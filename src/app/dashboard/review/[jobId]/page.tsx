@@ -853,6 +853,16 @@ export default function ReviewPage() {
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
+  // Recurring detection — must be declared before any early returns (Rules of Hooks)
+  const recurringPatterns = useMemo(
+    () => (job ? detectRecurring(job.transactions) : []),
+    [job]
+  )
+  const recurringIds = useMemo(
+    () => new Set(recurringPatterns.flatMap((p) => p.transactionIds)),
+    [recurringPatterns]
+  )
+
   function handleTransactionsChange(updated: Transaction[]) {
     if (!job) return
     const approved = updated.filter((t) => t.status === 'approved' || t.status === 'edited').length
@@ -1048,16 +1058,6 @@ export default function ReviewPage() {
   // All-reviewed check (no pending status remaining)
   const allReviewed = job.transactions.length > 0 &&
     job.transactions.every((t) => t.status !== 'pending')
-
-  // Recurring detection — recomputes whenever transactions change
-  const recurringPatterns = useMemo(
-    () => detectRecurring(job.transactions),
-    [job.transactions]
-  )
-  const recurringIds = useMemo(
-    () => new Set(recurringPatterns.flatMap((p) => p.transactionIds)),
-    [recurringPatterns]
-  )
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
