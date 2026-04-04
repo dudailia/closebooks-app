@@ -197,8 +197,8 @@ export default function TransactionRow({
           </div>
         </td>
 
-        {/* Confidence */}
-        <td className="px-3 py-2.5 w-32">
+        {/* Confidence — hidden on small screens to save space */}
+        <td className="px-3 py-2.5 w-32 hidden sm:table-cell">
           {transaction.confidence > 0
             ? <ConfidenceBar value={transaction.confidence} />
             : <span className="text-xs font-mono" style={{ color: '#a09a94' }}>—</span>

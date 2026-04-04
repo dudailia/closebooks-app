@@ -168,7 +168,7 @@ export default function FileUpload({ onContinue }: Props) {
           </div>
         ) : (
           /* Empty / hover state */
-          <div className="px-6 py-12 flex flex-col items-center text-center gap-3">
+          <div className="px-6 py-14 sm:py-12 flex flex-col items-center text-center gap-3">
             <UploadIcon hovering={isHovering} />
             <div>
               <p className="text-sm font-medium" style={{ color: '#1a1714' }}>
@@ -221,10 +221,10 @@ export default function FileUpload({ onContinue }: Props) {
             Preview — first {Math.min(PREVIEW_ROWS, preview.length)} of {preview.length} rows
           </p>
           <div
-            className="rounded-xl overflow-hidden border text-xs"
+            className="rounded-xl overflow-hidden overflow-x-auto border text-xs"
             style={{ borderColor: '#e0dbd4' }}
           >
-            <table className="w-full">
+            <table className="w-full min-w-[360px]">
               <thead>
                 <tr style={{ backgroundColor: '#f5f0ea' }}>
                   {['Date', 'Description', 'Amount', 'Type'].map((h) => (

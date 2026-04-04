@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { DM_Sans, DM_Mono, DM_Serif_Display } from 'next/font/google'
 import './globals.css'
 
@@ -23,9 +23,47 @@ const dmSerif = DM_Serif_Display({
   display: 'swap',
 })
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#2d5a27',
+}
+
 export const metadata: Metadata = {
-  title: 'CloseBooks — AI-Powered Month-End Close',
-  description: 'Categorize bank transactions with AI. Built for CPAs and bookkeepers.',
+  title: 'CloseBooks — AI-Powered Month-End Close for CPA Firms',
+  description:
+    "Close your clients' books in hours, not days. AI auto-categorizes bank transactions with 85–95% accuracy. Built for CPAs and bookkeepers.",
+  keywords: [
+    'CPA software',
+    'bookkeeping automation',
+    'month-end close',
+    'AI accounting',
+    'transaction categorization',
+    'QuickBooks export',
+  ],
+  authors: [{ name: 'CloseBooks' }],
+  openGraph: {
+    type: 'website',
+    siteName: 'CloseBooks',
+    title: 'CloseBooks — AI-Powered Month-End Close for CPA Firms',
+    description:
+      "Close your clients' books in hours, not days. AI auto-categorizes transactions with 85–95% accuracy.",
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'CloseBooks — AI-Powered Month-End Close',
+    description:
+      'AI auto-categorizes bank transactions with 85–95% accuracy. Built for CPAs and bookkeepers.',
+  },
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

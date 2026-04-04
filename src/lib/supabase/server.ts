@@ -1,28 +1,34 @@
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
+const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? ''
+const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+
+export const supabaseConfigured =
+  !!SUPABASE_URL && !SUPABASE_URL.startsWith('your_') &&
+  !!SUPABASE_ANON && !SUPABASE_ANON.startsWith('your_')
+
+/** Returns a Supabase server client, or null if env vars aren't set. */
 export function createClient() {
-  const cookieStore = cookies();
+  if (!supabaseConfigured) return null
 
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // setAll called from a Server Component — cookies can only be
-            // mutated in middleware or Server Actions.
-          }
-        },
+  const cookieStore = cookies()
+
+  return createServerClient(SUPABASE_URL, SUPABASE_ANON, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll()
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          )
+        } catch {
+          // Called from a Server Component — cookies can only be mutated
+          // in middleware or Server Actions, so we silently ignore.
+        }
+      },
+    },
+  })
 }

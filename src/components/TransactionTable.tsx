@@ -297,7 +297,7 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
 
       {/* Table */}
       <div
-        className="rounded-xl border overflow-hidden"
+        className="rounded-xl border overflow-hidden overflow-x-auto"
         style={{ borderColor: '#e0dbd4' }}
       >
         {visible.length === 0 ? (
@@ -307,7 +307,7 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
             </p>
           </div>
         ) : (
-          <table className="w-full">
+          <table className="w-full min-w-[640px]">
             <thead>
               <tr style={{ backgroundColor: '#f5f0ea', borderBottom: '1px solid #e0dbd4' }}>
                 <th className="pl-3 pr-1 py-2.5 w-8">
@@ -321,13 +321,13 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
                   />
                 </th>
                 {[
-                  ['Date',       'text-left  w-28'],
-                  ['Description','text-left  max-w-[220px]'],
-                  ['Category',   'text-left'],
-                  ['Confidence', 'text-right w-32'],
-                  ['Amount',     'text-right w-28'],
-                  ['Status',     'text-left  w-24'],
-                  ['Actions',    'text-left  w-24'],
+                  ['Date',        'text-left  w-28',              ''],
+                  ['Description', 'text-left  max-w-[220px]',     ''],
+                  ['Category',    'text-left',                    ''],
+                  ['Confidence',  'text-right w-32 hidden sm:table-cell', ''],
+                  ['Amount',      'text-right w-28',              ''],
+                  ['Status',      'text-left  w-24',              ''],
+                  ['Actions',     'text-left  w-24',              ''],
                 ].map(([label, cls]) => (
                   <th
                     key={label}

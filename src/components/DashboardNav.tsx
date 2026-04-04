@@ -1,10 +1,106 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { createClient, supabaseConfigured } from '@/lib/supabase/client'
+import type { User } from '@supabase/supabase-js'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User menu (shown when logged in)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function UserMenu({ user }: { user: User }) {
+  const router   = useRouter()
+  const [open, setOpen] = useState(false)
+
+  const displayName =
+    (user.user_metadata?.full_name as string | undefined) ||
+    user.email?.split('@')[0] ||
+    'Account'
+
+  async function signOut() {
+    const supabase = createClient()
+    if (supabase) await supabase.auth.signOut()
+    router.push('/')
+    router.refresh()
+  }
+
+  return (
+    <div className="relative ml-1">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors"
+        style={{ color: '#1a1714', backgroundColor: 'transparent' }}
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f0ea' }}
+        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+      >
+        {/* Avatar circle */}
+        <span
+          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0"
+          style={{ backgroundColor: '#b8734a' }}
+        >
+          {displayName[0].toUpperCase()}
+        </span>
+        <span className="max-w-[120px] truncate hidden sm:block" style={{ color: '#1a1714' }}>
+          {displayName}
+        </span>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="shrink-0">
+          <path d="M2 3.5l3 3 3-3" stroke="#6b6560" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div
+            className="absolute right-0 top-full mt-1 z-20 rounded-xl border shadow-lg overflow-hidden min-w-[180px]"
+            style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}
+          >
+            <div className="px-4 py-3 border-b" style={{ borderColor: '#f0ebe3' }}>
+              <p className="text-xs font-medium truncate" style={{ color: '#1a1714' }}>{displayName}</p>
+              <p className="text-xs truncate mt-0.5" style={{ color: '#a09a94' }}>{user.email}</p>
+            </div>
+            <button
+              onClick={signOut}
+              className="w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2"
+              style={{ color: '#991b1b' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fef2f2' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h3M9 10l3-3-3-3M12 7H5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Sign out
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Nav
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void } = {}) {
   const path = usePathname()
+  const [user, setUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    if (!supabaseConfigured) return
+    const supabase = createClient()
+    if (!supabase) return
+
+    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   return (
     <nav
@@ -13,7 +109,7 @@ export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void
     >
       <div className="max-w-6xl mx-auto px-5 flex items-center justify-between h-14">
 
-        {/* Logo — links to homepage */}
+        {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 select-none">
           <LedgerIcon />
           <span
@@ -37,6 +133,7 @@ export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void
           <NavLink href="/demo" active={path === '/demo'}>
             Demo
           </NavLink>
+
           {onHelpClick && (
             <button
               onClick={onHelpClick}
@@ -50,6 +147,7 @@ export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void
               ?
             </button>
           )}
+
           <Link
             href="/pricing"
             className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors"
@@ -59,6 +157,7 @@ export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void
           >
             Upgrade
           </Link>
+
           <Link
             href="/dashboard/upload"
             className="ml-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-white"
@@ -69,11 +168,32 @@ export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void
             <PlusIcon />
             New Close
           </Link>
+
+          {/* Auth */}
+          {supabaseConfigured && (
+            user
+              ? <UserMenu user={user} />
+              : (
+                <Link
+                  href="/login"
+                  className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                  style={{ color: '#6b6560', backgroundColor: 'transparent' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = '#1a1714'; e.currentTarget.style.backgroundColor = '#f5f0ea' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = '#6b6560'; e.currentTarget.style.backgroundColor = 'transparent' }}
+                >
+                  Sign in
+                </Link>
+              )
+          )}
         </div>
       </div>
     </nav>
   )
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sub-components
+// ─────────────────────────────────────────────────────────────────────────────
 
 function NavLink({
   href,
@@ -93,12 +213,8 @@ function NavLink({
         backgroundColor: active ? '#e8f0e6' : 'transparent',
         fontWeight: active ? 500 : 400,
       }}
-      onMouseEnter={(e) => {
-        if (!active) e.currentTarget.style.color = '#1a1714'
-      }}
-      onMouseLeave={(e) => {
-        if (!active) e.currentTarget.style.color = '#6b6560'
-      }}
+      onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = '#1a1714' }}
+      onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = '#6b6560' }}
     >
       {children}
     </Link>

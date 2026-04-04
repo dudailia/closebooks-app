@@ -8,6 +8,7 @@ import FileUpload from '@/components/FileUpload'
 import ChartOfAccountsUpload from '@/components/ChartOfAccountsUpload'
 import { saveJob } from '@/lib/storage'
 import { getRecentCorrections } from '@/lib/corrections'
+import { notify } from '@/lib/notify'
 import type { Transaction, ChartOfAccounts, CategorizationJob } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -157,6 +158,12 @@ function CategorizeStep({
       }
 
       saveJob(job)
+      notify('Categorization completed', {
+        client: clientName,
+        transactions: categorized.length,
+        auto_approved: job.auto_categorized,
+        flagged: job.flagged,
+      })
       router.push(`/dashboard/review/${job.id}`)
     } catch (err) {
       if (timerRef.current) clearInterval(timerRef.current)
@@ -225,10 +232,24 @@ function CategorizeStep({
         {/* Error */}
         {error && (
           <div
-            className="px-4 py-3 rounded-xl text-sm"
-            style={{ backgroundColor: '#fee2e2', borderLeft: '3px solid #dc2626', color: '#991b1b' }}
+            className="px-4 py-3 rounded-xl text-sm space-y-1"
+            style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b' }}
           >
-            {error}
+            <p className="font-semibold">Categorization failed</p>
+            <p className="text-xs opacity-80">
+              {error.includes('API') || error.includes('key') || error.includes('auth')
+                ? 'The AI service is unavailable. Check that ANTHROPIC_API_KEY is set.'
+                : error.includes('rate') || error.includes('429')
+                ? 'Too many requests. Wait a moment and try again.'
+                : error.includes('timeout') || error.includes('network') || error.includes('fetch')
+                ? 'Network error. Check your connection and try again.'
+                : error.length > 120
+                ? 'An unexpected error occurred with the AI service.'
+                : error}
+            </p>
+            <p className="text-xs" style={{ color: '#b91c1c' }}>
+              Click &ldquo;Try again&rdquo; below to retry.
+            </p>
           </div>
         )}
 
@@ -252,6 +273,8 @@ function CategorizeStep({
           >
             {state === 'loading' ? (
               <><Spinner light /> Categorizing…</>
+            ) : state === 'error' ? (
+              '↺ Try again'
             ) : (
               '✦ Categorize with AI'
             )}

@@ -7,9 +7,8 @@ export const supabaseConfigured =
   !!SUPABASE_URL && !SUPABASE_URL.startsWith('your_') &&
   !!SUPABASE_ANON && !SUPABASE_ANON.startsWith('your_')
 
+/** Returns a Supabase browser client, or null if env vars aren't set. */
 export function createClient() {
-  if (!supabaseConfigured) {
-    throw new Error('Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local.')
-  }
+  if (!supabaseConfigured) return null
   return createBrowserClient(SUPABASE_URL, SUPABASE_ANON)
 }

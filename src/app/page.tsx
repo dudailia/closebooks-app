@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { notify } from '@/lib/notify'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Scroll-fade animation hook
@@ -852,6 +853,7 @@ function Waitlist() {
       if (res.ok) {
         setStatus('success')
         setEmail('')
+        notify('Waitlist signup', { email })
       } else {
         const data = await res.json().catch(() => ({}))
         setErrorMsg((data as { error?: string }).error ?? 'Something went wrong. Try again.')
