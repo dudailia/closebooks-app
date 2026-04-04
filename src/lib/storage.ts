@@ -20,6 +20,7 @@ export function getJob(id: string): CategorizationJob | null {
 }
 
 export function saveJob(job: CategorizationJob): void {
+  if (typeof window === 'undefined') return
   const jobs = getJobs()
   const idx = jobs.findIndex((j) => j.id === job.id)
   if (idx >= 0) jobs[idx] = job
@@ -28,6 +29,7 @@ export function saveJob(job: CategorizationJob): void {
 }
 
 export function deleteJob(id: string): void {
+  if (typeof window === 'undefined') return
   localStorage.setItem(JOBS_KEY, JSON.stringify(getJobs().filter((j) => j.id !== id)))
 }
 
@@ -64,6 +66,7 @@ export function getClient(id: string): Client | null {
 }
 
 export function saveClient(client: Client): void {
+  if (typeof window === 'undefined') return
   const clients = getClients()
   const idx = clients.findIndex((c) => c.id === client.id)
   if (idx >= 0) clients[idx] = client
@@ -72,5 +75,6 @@ export function saveClient(client: Client): void {
 }
 
 export function deleteClient(id: string): void {
+  if (typeof window === 'undefined') return
   localStorage.setItem(CLIENTS_KEY, JSON.stringify(getClients().filter((c) => c.id !== id)))
 }

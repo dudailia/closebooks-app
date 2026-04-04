@@ -82,6 +82,8 @@ export function formatAuditEvent(e: AuditEvent): string {
       return `Close marked as complete`
     case 'job_created':
       return `Categorization job created — ${e.details.txCount} transactions imported`
+    default:
+      return `Event: ${e.action}`
   }
 }
 

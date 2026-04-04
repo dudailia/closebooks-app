@@ -47,7 +47,8 @@ export default function FileUpload({ onContinue }: Props) {
       setPdfLoading(true)
       try {
         const arrayBuffer = await file.arrayBuffer()
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+        const bytes  = new Uint8Array(arrayBuffer)
+        const base64 = btoa(Array.from(bytes, (b) => String.fromCharCode(b)).join(''))
         const res = await fetch('/api/parse-pdf', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

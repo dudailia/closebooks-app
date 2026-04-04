@@ -37,7 +37,10 @@ export async function POST(request: Request) {
   let pageCount = 0
   try {
     // Dynamic import keeps pdf-parse out of the client bundle
-    const pdfParse = (await import('pdf-parse')).default
+    // Handle both CJS default export and ESM named export
+    const mod      = await import('pdf-parse')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pdfParse = (mod as any).default ?? mod
     const buffer   = Buffer.from(base64, 'base64')
     const result   = await pdfParse(buffer)
     pdfText    = result.text ?? ''

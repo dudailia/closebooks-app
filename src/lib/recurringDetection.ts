@@ -52,7 +52,7 @@ export function detectRecurring(transactions: Transaction[]): RecurringPattern[]
 
   const patterns: RecurringPattern[] = []
 
-  for (const txs of groups.values()) {
+  for (const txs of Array.from(groups.values())) {
     if (txs.length < 2) continue
 
     // 2. Sort chronologically
