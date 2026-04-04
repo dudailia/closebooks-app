@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
 // ---------------------------------------------------------------------------
@@ -56,15 +56,11 @@ function DropZone({
     if (valid.length) onFiles([...files, ...valid])
   }
 
-  const onDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault()
-      setDragging(false)
-      accept(e.dataTransfer.files)
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [files]
-  )
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault()
+    setDragging(false)
+    accept(e.dataTransfer.files)
+  }
 
   const removeFile = (idx: number) => {
     onFiles(files.filter((_, i) => i !== idx))
