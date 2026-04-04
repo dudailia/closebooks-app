@@ -1,0 +1,123 @@
+import { NextRequest, NextResponse } from 'next/server'
+import Papa from 'papaparse'
+import type { Transaction } from '@/types'
+
+type ExportFormat = 'quickbooks' | 'standard'
+
+interface RequestBody {
+  transactions: Transaction[]
+  clientName: string
+  format: ExportFormat
+}
+
+function isValidBody(body: unknown): body is RequestBody {
+  if (!body || typeof body !== 'object') return false
+  const b = body as Record<string, unknown>
+  return (
+    Array.isArray(b.transactions) &&
+    typeof b.clientName === 'string' &&
+    b.clientName.trim().length > 0 &&
+    (b.format === 'quickbooks' || b.format === 'standard')
+  )
+}
+
+function safeFilename(name: string): string {
+  return name.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '_').replace(/\s+/g, '_')
+}
+
+// ---------------------------------------------------------------------------
+// QuickBooks CSV
+// Columns QuickBooks Desktop / Online import expects:
+//   Date, Account, Description, Amount, Category, Class
+// Debits are negative amounts on the bank account line.
+// ---------------------------------------------------------------------------
+function buildQuickBooksCSV(transactions: Transaction[], clientName: string): string {
+  const rows = transactions.map((t) => {
+    const category = t.final_category ?? t.suggested_category ?? 'Uncategorized'
+    const account  = t.final_account_code
+      ? `${t.final_account_code} - ${t.final_category ?? category}`
+      : (t.suggested_account_code
+          ? `${t.suggested_account_code} - ${category}`
+          : 'Uncategorized')
+    // QuickBooks: debits are negative, credits are positive
+    const amount = t.type === 'debit' ? -t.amount : t.amount
+
+    return {
+      Date:        t.date,
+      Account:     account,
+      Description: t.description,
+      Amount:      amount.toFixed(2),
+      Category:    category,
+      Class:       clientName,
+    }
+  })
+
+  return Papa.unparse(rows, { header: true })
+}
+
+// ---------------------------------------------------------------------------
+// Standard CSV
+// Columns: Date, Description, Category, Account Code, Debit, Credit, Status, Notes
+// Debit and Credit are split into separate columns (never both populated).
+// ---------------------------------------------------------------------------
+function buildStandardCSV(transactions: Transaction[]): string {
+  const rows = transactions.map((t) => {
+    const category    = t.final_category    ?? t.suggested_category    ?? ''
+    const accountCode = t.final_account_code ?? t.suggested_account_code ?? ''
+
+    return {
+      Date:           t.date,
+      Description:    t.description,
+      Category:       category,
+      'Account Code': accountCode,
+      Debit:          t.type === 'debit'  ? t.amount.toFixed(2) : '',
+      Credit:         t.type === 'credit' ? t.amount.toFixed(2) : '',
+      Status:         t.status,
+      Notes:          t.notes ?? '',
+    }
+  })
+
+  return Papa.unparse(rows, { header: true })
+}
+
+// ---------------------------------------------------------------------------
+// Route handler
+// ---------------------------------------------------------------------------
+export async function POST(request: NextRequest) {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON in request body.' }, { status: 400 })
+  }
+
+  if (!isValidBody(body)) {
+    return NextResponse.json(
+      { error: 'Request body must include transactions (array), clientName (string), and format ("quickbooks" or "standard").' },
+      { status: 422 }
+    )
+  }
+
+  const { transactions, clientName, format } = body
+
+  if (transactions.length === 0) {
+    return NextResponse.json({ error: 'No transactions to export.' }, { status: 422 })
+  }
+
+  const base      = safeFilename(clientName)
+  const datestamp = new Date().toISOString().slice(0, 10)
+  const filename  = `${base}_close_${datestamp}.csv`
+
+  const csv = format === 'quickbooks'
+    ? buildQuickBooksCSV(transactions, clientName)
+    : buildStandardCSV(transactions)
+
+  return new NextResponse(csv, {
+    status: 200,
+    headers: {
+      'Content-Type':        'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'X-Transaction-Count': String(transactions.length),
+    },
+  })
+}

@@ -1,0 +1,574 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import DashboardNav from '@/components/DashboardNav'
+import { getJobs, deleteJob } from '@/lib/storage'
+import type { CategorizationJob } from '@/types'
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+  })
+}
+
+function progressPercent(job: CategorizationJob) {
+  if (job.total_transactions === 0) return 0
+  return Math.round(((job.approved + job.flagged) / job.total_transactions) * 100)
+}
+
+const STATUS_STYLE: Record<CategorizationJob['status'], { bg: string; text: string; label: string; dot: string }> = {
+  processing: { bg: '#fef9c3', text: '#854d0e', label: 'Processing', dot: '#ca8a04' },
+  review:     { bg: '#fdf2e9', text: '#9a3412', label: 'In Review',  dot: '#b8734a' },
+  completed:  { bg: '#ecfdf5', text: '#065f46', label: 'Completed',  dot: '#059669' },
+}
+
+// ---------------------------------------------------------------------------
+// Summary stats
+// ---------------------------------------------------------------------------
+
+function SummaryStats({ jobs }: { jobs: CategorizationJob[] }) {
+  const totalClients = jobs.length
+  const totalTx = jobs.reduce((s, j) => s + j.total_transactions, 0)
+
+  // Avg confidence across all categorized transactions
+  const allTx = jobs.flatMap((j) => j.transactions)
+  const withConfidence = allTx.filter((t) => t.confidence > 0)
+  const avgConfidence = withConfidence.length > 0
+    ? Math.round(withConfidence.reduce((s, t) => s + t.confidence, 0) / withConfidence.length * 100)
+    : null
+
+  const inReview = jobs.filter((j) => j.status === 'review').length
+
+  const stats = [
+    {
+      label: 'Total Clients',
+      value: totalClients.toString(),
+      sub: 'all time',
+      color: '#1a1714',
+      icon: <ClientsIcon />,
+    },
+    {
+      label: 'Transactions Processed',
+      value: totalTx.toLocaleString(),
+      sub: 'across all closes',
+      color: '#1a1714',
+      icon: <TxIcon />,
+    },
+    {
+      label: 'Avg Confidence',
+      value: avgConfidence !== null ? `${avgConfidence}%` : '—',
+      sub: 'AI categorization',
+      color: avgConfidence !== null
+        ? avgConfidence >= 85 ? '#166534' : avgConfidence >= 70 ? '#854d0e' : '#991b1b'
+        : '#a09a94',
+      icon: <ConfIcon />,
+    },
+    {
+      label: 'Awaiting Review',
+      value: inReview.toString(),
+      sub: inReview === 1 ? 'client needs action' : 'clients need action',
+      color: inReview > 0 ? '#b8734a' : '#a09a94',
+      icon: <ReviewIcon />,
+    },
+  ]
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {stats.map((s) => (
+        <div
+          key={s.label}
+          className="rounded-xl border px-4 py-4 flex flex-col gap-2"
+          style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+        >
+          <div className="flex items-center justify-between">
+            <span style={{ color: '#a09a94' }}>{s.icon}</span>
+          </div>
+          <div>
+            <p
+              className="font-mono text-2xl font-semibold leading-none"
+              style={{ color: s.color }}
+            >
+              {s.value}
+            </p>
+            <p className="text-xs font-medium mt-1" style={{ color: '#1a1714' }}>{s.label}</p>
+            <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>{s.sub}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Job card
+// ---------------------------------------------------------------------------
+
+function JobCard({ job, onDelete }: { job: CategorizationJob; onDelete: (id: string) => void }) {
+  const router = useRouter()
+  const pct = progressPercent(job)
+  const s = STATUS_STYLE[job.status]
+  const pending = job.total_transactions - job.approved - job.flagged
+
+  return (
+    <div
+      className="group rounded-xl border p-5 cursor-pointer transition-all duration-150"
+      style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+      onClick={() => router.push(`/dashboard/review/${job.id}`)}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = '#b8734a'
+        e.currentTarget.style.boxShadow = '0 2px 8px rgba(184,115,74,0.1)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = '#e8e0d4'
+        e.currentTarget.style.boxShadow = 'none'
+      }}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-sm truncate" style={{ color: '#1a1714' }}>
+              {job.client_name}
+            </h3>
+            {/* Status badge with dot */}
+            <span
+              className="shrink-0 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{ backgroundColor: s.bg, color: s.text }}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full inline-block"
+                style={{ backgroundColor: s.dot }}
+              />
+              {s.label}
+            </span>
+          </div>
+          <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>{formatDate(job.created_at)}</p>
+        </div>
+
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(job.id) }}
+          className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1 rounded"
+          title="Delete"
+          style={{ color: '#c4bdb8' }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#dc2626' }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = '#c4bdb8' }}
+        >
+          <TrashIcon />
+        </button>
+      </div>
+
+      {/* Transaction counts */}
+      <div className="flex gap-3 mt-3 flex-wrap">
+        <Pill value={job.total_transactions} label="total" color="#6b6560" />
+        <Pill value={job.approved} label="approved" color="#166534" />
+        {pending > 0 && <Pill value={pending} label="pending" color="#854d0e" />}
+        {job.flagged > 0 && <Pill value={job.flagged} label="flagged" color="#991b1b" />}
+      </div>
+
+      {/* Progress bar */}
+      <div className="mt-4">
+        <div className="flex justify-between text-xs mb-1.5" style={{ color: '#c4bdb8' }}>
+          <span>Review progress</span>
+          <span className="font-mono" style={{ color: pct === 100 ? '#059669' : '#6b6560' }}>
+            {pct}%
+          </span>
+        </div>
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece4' }}>
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${pct}%`,
+              backgroundColor: pct === 100 ? '#059669' : pct >= 50 ? '#2d5a27' : '#b8734a',
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Pill({ value, label, color }: { value: number; label: string; color: string }) {
+  return (
+    <span className="text-xs" style={{ color: '#a09a94' }}>
+      <span className="font-mono font-semibold" style={{ color }}>{value}</span>
+      {' '}{label}
+    </span>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Client Portal section
+// ---------------------------------------------------------------------------
+
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'my-firm'
+}
+
+function ClientPortalSection() {
+  const [firmName, setFirmName]   = useState('')
+  const [copied, setCopied]       = useState(false)
+  const [generated, setGenerated] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function getOrigin() {
+    if (typeof window !== 'undefined') return window.location.origin
+    return 'http://localhost:3000'
+  }
+
+  function handleGenerate() {
+    const slug = slugify(firmName || 'my-firm')
+    const url  = `${getOrigin()}/portal/${slug}`
+    setGenerated(url)
+    setCopied(false)
+  }
+
+  async function handleCopy() {
+    if (!generated) return
+    try {
+      await navigator.clipboard.writeText(generated)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    } catch {
+      // fallback: select text
+      inputRef.current?.select()
+    }
+  }
+
+  return (
+    <div
+      className="rounded-2xl border p-6"
+      style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+    >
+      {/* Header row */}
+      <div className="flex items-start gap-3 mb-5">
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+          style={{ backgroundColor: '#e8f0e6' }}
+        >
+          <LinkIcon />
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold" style={{ color: '#1a1714' }}>
+            Client Upload Portal
+          </h2>
+          <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>
+            Generate a secure link your clients can use to send you bank statements — no login needed.
+          </p>
+        </div>
+      </div>
+
+      {/* Firm name input + generate */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={firmName}
+          onChange={(e) => { setFirmName(e.target.value); setGenerated(null) }}
+          onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+          placeholder="Your firm name (e.g. Smith CPA)"
+          className="flex-1 rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 transition-colors"
+          style={{
+            borderColor: '#e8e0d4',
+            backgroundColor: '#faf8f4',
+            color: '#1a1714',
+          }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = '#2d5a27' }}
+          onBlur={(e)  => { e.currentTarget.style.borderColor = '#e8e0d4' }}
+        />
+        <button
+          onClick={handleGenerate}
+          className="shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition-colors"
+          style={{ backgroundColor: '#2d5a27' }}
+          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+        >
+          Get Link
+        </button>
+      </div>
+
+      {/* Generated link */}
+      {generated && (
+        <div className="mt-3">
+          <div
+            className="flex items-center gap-2 rounded-xl border px-3.5 py-2.5"
+            style={{ borderColor: '#d4e5d0', backgroundColor: '#f0f5ef' }}
+          >
+            <input
+              ref={inputRef}
+              readOnly
+              value={generated}
+              className="flex-1 text-sm bg-transparent focus:outline-none font-mono truncate"
+              style={{ color: '#2d5a27' }}
+              onClick={(e) => e.currentTarget.select()}
+            />
+            <button
+              onClick={handleCopy}
+              className="shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+              style={{
+                backgroundColor: copied ? '#2d5a27' : '#ffffff',
+                color:           copied ? '#ffffff' : '#2d5a27',
+                border: '1px solid #2d5a27',
+              }}
+            >
+              {copied ? <CheckSmallIcon /> : <CopyIcon />}
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <div className="flex items-center gap-1.5 mt-2">
+            <LockSmallIcon />
+            <p className="text-xs" style={{ color: '#a09a94' }}>
+              Anyone with this link can submit documents. Share it directly with clients.
+            </p>
+          </div>
+          {/* Preview link */}
+          <a
+            href={generated}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs mt-1.5 transition-colors"
+            style={{ color: '#2d5a27' }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#1e3d1a' }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = '#2d5a27' }}
+          >
+            Preview portal →
+          </a>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
+export default function DashboardPage() {
+  const [jobs, setJobs] = useState<CategorizationJob[]>([])
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setJobs(getJobs())
+    setMounted(true)
+  }, [])
+
+  function handleDelete(id: string) {
+    deleteJob(id)
+    setJobs((prev) => prev.filter((j) => j.id !== id))
+  }
+
+  const recent = jobs.slice(0, 20)
+
+  // Greeting based on time of day
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: '#faf8f4' }}>
+      <DashboardNav />
+
+      <main className="max-w-4xl mx-auto px-5 py-10 space-y-8">
+
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium" style={{ color: '#b8734a' }}>
+              {mounted ? greeting : 'Welcome back'}
+            </p>
+            <h1
+              className="text-3xl mt-0.5"
+              style={{
+                fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
+                color: '#1a1714',
+                letterSpacing: '-0.02em',
+                lineHeight: 1.2,
+              }}
+            >
+              Your closes.
+            </h1>
+          </div>
+          <Link
+            href="/dashboard/upload"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-white shrink-0"
+            style={{ backgroundColor: '#2d5a27' }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+          >
+            <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
+            New Close
+          </Link>
+        </div>
+
+        {/* Stats — only shown once there's data */}
+        {mounted && jobs.length > 0 && <SummaryStats jobs={jobs} />}
+
+        {/* Client Portal */}
+        {mounted && <ClientPortalSection />}
+
+        {/* Recent closes */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2
+              className="text-xs font-semibold tracking-widest uppercase"
+              style={{ color: '#a09a94' }}
+            >
+              Recent Closes
+            </h2>
+            {recent.length > 0 && (
+              <span className="text-xs" style={{ color: '#a09a94' }}>
+                {recent.length} {recent.length === 1 ? 'client' : 'clients'}
+              </span>
+            )}
+          </div>
+
+          {!mounted || recent.length === 0 ? (
+            <div
+              className="rounded-2xl border-2 border-dashed px-8 py-16 text-center"
+              style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+            >
+              <LedgerEmptyIcon />
+              <p
+                className="text-lg mt-4"
+                style={{
+                  fontFamily: 'var(--font-dm-serif), Georgia, serif',
+                  color: '#1a1714',
+                }}
+              >
+                No closes yet
+              </p>
+              <p className="text-sm mt-1.5 mb-6" style={{ color: '#6b6560' }}>
+                Upload a client&apos;s bank statement to start categorizing.
+              </p>
+              <Link
+                href="/dashboard/upload"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white"
+                style={{ backgroundColor: '#2d5a27' }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+              >
+                Start your first close
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {recent.map((job) => (
+                <JobCard key={job.id} job={job} onDelete={handleDelete} />
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Icons
+// ---------------------------------------------------------------------------
+
+function TrashIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M2 3.5h10M5.5 3.5V2.5h3v1M11 3.5l-.6 7.5a.5.5 0 01-.5.5H4.1a.5.5 0 01-.5-.5L3 3.5"
+        stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function LedgerEmptyIcon() {
+  return (
+    <svg width="44" height="44" viewBox="0 0 44 44" fill="none" className="mx-auto opacity-40">
+      <rect x="6" y="3" width="24" height="32" rx="3" stroke="#b8734a" strokeWidth="1.8" fill="none" />
+      <path d="M12 12h12M12 18h12M12 24h8" stroke="#b8734a" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="34" cy="34" r="8" fill="#fdf2e9" stroke="#b8734a" strokeWidth="1.5" />
+      <path d="M31 34h6M34 31v6" stroke="#b8734a" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function ClientsIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="6" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M1 13c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="12" cy="5" r="1.8" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M14 13c0-1.657-1.343-3-3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function TxIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M4 8h8M4 11h5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M4 5h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function ConfIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M5.5 8.5l2 2 3-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function ReviewIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M8 5v3.5l2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function LinkIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path
+        d="M6.5 9.5a3.536 3.536 0 005 0l2-2a3.536 3.536 0 00-5-5L7.5 3.5"
+        stroke="#2d5a27" strokeWidth="1.4" strokeLinecap="round"
+      />
+      <path
+        d="M9.5 6.5a3.536 3.536 0 00-5 0l-2 2a3.536 3.536 0 005 5l1-1"
+        stroke="#2d5a27" strokeWidth="1.4" strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+function CopyIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <rect x="4" y="4" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M3 8H2a1 1 0 01-1-1V2a1 1 0 011-1h5a1 1 0 011 1v1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function CheckSmallIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function LockSmallIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+      <rect x="1.5" y="4.5" width="8" height="6" rx="1.2" stroke="#a09a94" strokeWidth="1.1" />
+      <path d="M3.5 4.5V3a2 2 0 014 0v1.5" stroke="#a09a94" strokeWidth="1.1" strokeLinecap="round" />
+    </svg>
+  )
+}
