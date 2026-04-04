@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import type { Transaction, ChartOfAccounts } from '@/types'
 import { saveCorrection } from '@/lib/corrections'
 import { getAlternativeSuggestions } from '@/lib/categorySuggestions'
+import type { AuditCallback, AuditEvent } from '@/lib/auditTrail'
+import { formatAuditEvent, fmtAuditTs } from '@/lib/auditTrail'
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -73,6 +75,8 @@ interface Props {
   onFocus?: () => void
   /** Incremented by parent to trigger expand/collapse toggle on focused row */
   enterTrigger?: number
+  onAudit?: AuditCallback
+  txAuditEvents?: AuditEvent[]
 }
 
 // ---------------------------------------------------------------------------
@@ -85,10 +89,12 @@ export default function TransactionRow({
   selected,
   onToggleSelect,
   onChange,
-  isRecurring  = false,
-  isFocused    = false,
+  isRecurring    = false,
+  isFocused      = false,
   onFocus,
-  enterTrigger = 0,
+  enterTrigger   = 0,
+  onAudit,
+  txAuditEvents  = [],
 }: Props) {
   const [expanded, setExpanded]   = useState(false)
   const [, setEditCategory]       = useState(
@@ -107,6 +113,12 @@ export default function TransactionRow({
   }, [enterTrigger])
 
   function handleApprove() {
+    onAudit?.({
+      action: 'tx_approved',
+      txId: transaction.id,
+      txDescription: transaction.description,
+      details: { category: transaction.final_category ?? transaction.suggested_category ?? '' },
+    })
     onChange({
       ...transaction,
       status: 'approved',
@@ -118,21 +130,34 @@ export default function TransactionRow({
   }
 
   function handleFlag() {
+    onAudit?.({
+      action: 'tx_flagged',
+      txId: transaction.id,
+      txDescription: transaction.description,
+      details: { reason: notes || '' },
+    })
     onChange({ ...transaction, status: 'flagged', notes: notes || undefined })
     setExpanded(false)
   }
 
   function handleCategoryChange(code: string) {
-    const account = chartOfAccounts.find((a) => a.code === code)
+    const account   = chartOfAccounts.find((a) => a.code === code)
+    const prevCode  = transaction.final_account_code ?? transaction.suggested_account_code
     setEditAccountCode(code)
     setEditCategory(account?.name ?? code)
 
-    if (code !== transaction.suggested_account_code && transaction.suggested_category) {
-      saveCorrection(
-        transaction.description,
-        transaction.suggested_category,
-        account?.name ?? code
-      )
+    if (code !== prevCode) {
+      const fromName = transaction.final_category ?? transaction.suggested_category ?? '—'
+      const toName   = account?.name ?? code
+      onAudit?.({
+        action: 'tx_category_changed',
+        txId: transaction.id,
+        txDescription: transaction.description,
+        details: { from: fromName, to: toName },
+      })
+      if (code !== transaction.suggested_account_code && transaction.suggested_category) {
+        saveCorrection(transaction.description, transaction.suggested_category, toName)
+      }
     }
 
     onChange({
@@ -145,6 +170,14 @@ export default function TransactionRow({
 
   function handleNotesBlur() {
     if (notes !== (transaction.notes ?? '')) {
+      if (notes) {
+        onAudit?.({
+          action: 'tx_note_added',
+          txId: transaction.id,
+          txDescription: transaction.description,
+          details: { note: notes },
+        })
+      }
       onChange({ ...transaction, notes: notes || undefined })
     }
   }
@@ -262,7 +295,7 @@ export default function TransactionRow({
         </td>
 
         {/* Actions */}
-        <td className="px-3 py-2.5 w-24" onClick={(e) => e.stopPropagation()}>
+        <td className="px-3 py-2.5 w-28" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-1">
             <ActionButton
               label="✓"
@@ -278,6 +311,29 @@ export default function TransactionRow({
               active={transaction.status === 'flagged'}
               activeStyle={{ backgroundColor: '#fee2e2', color: '#991b1b', borderColor: '#dc2626' }}
             />
+            {/* Audit history icon — amber when events exist */}
+            <div className="relative">
+              <button
+                onClick={() => setExpanded(true)}
+                title={txAuditEvents.length > 0 ? `${txAuditEvents.length} audit event${txAuditEvents.length !== 1 ? 's' : ''}` : 'No audit history'}
+                className="px-1.5 py-1 rounded border text-xs transition-colors"
+                style={{
+                  borderColor: txAuditEvents.length > 0 ? '#d97706' : '#e0dbd4',
+                  color:       txAuditEvents.length > 0 ? '#d97706' : '#c4bdb8',
+                  backgroundColor: txAuditEvents.length > 0 ? '#fffbeb' : '#faf8f4',
+                }}
+              >
+                <ClockIcon />
+              </button>
+              {txAuditEvents.length > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-white"
+                  style={{ backgroundColor: '#d97706', fontSize: 8, lineHeight: 1 }}
+                >
+                  {txAuditEvents.length > 9 ? '9+' : txAuditEvents.length}
+                </span>
+              )}
+            </div>
             <button
               onClick={() => setExpanded((v) => !v)}
               title={expanded ? 'Collapse' : 'Expand'}
@@ -430,6 +486,33 @@ export default function TransactionRow({
                 ⚑ Flag for review
               </button>
             </div>
+
+            {/* Audit history timeline */}
+            {txAuditEvents.length > 0 && (
+              <div className="mt-5 pt-4" style={{ borderTop: '1px solid #e0dbd4' }}>
+                <p className="text-xs font-semibold mb-3 flex items-center gap-1.5" style={{ color: '#6b6560' }}>
+                  <ClockIcon />
+                  Audit history
+                </p>
+                <ol className="relative space-y-3 pl-4" style={{ borderLeft: '1px solid #e0dbd4' }}>
+                  {[...txAuditEvents].reverse().map((ev) => (
+                    <li key={ev.id} className="relative">
+                      {/* Timeline dot */}
+                      <span
+                        className="absolute -left-[17px] top-1 w-2.5 h-2.5 rounded-full border-2 border-white"
+                        style={{ backgroundColor: auditDotColor(ev.action) }}
+                      />
+                      <p className="text-xs" style={{ color: '#1a1714' }}>
+                        {formatAuditEvent(ev)}
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>
+                        {ev.actor} · {fmtAuditTs(ev.timestamp)}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
           </td>
         </tr>
       )}
@@ -440,6 +523,25 @@ export default function TransactionRow({
 // ---------------------------------------------------------------------------
 // Icons
 // ---------------------------------------------------------------------------
+
+function ClockIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M6 3.5V6l1.5 1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function auditDotColor(action: AuditEvent['action']): string {
+  switch (action) {
+    case 'tx_approved':         return '#059669'
+    case 'tx_flagged':          return '#ef4444'
+    case 'tx_category_changed': return '#3b82f6'
+    case 'tx_note_added':       return '#a09a94'
+    default:                    return '#a09a94'
+  }
+}
 
 function RecurringIcon() {
   return (

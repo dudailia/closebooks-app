@@ -7,8 +7,10 @@ import DashboardNav from '@/components/DashboardNav'
 import OnboardingModal, { needsOnboarding } from '@/components/OnboardingModal'
 import AppFooter from '@/components/AppFooter'
 import { getJobs, deleteJob } from '@/lib/storage'
+import { getQBOConnection } from '@/lib/integrations'
 import ActivityFeed from '@/components/ActivityFeed'
 import type { CategorizationJob } from '@/types'
+import type { QBOConnection } from '@/lib/integrations'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -485,13 +487,15 @@ function ClientPortalSection({ sectionRef }: { sectionRef: React.RefObject<HTMLD
 // ---------------------------------------------------------------------------
 
 export default function DashboardPage() {
-  const [jobs, setJobs] = useState<CategorizationJob[]>([])
-  const [mounted, setMounted] = useState(false)
+  const [jobs, setJobs]           = useState<CategorizationJob[]>([])
+  const [mounted, setMounted]     = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [qboConn, setQboConn]     = useState<QBOConnection | null>(null)
   const portalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setJobs(getJobs())
+    setQboConn(getQBOConnection())
     setMounted(true)
     if (needsOnboarding()) setShowOnboarding(true)
   }, [])
@@ -561,6 +565,41 @@ export default function DashboardPage() {
         ) : jobs.length > 0 ? (
           <SummaryStats jobs={jobs} />
         ) : null}
+
+        {/* Connected integrations strip */}
+        {mounted && qboConn && (
+          <div
+            className="flex items-center justify-between gap-3 rounded-xl border px-4 py-3"
+            style={{ borderColor: '#bbf7d0', backgroundColor: '#f0fdf4' }}
+          >
+            <div className="flex items-center gap-2.5">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" fill="#2CA01C" />
+                <path d="M4.5 8l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className="text-sm font-medium" style={{ color: '#14532d' }}>
+                QuickBooks Online connected
+              </span>
+              <span className="text-xs font-mono" style={{ color: '#6b7280' }}>
+                {qboConn.companyName}
+              </span>
+              {qboConn.totalSynced > 0 && (
+                <span className="text-xs px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#dcfce7', color: '#166534' }}>
+                  {qboConn.totalSynced.toLocaleString()} synced
+                </span>
+              )}
+            </div>
+            <Link
+              href="/dashboard/integrations"
+              className="text-xs transition-colors"
+              style={{ color: '#2CA01C' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#166534' }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = '#2CA01C' }}
+            >
+              Manage →
+            </Link>
+          </div>
+        )}
 
         {/* Quick Actions */}
         <QuickActions onPortalClick={scrollToPortal} />

@@ -8,8 +8,13 @@ import TransactionTable from '@/components/TransactionTable'
 import { getJob, saveJob } from '@/lib/storage'
 import { detectRecurring } from '@/lib/recurringDetection'
 import { logActivity } from '@/lib/activity'
+import { getQBOConnection, recordQBOSync } from '@/lib/integrations'
+import { JobInsightsPanel } from '@/components/InsightsPanel'
+import { getAuditTrail, logAuditEvent, auditGroup, formatAuditEvent, fmtAuditTs } from '@/lib/auditTrail'
+import type { QBOConnection } from '@/lib/integrations'
 import type { CategorizationJob, Transaction } from '@/types'
 import type { RecurringPattern } from '@/lib/recurringDetection'
+import type { AuditEvent, AuditCallback } from '@/lib/auditTrail'
 
 // ---------------------------------------------------------------------------
 // Toast
@@ -510,6 +515,290 @@ function RecurringPanel({ patterns }: { patterns: RecurringPattern[] }) {
 }
 
 // ---------------------------------------------------------------------------
+// Push to QuickBooks modal
+// ---------------------------------------------------------------------------
+
+type PushStep = 'confirm' | 'connecting' | 'uploading' | 'success'
+
+interface PushModalProps {
+  count: number
+  connection: QBOConnection
+  onConfirm: () => void
+  onCancel: () => void
+  step: PushStep
+}
+
+function PushModal({ count, connection, onConfirm, onCancel, step }: PushModalProps) {
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (e.key === 'Escape' && step === 'confirm') onCancel()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [step, onCancel])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+      onClick={() => step === 'confirm' && onCancel()}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl border shadow-2xl overflow-hidden"
+        style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* QBO header strip */}
+        <div
+          className="px-5 py-3.5 flex items-center gap-2.5"
+          style={{ backgroundColor: '#2CA01C' }}
+        >
+          <svg width="20" height="20" viewBox="0 0 40 40" fill="none">
+            <rect width="40" height="40" rx="9" fill="rgba(255,255,255,0.25)" />
+            <text x="20" y="26" textAnchor="middle" fontSize="14" fontWeight="700" fontFamily="system-ui,sans-serif" fill="white">QB</text>
+          </svg>
+          <span className="text-sm font-semibold text-white">QuickBooks Online</span>
+          <span className="ml-auto text-xs text-white opacity-75">{connection.companyName}</span>
+        </div>
+
+        <div className="px-6 py-6">
+          {step === 'confirm' && (
+            <>
+              <p className="text-base font-semibold" style={{ color: '#1a1714' }}>
+                Push transactions to QuickBooks?
+              </p>
+              <p className="text-sm mt-2" style={{ color: '#6b6560' }}>
+                <span className="font-semibold" style={{ color: '#2CA01C' }}>{count}</span> approved transaction{count !== 1 ? 's' : ''} will be synced to{' '}
+                <span className="font-medium" style={{ color: '#1a1714' }}>{connection.companyName}</span>.
+                Transactions will be posted with their categorized account codes.
+              </p>
+              <div
+                className="mt-4 rounded-xl px-3.5 py-3 text-xs"
+                style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534' }}
+              >
+                Flagged and pending transactions are excluded from this push.
+              </div>
+              <div className="flex gap-2 mt-5">
+                <button
+                  onClick={onCancel}
+                  className="flex-1 py-2.5 rounded-xl text-sm border transition-colors"
+                  style={{ borderColor: '#e0dbd4', color: '#6b6560' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#1a1714' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e0dbd4' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={onConfirm}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+                  style={{ backgroundColor: '#2CA01C' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
+                >
+                  Push {count} transactions
+                </button>
+              </div>
+            </>
+          )}
+
+          {(step === 'connecting' || step === 'uploading') && (
+            <div className="py-6 flex flex-col items-center gap-4">
+              <div
+                className="w-12 h-12 rounded-full border-2 border-t-transparent animate-spin"
+                style={{ borderColor: '#2CA01C', borderTopColor: 'transparent' }}
+              />
+              <div className="text-center">
+                <p className="text-sm font-medium" style={{ color: '#1a1714' }}>
+                  {step === 'connecting' ? 'Connecting to QuickBooks…' : `Uploading ${count} transactions…`}
+                </p>
+                <p className="text-xs mt-1" style={{ color: '#6b6560' }}>
+                  {step === 'connecting' ? 'Authenticating with your company' : 'Posting to general ledger'}
+                </p>
+              </div>
+              {/* Simulated progress bar */}
+              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#dcfce7' }}>
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: step === 'connecting' ? '35%' : '85%',
+                    backgroundColor: '#2CA01C',
+                    transition: 'width 1.2s ease',
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {step === 'success' && (
+            <div className="py-6 flex flex-col items-center gap-4">
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: '#dcfce7' }}
+              >
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                  <path d="M5 14l6 6 12-12" stroke="#2CA01C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <div className="text-center">
+                <p className="text-base font-semibold" style={{ color: '#14532d' }}>
+                  {count} transaction{count !== 1 ? 's' : ''} synced to QuickBooks ✓
+                </p>
+                <p className="text-xs mt-1.5" style={{ color: '#6b6560' }}>
+                  Transactions are now visible in {connection.companyName}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Audit trail panel
+// ---------------------------------------------------------------------------
+
+type AuditFilterTab = 'all' | 'transactions' | 'exports' | 'system'
+
+function AuditPanel({ auditEvents }: { auditEvents: AuditEvent[] }) {
+  const [open, setOpen]       = useState(false)
+  const [tab, setTab]         = useState<AuditFilterTab>('all')
+
+  const filtered = tab === 'all'
+    ? auditEvents
+    : auditEvents.filter((e) => auditGroup(e.action) === tab)
+
+  const counts = {
+    all:          auditEvents.length,
+    transactions: auditEvents.filter((e) => auditGroup(e.action) === 'transactions').length,
+    exports:      auditEvents.filter((e) => auditGroup(e.action) === 'exports').length,
+    system:       auditEvents.filter((e) => auditGroup(e.action) === 'system').length,
+  }
+
+  const tabLabels: Record<AuditFilterTab, string> = {
+    all: 'All', transactions: 'Transactions', exports: 'Exports', system: 'System',
+  }
+
+  const dotColor: Record<string, string> = {
+    tx_approved:         '#059669',
+    tx_flagged:          '#ef4444',
+    tx_category_changed: '#3b82f6',
+    tx_note_added:       '#a09a94',
+    job_exported:        '#b8734a',
+    job_completed:       '#2d5a27',
+    job_created:         '#6b6560',
+  }
+
+  return (
+    <div
+      className="rounded-xl border overflow-hidden"
+      style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+    >
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-5 py-3.5 transition-colors text-left"
+        style={{ backgroundColor: open ? '#faf8f4' : '#ffffff' }}
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#faf8f4' }}
+        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = open ? '#faf8f4' : '#ffffff' }}
+      >
+        <div className="flex items-center gap-2.5">
+          <span
+            className="w-7 h-7 rounded-lg flex items-center justify-center"
+            style={{ backgroundColor: '#f5f0ea' }}
+          >
+            <AuditClockIcon />
+          </span>
+          <span className="text-sm font-semibold" style={{ color: '#1a1714' }}>
+            Audit Trail
+          </span>
+          <span
+            className="text-xs font-mono px-1.5 py-0.5 rounded-full"
+            style={{ backgroundColor: '#f5e6d8', color: '#b8734a' }}
+          >
+            {auditEvents.length} event{auditEvents.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        <svg
+          width="14" height="14" viewBox="0 0 14 14" fill="none"
+          style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', flexShrink: 0 }}
+        >
+          <path d="M3 5l4 4 4-4" stroke="#6b6560" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="border-t" style={{ borderColor: '#f0ece4' }}>
+          {/* Filter tabs */}
+          <div className="flex gap-0.5 px-4 pt-3 border-b" style={{ borderColor: '#f0ece4' }}>
+            {(['all', 'transactions', 'exports', 'system'] as AuditFilterTab[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className="px-3 py-1.5 text-xs font-medium border-b-2 -mb-px transition-colors"
+                style={{
+                  borderBottomColor: tab === t ? '#b8734a' : 'transparent',
+                  color: tab === t ? '#b8734a' : '#6b6560',
+                }}
+              >
+                {tabLabels[t]}
+                <span
+                  className="ml-1 font-mono px-1 py-0.5 rounded-full"
+                  style={{
+                    backgroundColor: tab === t ? '#fde8d4' : '#f5f0ea',
+                    color: tab === t ? '#b8734a' : '#a09a94',
+                    fontSize: 10,
+                  }}
+                >
+                  {counts[t]}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="py-10 text-center">
+              <p className="text-sm" style={{ color: '#a09a94' }}>No events in this category.</p>
+            </div>
+          ) : (
+            <div className="px-5 py-4">
+              <ol className="relative space-y-4 pl-5" style={{ borderLeft: '2px solid #f0ece4' }}>
+                {[...filtered].reverse().map((ev) => (
+                  <li key={ev.id} className="relative">
+                    <span
+                      className="absolute -left-[21px] top-1 w-3 h-3 rounded-full border-2"
+                      style={{
+                        backgroundColor: dotColor[ev.action] ?? '#a09a94',
+                        borderColor: '#ffffff',
+                      }}
+                    />
+                    <p className="text-sm" style={{ color: '#1a1714' }}>
+                      {formatAuditEvent(ev)}
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>
+                      {ev.actor} · {fmtAuditTs(ev.timestamp)}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AuditClockIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+      <circle cx="6.5" cy="6.5" r="5.5" stroke="#6b6560" strokeWidth="1.3" />
+      <path d="M6.5 3.5V6.5l2 2" stroke="#6b6560" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -523,12 +812,36 @@ export default function ReviewPage() {
   const [reporting, setReporting]   = useState(false)
   const [completing, setCompleting] = useState(false)
   const [toasts, setToasts]     = useState<ToastState[]>([])
+  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([])
   const toastId = useRef(0)
+
+  // QBO
+  const [qboConn,    setQboConn]    = useState<QBOConnection | null>(null)
+  const [showPush,   setShowPush]   = useState(false)
+  const [pushStep,   setPushStep]   = useState<PushStep>('confirm')
 
   useEffect(() => {
     const found = getJob(jobId)
     if (!found) { setNotFound(true); return }
     setJob(found)
+    setQboConn(getQBOConnection())
+    // Load audit trail; log job_created on first open if trail is empty
+    const existing = getAuditTrail(jobId)
+    if (existing.length === 0) {
+      logAuditEvent(jobId, {
+        action: 'job_created',
+        actor: 'system',
+        details: { txCount: found.total_transactions },
+      })
+      setAuditEvents(getAuditTrail(jobId))
+    } else {
+      setAuditEvents(existing)
+    }
+  }, [jobId])
+
+  const logAudit: AuditCallback = useCallback((event) => {
+    logAuditEvent(jobId, { ...event, actor: 'CPA' })
+    setAuditEvents(getAuditTrail(jobId))
   }, [jobId])
 
   const addToast = useCallback((message: string, kind: ToastKind) => {
@@ -597,6 +910,12 @@ export default function ReviewPage() {
 
       const label = format === 'quickbooks' ? 'QuickBooks CSV' : 'Standard CSV'
       addToast(`Exported ${exportable.length} transaction${exportable.length !== 1 ? 's' : ''} as ${label}`, 'success')
+      logAuditEvent(jobId, {
+        action: 'job_exported',
+        actor: 'CPA',
+        details: { count: exportable.length, format: label },
+      })
+      setAuditEvents(getAuditTrail(jobId))
       logActivity({
         type: 'csv_exported',
         description: `${label} exported for ${job.client_name} (${exportable.length} transactions)`,
@@ -617,7 +936,7 @@ export default function ReviewPage() {
       const res = await fetch('/api/report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ job }),
+        body: JSON.stringify({ job, auditEvents }),
       })
       if (!res.ok) throw new Error('Report generation failed.')
       const html = await res.text()
@@ -645,6 +964,12 @@ export default function ReviewPage() {
     saveJob(next)
     setJob(next)
     setCompleting(false)
+    logAuditEvent(jobId, {
+      action: 'job_completed',
+      actor: 'CPA',
+      details: { approved: job.approved, flagged: job.flagged },
+    })
+    setAuditEvents(getAuditTrail(jobId))
     addToast('Close marked as complete.', 'success')
     logActivity({
       type: 'close_completed',
@@ -652,6 +977,35 @@ export default function ReviewPage() {
       clientName: job.client_name,
       jobId: job.id,
     })
+  }
+
+  function handlePushToQBO() {
+    setPushStep('confirm')
+    setShowPush(true)
+  }
+
+  function executePush() {
+    if (!job || !qboConn) return
+    const count = job.transactions.filter((t) => t.status === 'approved' || t.status === 'edited').length
+    setPushStep('connecting')
+    setTimeout(() => {
+      setPushStep('uploading')
+      setTimeout(() => {
+        setPushStep('success')
+        recordQBOSync(count)
+        setQboConn(getQBOConnection())
+        logActivity({
+          type: 'csv_exported',
+          description: `${count} transactions pushed to QuickBooks Online for ${job.client_name}`,
+          clientName: job.client_name,
+          jobId: job.id,
+        })
+        setTimeout(() => {
+          setShowPush(false)
+          addToast(`${count} transactions synced to QuickBooks ✓`, 'success')
+        }, 2000)
+      }, 1800)
+    }, 1400)
   }
 
   // --- States ---------------------------------------------------------------
@@ -707,6 +1061,15 @@ export default function ReviewPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
+      {showPush && qboConn && (
+        <PushModal
+          count={approvedCount}
+          connection={qboConn}
+          step={pushStep}
+          onConfirm={executePush}
+          onCancel={() => setShowPush(false)}
+        />
+      )}
       <DashboardNav />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-5 py-8 space-y-6 page-enter">
@@ -771,6 +1134,22 @@ export default function ReviewPage() {
               {reporting ? 'Generating…' : 'Report'}
             </button>
 
+            {/* Push to QuickBooks — only shown when connected */}
+            {qboConn && approvedCount > 0 && (
+              <button
+                onClick={handlePushToQBO}
+                disabled={exporting || reporting}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-opacity"
+                style={{ backgroundColor: '#2CA01C' }}
+                onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88' }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
+                title={`Push ${approvedCount} approved transactions to QuickBooks Online`}
+              >
+                <QBOIcon />
+                Push to QuickBooks
+              </button>
+            )}
+
             {job.status !== 'completed' && (
               <button
                 onClick={handleComplete}
@@ -833,6 +1212,9 @@ export default function ReviewPage() {
           />
         )}
 
+        {/* AI Insights */}
+        <JobInsightsPanel job={job} autoGenerate />
+
         {/* Recurring transactions panel */}
         <RecurringPanel patterns={recurringPatterns} />
 
@@ -842,7 +1224,12 @@ export default function ReviewPage() {
           chartOfAccounts={job.chart_of_accounts}
           onTransactionsChange={handleTransactionsChange}
           recurringIds={recurringIds}
+          onAudit={logAudit}
+          auditEvents={auditEvents}
         />
+
+        {/* Audit trail panel */}
+        <AuditPanel auditEvents={auditEvents} />
       </main>
 
       {/* Toast stack */}
@@ -891,6 +1278,15 @@ function ChevronIcon({ open }: { open: boolean }) {
       style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
     >
       <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function QBOIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <rect width="14" height="14" rx="3" fill="rgba(255,255,255,0.25)" />
+      <text x="7" y="10.5" textAnchor="middle" fontSize="7" fontWeight="700" fontFamily="system-ui,sans-serif" fill="white">QB</text>
     </svg>
   )
 }

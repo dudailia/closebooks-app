@@ -160,6 +160,12 @@ export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void
           <NavLink href="/dashboard/analytics" active={path.startsWith('/dashboard/analytics')}>
             Analytics
           </NavLink>
+          <NavLink href="/dashboard/integrations" active={path.startsWith('/dashboard/integrations')}>
+            Integrations
+          </NavLink>
+          <NavLink href="/dashboard/templates" active={path.startsWith('/dashboard/templates')}>
+            Templates
+          </NavLink>
           <NavLink href="/demo" active={path === '/demo'}>
             Demo
           </NavLink>

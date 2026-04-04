@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import TransactionRow from './TransactionRow'
 import type { Transaction, ChartOfAccounts } from '@/types'
+import type { AuditCallback, AuditEvent } from '@/lib/auditTrail'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -15,6 +16,8 @@ interface Props {
   chartOfAccounts: ChartOfAccounts[]
   onTransactionsChange?: (transactions: Transaction[]) => void
   recurringIds?: Set<string>
+  onAudit?: AuditCallback
+  auditEvents?: AuditEvent[]
 }
 
 // ---------------------------------------------------------------------------
@@ -201,7 +204,7 @@ function ShortcutsPopover() {
 // TransactionTable
 // ---------------------------------------------------------------------------
 
-export default function TransactionTable({ initialTransactions, chartOfAccounts, onTransactionsChange, recurringIds }: Props) {
+export default function TransactionTable({ initialTransactions, chartOfAccounts, onTransactionsChange, recurringIds, onAudit, auditEvents = [] }: Props) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions)
   const [activeTab, setActiveTab]       = useState<FilterTab>('all')
   const [search, setSearch]             = useState('')
@@ -284,25 +287,39 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
 
   const bulkApprove = useCallback(() => {
     setTransactions((prev) => {
-      const next = prev.map((t) =>
-        selected.has(t.id)
-          ? { ...t, status: 'approved' as const, final_category: t.final_category ?? t.suggested_category, final_account_code: t.final_account_code ?? t.suggested_account_code }
-          : t
-      )
+      const next = prev.map((t) => {
+        if (!selected.has(t.id)) return t
+        onAudit?.({
+          action: 'tx_approved',
+          txId: t.id,
+          txDescription: t.description,
+          details: { category: t.final_category ?? t.suggested_category ?? '', bulk: 'true' },
+        })
+        return { ...t, status: 'approved' as const, final_category: t.final_category ?? t.suggested_category, final_account_code: t.final_account_code ?? t.suggested_account_code }
+      })
       onTransactionsChange?.(next)
       return next
     })
     setSelected(new Set())
-  }, [selected, onTransactionsChange])
+  }, [selected, onTransactionsChange, onAudit])
 
   const bulkFlag = useCallback(() => {
     setTransactions((prev) => {
-      const next = prev.map((t) => selected.has(t.id) ? { ...t, status: 'flagged' as const } : t)
+      const next = prev.map((t) => {
+        if (!selected.has(t.id)) return t
+        onAudit?.({
+          action: 'tx_flagged',
+          txId: t.id,
+          txDescription: t.description,
+          details: { reason: '', bulk: 'true' },
+        })
+        return { ...t, status: 'flagged' as const }
+      })
       onTransactionsChange?.(next)
       return next
     })
     setSelected(new Set())
-  }, [selected, onTransactionsChange])
+  }, [selected, onTransactionsChange, onAudit])
 
   // --- High-confidence approve (with confirm) -------------------------------
 
@@ -322,11 +339,16 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
   function doApproveHighConfidence() {
     setShowConfirm(false)
     setTransactions((prev) => {
-      const next = prev.map((t) =>
-        t.confidence >= 0.85 && t.status === 'pending'
-          ? { ...t, status: 'approved' as const, final_category: t.suggested_category, final_account_code: t.suggested_account_code }
-          : t
-      )
+      const next = prev.map((t) => {
+        if (!(t.confidence >= 0.85 && t.status === 'pending')) return t
+        onAudit?.({
+          action: 'tx_approved',
+          txId: t.id,
+          txDescription: t.description,
+          details: { category: t.suggested_category ?? '', bulk: 'true' },
+        })
+        return { ...t, status: 'approved' as const, final_category: t.suggested_category, final_account_code: t.suggested_account_code }
+      })
       onTransactionsChange?.(next)
       return next
     })
@@ -586,6 +608,8 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
                   isFocused={focusedId === tx.id}
                   onFocus={() => setFocusedId(tx.id)}
                   enterTrigger={focusedId === tx.id ? enterTrigger : 0}
+                  onAudit={onAudit}
+                  txAuditEvents={auditEvents.filter((e) => e.txId === tx.id)}
                 />
               ))}
             </tbody>

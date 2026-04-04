@@ -7,6 +7,7 @@ import DashboardNav from '@/components/DashboardNav'
 import AppFooter from '@/components/AppFooter'
 import { getClient, getJobsForClient, saveClient } from '@/lib/storage'
 import ActivityFeed from '@/components/ActivityFeed'
+import { ClientInsightsPanel } from '@/components/InsightsPanel'
 import type { Client, ClientIndustry, AccountingSoftware, CategorizationJob } from '@/types'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -278,7 +279,7 @@ export default function ClientDetailPage() {
             )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <button
               onClick={() => setShowEdit(true)}
               className="px-3 py-2 rounded-xl text-sm border transition-colors"
@@ -288,6 +289,17 @@ export default function ClientDetailPage() {
             >
               Edit
             </button>
+            <Link
+              href={`/dashboard/templates?template=document-request&client=${encodeURIComponent(client.business_name)}`}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border transition-colors"
+              style={{ borderColor: '#b8734a', color: '#b8734a', backgroundColor: '#ffffff' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
+              title="Open the Document Request email template pre-filled for this client"
+            >
+              <EnvelopeIcon />
+              Send Doc Request
+            </Link>
             <button
               onClick={handleNewClose}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors"
@@ -379,6 +391,11 @@ export default function ClientDetailPage() {
           )}
         </div>
 
+        {/* AI Trends & Insights */}
+        {jobs.length >= 1 && (
+          <ClientInsightsPanel clientName={client.business_name} jobs={jobs} />
+        )}
+
         {/* Recent Activity */}
         <div
           className="rounded-2xl border p-5"
@@ -391,5 +408,14 @@ export default function ClientDetailPage() {
 
       <AppFooter />
     </div>
+  )
+}
+
+function EnvelopeIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+      <rect x="1" y="2" width="11" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+      <path d="M1 4l5.5 4L12 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
   )
 }
