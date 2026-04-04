@@ -1,17 +1,17 @@
-import Stripe from 'stripe'
+import type Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-03-31.basil',
-})
-
-// Stripe requires the raw body for webhook signature verification.
-// Next.js App Router gives us the raw request — we must NOT call .json() first.
 export async function POST(request: NextRequest) {
-  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
+  const key    = process.env.STRIPE_SECRET_KEY
+  const secret = process.env.STRIPE_WEBHOOK_SECRET
+
+  if (!key || !secret) {
     console.error('[webhook] Missing STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET')
-    return NextResponse.json({ error: 'Webhook not configured.' }, { status: 500 })
+    return NextResponse.json({ error: 'Stripe not configured yet' }, { status: 503 })
   }
+
+  const { default: Stripe } = await import('stripe')
+  const stripe = new Stripe(key, { apiVersion: '2025-03-31.basil' })
 
   const sig = request.headers.get('stripe-signature')
   if (!sig) {
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   let event: Stripe.Event
   try {
     const rawBody = await request.text()
-    event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET)
+    event = stripe.webhooks.constructEvent(rawBody, sig, secret)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Webhook verification failed.'
     console.error('[webhook] Signature verification failed:', message)
@@ -49,11 +49,7 @@ export async function POST(request: NextRequest) {
         amountTotal:    session.amount_total,
         currency:       session.currency,
       })
-
-      // TODO: persist to Supabase — store customer_id + subscription_id against the user record
-      // const supabase = createClient()
-      // await supabase.from('subscriptions').upsert({ email: customerEmail, stripe_customer_id: customerId, stripe_subscription_id: subscriptionId, status: 'active' })
-
+      // TODO: persist to Supabase
       break
     }
 

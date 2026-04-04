@@ -1,9 +1,4 @@
-import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-03-31.basil',
-})
 
 interface RequestBody {
   priceId: string
@@ -21,9 +16,13 @@ function isValidBody(body: unknown): body is RequestBody {
 }
 
 export async function POST(request: NextRequest) {
-  if (!process.env.STRIPE_SECRET_KEY) {
-    return NextResponse.json({ error: 'Stripe is not configured.' }, { status: 500 })
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key) {
+    return NextResponse.json({ error: 'Stripe not configured yet' }, { status: 503 })
   }
+
+  const { default: Stripe } = await import('stripe')
+  const stripe = new Stripe(key, { apiVersion: '2025-03-31.basil' })
 
   let body: unknown
   try {
@@ -40,7 +39,6 @@ export async function POST(request: NextRequest) {
   }
 
   const { priceId, customerEmail } = body
-
   const origin = request.headers.get('origin') ?? 'http://localhost:3000'
 
   try {
@@ -50,9 +48,7 @@ export async function POST(request: NextRequest) {
       ...(customerEmail ? { customer_email: customerEmail } : {}),
       allow_promotion_codes: true,
       billing_address_collection: 'auto',
-      subscription_data: {
-        trial_period_days: 14,
-      },
+      subscription_data: { trial_period_days: 14 },
       success_url: `${origin}/dashboard?payment=success`,
       cancel_url:  `${origin}/pricing?payment=cancelled`,
     })
