@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient, supabaseConfigured } from '@/lib/supabase/client'
+import { getPendingReviewCount } from '@/lib/storage'
 import type { User } from '@supabase/supabase-js'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -87,6 +88,7 @@ function UserMenu({ user }: { user: User }) {
 export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void } = {}) {
   const path = usePathname()
   const [user, setUser] = useState<User | null>(null)
+  const [pendingCount, setPendingCount] = useState(0)
 
   useEffect(() => {
     if (!supabaseConfigured) return
@@ -101,6 +103,11 @@ export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void
 
     return () => subscription.unsubscribe()
   }, [])
+
+  // Recompute pending count on every navigation
+  useEffect(() => {
+    setPendingCount(getPendingReviewCount())
+  }, [path])
 
   return (
     <nav
@@ -128,7 +135,24 @@ export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void
         {/* Links */}
         <div className="flex items-center gap-1">
           <NavLink href="/dashboard" active={path === '/dashboard'}>
-            Dashboard
+            <span className="flex items-center gap-1.5">
+              Dashboard
+              {pendingCount > 0 && (
+                <span
+                  className="inline-flex items-center justify-center rounded-full font-mono font-semibold text-white leading-none"
+                  style={{
+                    backgroundColor: '#dc2626',
+                    fontSize: 10,
+                    minWidth: 16,
+                    height: 16,
+                    padding: '0 4px',
+                  }}
+                  title={`${pendingCount} transaction${pendingCount !== 1 ? 's' : ''} pending review`}
+                >
+                  {pendingCount > 99 ? '99+' : pendingCount}
+                </span>
+              )}
+            </span>
           </NavLink>
           <NavLink href="/dashboard/clients" active={path.startsWith('/dashboard/clients')}>
             Clients

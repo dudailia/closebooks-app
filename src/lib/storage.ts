@@ -37,6 +37,13 @@ export function getJobsForClient(businessName: string): CategorizationJob[] {
   return getJobs().filter((j) => j.client_name.toLowerCase() === lower)
 }
 
+/** Total pending (unreviewed) transactions across all in-review jobs. */
+export function getPendingReviewCount(): number {
+  return getJobs()
+    .filter((j) => j.status === 'review')
+    .reduce((sum, j) => sum + j.transactions.filter((t) => t.status === 'pending').length, 0)
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Clients
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Transaction, ChartOfAccounts } from '@/types'
 import { saveCorrection } from '@/lib/corrections'
+import { getAlternativeSuggestions } from '@/lib/categorySuggestions'
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -28,8 +29,7 @@ function StatusBadge({ status }: { status: Transaction['status'] }) {
 }
 
 function ConfidenceBar({ value }: { value: number }) {
-  const pct = Math.round(value * 100)
-  // Three visually distinct zones
+  const pct        = Math.round(value * 100)
   const color      = value >= 0.85 ? '#059669' : value >= 0.7 ? '#d97706' : '#ef4444'
   const trackColor = value >= 0.85 ? '#d1fae5' : value >= 0.7 ? '#fef3c7' : '#fee2e2'
   const label      = value >= 0.85 ? 'High'    : value >= 0.7 ? 'Med'     : 'Low'
@@ -68,6 +68,11 @@ interface Props {
   selected: boolean
   onToggleSelect: (id: string) => void
   onChange: (updated: Transaction) => void
+  isRecurring?: boolean
+  isFocused?: boolean
+  onFocus?: () => void
+  /** Incremented by parent to trigger expand/collapse toggle on focused row */
+  enterTrigger?: number
 }
 
 // ---------------------------------------------------------------------------
@@ -80,15 +85,26 @@ export default function TransactionRow({
   selected,
   onToggleSelect,
   onChange,
+  isRecurring  = false,
+  isFocused    = false,
+  onFocus,
+  enterTrigger = 0,
 }: Props) {
-  const [expanded, setExpanded] = useState(false)
-  const [, setEditCategory] = useState(
+  const [expanded, setExpanded]   = useState(false)
+  const [, setEditCategory]       = useState(
     transaction.final_category ?? transaction.suggested_category
   )
   const [editAccountCode, setEditAccountCode] = useState(
     transaction.final_account_code ?? transaction.suggested_account_code
   )
-  const [notes, setNotes] = useState(transaction.notes ?? '')
+  const [notes, setNotes]         = useState(transaction.notes ?? '')
+  const [hovered, setHovered]     = useState(false)
+
+  // Toggle expand when parent fires Enter for this row
+  useEffect(() => {
+    if (enterTrigger > 0) setExpanded((v) => !v)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enterTrigger])
 
   function handleApprove() {
     onChange({
@@ -111,7 +127,6 @@ export default function TransactionRow({
     setEditAccountCode(code)
     setEditCategory(account?.name ?? code)
 
-    // Persist correction so future AI runs can learn from it
     if (code !== transaction.suggested_account_code && transaction.suggested_category) {
       saveCorrection(
         transaction.description,
@@ -135,23 +150,41 @@ export default function TransactionRow({
   }
 
   const displayCategory = transaction.final_category ?? transaction.suggested_category
-  const displayCode = transaction.final_account_code ?? transaction.suggested_account_code
-  const [hovered, setHovered] = useState(false)
-  const rowBg = selected ? '#fdf2e9' : expanded ? '#faf8f4' : hovered ? '#faf8f4' : '#ffffff'
+  const displayCode     = transaction.final_account_code ?? transaction.suggested_account_code
+
+  // Show suggestions when flagged or low-confidence and expanded
+  const showSuggestions = expanded && (transaction.status === 'flagged' || transaction.confidence < 0.7)
+  const suggestions = showSuggestions
+    ? getAlternativeSuggestions(transaction, chartOfAccounts)
+    : []
+
+  const rowBg = selected
+    ? '#fdf2e9'
+    : isFocused
+    ? '#f0f4ff'
+    : expanded
+    ? '#faf8f4'
+    : hovered
+    ? '#faf8f4'
+    : '#ffffff'
+
+  const focusBorder = isFocused ? '2px solid #3b5bdb' : 'none'
 
   return (
     <>
       {/* Main row */}
       <tr
+        data-row-id={transaction.id}
         style={{
           backgroundColor: rowBg,
           borderTop: '1px solid #f0ece4',
+          borderLeft: focusBorder,
           cursor: 'pointer',
           transition: 'background-color 0.1s',
         }}
-        onMouseEnter={() => setHovered(true)}
+        onMouseEnter={() => { setHovered(true); onFocus?.() }}
         onMouseLeave={() => setHovered(false)}
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => { setExpanded((v) => !v); onFocus?.() }}
       >
         {/* Checkbox */}
         <td className="pl-3 pr-1 py-2.5 w-8" onClick={(e) => e.stopPropagation()}>
@@ -174,13 +207,20 @@ export default function TransactionRow({
 
         {/* Description */}
         <td className="px-3 py-2.5 max-w-[220px]">
-          <span
-            className="text-sm block truncate"
-            style={{ color: '#1a1714' }}
-            title={transaction.description}
-          >
-            {transaction.description}
-          </span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            {isRecurring && (
+              <span title="Recurring transaction">
+                <RecurringIcon />
+              </span>
+            )}
+            <span
+              className="text-sm block truncate"
+              style={{ color: '#1a1714' }}
+              title={transaction.description}
+            >
+              {transaction.description}
+            </span>
+          </div>
         </td>
 
         {/* Suggested category */}
@@ -197,7 +237,7 @@ export default function TransactionRow({
           </div>
         </td>
 
-        {/* Confidence — hidden on small screens to save space */}
+        {/* Confidence */}
         <td className="px-3 py-2.5 w-32 hidden sm:table-cell">
           {transaction.confidence > 0
             ? <ConfidenceBar value={transaction.confidence} />
@@ -256,8 +296,61 @@ export default function TransactionRow({
 
       {/* Expanded detail row */}
       {expanded && (
-        <tr style={{ backgroundColor: '#f5f0ea', borderTop: '1px solid #e0dbd4' }}>
+        <tr style={{ backgroundColor: '#f5f0ea', borderTop: '1px solid #e0dbd4', borderLeft: focusBorder }}>
           <td colSpan={8} className="px-6 py-4">
+
+            {/* Smart suggestions — shown for flagged / low-confidence */}
+            {suggestions.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs font-semibold mb-2" style={{ color: '#6b6560' }}>
+                  Suggested categories
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {/* Primary suggestion */}
+                  <button
+                    onClick={() => handleCategoryChange(transaction.suggested_account_code)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors"
+                    style={{
+                      borderColor: editAccountCode === transaction.suggested_account_code ? '#2d5a27' : '#d4e8d0',
+                      backgroundColor: editAccountCode === transaction.suggested_account_code ? '#e8f0e6' : '#f0f9ee',
+                      color: '#2d5a27',
+                    }}
+                    title="Primary AI suggestion"
+                  >
+                    <span>{transaction.suggested_category || '(uncategorized)'}</span>
+                    <span
+                      className="font-mono px-1 py-0.5 rounded text-xs"
+                      style={{ backgroundColor: '#d4e8d0', color: '#1e5c1a' }}
+                    >
+                      {Math.round(transaction.confidence * 100)}%
+                    </span>
+                  </button>
+
+                  {/* Alternatives */}
+                  {suggestions.map((s) => (
+                    <button
+                      key={s.accountCode}
+                      onClick={() => handleCategoryChange(s.accountCode)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors"
+                      style={{
+                        borderColor: editAccountCode === s.accountCode ? '#b8734a' : '#e8ddd2',
+                        backgroundColor: editAccountCode === s.accountCode ? '#fdf2e9' : '#faf6f2',
+                        color: '#6b4c32',
+                      }}
+                    >
+                      <span>{s.category}</span>
+                      <span
+                        className="font-mono px-1 py-0.5 rounded text-xs"
+                        style={{ backgroundColor: '#f0e4d6', color: '#7a4e2a' }}
+                      >
+                        {s.pct}%
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
               {/* Category selector */}
@@ -341,6 +434,33 @@ export default function TransactionRow({
         </tr>
       )}
     </>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Icons
+// ---------------------------------------------------------------------------
+
+function RecurringIcon() {
+  return (
+    <svg
+      width="11"
+      height="11"
+      viewBox="0 0 12 12"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="shrink-0"
+      aria-hidden="true"
+    >
+      <path
+        d="M1.5 6A4.5 4.5 0 0 1 9 2.5L10.5 4M10.5 6A4.5 4.5 0 0 1 3 9.5L1.5 8"
+        stroke="#b8734a"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      <path d="M10.5 1.5v2.5H8" stroke="#b8734a" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M1.5 10.5V8H4" stroke="#b8734a" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   )
 }
 

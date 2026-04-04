@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import DashboardNav from '@/components/DashboardNav'
 import AppFooter from '@/components/AppFooter'
 import { getClient, getJobsForClient, saveClient } from '@/lib/storage'
+import ActivityFeed from '@/components/ActivityFeed'
 import type { Client, ClientIndustry, AccountingSoftware, CategorizationJob } from '@/types'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -376,6 +377,14 @@ export default function ClientDetailPage() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Recent Activity */}
+        <div
+          className="rounded-2xl border p-5"
+          style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+        >
+          <ActivityFeed clientName={client.business_name} limit={6} />
         </div>
 
       </main>

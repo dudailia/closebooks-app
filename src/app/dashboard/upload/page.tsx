@@ -9,6 +9,7 @@ import ChartOfAccountsUpload from '@/components/ChartOfAccountsUpload'
 import { saveJob } from '@/lib/storage'
 import { getRecentCorrections } from '@/lib/corrections'
 import { notify } from '@/lib/notify'
+import { logActivity } from '@/lib/activity'
 import type { Transaction, ChartOfAccounts, CategorizationJob } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -158,6 +159,18 @@ function CategorizeStep({
       }
 
       saveJob(job)
+      logActivity({
+        type: 'transactions_categorized',
+        description: `${categorized.length} transactions categorized for ${clientName}`,
+        clientName,
+        jobId: job.id,
+      })
+      logActivity({
+        type: 'close_started',
+        description: `New close started for ${clientName}`,
+        clientName,
+        jobId: job.id,
+      })
       notify('Categorization completed', {
         client: clientName,
         transactions: categorized.length,
@@ -395,9 +408,19 @@ export default function UploadPage() {
         {/* Step 2 — Bank statement */}
         {step === 2 && (
           <StepCard title="Bank Statement">
-            <p className="text-sm mb-5" style={{ color: '#6b6560' }}>
-              Upload a CSV export from your client&apos;s bank or accounting software.
+            <p className="text-sm mb-4" style={{ color: '#6b6560' }}>
+              Upload a CSV or PDF export from your client&apos;s bank or accounting software.
             </p>
+            <div
+              className="flex items-start gap-2 rounded-lg px-3 py-2.5 mb-5 text-xs"
+              style={{ backgroundColor: '#f0f4ff', color: '#3b5bdb' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0 mt-0.5">
+                <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.3" />
+                <path d="M7 6v4M7 4.5v.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+              </svg>
+              <span>PDF bank statements are supported — AI will extract transactions automatically. This may take 10–20 seconds.</span>
+            </div>
             <FileUpload
               onContinue={(parsed) => {
                 setTransactions(parsed)

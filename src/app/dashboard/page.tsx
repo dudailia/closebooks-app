@@ -7,6 +7,7 @@ import DashboardNav from '@/components/DashboardNav'
 import OnboardingModal, { needsOnboarding } from '@/components/OnboardingModal'
 import AppFooter from '@/components/AppFooter'
 import { getJobs, deleteJob } from '@/lib/storage'
+import ActivityFeed from '@/components/ActivityFeed'
 import type { CategorizationJob } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -632,6 +633,16 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Activity feed */}
+        {mounted && (
+          <div
+            className="rounded-2xl border p-5"
+            style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+          >
+            <ActivityFeed limit={8} />
+          </div>
+        )}
       </main>
       <AppFooter />
     </div>

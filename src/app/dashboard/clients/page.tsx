@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import DashboardNav from '@/components/DashboardNav'
 import AppFooter from '@/components/AppFooter'
 import { getClients, saveClient, deleteClient, getJobsForClient } from '@/lib/storage'
+import { logActivity } from '@/lib/activity'
 import type { Client, ClientIndustry, AccountingSoftware } from '@/types'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -315,15 +316,30 @@ export default function ClientsPage() {
   }, [])
 
   function handleSave(client: Client) {
+    const isNew = !clients.some((c) => c.id === client.id)
     saveClient(client)
     setClients(getClients())
     setShowModal(false)
     setEditing(undefined)
+    if (isNew) {
+      logActivity({
+        type: 'client_created',
+        description: `Client "${client.business_name}" added`,
+        clientName: client.business_name,
+      })
+    }
   }
 
   function handleDelete(id: string) {
+    const client = clients.find((c) => c.id === id)
     deleteClient(id)
     setClients((prev) => prev.filter((c) => c.id !== id))
+    if (client) {
+      logActivity({
+        type: 'client_deleted',
+        description: `Client "${client.business_name}" removed`,
+      })
+    }
   }
 
   function openEdit(c: Client) {

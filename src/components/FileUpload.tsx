@@ -19,6 +19,7 @@ export default function FileUpload({ onContinue }: Props) {
   const [preview, setPreview] = useState<Transaction[] | null>(null)
   const [parseErrors, setParseErrors] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [pdfLoading, setPdfLoading] = useState(false)
 
   // --- File processing -------------------------------------------------------
 
@@ -27,12 +28,56 @@ export default function FileUpload({ onContinue }: Props) {
     setParseErrors([])
     setPreview(null)
 
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      setError('Only .csv files are accepted. Please export your bank statement as a CSV.')
+    const isPDF = file.name.toLowerCase().endsWith('.pdf')
+    const isCSV = file.name.toLowerCase().endsWith('.csv')
+
+    if (!isPDF && !isCSV) {
+      setError('Only .csv or .pdf files are accepted. Please export your bank statement from your bank.')
       setFileName(null)
       return
     }
 
+    if (file.size > 20 * 1024 * 1024) {
+      setError('File is too large (max 20 MB). Try splitting it into smaller exports.')
+      setFileName(null)
+      return
+    }
+
+    if (isPDF) {
+      setPdfLoading(true)
+      try {
+        const arrayBuffer = await file.arrayBuffer()
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+        const res = await fetch('/api/parse-pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64 }),
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          setError(data.error ?? 'PDF parsing failed. Please try a different file or use CSV export.')
+          setFileName(null)
+          return
+        }
+        const transactions: Transaction[] = data.transactions ?? []
+        if (transactions.length === 0) {
+          setError('No transactions could be extracted from this PDF. Try exporting as CSV from your bank instead.')
+          setFileName(null)
+          return
+        }
+        setFileName(file.name)
+        setPreview(transactions)
+        if (data.errors?.length > 0) setParseErrors(data.errors)
+      } catch {
+        setError('Could not process this PDF. Please check your connection and try again.')
+        setFileName(null)
+      } finally {
+        setPdfLoading(false)
+      }
+      return
+    }
+
+    // CSV path
     if (file.size > 10 * 1024 * 1024) {
       setError('File is too large (max 10 MB). Try splitting it into smaller exports.')
       setFileName(null)
@@ -115,30 +160,46 @@ export default function FileUpload({ onContinue }: Props) {
       <div
         role="button"
         tabIndex={0}
-        aria-label="Upload CSV file"
-        onClick={() => !hasFile && inputRef.current?.click()}
-        onKeyDown={(e) => e.key === 'Enter' && !hasFile && inputRef.current?.click()}
+        aria-label="Upload CSV or PDF bank statement"
+        onClick={() => !hasFile && !pdfLoading && inputRef.current?.click()}
+        onKeyDown={(e) => e.key === 'Enter' && !hasFile && !pdfLoading && inputRef.current?.click()}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         style={{
           backgroundColor: isHovering ? '#f0ece4' : '#faf8f4',
-          borderColor: isHovering ? '#2d5a27' : hasFile ? '#2d5a27' : '#e0dbd4',
-          borderStyle: hasFile ? 'solid' : 'dashed',
-          cursor: hasFile ? 'default' : 'pointer',
+          borderColor: isHovering ? '#2d5a27' : (hasFile || pdfLoading) ? '#2d5a27' : '#e0dbd4',
+          borderStyle: (hasFile || pdfLoading) ? 'solid' : 'dashed',
+          cursor: (hasFile || pdfLoading) ? 'default' : 'pointer',
         }}
         className="relative rounded-xl border-2 transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2d5a27]"
       >
         <input
           ref={inputRef}
           type="file"
-          accept=".csv"
+          accept=".csv,.pdf"
           onChange={handleInputChange}
           className="hidden"
           aria-hidden="true"
         />
 
-        {hasFile ? (
+        {pdfLoading ? (
+          /* PDF processing state */
+          <div className="px-6 py-14 sm:py-12 flex flex-col items-center text-center gap-3">
+            <div
+              className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
+              style={{ borderColor: '#2d5a27', borderTopColor: 'transparent' }}
+            />
+            <div>
+              <p className="text-sm font-medium" style={{ color: '#1a1714' }}>
+                AI is extracting transactions from your PDF…
+              </p>
+              <p className="text-xs mt-1" style={{ color: '#6b6560' }}>
+                This usually takes 10–20 seconds
+              </p>
+            </div>
+          </div>
+        ) : hasFile ? (
           /* File selected state */
           <div className="px-6 py-5 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
@@ -172,7 +233,7 @@ export default function FileUpload({ onContinue }: Props) {
             <UploadIcon hovering={isHovering} />
             <div>
               <p className="text-sm font-medium" style={{ color: '#1a1714' }}>
-                Drop your bank statement CSV here
+                Drop your bank statement here
               </p>
               <p className="text-sm mt-1" style={{ color: '#6b6560' }}>
                 or{' '}
@@ -185,7 +246,7 @@ export default function FileUpload({ onContinue }: Props) {
               </p>
             </div>
             <p className="text-xs" style={{ color: '#a09a94' }}>
-              Supports most bank export formats · max 10 MB
+              CSV or PDF · max 20 MB
             </p>
           </div>
         )}

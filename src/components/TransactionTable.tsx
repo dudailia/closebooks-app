@@ -14,6 +14,7 @@ interface Props {
   initialTransactions: Transaction[]
   chartOfAccounts: ChartOfAccounts[]
   onTransactionsChange?: (transactions: Transaction[]) => void
+  recurringIds?: Set<string>
 }
 
 // ---------------------------------------------------------------------------
@@ -21,10 +22,10 @@ interface Props {
 // ---------------------------------------------------------------------------
 
 function SummaryBar({ transactions }: { transactions: Transaction[] }) {
-  const total    = transactions.length
-  const pending  = transactions.filter((t) => t.status === 'pending').length
-  const flagged  = transactions.filter((t) => t.status === 'flagged').length
-  const autoApproved = transactions.filter((t) => t.status === 'approved' && t.confidence >= 0.85).length
+  const total         = transactions.length
+  const pending       = transactions.filter((t) => t.status === 'pending').length
+  const flagged       = transactions.filter((t) => t.status === 'flagged').length
+  const autoApproved  = transactions.filter((t) => t.status === 'approved' && t.confidence >= 0.85).length
 
   const stats = [
     { label: 'Total',         value: total,       color: '#1a1714' },
@@ -49,14 +50,171 @@ function SummaryBar({ transactions }: { transactions: Transaction[] }) {
 }
 
 // ---------------------------------------------------------------------------
+// Confirm modal
+// ---------------------------------------------------------------------------
+
+interface ConfirmApproveModalProps {
+  count: number
+  remaining: number
+  onConfirm: () => void
+  onCancel: () => void
+}
+
+function ConfirmApproveModal({ count, remaining, onConfirm, onCancel }: ConfirmApproveModalProps) {
+  // Close on Escape
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (e.key === 'Escape') onCancel()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onCancel])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}
+      onClick={onCancel}
+    >
+      <div
+        className="rounded-2xl border shadow-xl p-6 max-w-sm w-full"
+        style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start gap-3 mb-4">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ backgroundColor: '#e8f0e6' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 8l4 4 8-8" stroke="#2d5a27" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: '#1a1714' }}>
+              Approve high-confidence transactions?
+            </p>
+            <p className="text-sm mt-1" style={{ color: '#6b6560' }}>
+              This will approve{' '}
+              <span className="font-semibold" style={{ color: '#2d5a27' }}>{count}</span> transaction{count !== 1 ? 's' : ''} with confidence ≥ 85%
+              {remaining > 0
+                ? `, leaving ${remaining} for manual review.`
+                : '. All pending transactions will be approved.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded-lg text-sm border transition-colors"
+            style={{ borderColor: '#e0dbd4', color: '#6b6560' }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#1a1714' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e0dbd4' }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+            style={{ backgroundColor: '#2d5a27' }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+          >
+            Approve {count}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Keyboard shortcuts popover
+// ---------------------------------------------------------------------------
+
+const SHORTCUTS = [
+  { key: 'a',     desc: 'Approve selected rows' },
+  { key: 'f',     desc: 'Flag selected rows' },
+  { key: 'j',     desc: 'Move focus down' },
+  { key: 'k',     desc: 'Move focus up' },
+  { key: '↵',     desc: 'Expand / collapse row' },
+  { key: '⎵',     desc: 'Toggle checkbox' },
+]
+
+function ShortcutsPopover() {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    if (open) document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-7 h-7 flex items-center justify-center rounded-full text-xs font-semibold border transition-colors"
+        style={{
+          borderColor: open ? '#2d5a27' : '#e0dbd4',
+          color: open ? '#2d5a27' : '#6b6560',
+          backgroundColor: open ? '#e8f0e6' : 'transparent',
+        }}
+        title="Keyboard shortcuts"
+        aria-label="Show keyboard shortcuts"
+      >
+        ?
+      </button>
+
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-1.5 z-30 rounded-xl border shadow-lg p-3 w-52"
+          style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}
+        >
+          <p className="text-xs font-semibold mb-2" style={{ color: '#6b6560' }}>
+            Keyboard shortcuts
+          </p>
+          <div className="space-y-1.5">
+            {SHORTCUTS.map(({ key, desc }) => (
+              <div key={key} className="flex items-center justify-between gap-3">
+                <span className="text-xs" style={{ color: '#6b6560' }}>{desc}</span>
+                <kbd
+                  className="px-1.5 py-0.5 rounded text-xs font-mono shrink-0"
+                  style={{ backgroundColor: '#f5f0ea', color: '#1a1714', border: '1px solid #e0dbd4' }}
+                >
+                  {key}
+                </kbd>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // TransactionTable
 // ---------------------------------------------------------------------------
 
-export default function TransactionTable({ initialTransactions, chartOfAccounts, onTransactionsChange }: Props) {
+export default function TransactionTable({ initialTransactions, chartOfAccounts, onTransactionsChange, recurringIds }: Props) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions)
   const [activeTab, setActiveTab]       = useState<FilterTab>('all')
   const [search, setSearch]             = useState('')
   const [selected, setSelected]         = useState<Set<string>>(new Set())
+
+  // Bulk approve confirm state
+  const [showConfirm, setShowConfirm]   = useState(false)
+  const [approveResult, setApproveResult] = useState<{ approved: number; remaining: number } | null>(null)
+
+  // j/k row focus
+  const [focusedId, setFocusedId]       = useState<string | null>(null)
+  // Enter key → toggle expand for focused row
+  const [enterTrigger, setEnterTrigger] = useState(0)
 
   // --- Derived filtered list -----------------------------------------------
 
@@ -79,6 +237,11 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
 
     return list
   }, [transactions, activeTab, search])
+
+  const focusedIndex = useMemo(
+    () => visible.findIndex((t) => t.id === focusedId),
+    [visible, focusedId]
+  )
 
   // --- Tab counts ----------------------------------------------------------
 
@@ -141,7 +304,23 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
     setSelected(new Set())
   }, [selected, onTransactionsChange])
 
-  function approveHighConfidence() {
+  // --- High-confidence approve (with confirm) -------------------------------
+
+  const highConfidencePending = transactions.filter(
+    (t) => t.confidence >= 0.85 && t.status === 'pending'
+  ).length
+
+  const lowConfidencePending = transactions.filter(
+    (t) => t.status === 'pending' && t.confidence < 0.85
+  ).length
+
+  function handleApproveHighConfidenceClick() {
+    if (highConfidencePending === 0) return
+    setShowConfirm(true)
+  }
+
+  function doApproveHighConfidence() {
+    setShowConfirm(false)
     setTransactions((prev) => {
       const next = prev.map((t) =>
         t.confidence >= 0.85 && t.status === 'pending'
@@ -151,6 +330,9 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
       onTransactionsChange?.(next)
       return next
     })
+    setApproveResult({ approved: highConfidencePending, remaining: lowConfidencePending })
+    // Auto-clear the result banner after 6s
+    setTimeout(() => setApproveResult(null), 6000)
   }
 
   // --- Keyboard shortcuts --------------------------------------------------
@@ -158,16 +340,49 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
   const bulkApproveRef = useRef(bulkApprove)
   const bulkFlagRef    = useRef(bulkFlag)
   const selectedRef    = useRef(selected)
-  bulkApproveRef.current = bulkApprove
-  bulkFlagRef.current    = bulkFlag
-  selectedRef.current    = selected
+  const visibleRef     = useRef(visible)
+  const focusedIndexRef = useRef(focusedIndex)
+  bulkApproveRef.current    = bulkApprove
+  bulkFlagRef.current       = bulkFlag
+  selectedRef.current       = selected
+  visibleRef.current        = visible
+  focusedIndexRef.current   = focusedIndex
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
-      // Don't fire when focused in a form field
       const tag = (e.target as HTMLElement).tagName.toLowerCase()
       if (tag === 'input' || tag === 'select' || tag === 'textarea') return
       if (e.metaKey || e.ctrlKey || e.altKey) return
+
+      const vis = visibleRef.current
+      const fi  = focusedIndexRef.current
+
+      if (e.key === 'j') {
+        e.preventDefault()
+        const next = fi < vis.length - 1 ? fi + 1 : 0
+        setFocusedId(vis[next]?.id ?? null)
+        // Scroll into view
+        setTimeout(() => {
+          document.querySelector(`[data-row-id="${vis[next]?.id}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+        }, 0)
+        return
+      }
+
+      if (e.key === 'k') {
+        e.preventDefault()
+        const prev = fi > 0 ? fi - 1 : vis.length - 1
+        setFocusedId(vis[prev]?.id ?? null)
+        setTimeout(() => {
+          document.querySelector(`[data-row-id="${vis[prev]?.id}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+        }, 0)
+        return
+      }
+
+      if (e.key === 'Enter' && focusedIndexRef.current >= 0) {
+        e.preventDefault()
+        setEnterTrigger((n) => n + 1)
+        return
+      }
 
       if (e.key === 'a' && selectedRef.current.size > 0) {
         e.preventDefault()
@@ -183,8 +398,7 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
   }, [])
 
   const allVisibleSelected = visible.length > 0 && selected.size === visible.length
-  const someSelected = selected.size > 0
-  const highConfidencePending = transactions.filter((t) => t.confidence >= 0.85 && t.status === 'pending').length
+  const someSelected       = selected.size > 0
 
   // -------------------------------------------------------------------------
 
@@ -193,6 +407,22 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
 
       {/* Summary bar */}
       <SummaryBar transactions={transactions} />
+
+      {/* Post-approve result banner */}
+      {approveResult && (
+        <div
+          className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border text-sm"
+          style={{ backgroundColor: '#ecfdf5', borderColor: '#059669', color: '#065f46' }}
+        >
+          <span>
+            <span className="font-semibold">✓ {approveResult.approved} approved.</span>
+            {approveResult.remaining > 0
+              ? ` ${approveResult.remaining} transaction${approveResult.remaining !== 1 ? 's' : ''} remaining for review.`
+              : ' All transactions approved.'}
+          </span>
+          <button onClick={() => setApproveResult(null)} className="opacity-50 hover:opacity-100 transition-opacity text-lg leading-none">×</button>
+        </div>
+      )}
 
       {/* Controls row */}
       <div className="flex flex-wrap items-center gap-2">
@@ -210,14 +440,15 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
           />
         </div>
 
-        {/* Approve high confidence — prominent button */}
+        {/* Approve high confidence */}
         {highConfidencePending > 0 && (
           <button
-            onClick={approveHighConfidence}
+            onClick={handleApproveHighConfidenceClick}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm transition-all"
             style={{ backgroundColor: '#2d5a27' }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a'; e.currentTarget.style.transform = 'translateY(-1px)' }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27'; e.currentTarget.style.transform = 'none' }}
+            title={`Approve all ${highConfidencePending} transactions with confidence ≥ 85%`}
           >
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
               <path d="M2 6.5l3 3 6-6" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -261,6 +492,9 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
             </button>
           </div>
         )}
+
+        {/* Keyboard shortcuts help */}
+        <ShortcutsPopover />
       </div>
 
       {/* Filter tabs */}
@@ -348,6 +582,10 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
                   selected={selected.has(tx.id)}
                   onToggleSelect={toggleSelect}
                   onChange={handleChange}
+                  isRecurring={recurringIds?.has(tx.id) ?? false}
+                  isFocused={focusedId === tx.id}
+                  onFocus={() => setFocusedId(tx.id)}
+                  enterTrigger={focusedId === tx.id ? enterTrigger : 0}
                 />
               ))}
             </tbody>
@@ -359,13 +597,29 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
       {visible.length > 0 && (
         <div className="flex items-center justify-between">
           <p className="text-xs" style={{ color: '#c4bdb8' }}>
-            Select rows then press <kbd className="px-1 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: '#f0ece4', color: '#6b6560' }}>A</kbd> to approve
-            {' · '}<kbd className="px-1 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: '#f0ece4', color: '#6b6560' }}>F</kbd> to flag
+            <kbd className="px-1 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: '#f0ece4', color: '#6b6560' }}>j</kbd>
+            {' / '}
+            <kbd className="px-1 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: '#f0ece4', color: '#6b6560' }}>k</kbd>
+            {' navigate · '}
+            <kbd className="px-1 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: '#f0ece4', color: '#6b6560' }}>A</kbd>
+            {' approve · '}
+            <kbd className="px-1 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: '#f0ece4', color: '#6b6560' }}>F</kbd>
+            {' flag'}
           </p>
           <p className="text-xs" style={{ color: '#a09a94' }}>
             Showing {visible.length} of {transactions.length}
           </p>
         </div>
+      )}
+
+      {/* Confirm modal */}
+      {showConfirm && (
+        <ConfirmApproveModal
+          count={highConfidencePending}
+          remaining={lowConfidencePending}
+          onConfirm={doApproveHighConfidence}
+          onCancel={() => setShowConfirm(false)}
+        />
       )}
     </div>
   )

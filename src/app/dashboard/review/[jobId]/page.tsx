@@ -1,12 +1,15 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import DashboardNav from '@/components/DashboardNav'
 import AppFooter from '@/components/AppFooter'
 import TransactionTable from '@/components/TransactionTable'
 import { getJob, saveJob } from '@/lib/storage'
+import { detectRecurring } from '@/lib/recurringDetection'
+import { logActivity } from '@/lib/activity'
 import type { CategorizationJob, Transaction } from '@/types'
+import type { RecurringPattern } from '@/lib/recurringDetection'
 
 // ---------------------------------------------------------------------------
 // Toast
@@ -256,6 +259,257 @@ function CategoryBreakdown({ transactions }: { transactions: Transaction[] }) {
 }
 
 // ---------------------------------------------------------------------------
+// Review summary (shown when no pending transactions remain)
+// ---------------------------------------------------------------------------
+
+interface ReviewSummaryProps {
+  transactions: Transaction[]
+  onExport: () => void
+  onReport: () => void
+  exporting: boolean
+  reporting: boolean
+}
+
+function ReviewSummary({ transactions, onExport, onReport, exporting, reporting }: ReviewSummaryProps) {
+  const total    = transactions.length
+  const approved = transactions.filter((t) => t.status === 'approved').length
+  const edited   = transactions.filter((t) => t.status === 'edited').length
+  const flagged  = transactions.filter((t) => t.status === 'flagged').length
+
+  const breakdown: { label: string; value: number; color: string; bg: string }[] = [
+    { label: 'Approved', value: approved, color: '#065f46', bg: '#ecfdf5' },
+    { label: 'Edited',   value: edited,   color: '#1d4ed8', bg: '#eff6ff' },
+    { label: 'Flagged',  value: flagged,  color: '#991b1b', bg: '#fef2f2' },
+  ].filter((b) => b.value > 0)
+
+  return (
+    <div
+      className="rounded-2xl border-2 overflow-hidden"
+      style={{ borderColor: '#059669', backgroundColor: '#f0fdf4' }}
+    >
+      {/* Header */}
+      <div
+        className="px-6 py-5 flex flex-wrap items-center justify-between gap-4"
+        style={{ backgroundColor: '#dcfce7', borderBottom: '1px solid #bbf7d0' }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            style={{ backgroundColor: '#059669' }}
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M3 9l4 4 8-8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div>
+            <p
+              style={{
+                fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
+                fontSize: '1.1rem',
+                color: '#14532d',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              All {total} transactions reviewed!
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: '#166534' }}>
+              Ready to export or generate the close report.
+            </p>
+          </div>
+        </div>
+
+        {/* Breakdown chips */}
+        <div className="flex flex-wrap gap-2">
+          {breakdown.map((b) => (
+            <span
+              key={b.label}
+              className="px-3 py-1 rounded-full text-xs font-semibold"
+              style={{ backgroundColor: b.bg, color: b.color }}
+            >
+              {b.value} {b.label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="px-6 py-4 flex flex-wrap items-center gap-3">
+        <button
+          onClick={onExport}
+          disabled={exporting || reporting}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-opacity"
+          style={{ backgroundColor: '#2d5a27' }}
+          onMouseEnter={(e) => { if (!exporting && !reporting) e.currentTarget.style.opacity = '0.88' }}
+          onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
+        >
+          {exporting ? (
+            <SummarySpinner />
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M7 1v8M4 6l3 3 3-3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M2 11h10" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          )}
+          {exporting ? 'Exporting…' : 'Export to QuickBooks'}
+        </button>
+
+        <button
+          onClick={onReport}
+          disabled={reporting || exporting}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border disabled:opacity-60 transition-colors"
+          style={{ borderColor: '#059669', color: '#059669', backgroundColor: '#ffffff' }}
+          onMouseEnter={(e) => { if (!reporting && !exporting) e.currentTarget.style.backgroundColor = '#f0fdf4' }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
+        >
+          {reporting ? (
+            <SummarySpinner />
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <rect x="2" y="1" width="8" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none" />
+              <path d="M4 4.5h4M4 7h4M4 9.5h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+              <path d="M9 8.5l1.5 1.5L13 7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+          {reporting ? 'Generating…' : 'Generate Close Report'}
+        </button>
+
+        <p className="text-xs ml-1" style={{ color: '#6b7280' }}>
+          {flagged > 0 && `${flagged} flagged transaction${flagged !== 1 ? 's' : ''} will not be exported.`}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function SummarySpinner() {
+  return (
+    <svg className="animate-spin" width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="2" opacity="0.3" />
+      <path d="M7 1.5A5.5 5.5 0 0112.5 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Recurring transactions panel
+// ---------------------------------------------------------------------------
+
+const FREQ_LABEL: Record<RecurringPattern['frequency'], string> = {
+  weekly:    'Weekly',
+  'bi-weekly': 'Bi-weekly',
+  monthly:   'Monthly',
+  irregular: 'Recurring',
+}
+
+function RecurringPanel({ patterns }: { patterns: RecurringPattern[] }) {
+  const [open, setOpen] = useState(true)
+
+  if (patterns.length === 0) return null
+
+  return (
+    <div
+      className="rounded-xl border overflow-hidden"
+      style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+    >
+      {/* Header */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-5 py-3.5 transition-colors text-left"
+        style={{ backgroundColor: open ? '#fdf6f0' : '#ffffff' }}
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf6f0' }}
+        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = open ? '#fdf6f0' : '#ffffff' }}
+      >
+        <div className="flex items-center gap-2.5">
+          <RecurIconLg />
+          <div>
+            <span className="text-sm font-semibold" style={{ color: '#1a1714' }}>
+              Recurring Transactions
+            </span>
+            <span
+              className="ml-2 text-xs font-mono px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: '#f5e6d8', color: '#b8734a' }}
+            >
+              {patterns.length} pattern{patterns.length !== 1 ? 's' : ''} detected
+            </span>
+          </div>
+        </div>
+        <svg
+          width="14" height="14" viewBox="0 0 14 14" fill="none"
+          style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', flexShrink: 0 }}
+        >
+          <path d="M3 5l4 4 4-4" stroke="#6b6560" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="border-t divide-y" style={{ borderColor: '#f0ebe3' }}>
+          {patterns.map((p) => {
+            const amtStr = p.minAmount === p.maxAmount
+              ? `$${p.avgAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : `~$${p.avgAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+
+            return (
+              <div
+                key={p.vendor}
+                className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
+                style={{ borderColor: '#f0ebe3' }}
+              >
+                {/* Left: vendor + frequency */}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0"
+                    style={{ backgroundColor: '#e8f0e6', color: '#2d5a27' }}
+                  >
+                    {FREQ_LABEL[p.frequency]}
+                  </span>
+                  <span
+                    className="text-sm font-medium truncate max-w-[240px]"
+                    style={{ color: '#1a1714' }}
+                    title={p.vendor}
+                  >
+                    {p.vendor}
+                  </span>
+                  <span className="text-xs shrink-0" style={{ color: '#a09a94' }}>
+                    ×{p.count}
+                  </span>
+                </div>
+
+                {/* Right: amount + last / next date */}
+                <div className="flex items-center gap-4 text-right shrink-0">
+                  <div>
+                    <p className="font-mono text-sm font-semibold" style={{ color: '#1a1714' }}>
+                      {amtStr}
+                    </p>
+                    <p className="text-xs" style={{ color: '#a09a94' }}>avg / occurrence</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-mono" style={{ color: '#6b6560' }}>
+                      Last: {p.lastDate}
+                    </p>
+                    {p.nextExpectedDate && (
+                      <p className="text-xs font-mono" style={{ color: '#b8734a' }}>
+                        Next: ~{p.nextExpectedDate}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+
+          <div className="px-5 py-2.5">
+            <p className="text-xs" style={{ color: '#c4bdb8' }}>
+              Patterns detected from vendor name, amount variance ≤15%, and regular intervals.
+              Marked with <span style={{ color: '#b8734a' }}>↺</span> in the transaction table.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -343,6 +597,12 @@ export default function ReviewPage() {
 
       const label = format === 'quickbooks' ? 'QuickBooks CSV' : 'Standard CSV'
       addToast(`Exported ${exportable.length} transaction${exportable.length !== 1 ? 's' : ''} as ${label}`, 'success')
+      logActivity({
+        type: 'csv_exported',
+        description: `${label} exported for ${job.client_name} (${exportable.length} transactions)`,
+        clientName: job.client_name,
+        jobId: job.id,
+      })
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Export failed.', 'error')
     } finally {
@@ -364,8 +624,13 @@ export default function ReviewPage() {
       const blob = new Blob([html], { type: 'text/html' })
       const url  = URL.createObjectURL(blob)
       window.open(url, '_blank')
-      // Revoke after a short delay so the new tab can load the blob URL
       setTimeout(() => URL.revokeObjectURL(url), 60_000)
+      logActivity({
+        type: 'report_generated',
+        description: `Close report generated for ${job.client_name}`,
+        clientName: job.client_name,
+        jobId: job.id,
+      })
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Could not generate report.', 'error')
     } finally {
@@ -381,6 +646,12 @@ export default function ReviewPage() {
     setJob(next)
     setCompleting(false)
     addToast('Close marked as complete.', 'success')
+    logActivity({
+      type: 'close_completed',
+      description: `Close completed for ${job.client_name}`,
+      clientName: job.client_name,
+      jobId: job.id,
+    })
   }
 
   // --- States ---------------------------------------------------------------
@@ -419,6 +690,20 @@ export default function ReviewPage() {
   const pct = job.total_transactions > 0
     ? Math.round(((job.approved + job.flagged) / job.total_transactions) * 100)
     : 0
+
+  // All-reviewed check (no pending status remaining)
+  const allReviewed = job.transactions.length > 0 &&
+    job.transactions.every((t) => t.status !== 'pending')
+
+  // Recurring detection — recomputes whenever transactions change
+  const recurringPatterns = useMemo(
+    () => detectRecurring(job.transactions),
+    [job.transactions]
+  )
+  const recurringIds = useMemo(
+    () => new Set(recurringPatterns.flatMap((p) => p.transactionIds)),
+    [recurringPatterns]
+  )
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
@@ -537,11 +822,26 @@ export default function ReviewPage() {
         {/* Category breakdown */}
         <CategoryBreakdown transactions={job.transactions} />
 
+        {/* Review complete summary */}
+        {allReviewed && (
+          <ReviewSummary
+            transactions={job.transactions}
+            onExport={() => handleExport('quickbooks')}
+            onReport={handleReport}
+            exporting={exporting}
+            reporting={reporting}
+          />
+        )}
+
+        {/* Recurring transactions panel */}
+        <RecurringPanel patterns={recurringPatterns} />
+
         {/* Transaction table */}
         <TransactionTable
           initialTransactions={job.transactions}
           chartOfAccounts={job.chart_of_accounts}
           onTransactionsChange={handleTransactionsChange}
+          recurringIds={recurringIds}
         />
       </main>
 
@@ -591,6 +891,21 @@ function ChevronIcon({ open }: { open: boolean }) {
       style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
     >
       <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function RecurIconLg() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M2 8A6 6 0 0 1 12 3.5L14 5.5M14 8A6 6 0 0 1 4 12.5L2 10.5"
+        stroke="#b8734a"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path d="M14 2.5v3H11" stroke="#b8734a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M2 13.5v-3H5" stroke="#b8734a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
