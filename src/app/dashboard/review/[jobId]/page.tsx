@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import DashboardNav from '@/components/DashboardNav'
+import AppFooter from '@/components/AppFooter'
 import TransactionTable from '@/components/TransactionTable'
 import { getJob, saveJob } from '@/lib/storage'
 import type { CategorizationJob, Transaction } from '@/types'
@@ -191,6 +192,70 @@ function Stat({ label, value, color, bg }: { label: string; value: number; color
 }
 
 // ---------------------------------------------------------------------------
+// Category breakdown
+// ---------------------------------------------------------------------------
+
+function CategoryBreakdown({ transactions }: { transactions: Transaction[] }) {
+  type Entry = { amount: number; count: number; isCredit: boolean }
+  const map = new Map<string, Entry>()
+
+  for (const tx of transactions) {
+    const cat = tx.final_category ?? tx.suggested_category ?? 'Uncategorized'
+    const existing = map.get(cat) ?? { amount: 0, count: 0, isCredit: tx.type === 'credit' }
+    map.set(cat, { amount: existing.amount + tx.amount, count: existing.count + 1, isCredit: tx.type === 'credit' })
+  }
+
+  const sorted = Array.from(map.entries())
+    .sort((a, b) => b[1].amount - a[1].amount)
+    .slice(0, 5)
+
+  if (sorted.length === 0) return null
+
+  const max = sorted[0][1].amount
+
+  return (
+    <div
+      className="rounded-xl border p-5"
+      style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+    >
+      <h3 className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ color: '#a09a94' }}>
+        Top Categories by Volume
+      </h3>
+      <div className="space-y-3">
+        {sorted.map(([cat, { amount, count, isCredit }]) => {
+          const pct = Math.round((amount / max) * 100)
+          const barColor = isCredit ? '#059669' : '#2d5a27'
+          const barBg = isCredit ? '#dcfce7' : '#e8f0e6'
+          return (
+            <div key={cat}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium truncate max-w-[55%]" style={{ color: '#1a1714' }}>
+                  {cat}
+                </span>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-xs" style={{ color: '#a09a94' }}>
+                    {count} tx
+                  </span>
+                  <span className="font-mono text-xs font-semibold" style={{ color: barColor }}>
+                    ${amount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                  </span>
+                </div>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: barBg }}>
+                <div
+                  className="h-full rounded-full transition-all duration-700 ease-out"
+                  style={{ width: `${pct}%`, backgroundColor: barColor }}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -332,10 +397,10 @@ export default function ReviewPage() {
     : 0
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#faf8f4' }}>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
       <DashboardNav />
 
-      <main className="max-w-6xl mx-auto px-5 py-8 space-y-6">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-5 py-8 space-y-6 page-enter">
 
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -432,6 +497,9 @@ export default function ReviewPage() {
           </div>
         </div>
 
+        {/* Category breakdown */}
+        <CategoryBreakdown transactions={job.transactions} />
+
         {/* Transaction table */}
         <TransactionTable
           initialTransactions={job.transactions}
@@ -442,6 +510,7 @@ export default function ReviewPage() {
 
       {/* Toast stack */}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
+      <AppFooter />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import TransactionRow from './TransactionRow'
 import type { Transaction, ChartOfAccounts } from '@/types'
 
@@ -119,7 +119,7 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
 
   // --- Bulk actions --------------------------------------------------------
 
-  function bulkApprove() {
+  const bulkApprove = useCallback(() => {
     setTransactions((prev) => {
       const next = prev.map((t) =>
         selected.has(t.id)
@@ -130,16 +130,16 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
       return next
     })
     setSelected(new Set())
-  }
+  }, [selected, onTransactionsChange])
 
-  function bulkFlag() {
+  const bulkFlag = useCallback(() => {
     setTransactions((prev) => {
       const next = prev.map((t) => selected.has(t.id) ? { ...t, status: 'flagged' as const } : t)
       onTransactionsChange?.(next)
       return next
     })
     setSelected(new Set())
-  }
+  }, [selected, onTransactionsChange])
 
   function approveHighConfidence() {
     setTransactions((prev) => {
@@ -152,6 +152,35 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
       return next
     })
   }
+
+  // --- Keyboard shortcuts --------------------------------------------------
+
+  const bulkApproveRef = useRef(bulkApprove)
+  const bulkFlagRef    = useRef(bulkFlag)
+  const selectedRef    = useRef(selected)
+  bulkApproveRef.current = bulkApprove
+  bulkFlagRef.current    = bulkFlag
+  selectedRef.current    = selected
+
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      // Don't fire when focused in a form field
+      const tag = (e.target as HTMLElement).tagName.toLowerCase()
+      if (tag === 'input' || tag === 'select' || tag === 'textarea') return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+
+      if (e.key === 'a' && selectedRef.current.size > 0) {
+        e.preventDefault()
+        bulkApproveRef.current()
+      }
+      if (e.key === 'f' && selectedRef.current.size > 0) {
+        e.preventDefault()
+        bulkFlagRef.current()
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [])
 
   const allVisibleSelected = visible.length > 0 && selected.size === visible.length
   const someSelected = selected.size > 0
@@ -181,17 +210,19 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
           />
         </div>
 
-        {/* Approve high confidence */}
+        {/* Approve high confidence — prominent button */}
         {highConfidencePending > 0 && (
           <button
             onClick={approveHighConfidence}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors"
-            style={{ borderColor: '#16a34a', color: '#166534', backgroundColor: '#f0fdf4' }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#dcfce7' }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0fdf4' }}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm transition-all"
+            style={{ backgroundColor: '#2d5a27' }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27'; e.currentTarget.style.transform = 'none' }}
           >
-            <span style={{ fontSize: 11 }}>✓✓</span>
-            Approve high confidence ({highConfidencePending})
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path d="M2 6.5l3 3 6-6" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Approve {highConfidencePending} high-confidence
           </button>
         )}
 
@@ -324,11 +355,17 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
         )}
       </div>
 
-      {/* Footer count */}
+      {/* Footer row */}
       {visible.length > 0 && (
-        <p className="text-xs text-right" style={{ color: '#a09a94' }}>
-          Showing {visible.length} of {transactions.length} transactions
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs" style={{ color: '#c4bdb8' }}>
+            Select rows then press <kbd className="px-1 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: '#f0ece4', color: '#6b6560' }}>A</kbd> to approve
+            {' · '}<kbd className="px-1 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: '#f0ece4', color: '#6b6560' }}>F</kbd> to flag
+          </p>
+          <p className="text-xs" style={{ color: '#a09a94' }}>
+            Showing {visible.length} of {transactions.length}
+          </p>
+        </div>
       )}
     </div>
   )

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-export default function DashboardNav() {
+export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void } = {}) {
   const path = usePathname()
 
   return (
@@ -13,8 +13,8 @@ export default function DashboardNav() {
     >
       <div className="max-w-6xl mx-auto px-5 flex items-center justify-between h-14">
 
-        {/* Logo */}
-        <Link href="/dashboard" className="flex items-center gap-2.5 select-none">
+        {/* Logo — links to homepage */}
+        <Link href="/" className="flex items-center gap-2.5 select-none">
           <LedgerIcon />
           <span
             style={{
@@ -34,9 +34,22 @@ export default function DashboardNav() {
           <NavLink href="/dashboard" active={path === '/dashboard'}>
             Dashboard
           </NavLink>
-          <NavLink href="/pricing" active={path === '/pricing'}>
-            Pricing
+          <NavLink href="/demo" active={path === '/demo'}>
+            Demo
           </NavLink>
+          {onHelpClick && (
+            <button
+              onClick={onHelpClick}
+              className="ml-1 w-7 h-7 flex items-center justify-center rounded-full text-xs font-semibold border transition-colors"
+              style={{ borderColor: '#e0dbd4', color: '#6b6560', backgroundColor: 'transparent' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f0ea'; e.currentTarget.style.color = '#1a1714' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6b6560' }}
+              title="How it works"
+              aria-label="Open onboarding guide"
+            >
+              ?
+            </button>
+          )}
           <Link
             href="/pricing"
             className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors"

@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { categorizeTransactions } from '@/lib/categorize'
+import type { CorrectionHint } from '@/lib/categorize'
 import type { Transaction, ChartOfAccounts } from '@/types'
 
 interface RequestBody {
   transactions: Transaction[]
   chartOfAccounts: ChartOfAccounts[]
   clientName: string
+  corrections?: CorrectionHint[]
 }
 
 function isValidBody(body: unknown): body is RequestBody {
@@ -46,9 +48,12 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { transactions, chartOfAccounts, clientName } = body
+  const { transactions, chartOfAccounts, clientName, corrections = [] } = body
 
-  console.log(`Received: ${transactions.length} transactions, ${chartOfAccounts.length} accounts, client="${clientName}"`)
+  console.log(
+    `Received: ${transactions.length} transactions, ${chartOfAccounts.length} accounts, ` +
+    `client="${clientName}", ${corrections.length} correction hints`
+  )
 
   if (transactions.length === 0) {
     return NextResponse.json({ error: 'transactions array is empty.' }, { status: 422 })
@@ -60,7 +65,7 @@ export async function POST(request: NextRequest) {
 
   // --- Categorize -----------------------------------------------------------
   try {
-    const categorized = await categorizeTransactions(transactions, chartOfAccounts)
+    const categorized = await categorizeTransactions(transactions, chartOfAccounts, corrections)
 
     const summary = {
       total: categorized.length,

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { Transaction, ChartOfAccounts } from '@/types'
+import { saveCorrection } from '@/lib/corrections'
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -109,6 +110,16 @@ export default function TransactionRow({
     const account = chartOfAccounts.find((a) => a.code === code)
     setEditAccountCode(code)
     setEditCategory(account?.name ?? code)
+
+    // Persist correction so future AI runs can learn from it
+    if (code !== transaction.suggested_account_code && transaction.suggested_category) {
+      saveCorrection(
+        transaction.description,
+        transaction.suggested_category,
+        account?.name ?? code
+      )
+    }
+
     onChange({
       ...transaction,
       status: 'edited',

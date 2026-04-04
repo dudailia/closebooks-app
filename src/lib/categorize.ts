@@ -7,16 +7,53 @@ const MAX_RETRIES = 3
 const RETRY_DELAY_MS = 1000
 const AUTO_APPROVE_THRESHOLD = 0.85
 
-const SYSTEM_PROMPT = `You are an expert bookkeeper. Given a list of bank transactions and a Chart of Accounts, categorize each transaction to the most appropriate account. Consider the transaction description, amount, and whether it's a debit or credit.
+// Plain object shape — mirrors Correction from corrections.ts but without the
+// savedAt field and without a client-side localStorage dependency.
+export interface CorrectionHint {
+  description: string
+  fromCategory: string
+  toCategory: string
+}
+
+// ---------------------------------------------------------------------------
+// System prompt
+// ---------------------------------------------------------------------------
+
+const SYSTEM_PROMPT = `You are an expert bookkeeper with 20 years of experience. Given a list of bank transactions and a Chart of Accounts, categorize each transaction to the most appropriate account.
+
+KEYWORD RULES — apply these with high confidence whenever a description matches:
+- "PAYROLL", "GUSTO", "ADP" → Payroll & Wages, confidence 0.99
+- "PAYROLL TAX", "FICA", "FUTA" → Payroll Tax Expense, confidence 0.97
+- "DEPOSIT", "PAYMENT FROM", "CLIENT PAYMENT", "WIRE TRANSFER" (credit) → nearest Revenue account, confidence 0.90+
+- "RENT", "LEASE" → Rent & Occupancy, confidence 0.95+
+- "ELECTRIC", "GAS COMPANY", "WATER DEPT", "INTERNET", "COMCAST", "VERIZON", "AT&T", "SPECTRUM", "XFINITY" → Utilities or Internet & Phone
+- "TRANSFER", "XFER" with no clear counterparty → flag as ambiguous (confidence below 0.50)
+- Recognizable subscription/SaaS vendors (NOTION, SLACK, ZOOM, ADOBE, FIGMA, AWS, GOOGLE WORKSPACE, GITHUB, etc.) → Software & SaaS
+- Airlines, hotels, rideshare (UBER, LYFT), parking garages → Travel & Transportation
+- Restaurants, cafes, food delivery → Meals & Entertainment
+- Insurance company names (PROGRESSIVE, ALLSTATE, GEICO, HISCOX, etc.) → Insurance
+- Bank fees, merchant processing fees (STRIPE, SQUARE, PAYPAL fees) → Bank & Merchant Fees
+
+AMOUNT GUIDANCE:
+- Large round-dollar amounts ($1,000 – $10,000 debit) are likely rent, payroll, or large vendor payments — look for keyword clues.
+- Recurring identical amounts are likely subscriptions.
+- Credits/deposits are almost always revenue; debits are almost always expenses.
+- Very small amounts under $20 may be ambiguous — lower confidence slightly to prompt human review.
+
+CONFIDENCE CALIBRATION:
+- 0.95–0.99: clear keyword or vendor match with no ambiguity
+- 0.80–0.94: likely correct but some ambiguity
+- 0.65–0.79: plausible but needs human review
+- Below 0.65: uncertain — a human will review
 
 For each transaction, return:
 - index: the transaction's index number (as given)
 - suggested_category: the account name from the Chart of Accounts
 - suggested_account_code: the account code
-- confidence: a number from 0 to 1 indicating how confident you are
-- reasoning: a brief explanation (1 sentence)
+- confidence: a number from 0 to 1
+- reasoning: one sentence explaining why you chose this category
 
-Return ONLY a JSON array with no markdown fences, no explanation, just the raw JSON array. Be conservative — if unsure, set confidence below 0.7 so a human reviews it.`
+Return ONLY a JSON array. No markdown fences, no preamble, no explanation — just the raw JSON array.`
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -26,17 +63,58 @@ function formatChartOfAccounts(coa: ChartOfAccounts[]): string {
   return coa.map((a) => `[${a.code}] ${a.name} (${a.type})`).join('\n')
 }
 
+function formatCorrections(corrections: CorrectionHint[]): string {
+  if (corrections.length === 0) return ''
+  const lines = corrections
+    .map((c) => `- "${c.description}" was recategorized from "${c.fromCategory}" to "${c.toCategory}"`)
+    .join('\n')
+  return `\nLearning from this firm's past corrections (apply these patterns to similar transactions):\n${lines}\n`
+}
+
 // Use sequential indices instead of raw IDs — Claude reliably echoes small integers,
-// whereas it often reformats or truncates long ID strings like "1717234567890-abc1234".
-function buildUserPrompt(batch: Transaction[], coa: ChartOfAccounts[]): string {
+// whereas it often reformats or truncates long ID strings.
+function buildUserPrompt(
+  batch: Transaction[],
+  coa: ChartOfAccounts[],
+  corrections: CorrectionHint[]
+): string {
   const txLines = batch
     .map((t, i) =>
       `${i}: date=${t.date} | description="${t.description}" | amount=${t.amount.toFixed(2)} | type=${t.type}`
     )
     .join('\n')
 
-  return `Chart of Accounts:\n${formatChartOfAccounts(coa)}\n\nTransactions (use the number at the start as "index"):\n${txLines}\n\nReturn a JSON array, one object per transaction, each with fields: index, suggested_category, suggested_account_code, confidence, reasoning.`
+  const correctionBlock = formatCorrections(corrections)
+
+  return `Chart of Accounts:\n${formatChartOfAccounts(coa)}\n${correctionBlock}\nTransactions (use the number at the start as "index"):\n${txLines}\n\nReturn a JSON array, one object per transaction, each with fields: index, suggested_category, suggested_account_code, confidence, reasoning.`
 }
+
+// ---------------------------------------------------------------------------
+// Confidence calibration — applied after Claude responds
+// ---------------------------------------------------------------------------
+
+function calibrateConfidence(description: string, amount: number, rawConf: number): number {
+  let conf = rawConf
+
+  // Small amounts are often ambiguous
+  if (amount < 20) {
+    conf -= 0.08
+  }
+
+  // Generic descriptions: single word, all digits, or suspiciously short
+  const desc = description.trim()
+  const wordCount = desc.split(/\s+/).filter(Boolean).length
+  const allDigits = /^\d+$/.test(desc)
+  if (wordCount <= 1 || allDigits || desc.length <= 4) {
+    conf = Math.min(conf, 0.60)
+  }
+
+  return Math.min(1, Math.max(0, conf))
+}
+
+// ---------------------------------------------------------------------------
+// JSON parsing
+// ---------------------------------------------------------------------------
 
 interface ClaudeItem {
   index: number
@@ -47,7 +125,6 @@ interface ClaudeItem {
 }
 
 function extractJSON(text: string): ClaudeItem[] {
-  // Strip markdown code fences if present
   const stripped = text.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim()
   const match = stripped.match(/\[[\s\S]*\]/)
   if (!match) {
@@ -72,13 +149,14 @@ async function sleep(ms: number) {
 
 async function categorizeBatch(
   batch: Transaction[],
-  coa: ChartOfAccounts[]
+  coa: ChartOfAccounts[],
+  corrections: CorrectionHint[]
 ): Promise<ClaudeItem[]> {
   let lastError: Error | null = null
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const prompt = buildUserPrompt(batch, coa)
+      const prompt = buildUserPrompt(batch, coa, corrections)
       console.log(`[categorize] Attempt ${attempt}/${MAX_RETRIES} — calling ${MODEL} with ${batch.length} transactions`)
       console.log('[categorize] User prompt (first 600 chars):\n', prompt.slice(0, 600))
 
@@ -126,9 +204,13 @@ const client = new Anthropic()
 
 export async function categorizeTransactions(
   transactions: Transaction[],
-  chartOfAccounts: ChartOfAccounts[]
+  chartOfAccounts: ChartOfAccounts[],
+  corrections: CorrectionHint[] = []
 ): Promise<Transaction[]> {
-  console.log(`[categorize] categorizeTransactions called: ${transactions.length} tx, ${chartOfAccounts.length} accounts`)
+  console.log(
+    `[categorize] categorizeTransactions called: ${transactions.length} tx, ` +
+    `${chartOfAccounts.length} accounts, ${corrections.length} correction hints`
+  )
 
   if (!transactions.length) return []
   if (!chartOfAccounts.length) throw new Error('Chart of accounts is empty.')
@@ -144,15 +226,13 @@ export async function categorizeTransactions(
 
     let items: ClaudeItem[]
     try {
-      items = await categorizeBatch(batch, chartOfAccounts)
+      items = await categorizeBatch(batch, chartOfAccounts, corrections)
     } catch (err) {
       console.error(`[categorize] Batch ${batchNum} failed entirely:`, err)
-      // Flag all transactions in the failed batch and continue
       for (const tx of batch) results.push({ ...tx, status: 'flagged' })
       continue
     }
 
-    // Map results back by index (0-based position within this batch)
     const byIndex = new Map(items.map((item) => [item.index, item]))
     console.log(`[categorize] Index keys returned by Claude:`, Array.from(byIndex.keys()))
 
@@ -166,19 +246,24 @@ export async function categorizeTransactions(
         continue
       }
 
-      const confidence = Math.min(1, Math.max(0, Number(suggestion.confidence) || 0))
-      const status = confidence >= AUTO_APPROVE_THRESHOLD ? 'approved' : 'pending'
+      const rawConf  = Math.min(1, Math.max(0, Number(suggestion.confidence) || 0))
+      const confidence = calibrateConfidence(tx.description, tx.amount, rawConf)
+      const status   = confidence >= AUTO_APPROVE_THRESHOLD ? 'approved' : 'pending'
 
       console.log(
-        `[categorize] [${j}] "${tx.description}" → [${suggestion.suggested_account_code}] "${suggestion.suggested_category}" conf=${Math.round(confidence * 100)}% status=${status}`
+        `[categorize] [${j}] "${tx.description}" → [${suggestion.suggested_account_code}] ` +
+        `"${suggestion.suggested_category}" rawConf=${Math.round(rawConf * 100)}% ` +
+        `calibrated=${Math.round(confidence * 100)}% status=${status}`
       )
 
       results.push({
         ...tx,
-        suggested_category: suggestion.suggested_category,
+        suggested_category:    suggestion.suggested_category,
         suggested_account_code: suggestion.suggested_account_code,
         confidence,
         status,
+        // Carry reasoning through for display in the review UI
+        ...({ reasoning: suggestion.reasoning } as object),
       })
     }
 

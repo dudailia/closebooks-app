@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import DashboardNav from '@/components/DashboardNav'
+import OnboardingModal, { needsOnboarding } from '@/components/OnboardingModal'
+import AppFooter from '@/components/AppFooter'
 import { getJobs, deleteJob } from '@/lib/storage'
 import type { CategorizationJob } from '@/types'
 
@@ -36,14 +38,16 @@ function SummaryStats({ jobs }: { jobs: CategorizationJob[] }) {
   const totalClients = jobs.length
   const totalTx = jobs.reduce((s, j) => s + j.total_transactions, 0)
 
-  // Avg confidence across all categorized transactions
   const allTx = jobs.flatMap((j) => j.transactions)
-  const withConfidence = allTx.filter((t) => t.confidence > 0)
-  const avgConfidence = withConfidence.length > 0
-    ? Math.round(withConfidence.reduce((s, t) => s + t.confidence, 0) / withConfidence.length * 100)
+  const withConf = allTx.filter((t) => t.confidence > 0)
+  const avgConf = withConf.length > 0
+    ? Math.round(withConf.reduce((s, t) => s + t.confidence, 0) / withConf.length * 100)
     : null
 
-  const inReview = jobs.filter((j) => j.status === 'review').length
+  const timeSavedMin = totalTx * 2
+  const timeSavedStr = timeSavedMin === 0 ? '—'
+    : timeSavedMin >= 60 ? `${(timeSavedMin / 60).toFixed(1)}h`
+    : `${timeSavedMin}m`
 
   const stats = [
     {
@@ -62,19 +66,19 @@ function SummaryStats({ jobs }: { jobs: CategorizationJob[] }) {
     },
     {
       label: 'Avg Confidence',
-      value: avgConfidence !== null ? `${avgConfidence}%` : '—',
+      value: avgConf !== null ? `${avgConf}%` : '—',
       sub: 'AI categorization',
-      color: avgConfidence !== null
-        ? avgConfidence >= 85 ? '#166534' : avgConfidence >= 70 ? '#854d0e' : '#991b1b'
+      color: avgConf !== null
+        ? avgConf >= 85 ? '#166534' : avgConf >= 70 ? '#854d0e' : '#991b1b'
         : '#a09a94',
       icon: <ConfIcon />,
     },
     {
-      label: 'Awaiting Review',
-      value: inReview.toString(),
-      sub: inReview === 1 ? 'client needs action' : 'clients need action',
-      color: inReview > 0 ? '#b8734a' : '#a09a94',
-      icon: <ReviewIcon />,
+      label: 'Time Saved',
+      value: timeSavedStr,
+      sub: 'est. at 2 min/tx',
+      color: timeSavedMin > 0 ? '#2d5a27' : '#a09a94',
+      icon: <ClockIcon />,
     },
   ]
 
@@ -86,14 +90,9 @@ function SummaryStats({ jobs }: { jobs: CategorizationJob[] }) {
           className="rounded-xl border px-4 py-4 flex flex-col gap-2"
           style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
         >
-          <div className="flex items-center justify-between">
-            <span style={{ color: '#a09a94' }}>{s.icon}</span>
-          </div>
+          <span style={{ color: '#a09a94' }}>{s.icon}</span>
           <div>
-            <p
-              className="font-mono text-2xl font-semibold leading-none"
-              style={{ color: s.color }}
-            >
+            <p className="font-mono text-2xl font-semibold leading-none" style={{ color: s.color }}>
               {s.value}
             </p>
             <p className="text-xs font-medium mt-1" style={{ color: '#1a1714' }}>{s.label}</p>
@@ -101,6 +100,143 @@ function SummaryStats({ jobs }: { jobs: CategorizationJob[] }) {
           </div>
         </div>
       ))}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Loading skeleton
+// ---------------------------------------------------------------------------
+
+function SkeletonCard() {
+  return (
+    <div
+      className="rounded-xl border p-5 space-y-3 animate-pulse"
+      style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+    >
+      <div className="flex justify-between">
+        <div className="h-4 w-2/5 rounded-md" style={{ backgroundColor: '#f0ece4' }} />
+        <div className="h-5 w-16 rounded-full" style={{ backgroundColor: '#f0ece4' }} />
+      </div>
+      <div className="h-3 w-1/4 rounded-md" style={{ backgroundColor: '#f0ece4' }} />
+      <div className="flex gap-2 pt-1">
+        <div className="h-3 w-10 rounded" style={{ backgroundColor: '#f0ece4' }} />
+        <div className="h-3 w-14 rounded" style={{ backgroundColor: '#f0ece4' }} />
+        <div className="h-3 w-12 rounded" style={{ backgroundColor: '#f0ece4' }} />
+      </div>
+      <div className="h-1.5 w-full rounded-full mt-1" style={{ backgroundColor: '#f0ece4' }} />
+    </div>
+  )
+}
+
+function StatSkeleton() {
+  return (
+    <div
+      className="rounded-xl border px-4 py-4 space-y-2 animate-pulse"
+      style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+    >
+      <div className="h-3 w-3 rounded" style={{ backgroundColor: '#f0ece4' }} />
+      <div className="h-7 w-12 rounded-md" style={{ backgroundColor: '#f0ece4' }} />
+      <div className="h-3 w-24 rounded" style={{ backgroundColor: '#f0ece4' }} />
+      <div className="h-3 w-16 rounded" style={{ backgroundColor: '#f0ece4' }} />
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Quick Actions
+// ---------------------------------------------------------------------------
+
+function QuickActions({ onPortalClick }: { onPortalClick: () => void }) {
+  const actions = [
+    {
+      href: '/dashboard/upload',
+      label: 'New Close',
+      sub: 'Upload a bank statement',
+      icon: <NewCloseIcon />,
+      iconBg: '#e8f0e6',
+      arrow: true,
+    },
+    {
+      href: '/demo',
+      label: 'View Demo',
+      sub: 'See the AI in action',
+      icon: <DemoIcon />,
+      iconBg: '#fdf2e9',
+      arrow: true,
+    },
+  ]
+
+  return (
+    <div>
+      <h2
+        className="text-xs font-semibold tracking-widest uppercase mb-3"
+        style={{ color: '#a09a94' }}
+      >
+        Quick Actions
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {actions.map((a) => (
+          <Link
+            key={a.label}
+            href={a.href}
+            className="group flex items-center gap-3 rounded-xl border px-4 py-3.5 transition-all"
+            style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#b8734a'
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(184,115,74,0.08)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#e8e0d4'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
+          >
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
+              style={{ backgroundColor: a.iconBg }}
+            >
+              {a.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium leading-tight" style={{ color: '#1a1714' }}>{a.label}</p>
+              <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>{a.sub}</p>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: '#c4bdb8', transition: 'transform 0.15s', flexShrink: 0 }}
+              className="group-hover:translate-x-0.5">
+              <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+        ))}
+
+        {/* Portal link — button, not href */}
+        <button
+          onClick={onPortalClick}
+          className="group flex items-center gap-3 rounded-xl border px-4 py-3.5 transition-all text-left w-full"
+          style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#b8734a'
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(184,115,74,0.08)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#e8e0d4'
+            e.currentTarget.style.boxShadow = 'none'
+          }}
+        >
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
+            style={{ backgroundColor: '#e8f0e6' }}
+          >
+            <LinkIcon />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium leading-tight" style={{ color: '#1a1714' }}>Client Portal Link</p>
+            <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>Share a secure upload link</p>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: '#c4bdb8', flexShrink: 0 }}>
+            <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
     </div>
   )
 }
@@ -135,15 +271,11 @@ function JobCard({ job, onDelete }: { job: CategorizationJob; onDelete: (id: str
             <h3 className="font-semibold text-sm truncate" style={{ color: '#1a1714' }}>
               {job.client_name}
             </h3>
-            {/* Status badge with dot */}
             <span
               className="shrink-0 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium"
               style={{ backgroundColor: s.bg, color: s.text }}
             >
-              <span
-                className="w-1.5 h-1.5 rounded-full inline-block"
-                style={{ backgroundColor: s.dot }}
-              />
+              <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: s.dot }} />
               {s.label}
             </span>
           </div>
@@ -213,7 +345,7 @@ function slugify(name: string): string {
     .replace(/^-+|-+$/g, '') || 'my-firm'
 }
 
-function ClientPortalSection() {
+function ClientPortalSection({ sectionRef }: { sectionRef: React.RefObject<HTMLDivElement> }) {
   const [firmName, setFirmName]   = useState('')
   const [copied, setCopied]       = useState(false)
   const [generated, setGenerated] = useState<string | null>(null)
@@ -238,17 +370,17 @@ function ClientPortalSection() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2500)
     } catch {
-      // fallback: select text
       inputRef.current?.select()
     }
   }
 
   return (
     <div
+      ref={sectionRef}
+      id="portal"
       className="rounded-2xl border p-6"
       style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
     >
-      {/* Header row */}
       <div className="flex items-start gap-3 mb-5">
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
@@ -266,7 +398,6 @@ function ClientPortalSection() {
         </div>
       </div>
 
-      {/* Firm name input + generate */}
       <div className="flex gap-2">
         <input
           type="text"
@@ -275,11 +406,7 @@ function ClientPortalSection() {
           onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
           placeholder="Your firm name (e.g. Smith CPA)"
           className="flex-1 rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 transition-colors"
-          style={{
-            borderColor: '#e8e0d4',
-            backgroundColor: '#faf8f4',
-            color: '#1a1714',
-          }}
+          style={{ borderColor: '#e8e0d4', backgroundColor: '#faf8f4', color: '#1a1714' }}
           onFocus={(e) => { e.currentTarget.style.borderColor = '#2d5a27' }}
           onBlur={(e)  => { e.currentTarget.style.borderColor = '#e8e0d4' }}
         />
@@ -294,7 +421,6 @@ function ClientPortalSection() {
         </button>
       </div>
 
-      {/* Generated link */}
       {generated && (
         <div className="mt-3">
           <div
@@ -328,7 +454,6 @@ function ClientPortalSection() {
               Anyone with this link can submit documents. Share it directly with clients.
             </p>
           </div>
-          {/* Preview link */}
           <a
             href={generated}
             target="_blank"
@@ -353,10 +478,13 @@ function ClientPortalSection() {
 export default function DashboardPage() {
   const [jobs, setJobs] = useState<CategorizationJob[]>([])
   const [mounted, setMounted] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const portalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setJobs(getJobs())
     setMounted(true)
+    if (needsOnboarding()) setShowOnboarding(true)
   }, [])
 
   function handleDelete(id: string) {
@@ -364,23 +492,33 @@ export default function DashboardPage() {
     setJobs((prev) => prev.filter((j) => j.id !== id))
   }
 
-  const recent = jobs.slice(0, 20)
+  function handleOnboardingClose() {
+    setShowOnboarding(false)
+  }
 
-  // Greeting based on time of day
+  function scrollToPortal() {
+    portalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setTimeout(() => {
+      portalRef.current?.querySelector('input')?.focus()
+    }, 400)
+  }
+
+  const recent = jobs.slice(0, 20)
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
+      {showOnboarding && <OnboardingModal onClose={handleOnboardingClose} />}
+      <DashboardNav onHelpClick={() => setShowOnboarding(true)} />
 
-      <main className="max-w-4xl mx-auto px-5 py-10 space-y-8">
+      <main className="flex-1 max-w-4xl mx-auto w-full px-5 py-10 space-y-8 page-enter">
 
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-medium" style={{ color: '#b8734a' }}>
-              {mounted ? greeting : 'Welcome back'}
+              {mounted ? greeting : <span className="inline-block w-28 h-4 rounded animate-pulse" style={{ backgroundColor: '#f0ece4' }} />}
             </p>
             <h1
               className="text-3xl mt-0.5"
@@ -406,11 +544,20 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {/* Stats — only shown once there's data */}
-        {mounted && jobs.length > 0 && <SummaryStats jobs={jobs} />}
+        {/* Stats */}
+        {!mounted ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[0, 1, 2, 3].map((i) => <StatSkeleton key={i} />)}
+          </div>
+        ) : jobs.length > 0 ? (
+          <SummaryStats jobs={jobs} />
+        ) : null}
+
+        {/* Quick Actions */}
+        <QuickActions onPortalClick={scrollToPortal} />
 
         {/* Client Portal */}
-        {mounted && <ClientPortalSection />}
+        {mounted && <ClientPortalSection sectionRef={portalRef} />}
 
         {/* Recent closes */}
         <div>
@@ -421,14 +568,19 @@ export default function DashboardPage() {
             >
               Recent Closes
             </h2>
-            {recent.length > 0 && (
+            {mounted && recent.length > 0 && (
               <span className="text-xs" style={{ color: '#a09a94' }}>
                 {recent.length} {recent.length === 1 ? 'client' : 'clients'}
               </span>
             )}
           </div>
 
-          {!mounted || recent.length === 0 ? (
+          {!mounted ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          ) : recent.length === 0 ? (
             <div
               className="rounded-2xl border-2 border-dashed px-8 py-16 text-center"
               style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
@@ -436,25 +588,33 @@ export default function DashboardPage() {
               <LedgerEmptyIcon />
               <p
                 className="text-lg mt-4"
-                style={{
-                  fontFamily: 'var(--font-dm-serif), Georgia, serif',
-                  color: '#1a1714',
-                }}
+                style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#1a1714' }}
               >
                 No closes yet
               </p>
               <p className="text-sm mt-1.5 mb-6" style={{ color: '#6b6560' }}>
                 Upload a client&apos;s bank statement to start categorizing.
               </p>
-              <Link
-                href="/dashboard/upload"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white"
-                style={{ backgroundColor: '#2d5a27' }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
-              >
-                Start your first close
-              </Link>
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                <Link
+                  href="/dashboard/upload"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white"
+                  style={{ backgroundColor: '#2d5a27' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+                >
+                  Start your first close
+                </Link>
+                <Link
+                  href="/demo"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium border transition-colors"
+                  style={{ borderColor: '#b8734a', color: '#b8734a', backgroundColor: '#ffffff' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
+                >
+                  See Demo
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -465,6 +625,7 @@ export default function DashboardPage() {
           )}
         </div>
       </main>
+      <AppFooter />
     </div>
   )
 }
@@ -523,7 +684,7 @@ function ConfIcon() {
   )
 }
 
-function ReviewIcon() {
+function ClockIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
       <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.3" />
@@ -535,14 +696,28 @@ function ReviewIcon() {
 function LinkIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path
-        d="M6.5 9.5a3.536 3.536 0 005 0l2-2a3.536 3.536 0 00-5-5L7.5 3.5"
-        stroke="#2d5a27" strokeWidth="1.4" strokeLinecap="round"
-      />
-      <path
-        d="M9.5 6.5a3.536 3.536 0 00-5 0l-2 2a3.536 3.536 0 005 5l1-1"
-        stroke="#2d5a27" strokeWidth="1.4" strokeLinecap="round"
-      />
+      <path d="M6.5 9.5a3.536 3.536 0 005 0l2-2a3.536 3.536 0 00-5-5L7.5 3.5"
+        stroke="#2d5a27" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M9.5 6.5a3.536 3.536 0 00-5 0l-2 2a3.536 3.536 0 005 5l1-1"
+        stroke="#2d5a27" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function NewCloseIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <rect x="2" y="2" width="12" height="12" rx="2.5" stroke="#2d5a27" strokeWidth="1.3" />
+      <path d="M8 5v6M5 8h6" stroke="#2d5a27" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function DemoIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M6 4l6 4-6 4V4z" stroke="#b8734a" strokeWidth="1.3" strokeLinejoin="round" fill="none" />
+      <circle cx="8" cy="8" r="6.5" stroke="#b8734a" strokeWidth="1.3" />
     </svg>
   )
 }

@@ -2,78 +2,70 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import DashboardNav from '@/components/DashboardNav'
+import AppFooter from '@/components/AppFooter'
 
 // ---------------------------------------------------------------------------
-// Plan definitions
+// Plans — kept in sync with homepage PLANS
 // ---------------------------------------------------------------------------
 
 const PLANS = [
   {
-    name:        'Starter',
-    price:       99,
-    period:      'mo',
-    description: 'For solo bookkeepers handling a handful of clients.',
-    priceEnvKey: 'NEXT_PUBLIC_STRIPE_PRICE_STARTER',
-    color:       '#6b6560',
-    popular:     false,
+    name:    'Starter',
+    price:   99,
+    clients: '20 clients',
+    color:   '#6b6560',
+    popular: false,
+    priceEnvKey: 'NEXT_PUBLIC_STRIPE_PRICE_STARTER' as const,
     features: [
-      'Up to 5 clients',
-      '500 transactions / month',
+      'Up to 20 clients',
+      '1,000 transactions / mo',
       'AI categorization',
       'QuickBooks CSV export',
+      'Client portal',
       'Email support',
     ],
-    missing: [
-      'Priority support',
-      'Team members',
-      'API access',
-    ],
   },
   {
-    name:        'Growth',
-    price:       249,
-    period:      'mo',
-    description: 'For growing practices with multiple clients and staff.',
-    priceEnvKey: 'NEXT_PUBLIC_STRIPE_PRICE_GROWTH',
-    color:       '#2d5a27',
-    popular:     true,
+    name:    'Growth',
+    price:   249,
+    clients: '75 clients',
+    color:   '#2d5a27',
+    popular: true,
+    priceEnvKey: 'NEXT_PUBLIC_STRIPE_PRICE_GROWTH' as const,
     features: [
-      'Up to 25 clients',
-      '5,000 transactions / month',
+      'Up to 75 clients',
+      '10,000 transactions / mo',
       'AI categorization',
-      'QuickBooks CSV export',
-      'Priority email & chat support',
-      '3 team members',
+      'QuickBooks & Xero export',
+      'Client portal',
+      'Priority support',
+      '5 team members',
       'Confidence review dashboard',
     ],
-    missing: [
-      'API access',
-    ],
   },
   {
-    name:        'Scale',
-    price:       499,
-    period:      'mo',
-    description: 'For established firms running high-volume closes.',
-    priceEnvKey: null, // no env key — contact sales
-    color:       '#b8734a',
-    popular:     false,
+    name:    'Scale',
+    price:   499,
+    clients: 'Unlimited',
+    color:   '#b8734a',
+    popular: false,
+    priceEnvKey: null,
     features: [
       'Unlimited clients',
       'Unlimited transactions',
       'AI categorization',
-      'QuickBooks CSV export',
+      'All export formats',
+      'Client portal',
       'Dedicated account manager',
       'Unlimited team members',
-      'API access',
-      'Custom integrations',
+      'API access & custom integrations',
     ],
-    missing: [],
   },
 ] as const
 
 // ---------------------------------------------------------------------------
-// Checkout helper
+// Checkout
 // ---------------------------------------------------------------------------
 
 async function startCheckout(priceId: string, email: string): Promise<string> {
@@ -88,27 +80,26 @@ async function startCheckout(priceId: string, email: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
-// PricingCard
+// Pricing card
 // ---------------------------------------------------------------------------
 
 function PricingCard({ plan }: { plan: typeof PLANS[number] }) {
-  const [email, setEmail]     = useState('')
+  const [email,   setEmail]   = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState<string | null>(null)
+  const [error,   setError]   = useState<string | null>(null)
 
   const isContactSales = plan.priceEnvKey === null
 
-  // Determine at render time whether Stripe is configured for this plan
-  const resolvedPriceId = plan.priceEnvKey === 'NEXT_PUBLIC_STRIPE_PRICE_STARTER'
-    ? process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER
-    : plan.priceEnvKey === 'NEXT_PUBLIC_STRIPE_PRICE_GROWTH'
-    ? process.env.NEXT_PUBLIC_STRIPE_PRICE_GROWTH
-    : undefined
+  const resolvedPriceId =
+    plan.priceEnvKey === 'NEXT_PUBLIC_STRIPE_PRICE_STARTER'
+      ? process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER
+      : plan.priceEnvKey === 'NEXT_PUBLIC_STRIPE_PRICE_GROWTH'
+      ? process.env.NEXT_PUBLIC_STRIPE_PRICE_GROWTH
+      : undefined
   const stripeConfigured = !isContactSales && !!resolvedPriceId && !resolvedPriceId.startsWith('your_')
 
   async function handleClick() {
     if (isContactSales || !stripeConfigured) return
-
     setLoading(true)
     setError(null)
     try {
@@ -122,24 +113,31 @@ function PricingCard({ plan }: { plan: typeof PLANS[number] }) {
 
   return (
     <div
-      className="relative flex flex-col rounded-2xl border p-8 transition-shadow"
+      className="relative flex flex-col rounded-2xl border p-8 transition-all duration-200"
       style={{
         borderColor:     plan.popular ? plan.color : '#e8e0d4',
-        backgroundColor: plan.popular ? '#faf8f4' : '#ffffff',
-        boxShadow:       plan.popular ? '0 4px 24px rgba(45,90,39,0.10)' : 'none',
+        backgroundColor: '#ffffff',
+        boxShadow:       plan.popular ? '0 8px 32px rgba(45,90,39,0.12)' : 'none',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-3px)'
+        if (!plan.popular) e.currentTarget.style.boxShadow = '0 8px 24px rgba(26,23,20,0.08)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'none'
+        if (!plan.popular) e.currentTarget.style.boxShadow = 'none'
       }}
     >
-      {/* Popular badge */}
       {plan.popular && (
         <div
-          className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold text-white"
+          className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold text-white whitespace-nowrap"
           style={{ backgroundColor: plan.color }}
         >
           Most Popular
         </div>
       )}
 
-      {/* Plan header */}
+      {/* Header */}
       <div className="mb-6">
         <p className="text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: plan.color }}>
           {plan.name}
@@ -148,35 +146,32 @@ function PricingCard({ plan }: { plan: typeof PLANS[number] }) {
           <span
             style={{
               fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
-              fontSize: '2.8rem',
+              fontSize: '2.6rem',
               lineHeight: 1,
               color: '#1a1714',
             }}
           >
             ${plan.price}
           </span>
-          <span className="text-sm mb-1.5" style={{ color: '#a09a94' }}>/ {plan.period}</span>
+          <span className="text-sm mb-1.5" style={{ color: '#a09a94' }}>/mo</span>
         </div>
-        <p className="text-sm mt-2" style={{ color: '#6b6560' }}>{plan.description}</p>
+        <p className="text-sm mt-1.5" style={{ color: '#a09a94' }}>{plan.clients}</p>
       </div>
 
       {/* Features */}
       <ul className="space-y-2.5 mb-8 flex-1">
-        {plan.features.map((f) => (
-          <li key={f} className="flex items-start gap-2.5 text-sm" style={{ color: '#1a1714' }}>
-            <CheckIcon color={plan.color} />
-            {f}
-          </li>
-        ))}
-        {plan.missing.map((f) => (
-          <li key={f} className="flex items-start gap-2.5 text-sm" style={{ color: '#c4bdb8' }}>
-            <DashIcon />
-            {f}
+        {plan.features.map((feat) => (
+          <li key={feat} className="flex items-start gap-2.5 text-sm" style={{ color: '#1a1714' }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0 mt-0.5">
+              <circle cx="8" cy="8" r="7" fill={plan.color} opacity="0.12" />
+              <path d="M5 8l2.5 2.5L11 5.5" stroke={plan.color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {feat}
           </li>
         ))}
       </ul>
 
-      {/* Email input — only for paid plans */}
+      {/* Email (paid plans) */}
       {!isContactSales && (
         <input
           type="email"
@@ -184,11 +179,7 @@ function PricingCard({ plan }: { plan: typeof PLANS[number] }) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com (optional)"
           className="w-full border rounded-xl px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2"
-          style={{
-            borderColor: '#e8e0d4',
-            backgroundColor: '#faf8f4',
-            color: '#1a1714',
-          }}
+          style={{ borderColor: '#e8e0d4', backgroundColor: '#faf8f4', color: '#1a1714' }}
           onFocus={(e) => { e.currentTarget.style.borderColor = plan.color }}
           onBlur={(e)  => { e.currentTarget.style.borderColor = '#e8e0d4' }}
         />
@@ -226,15 +217,17 @@ function PricingCard({ plan }: { plan: typeof PLANS[number] }) {
         </>
       ) : (
         <>
-          <button
-            disabled
-            className="w-full py-3 rounded-xl text-sm font-semibold transition-all opacity-50 cursor-not-allowed"
-            style={{ backgroundColor: plan.color, color: '#ffffff' }}
+          <Link
+            href="/dashboard/upload"
+            className="block text-center py-3 rounded-xl text-sm font-semibold text-white transition-opacity"
+            style={{ backgroundColor: plan.color }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88' }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
           >
-            Coming soon
-          </button>
+            Start Free Trial
+          </Link>
           <p className="text-xs text-center mt-2" style={{ color: '#a09a94' }}>
-            Billing not yet configured
+            14-day free trial · No credit card required
           </p>
         </>
       )}
@@ -248,39 +241,32 @@ function PricingCard({ plan }: { plan: typeof PLANS[number] }) {
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#faf8f4' }}>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
+      <DashboardNav />
 
-      {/* Minimal nav */}
-      <nav className="border-b" style={{ backgroundColor: '#ffffff', borderColor: '#e8e0d4' }}>
-        <div className="max-w-6xl mx-auto px-5 h-14 flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2.5 select-none">
-            <LedgerIcon />
-            <span style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', fontSize: 18, lineHeight: 1 }}>
-              <span style={{ color: '#1a1714' }}>Close</span>
-              <span style={{ color: '#b8734a' }}>Books</span>
-            </span>
-          </Link>
-          <Link
-            href="/dashboard"
-            className="text-sm transition-colors"
-            style={{ color: '#6b6560' }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = '#1a1714' }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = '#6b6560' }}
-          >
-            ← Back to app
-          </Link>
-        </div>
-      </nav>
+      <main className="flex-1 max-w-5xl mx-auto w-full px-5 py-16 page-enter">
 
-      <main className="max-w-5xl mx-auto px-5 py-16">
+        {/* Breadcrumb */}
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-xs mb-10 transition-colors"
+          style={{ color: '#b8734a' }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#8a4f2e' }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = '#b8734a' }}
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M8 2L4 6l4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Back to Home
+        </Link>
 
         {/* Header */}
         <div className="text-center mb-14">
-          <p className="text-sm font-semibold tracking-widest uppercase mb-3" style={{ color: '#b8734a' }}>
+          <p className="text-xs font-semibold tracking-[0.18em] uppercase mb-3" style={{ color: '#b8734a' }}>
             Pricing
           </p>
           <h1
-            className="text-4xl sm:text-5xl"
+            className="text-4xl sm:text-5xl mb-4"
             style={{
               fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
               color: '#1a1714',
@@ -288,11 +274,22 @@ export default function PricingPage() {
               lineHeight: 1.1,
             }}
           >
-            Simple, honest pricing.
+            Simple, honest pricing
           </h1>
-          <p className="text-lg mt-4 mx-auto max-w-xl" style={{ color: '#6b6560' }}>
-            Built for CPAs and bookkeepers. Start free for 14 days, cancel any time.
+          <p className="text-lg mt-2 mx-auto max-w-xl" style={{ color: '#6b6560' }}>
+            14-day free trial on every plan. Cancel any time.
           </p>
+
+          {/* Early access callout */}
+          <div className="mt-6">
+            <span
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
+              style={{ backgroundColor: '#fdf2e9', color: '#b8734a', border: '1px solid #f0c8a8' }}
+            >
+              <span>🎉</span>
+              Early access firms get <strong>50% off for life</strong> — limited to first 50 firms
+            </span>
+          </div>
         </div>
 
         {/* Cards */}
@@ -302,51 +299,47 @@ export default function PricingPage() {
           ))}
         </div>
 
-        {/* FAQ strip */}
-        <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
+        {/* FAQ */}
+        <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm border-t pt-12" style={{ borderColor: '#e8e0d4' }}>
           {[
-            { q: 'What counts as a transaction?', a: 'Every row in your uploaded bank statement CSV counts as one transaction.' },
-            { q: 'Can I switch plans?', a: 'Yes — upgrade or downgrade at any time. Changes take effect at the next billing cycle.' },
-            { q: 'How does the free trial work?', a: '14 days, full access, no credit card required. You\'ll only be charged if you choose to continue.' },
+            {
+              q: 'What counts as a transaction?',
+              a: 'Every row in your uploaded bank statement CSV counts as one transaction.',
+            },
+            {
+              q: 'Can I switch plans?',
+              a: 'Yes — upgrade or downgrade at any time. Changes take effect at the next billing cycle.',
+            },
+            {
+              q: 'How does the free trial work?',
+              a: '14 days, full access, no credit card required. You\'ll only be charged if you choose to continue.',
+            },
           ].map(({ q, a }) => (
             <div key={q}>
-              <p className="font-medium mb-1" style={{ color: '#1a1714' }}>{q}</p>
-              <p style={{ color: '#6b6560' }}>{a}</p>
+              <p className="font-medium mb-1.5" style={{ color: '#1a1714' }}>{q}</p>
+              <p style={{ color: '#6b6560', lineHeight: 1.6 }}>{a}</p>
             </div>
           ))}
         </div>
+
+        {/* Bottom CTA */}
+        <div className="mt-14 text-center">
+          <p className="text-sm mb-4" style={{ color: '#6b6560' }}>
+            Not sure which plan is right for you?
+          </p>
+          <Link
+            href="/demo"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium border transition-colors"
+            style={{ borderColor: '#b8734a', color: '#b8734a', backgroundColor: 'transparent' }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9' }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+          >
+            Try the live demo first — no signup needed
+          </Link>
+        </div>
       </main>
+
+      <AppFooter />
     </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Icons
-// ---------------------------------------------------------------------------
-
-function CheckIcon({ color }: { color: string }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0 mt-0.5">
-      <circle cx="8" cy="8" r="7" fill={color} opacity="0.12" />
-      <path d="M5 8l2.5 2.5L11 5.5" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function DashIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0 mt-0.5">
-      <path d="M5 8h6" stroke="#c4bdb8" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function LedgerIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <rect x="2" y="1" width="13" height="17" rx="2" stroke="#b8734a" strokeWidth="1.5" fill="none" />
-      <path d="M6 6h5M6 10h5M6 14h3" stroke="#b8734a" strokeWidth="1.3" strokeLinecap="round" />
-      <rect x="13" y="4" width="5" height="13" rx="1.5" fill="#b8734a" opacity="0.15" />
-    </svg>
   )
 }

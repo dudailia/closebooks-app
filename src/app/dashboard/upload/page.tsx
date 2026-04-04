@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardNav from '@/components/DashboardNav'
+import AppFooter from '@/components/AppFooter'
 import FileUpload from '@/components/FileUpload'
 import ChartOfAccountsUpload from '@/components/ChartOfAccountsUpload'
 import { saveJob } from '@/lib/storage'
+import { getRecentCorrections } from '@/lib/corrections'
 import type { Transaction, ChartOfAccounts, CategorizationJob } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -88,31 +90,59 @@ function CategorizeStep({
   onBack: () => void
 }) {
   const router = useRouter()
-  const [state, setState] = useState<CategorizeState>('idle')
-  const [error, setError] = useState<string | null>(null)
-  const [progress, setProgress] = useState('')
+  const [state, setState]             = useState<CategorizeState>('idle')
+  const [error, setError]             = useState<string | null>(null)
+  const [batchCurrent, setBatchCurrent] = useState(0)
+  const [batchTotal, setBatchTotal]   = useState(0)
+  const [phase, setPhase]             = useState<'sending' | 'categorizing' | 'saving'>('sending')
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const numBatches = Math.ceil(transactions.length / 20)
+
+  // Advance simulated batch counter while loading
+  useEffect(() => {
+    if (state !== 'loading') {
+      if (timerRef.current) clearInterval(timerRef.current)
+      return
+    }
+    // Advance one batch tick every ~2.5s so it roughly tracks real time
+    const msPerBatch = Math.max(1800, 2500)
+    let cur = 0
+    timerRef.current = setInterval(() => {
+      cur++
+      if (cur < numBatches) {
+        setBatchCurrent(cur)
+        setPhase('categorizing')
+      } else {
+        if (timerRef.current) clearInterval(timerRef.current)
+      }
+    }, msPerBatch)
+    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+  }, [state, numBatches])
 
   async function handleCategorize() {
     setState('loading')
     setError(null)
+    setBatchCurrent(0)
+    setBatchTotal(numBatches)
+    setPhase('sending')
 
     try {
-      setProgress('Sending to AI…')
+      const corrections = getRecentCorrections(10)
       const res = await fetch('/api/categorize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactions, chartOfAccounts, clientName }),
+        body: JSON.stringify({ transactions, chartOfAccounts, clientName, corrections }),
       })
 
-      setProgress('Processing results…')
-      const data = await res.json()
+      if (timerRef.current) clearInterval(timerRef.current)
+      setPhase('saving')
+      setBatchCurrent(numBatches)
 
-      if (!res.ok) {
-        throw new Error(data.error ?? `Server error ${res.status}`)
-      }
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? `Server error ${res.status}`)
 
       const categorized: Transaction[] = data.transactions
-
       const job: CategorizationJob = {
         id: crypto.randomUUID(),
         client_name: clientName,
@@ -126,14 +156,23 @@ function CategorizeStep({
         chart_of_accounts: chartOfAccounts,
       }
 
-      setProgress('Saving…')
       saveJob(job)
       router.push(`/dashboard/review/${job.id}`)
     } catch (err) {
+      if (timerRef.current) clearInterval(timerRef.current)
       setError(err instanceof Error ? err.message : 'Categorization failed.')
       setState('error')
     }
   }
+
+  const progressPct = batchTotal > 0
+    ? Math.round(((phase === 'saving' ? batchTotal : batchCurrent) / batchTotal) * 100)
+    : 0
+
+  const phaseLabel =
+    phase === 'sending'      ? 'Sending transactions to AI…' :
+    phase === 'categorizing' ? `Categorizing batch ${batchCurrent} of ${batchTotal}…` :
+                               'Saving results…'
 
   return (
     <StepCard title="Categorize with AI">
@@ -155,21 +194,31 @@ function CategorizeStep({
             <span style={{ color: '#6b6560' }}>Chart of Accounts</span>
             <span className="font-mono font-medium" style={{ color: '#1a1714' }}>{chartOfAccounts.length} accounts</span>
           </div>
+          <div className="flex justify-between">
+            <span style={{ color: '#6b6560' }}>AI batches</span>
+            <span className="font-mono font-medium" style={{ color: '#1a1714' }}>{numBatches}</span>
+          </div>
         </div>
 
-        {/* Cost estimate */}
-        <p className="text-xs" style={{ color: '#a09a94' }}>
-          Estimated cost: ~${(Math.ceil(transactions.length / 20) * 0.003).toFixed(3)} · {Math.ceil(transactions.length / 20)} API batch{Math.ceil(transactions.length / 20) !== 1 ? 'es' : ''}
-        </p>
-
-        {/* Loading state */}
+        {/* Progress */}
         {state === 'loading' && (
           <div
-            className="flex items-center gap-3 px-4 py-3 rounded-xl border text-sm"
-            style={{ borderColor: '#e0dbd4', backgroundColor: '#f5f0ea', color: '#2d5a27' }}
+            className="rounded-xl border overflow-hidden"
+            style={{ borderColor: '#e0dbd4', backgroundColor: '#f5f0ea' }}
           >
-            <Spinner />
-            <span>{progress}</span>
+            <div className="flex items-center gap-3 px-4 py-3 text-sm" style={{ color: '#2d5a27' }}>
+              <Spinner />
+              <span className="flex-1">{phaseLabel}</span>
+              <span className="font-mono text-xs font-semibold" style={{ color: '#2d5a27' }}>
+                {progressPct}%
+              </span>
+            </div>
+            <div className="h-1.5" style={{ backgroundColor: '#e0dbd4' }}>
+              <div
+                className="h-full transition-all duration-700 ease-out"
+                style={{ width: `${progressPct}%`, backgroundColor: '#2d5a27' }}
+              />
+            </div>
           </div>
         )}
 
@@ -234,10 +283,10 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f5f0ea' }}>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f5f0ea' }}>
       <DashboardNav />
 
-      <main className="max-w-2xl mx-auto px-5 py-10">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-5 py-10">
 
         {/* Header */}
         <div className="mb-8">
@@ -343,6 +392,7 @@ export default function UploadPage() {
           />
         )}
       </main>
+      <AppFooter />
     </div>
   )
 }
