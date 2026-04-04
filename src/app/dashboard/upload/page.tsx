@@ -296,6 +296,15 @@ export default function UploadPage() {
   const [chartOfAccounts, setChartOfAccounts] = useState<ChartOfAccounts[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
 
+  // Pre-fill client name if navigated from a client detail page
+  useEffect(() => {
+    const prefill = sessionStorage.getItem('closebooks_prefill_client')
+    if (prefill) {
+      setClientName(prefill)
+      sessionStorage.removeItem('closebooks_prefill_client')
+    }
+  }, [])
+
   function handleClientContinue() {
     if (!clientName.trim()) {
       setClientNameError('Please enter a client name.')

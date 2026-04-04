@@ -158,11 +158,19 @@ function QuickActions({ onPortalClick }: { onPortalClick: () => void }) {
       arrow: true,
     },
     {
+      href: '/dashboard/clients',
+      label: 'Clients',
+      sub: 'Manage your client list',
+      icon: <ClientsNavIcon />,
+      iconBg: '#fdf2e9',
+      arrow: true,
+    },
+    {
       href: '/demo',
       label: 'View Demo',
       sub: 'See the AI in action',
       icon: <DemoIcon />,
-      iconBg: '#fdf2e9',
+      iconBg: '#f5f0ea',
       arrow: true,
     },
   ]
@@ -713,11 +721,22 @@ function NewCloseIcon() {
   )
 }
 
+function ClientsNavIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="6" cy="5" r="2.5" stroke="#b8734a" strokeWidth="1.3" />
+      <path d="M1 13c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="#b8734a" strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="12" cy="5" r="1.8" stroke="#b8734a" strokeWidth="1.2" />
+      <path d="M14 13c0-1.657-1.343-3-3-3" stroke="#b8734a" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 function DemoIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M6 4l6 4-6 4V4z" stroke="#b8734a" strokeWidth="1.3" strokeLinejoin="round" fill="none" />
-      <circle cx="8" cy="8" r="6.5" stroke="#b8734a" strokeWidth="1.3" />
+      <path d="M6 4l6 4-6 4V4z" stroke="#6b6560" strokeWidth="1.3" strokeLinejoin="round" fill="none" />
+      <circle cx="8" cy="8" r="6.5" stroke="#6b6560" strokeWidth="1.3" />
     </svg>
   )
 }

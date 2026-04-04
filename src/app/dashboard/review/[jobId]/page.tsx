@@ -265,7 +265,8 @@ export default function ReviewPage() {
 
   const [job, setJob]           = useState<CategorizationJob | null>(null)
   const [notFound, setNotFound] = useState(false)
-  const [exporting, setExporting] = useState(false)
+  const [exporting, setExporting]   = useState(false)
+  const [reporting, setReporting]   = useState(false)
   const [completing, setCompleting] = useState(false)
   const [toasts, setToasts]     = useState<ToastState[]>([])
   const toastId = useRef(0)
@@ -346,6 +347,29 @@ export default function ReviewPage() {
       addToast(err instanceof Error ? err.message : 'Export failed.', 'error')
     } finally {
       setExporting(false)
+    }
+  }
+
+  async function handleReport() {
+    if (!job) return
+    setReporting(true)
+    try {
+      const res = await fetch('/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job }),
+      })
+      if (!res.ok) throw new Error('Report generation failed.')
+      const html = await res.text()
+      const blob = new Blob([html], { type: 'text/html' })
+      const url  = URL.createObjectURL(blob)
+      window.open(url, '_blank')
+      // Revoke after a short delay so the new tab can load the blob URL
+      setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Could not generate report.', 'error')
+    } finally {
+      setReporting(false)
     }
   }
 
@@ -449,6 +473,19 @@ export default function ReviewPage() {
               approvedCount={approvedCount}
             />
 
+            <button
+              onClick={handleReport}
+              disabled={reporting || exporting}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50"
+              style={{ borderColor: '#e8e0d4', color: '#1a1714', backgroundColor: '#ffffff' }}
+              onMouseEnter={(e) => { if (!reporting) e.currentTarget.style.borderColor = '#b8734a' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e8e0d4' }}
+              title="Generate a printable PDF report"
+            >
+              {reporting ? <Spinner /> : <ReportIcon />}
+              {reporting ? 'Generating…' : 'Report'}
+            </button>
+
             {job.status !== 'completed' && (
               <button
                 onClick={handleComplete}
@@ -524,6 +561,16 @@ function Spinner() {
     <svg className="animate-spin" width="14" height="14" viewBox="0 0 14 14" fill="none">
       <circle cx="7" cy="7" r="5.5" stroke="#e0dbd4" strokeWidth="2" />
       <path d="M7 1.5A5.5 5.5 0 0112.5 7" stroke="#b8734a" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function ReportIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <rect x="2" y="1" width="8" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none" />
+      <path d="M4 4.5h4M4 7h4M4 9.5h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M9 8.5l1.5 1.5L13 7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }

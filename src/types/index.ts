@@ -20,6 +20,27 @@ export type ChartOfAccounts = {
   type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense'
 }
 
+export type ClientIndustry =
+  | 'Restaurant'
+  | 'Retail'
+  | 'Professional Services'
+  | 'Construction'
+  | 'Healthcare'
+  | 'E-commerce'
+  | 'Other'
+
+export type AccountingSoftware = 'QuickBooks' | 'Xero' | 'Other'
+
+export type Client = {
+  id: string
+  business_name: string
+  industry: ClientIndustry
+  contact_email: string
+  accounting_software: AccountingSoftware
+  created_at: string
+  notes?: string
+}
+
 export type CategorizationJob = {
   id: string
   client_name: string

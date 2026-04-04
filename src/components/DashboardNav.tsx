@@ -130,6 +130,12 @@ export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void
           <NavLink href="/dashboard" active={path === '/dashboard'}>
             Dashboard
           </NavLink>
+          <NavLink href="/dashboard/clients" active={path.startsWith('/dashboard/clients')}>
+            Clients
+          </NavLink>
+          <NavLink href="/dashboard/analytics" active={path.startsWith('/dashboard/analytics')}>
+            Analytics
+          </NavLink>
           <NavLink href="/demo" active={path === '/demo'}>
             Demo
           </NavLink>
