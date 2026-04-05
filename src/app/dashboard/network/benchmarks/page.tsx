@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import BenchmarkGauge from '@/components/BenchmarkGauge'
 import {
   INDUSTRY_BENCHMARKS,
@@ -121,7 +119,6 @@ export default function BenchmarksPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 16px 64px' }}>
         {/* Header */}
@@ -330,7 +327,6 @@ export default function BenchmarksPage() {
         )}
       </main>
 
-      <AppFooter />
     </div>
   )
 }

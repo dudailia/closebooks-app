@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import { getClients, saveClient, deleteClient, getJobsForClient } from '@/lib/storage'
 import { logActivity } from '@/lib/activity'
 import type { Client, ClientIndustry, AccountingSoftware } from '@/types'
@@ -372,7 +370,6 @@ export default function ClientsPage() {
         />
       )}
 
-      <DashboardNav />
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-5 py-10 space-y-6 page-enter">
 
@@ -485,7 +482,6 @@ export default function ClientsPage() {
         )}
       </main>
 
-      <AppFooter />
     </div>
   )
 }

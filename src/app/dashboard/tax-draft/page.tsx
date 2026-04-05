@@ -2,8 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -98,7 +96,6 @@ export default function TaxDraftPage() {
 
   return (
     <div style={{ backgroundColor: '#faf8f4', minHeight: '100vh' }}>
-      <DashboardNav />
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
 
         {/* Header */}
@@ -234,7 +231,6 @@ export default function TaxDraftPage() {
           })}
         </div>
       </div>
-      <AppFooter />
     </div>
   )
 }

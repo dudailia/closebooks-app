@@ -3,8 +3,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import AdvisoryMemoViewer from '@/components/AdvisoryMemoViewer'
 import AdvisoryGenerateModal from '@/components/AdvisoryGenerateModal'
 import {
@@ -126,7 +124,6 @@ export default function MemoDetailPage() {
   if (memo === undefined) {
     return (
       <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-        <DashboardNav />
         <main className="flex-1 flex items-center justify-center">
           <div
             className="w-8 h-8 rounded-full border-4 border-t-transparent animate-spin"
@@ -141,7 +138,6 @@ export default function MemoDetailPage() {
   if (memo === null) {
     return (
       <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-        <DashboardNav />
         <main className="flex-1 max-w-2xl mx-auto w-full px-5 py-16 text-center">
           <div className="text-5xl mb-6">📭</div>
           <h1
@@ -164,7 +160,6 @@ export default function MemoDetailPage() {
             ← Back to Advisory Memos
           </Link>
         </main>
-        <AppFooter />
       </div>
     )
   }
@@ -173,7 +168,6 @@ export default function MemoDetailPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-5 py-8">
 
@@ -390,7 +384,6 @@ export default function MemoDetailPage() {
         </div>
       </main>
 
-      <AppFooter />
 
       {/* Regenerate modal */}
       {showRegenModal && job && (

@@ -1,8 +1,6 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import CloseReport from '@/components/autopilot/CloseReport'
 import type { CloseResult, CloseException } from '@/components/autopilot/CloseTerminal'
 
@@ -146,7 +144,6 @@ export default function CloseReportPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-5 py-8">
         {/* Back nav */}
@@ -192,7 +189,6 @@ export default function CloseReportPage() {
         <CloseReport result={result} clientName={clientName} period={period} />
       </main>
 
-      <AppFooter />
     </div>
   )
 }

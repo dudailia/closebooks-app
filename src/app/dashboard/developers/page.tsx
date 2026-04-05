@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -326,7 +324,6 @@ export default function DevelopersPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-5 py-10 space-y-8 page-enter">
 
@@ -706,7 +703,6 @@ export default function DevelopersPage() {
         </div>
 
       </main>
-      <AppFooter />
     </div>
   )
 }

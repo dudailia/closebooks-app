@@ -3,8 +3,6 @@
 import { useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -308,7 +306,6 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ docum
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#faf8f4', display: 'flex', flexDirection: 'column' }}>
-      <DashboardNav />
 
       <main style={{ flex: 1, maxWidth: 1060, margin: '0 auto', width: '100%', padding: '28px 20px 60px' }}>
 
@@ -532,7 +529,6 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ docum
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
 
-      <AppFooter />
     </div>
   )
 }

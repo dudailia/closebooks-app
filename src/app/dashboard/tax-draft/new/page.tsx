@@ -3,8 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 
 const FORM_TYPES = [
   { id: '1120S', label: 'Form 1120-S', description: 'S-Corporation tax return', icon: 'S' },
@@ -46,7 +44,6 @@ export default function NewTaxReturnPage() {
 
   return (
     <div style={{ backgroundColor: '#faf8f4', minHeight: '100vh' }}>
-      <DashboardNav />
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '40px 24px' }}>
 
         {/* Back */}
@@ -253,7 +250,6 @@ export default function NewTaxReturnPage() {
         </div>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-      <AppFooter />
     </div>
   )
 }

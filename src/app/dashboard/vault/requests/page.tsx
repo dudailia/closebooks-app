@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import DocumentRequestModal from '@/components/DocumentRequestModal'
 import DocumentUploader from '@/components/DocumentUploader'
 import {
@@ -318,7 +316,6 @@ export default function RequestsPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#faf8f4', display: 'flex', flexDirection: 'column' }}>
-      <DashboardNav />
 
       <main style={{ flex: 1, maxWidth: 860, margin: '0 auto', width: '100%', padding: '32px 20px' }}>
         {/* Header */}
@@ -461,7 +458,6 @@ export default function RequestsPage() {
         )}
       </main>
 
-      <AppFooter />
 
       {/* New request modal */}
       {showModal && (

@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -210,7 +208,6 @@ export default function AutopilotPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-5 py-10 space-y-8">
 
@@ -515,7 +512,6 @@ export default function AutopilotPage() {
 
       </main>
 
-      <AppFooter />
 
       {/* Pulse animation */}
       <style>{`

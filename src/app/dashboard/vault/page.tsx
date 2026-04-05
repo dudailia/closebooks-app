@@ -2,8 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import VaultDocumentCard from '@/components/VaultDocumentCard'
 import VaultSearchBar from '@/components/VaultSearchBar'
 import DocumentUploader from '@/components/DocumentUploader'
@@ -200,7 +198,6 @@ export default function VaultPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#faf8f4', display: 'flex', flexDirection: 'column' }}>
-      <DashboardNav />
 
       <main style={{ flex: 1, maxWidth: 1080, margin: '0 auto', width: '100%', padding: '32px 20px' }}>
         {/* Header */}
@@ -453,7 +450,6 @@ export default function VaultPage() {
         )}
       </main>
 
-      <AppFooter />
 
       {/* Upload modal */}
       {showUploader && (

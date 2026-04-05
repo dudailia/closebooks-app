@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import InvoiceCard from '@/components/InvoiceCard'
 import RateCardEditor from '@/components/RateCardEditor'
 import InvoiceGenerateModal from '@/components/InvoiceGenerateModal'
@@ -232,7 +230,6 @@ export default function BillingPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-5 py-8 space-y-6">
         {/* Page header */}
@@ -492,7 +489,6 @@ export default function BillingPage() {
         )}
       </main>
 
-      <AppFooter />
 
       {/* Job selector modal */}
       {showJobSelector && (

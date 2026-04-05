@@ -3,8 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -507,7 +505,6 @@ export default function InboxSetupPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#faf8f4', display: 'flex', flexDirection: 'column' }}>
-      <DashboardNav />
 
       <main style={{ flex: 1, maxWidth: 680, margin: '0 auto', width: '100%', padding: '32px 20px 60px' }}>
         {/* Back */}
@@ -572,7 +569,6 @@ export default function InboxSetupPage() {
         </div>
       </main>
 
-      <AppFooter />
     </div>
   )
 }

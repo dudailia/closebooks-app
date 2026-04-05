@@ -3,9 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import DashboardNav from '@/components/DashboardNav'
 import OnboardingModal, { needsOnboarding } from '@/components/OnboardingModal'
-import AppFooter from '@/components/AppFooter'
 import { getJobs, deleteJob } from '@/lib/storage'
 import { dbGetJobs, dbDeleteJob } from '@/lib/db'
 import { getQBOConnection } from '@/lib/integrations'
@@ -545,7 +543,6 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
       {showOnboarding && <OnboardingModal onClose={handleOnboardingClose} />}
-      <DashboardNav onHelpClick={() => setShowOnboarding(true)} />
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-5 py-10 space-y-8 page-enter">
 
@@ -779,7 +776,6 @@ export default function DashboardPage() {
         )}
 
       </main>
-      <AppFooter />
     </div>
   )
 }

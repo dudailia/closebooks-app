@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import { getJobs } from '@/lib/storage'
 import type { CategorizationJob, Transaction } from '@/types'
 
@@ -368,7 +366,6 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-5 py-10 space-y-10 page-enter">
 
@@ -676,7 +673,6 @@ export default function AnalyticsPage() {
         )}
       </main>
 
-      <AppFooter />
     </div>
   )
 }

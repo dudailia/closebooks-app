@@ -2,8 +2,6 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import TransactionTable from '@/components/TransactionTable'
 import { getJob, saveJob, getJobs } from '@/lib/storage'
 import { dbGetJob, dbSaveJob } from '@/lib/db'
@@ -1104,7 +1102,6 @@ export default function ReviewPage() {
   if (notFound) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: '#faf8f4' }}>
-        <DashboardNav />
         <div className="max-w-4xl mx-auto px-5 py-20 text-center">
           <p className="text-sm font-medium" style={{ color: '#1a1714' }}>Job not found.</p>
           <p className="text-sm mt-1 mb-6" style={{ color: '#6b6560' }}>
@@ -1151,7 +1148,6 @@ export default function ReviewPage() {
           onCancel={() => setShowPush(false)}
         />
       )}
-      <DashboardNav />
 
       <main className="flex-1 max-w-[1400px] mx-auto w-full px-6 py-8 space-y-6 page-enter">
 
@@ -1456,7 +1452,6 @@ export default function ReviewPage() {
 
       {/* Toast stack */}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
-      <AppFooter />
     </div>
   )
 }

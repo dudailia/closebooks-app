@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -602,7 +600,6 @@ export default function TeamPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-5 py-8 space-y-6 page-enter">
 
@@ -702,7 +699,6 @@ export default function TeamPage() {
 
       </main>
 
-      <AppFooter />
 
       {/* Invite modal */}
       {showModal && (

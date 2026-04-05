@@ -1,0 +1,136 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+
+// ─── Route label map ──────────────────────────────────────────────────────────
+
+const LABELS: Record<string, string> = {
+  dashboard:    'Dashboard',
+  upload:       'New Close',
+  review:       'Review',
+  clients:      'Clients',
+  calendar:     'Calendar',
+  copilot:      'Copilot',
+  autopilot:    'Autopilot',
+  radar:        'Radar',
+  'tax-draft':  'TaxDraft',
+  vault:        'Vault',
+  inbox:        'Inbox',
+  templates:    'Templates',
+  analytics:    'Analytics',
+  network:      'Network',
+  advisory:     'Advisory',
+  compliance:   'Compliance',
+  billing:      'Billing',
+  team:         'Team',
+  settings:     'Settings',
+  integrations: 'Integrations',
+  developers:   'Developers',
+  referrals:    'Refer & Earn',
+  'close-report': 'Close Report',
+  run:          'Live Close',
+  new:          'New Return',
+  benchmarks:   'Benchmarks',
+  insights:     'Insights',
+  pulse:        'Pulse',
+  requests:     'Requests',
+  setup:        'Setup',
+}
+
+function isUUID(s: string) {
+  return /^[0-9a-f-]{8,}$/i.test(s)
+}
+
+function segmentLabel(seg: string): string {
+  if (isUUID(seg)) return ''
+  // kebab-case slug like "smith-2024" → "Smith 2024"
+  if (LABELS[seg]) return LABELS[seg]
+  return seg.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
+export default function TopBar() {
+  const pathname = usePathname()
+
+  // Build breadcrumb from path segments after /dashboard
+  const parts = pathname.split('/').filter(Boolean).slice(1) // remove 'dashboard'
+  const crumbs: { label: string; href: string }[] = []
+  let acc = '/dashboard'
+  for (const seg of parts) {
+    acc += '/' + seg
+    const label = segmentLabel(seg)
+    if (label) crumbs.push({ label, href: acc })
+  }
+
+  const isUpload = pathname === '/dashboard/upload'
+
+  return (
+    <header style={{
+      height: 48,
+      backgroundColor: '#ffffff',
+      borderBottom: '1px solid #e8e0d4',
+      display: 'flex',
+      alignItems: 'center',
+      paddingLeft: 56, // leaves room for mobile hamburger
+      paddingRight: 20,
+      gap: 8,
+      flexShrink: 0,
+    }}>
+
+      {/* Breadcrumb */}
+      <nav style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
+        <Link href="/dashboard" style={{ fontSize: 13, color: '#a09a94', textDecoration: 'none', flexShrink: 0 }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#6b6560' }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#a09a94' }}
+        >
+          CloseBooks
+        </Link>
+        {crumbs.map((crumb, i) => (
+          <span key={crumb.href} style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+            <span style={{ color: '#d4cdc6', fontSize: 13 }}>›</span>
+            {i === crumbs.length - 1 ? (
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1714', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {crumb.label}
+              </span>
+            ) : (
+              <Link href={crumb.href} style={{ fontSize: 13, color: '#6b6560', textDecoration: 'none', whiteSpace: 'nowrap' }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#1a1714' }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#6b6560' }}
+              >
+                {crumb.label}
+              </Link>
+            )}
+          </span>
+        ))}
+      </nav>
+
+      {/* Actions */}
+      {!isUpload && (
+        <Link
+          href="/dashboard/upload"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '6px 14px',
+            borderRadius: 8,
+            backgroundColor: '#2d5a27',
+            color: '#fff',
+            fontSize: 12,
+            fontWeight: 600,
+            textDecoration: 'none',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+        >
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+          New Close
+        </Link>
+      )}
+    </header>
+  )
+}

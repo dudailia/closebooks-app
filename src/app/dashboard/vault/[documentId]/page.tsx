@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import {
   getDocuments,
   saveDocument,
@@ -128,14 +126,12 @@ export default function DocumentDetailPage() {
   if (notFound) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#faf8f4', display: 'flex', flexDirection: 'column' }}>
-        <DashboardNav />
         <main style={{ flex: 1, maxWidth: 700, margin: '80px auto', padding: '0 20px', textAlign: 'center' }}>
           <p style={{ fontSize: 18, color: '#6b6560' }}>Document not found.</p>
           <Link href="/dashboard/vault" style={{ color: '#b8734a', fontSize: 14 }}>
             ← Back to Document Vault
           </Link>
         </main>
-        <AppFooter />
       </div>
     )
   }
@@ -143,9 +139,7 @@ export default function DocumentDetailPage() {
   if (!doc) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#faf8f4', display: 'flex', flexDirection: 'column' }}>
-        <DashboardNav />
         <main style={{ flex: 1 }} />
-        <AppFooter />
       </div>
     )
   }
@@ -154,7 +148,6 @@ export default function DocumentDetailPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#faf8f4', display: 'flex', flexDirection: 'column' }}>
-      <DashboardNav />
 
       <main style={{ flex: 1, maxWidth: 760, margin: '0 auto', width: '100%', padding: '28px 20px' }}>
         {/* Breadcrumb */}
@@ -572,7 +565,6 @@ export default function DocumentDetailPage() {
         )}
       </main>
 
-      <AppFooter />
     </div>
   )
 }

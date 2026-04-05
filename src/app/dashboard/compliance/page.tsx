@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import ComplianceAlertCard from '@/components/ComplianceAlertCard'
 import RegulatoryLetterModal from '@/components/RegulatoryLetterModal'
 import { getAllAlerts, loadAlertStatuses, saveAlertStatus } from '@/lib/regulatoryAlerts'
@@ -89,7 +87,6 @@ export default function CompliancePage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-5 py-8">
         {/* Header */}
@@ -250,7 +247,6 @@ export default function CompliancePage() {
         </div>
       </main>
 
-      <AppFooter />
 
       {letterModal && (
         <RegulatoryLetterModal

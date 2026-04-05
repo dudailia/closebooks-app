@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import SpendComparisonChart from '@/components/SpendComparisonChart'
 import {
   getNetworkStats,
@@ -155,7 +153,6 @@ export default function NetworkPage() {
   if (!mounted) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: '#faf8f4' }}>
-        <DashboardNav />
         <div className="max-w-6xl mx-auto px-5 py-10">
           <div className="h-8 w-64 rounded animate-pulse" style={{ backgroundColor: '#e8e0d4' }} />
         </div>
@@ -165,7 +162,6 @@ export default function NetworkPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main className="flex-1 max-w-6xl mx-auto px-5 py-8 w-full space-y-8">
 
@@ -414,7 +410,6 @@ export default function NetworkPage() {
 
       </main>
 
-      <AppFooter />
     </div>
   )
 }

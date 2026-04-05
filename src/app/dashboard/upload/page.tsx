@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import FileUpload from '@/components/FileUpload'
 import ChartOfAccountsUpload from '@/components/ChartOfAccountsUpload'
 import { saveJob } from '@/lib/storage'
@@ -331,7 +329,6 @@ export default function UploadPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f5f0ea' }}>
-      <DashboardNav />
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-5 py-10">
 
@@ -449,7 +446,6 @@ export default function UploadPage() {
           />
         )}
       </main>
-      <AppFooter />
     </div>
   )
 }

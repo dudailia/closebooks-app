@@ -2,8 +2,6 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import AdvisoryGenerateModal from '@/components/AdvisoryGenerateModal'
 import {
   getAdvisoryMemos,
@@ -222,7 +220,6 @@ export default function AdvisoryPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-5 py-8 space-y-6">
 
@@ -510,7 +507,6 @@ export default function AdvisoryPage() {
         )}
       </main>
 
-      <AppFooter />
 
       {/* Job selector */}
       {showJobSelector && (

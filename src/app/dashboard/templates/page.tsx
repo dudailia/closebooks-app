@@ -2,8 +2,6 @@
 
 import { useState, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 
 // ---------------------------------------------------------------------------
 // Template definitions
@@ -425,7 +423,6 @@ function TemplatesContent() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-5 py-10 page-enter">
 
@@ -559,7 +556,6 @@ function TemplatesContent() {
         </div>
       </main>
 
-      <AppFooter />
     </div>
   )
 }

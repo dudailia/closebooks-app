@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import { getQBOConnection, saveQBOConnection, disconnectQBO } from '@/lib/integrations'
 import type { QBOConnection } from '@/lib/integrations'
 
@@ -334,7 +332,6 @@ export default function IntegrationsPage() {
         />
       )}
 
-      <DashboardNav />
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-5 py-10 space-y-10 page-enter">
 
@@ -551,7 +548,6 @@ export default function IntegrationsPage() {
         </div>
 
       </main>
-      <AppFooter />
     </div>
   )
 }

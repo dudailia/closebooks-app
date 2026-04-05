@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import { loadFirmSettings } from '@/lib/firmSettings'
 
 // ---------------------------------------------------------------------------
@@ -106,7 +104,6 @@ ${firmName}`
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
       <main className="flex-1 max-w-3xl mx-auto w-full px-5 py-8 space-y-6 page-enter">
 
         {/* Header */}
@@ -235,7 +232,6 @@ ${firmName}`
         </div>
 
       </main>
-      <AppFooter />
     </div>
   )
 }

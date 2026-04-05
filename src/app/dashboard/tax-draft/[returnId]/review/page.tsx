@@ -3,8 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import AnnotationPopover from '@/components/tax-draft/AnnotationPopover'
 import { SMITH_CONSTRUCTION_RETURN, type ReturnLine } from '@/lib/tax-draft/demoReturnData'
 
@@ -63,7 +61,6 @@ export default function TaxReturnReviewPage() {
 
   return (
     <div style={{ backgroundColor: '#faf8f4', minHeight: '100vh' }}>
-      <DashboardNav />
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '32px 24px' }}>
 
         {/* Header */}
@@ -230,7 +227,6 @@ export default function TaxReturnReviewPage() {
           )}
         </div>
       </div>
-      <AppFooter />
     </div>
   )
 }

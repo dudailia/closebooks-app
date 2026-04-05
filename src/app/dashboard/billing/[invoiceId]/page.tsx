@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import { getInvoice, updateInvoiceStatus, deleteInvoice } from '@/lib/billingStorage'
 import type { Invoice } from '@/types/billing'
 
@@ -72,11 +70,9 @@ export default function InvoiceDetailPage() {
   if (invoice === undefined) {
     return (
       <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-        <DashboardNav />
         <main className="flex-1 flex items-center justify-center">
           <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: '#e8e0d4', borderTopColor: '#2d5a27' }} />
         </main>
-        <AppFooter />
       </div>
     )
   }
@@ -85,7 +81,6 @@ export default function InvoiceDetailPage() {
   if (invoice === null) {
     return (
       <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-        <DashboardNav />
         <main className="flex-1 flex flex-col items-center justify-center gap-4">
           <h1
             className="text-2xl"
@@ -106,7 +101,6 @@ export default function InvoiceDetailPage() {
             Back to Billing
           </Link>
         </main>
-        <AppFooter />
       </div>
     )
   }
@@ -116,7 +110,6 @@ export default function InvoiceDetailPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-5 py-8 space-y-6">
         {/* Breadcrumb + actions */}
@@ -346,7 +339,6 @@ export default function InvoiceDetailPage() {
         </div>
       </main>
 
-      <AppFooter />
 
       {/* Mark as Paid modal */}
       {showPaidModal && (

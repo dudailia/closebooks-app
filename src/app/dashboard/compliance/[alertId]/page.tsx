@@ -3,8 +3,6 @@
 import { use } from 'react'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import RegulatoryLetterModal from '@/components/RegulatoryLetterModal'
 import { getAlertById, loadAlertStatuses, saveAlertStatus } from '@/lib/regulatoryAlerts'
 import { loadFirmSettings } from '@/lib/firmSettings'
@@ -45,7 +43,6 @@ export default function AlertDetailPage({ params }: { params: Promise<{ alertId:
   if (!alert) {
     return (
       <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-        <DashboardNav />
         <main className="flex-1 max-w-4xl mx-auto w-full px-5 py-12 text-center">
           <p className="text-lg" style={{ color: '#6b6560' }}>Alert not found.</p>
           <button onClick={() => router.push('/dashboard/compliance')} className="mt-4 text-sm" style={{ color: '#2d5a27' }}>
@@ -80,7 +77,6 @@ export default function AlertDetailPage({ params }: { params: Promise<{ alertId:
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-5 py-8">
         {/* Back */}
@@ -202,7 +198,6 @@ export default function AlertDetailPage({ params }: { params: Promise<{ alertId:
         </div>
       </main>
 
-      <AppFooter />
 
       {letterModal && (
         <RegulatoryLetterModal

@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import PulseResultChart from '@/components/PulseResultChart'
 import { queryNetwork, type NetworkQueryResult } from '@/lib/network/queryEngine'
 
@@ -271,7 +269,6 @@ export default function PulsePage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main style={{ maxWidth: 800, margin: '0 auto', padding: '32px 16px 64px' }}>
         {/* Header */}
@@ -480,7 +477,6 @@ export default function PulsePage() {
         )}
       </main>
 
-      <AppFooter />
     </div>
   )
 }

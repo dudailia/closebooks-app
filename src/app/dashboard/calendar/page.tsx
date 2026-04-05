@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -595,18 +593,15 @@ export default function CalendarPage() {
   if (!mounted) {
     return (
       <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-        <DashboardNav />
         <main className="flex-1 max-w-6xl mx-auto w-full px-5 py-10">
           <div className="h-8 w-48 rounded-lg animate-pulse" style={{ backgroundColor: '#e8e0d4' }} />
         </main>
-        <AppFooter />
       </div>
     )
   }
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-5 py-8">
 
@@ -825,7 +820,6 @@ export default function CalendarPage() {
         />
       )}
 
-      <AppFooter />
     </div>
   )
 }

@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import { getClient, getJobsForClient, saveClient } from '@/lib/storage'
 import ActivityFeed from '@/components/ActivityFeed'
 import { ClientInsightsPanel } from '@/components/InsightsPanel'
@@ -339,7 +337,6 @@ export default function ClientDetailPage() {
   if (notFound) {
     return (
       <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-        <DashboardNav />
         <div className="flex-1 flex items-center justify-center flex-col gap-4 text-center px-5">
           <p className="text-lg font-semibold" style={{ color: '#1a1714' }}>Client not found</p>
           <p className="text-sm" style={{ color: '#6b6560' }}>This client may have been deleted.</p>
@@ -383,7 +380,6 @@ export default function ClientDetailPage() {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
       {showEdit && <EditModal client={client} onSave={handleSaveEdit} onClose={() => setShowEdit(false)} />}
 
-      <DashboardNav />
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-5 py-10 space-y-8 page-enter">
 
@@ -555,7 +551,6 @@ export default function ClientDetailPage() {
 
       </main>
 
-      <AppFooter />
     </div>
   )
 }

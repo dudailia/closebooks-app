@@ -3,8 +3,6 @@
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import TaxReturnForm from '@/components/tax-draft/TaxReturnForm'
 import AnnotationPopover from '@/components/tax-draft/AnnotationPopover'
 import OpportunitySummary from '@/components/tax-draft/OpportunitySummary'
@@ -108,7 +106,6 @@ export default function TaxDraftViewerPage() {
 
   return (
     <div style={{ backgroundColor: '#faf8f4', minHeight: '100vh' }}>
-      <DashboardNav />
 
       {/* Top header */}
       <div style={{ borderBottom: '1px solid #e8e0d4', backgroundColor: '#fff', padding: '0 24px' }}>
@@ -358,7 +355,6 @@ export default function TaxDraftViewerPage() {
         }
       `}</style>
 
-      <AppFooter />
     </div>
   )
 }

@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import DashboardNav from '@/components/DashboardNav'
-import AppFooter from '@/components/AppFooter'
 import NetworkInsightCardEnhanced from '@/components/NetworkInsightCardEnhanced'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -179,7 +177,6 @@ export default function InsightsPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#faf8f4' }}>
-      <DashboardNav />
 
       {/* Global toast */}
       {toastMessage && (
@@ -371,7 +368,6 @@ export default function InsightsPage() {
         }
       `}</style>
 
-      <AppFooter />
     </div>
   )
 }
