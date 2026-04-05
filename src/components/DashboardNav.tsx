@@ -169,6 +169,9 @@ export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void
           <NavLink href="/demo" active={path === '/demo'}>
             Demo
           </NavLink>
+          <NavLink href="/dashboard/settings" active={path.startsWith('/dashboard/settings')}>
+            Settings
+          </NavLink>
 
           {onHelpClick && (
             <button

@@ -5,16 +5,20 @@ import { useParams, useRouter } from 'next/navigation'
 import DashboardNav from '@/components/DashboardNav'
 import AppFooter from '@/components/AppFooter'
 import TransactionTable from '@/components/TransactionTable'
-import { getJob, saveJob } from '@/lib/storage'
+import { getJob, saveJob, getJobs } from '@/lib/storage'
 import { detectRecurring } from '@/lib/recurringDetection'
 import { logActivity } from '@/lib/activity'
 import { getQBOConnection, recordQBOSync } from '@/lib/integrations'
 import { JobInsightsPanel } from '@/components/InsightsPanel'
 import { getAuditTrail, logAuditEvent, auditGroup, formatAuditEvent, fmtAuditTs } from '@/lib/auditTrail'
+import { calcROI, fmtHours } from '@/lib/roiCalc'
+import { detectAnomalies } from '@/lib/anomalyDetection'
+import { loadFirmSettings } from '@/lib/firmSettings'
 import type { QBOConnection } from '@/lib/integrations'
 import type { CategorizationJob, Transaction } from '@/types'
 import type { RecurringPattern } from '@/lib/recurringDetection'
 import type { AuditEvent, AuditCallback } from '@/lib/auditTrail'
+import type { Anomaly } from '@/lib/anomalyDetection'
 
 // ---------------------------------------------------------------------------
 // Toast
@@ -808,9 +812,10 @@ export default function ReviewPage() {
 
   const [job, setJob]           = useState<CategorizationJob | null>(null)
   const [notFound, setNotFound] = useState(false)
-  const [exporting, setExporting]   = useState(false)
-  const [reporting, setReporting]   = useState(false)
-  const [completing, setCompleting] = useState(false)
+  const [exporting, setExporting]         = useState(false)
+  const [reporting, setReporting]         = useState(false)
+  const [clientSummary, setClientSummary] = useState(false)
+  const [completing, setCompleting]       = useState(false)
   const [toasts, setToasts]     = useState<ToastState[]>([])
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([])
   const toastId = useRef(0)
@@ -862,6 +867,21 @@ export default function ReviewPage() {
     () => new Set(recurringPatterns.flatMap((p) => p.transactionIds)),
     [recurringPatterns]
   )
+
+  // Anomaly detection — compare current job to previous job for same client
+  const anomalies = useMemo(() => {
+    if (!job) return []
+    const allJobs = getJobs()
+    const prevJob = allJobs
+      .filter(
+        (j) =>
+          j.client_name === job.client_name &&
+          j.id !== job.id &&
+          j.created_at < job.created_at
+      )
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+    return detectAnomalies(job.transactions, prevJob?.transactions ?? null)
+  }, [job])
 
   function handleTransactionsChange(updated: Transaction[]) {
     if (!job) return
@@ -964,6 +984,29 @@ export default function ReviewPage() {
       addToast(err instanceof Error ? err.message : 'Could not generate report.', 'error')
     } finally {
       setReporting(false)
+    }
+  }
+
+  async function handleClientSummary() {
+    if (!job) return
+    setClientSummary(true)
+    try {
+      const firmSettings = loadFirmSettings()
+      const res = await fetch('/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job, mode: 'client-summary', firmSettings }),
+      })
+      if (!res.ok) throw new Error('Summary generation failed.')
+      const html = await res.text()
+      const blob = new Blob([html], { type: 'text/html' })
+      const url  = URL.createObjectURL(blob)
+      window.open(url, '_blank')
+      setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Could not generate summary.', 'error')
+    } finally {
+      setClientSummary(false)
     }
   }
 
@@ -1134,6 +1177,19 @@ export default function ReviewPage() {
               {reporting ? 'Generating…' : 'Report'}
             </button>
 
+            <button
+              onClick={handleClientSummary}
+              disabled={clientSummary || exporting}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50"
+              style={{ borderColor: '#e8e0d4', color: '#1a1714', backgroundColor: '#ffffff' }}
+              onMouseEnter={(e) => { if (!clientSummary) e.currentTarget.style.borderColor = '#2d5a27' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e8e0d4' }}
+              title="Generate a branded client-facing summary"
+            >
+              {clientSummary ? <Spinner /> : <ClientSummaryIcon />}
+              {clientSummary ? 'Generating…' : 'Client Summary'}
+            </button>
+
             {/* Push to QuickBooks — only shown when connected */}
             {qboConn && approvedCount > 0 && (
               <button
@@ -1172,6 +1228,12 @@ export default function ReviewPage() {
           <Stat label="Pending"  value={pending}                color="#d97706" bg="#fefce8" />
           <Stat label="Flagged"  value={job.flagged}            color="#ef4444" bg="#fef2f2" />
         </div>
+
+        {/* ROI Counter */}
+        {(job.auto_categorized ?? 0) > 0 && <ROICard job={job} />}
+
+        {/* Anomaly Alerts */}
+        {anomalies.length > 0 && <AnomalyPanel anomalies={anomalies} />}
 
         {/* Progress bar */}
         <div
@@ -1302,6 +1364,119 @@ function RecurIconLg() {
       />
       <path d="M14 2.5v3H11" stroke="#b8734a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M2 13.5v-3H5" stroke="#b8734a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function ROICard({ job }: { job: CategorizationJob }) {
+  const roi = calcROI(job)
+  const pct = roi.totalTx > 0 ? Math.round((roi.autoApproved / roi.totalTx) * 100) : 0
+  return (
+    <div
+      className="rounded-xl border px-5 py-4 flex flex-wrap items-center gap-6"
+      style={{ borderColor: '#d4e8d0', backgroundColor: '#f0f7ee' }}
+    >
+      <div className="flex items-center gap-2.5">
+        <span className="text-2xl font-bold tabular-nums" style={{ color: '#2d5a27' }}>
+          {fmtHours(roi.hoursSaved)}
+        </span>
+        <span className="text-sm" style={{ color: '#4a7c43' }}>saved</span>
+      </div>
+      <div className="w-px h-8 hidden sm:block" style={{ backgroundColor: '#c0debb' }} />
+      <div className="flex items-center gap-2.5">
+        <span className="text-2xl font-bold tabular-nums" style={{ color: '#2d5a27' }}>
+          ${roi.valueSaved.toLocaleString()}
+        </span>
+        <span className="text-sm" style={{ color: '#4a7c43' }}>value recovered</span>
+      </div>
+      <div className="w-px h-8 hidden sm:block" style={{ backgroundColor: '#c0debb' }} />
+      <div className="text-xs space-y-0.5" style={{ color: '#4a7c43' }}>
+        <p>{roi.autoApproved} of {roi.totalTx} transactions auto-approved ({pct}%)</p>
+        <p style={{ color: '#6b9e64' }}>at ${roi.ratePerHour}/hr · 3 min manual baseline</p>
+      </div>
+    </div>
+  )
+}
+
+const ANOMALY_STYLE: Record<string, { border: string; bg: string; dot: string; text: string; label: string }> = {
+  high:   { border: '#fca5a5', bg: '#fef2f2', dot: '#ef4444', text: '#991b1b', label: 'High'   },
+  medium: { border: '#fed7aa', bg: '#fff7ed', dot: '#f97316', text: '#9a3412', label: 'Medium' },
+  low:    { border: '#fde68a', bg: '#fefce8', dot: '#d97706', text: '#854d0e', label: 'Low'    },
+}
+
+function AnomalyPanel({ anomalies }: { anomalies: Anomaly[] }) {
+  const [expanded, setExpanded] = useState(false)
+  const shown = expanded ? anomalies : anomalies.slice(0, 3)
+  const highCount = anomalies.filter((a) => a.severity === 'high').length
+
+  return (
+    <div
+      className="rounded-xl border"
+      style={{ borderColor: highCount > 0 ? '#fca5a5' : '#fed7aa', backgroundColor: '#ffffff' }}
+    >
+      <div className="px-4 py-3 flex items-center justify-between gap-3 border-b" style={{ borderColor: '#f0ece4' }}>
+        <div className="flex items-center gap-2.5">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 2L14 13H2L8 2Z" stroke={highCount > 0 ? '#ef4444' : '#f97316'} strokeWidth="1.5" strokeLinejoin="round" fill={highCount > 0 ? '#fee2e2' : '#fff7ed'} />
+            <path d="M8 6v3M8 11v0.5" stroke={highCount > 0 ? '#ef4444' : '#f97316'} strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <span className="text-sm font-semibold" style={{ color: '#1a1714' }}>
+            Anomaly Alerts
+          </span>
+          <span
+            className="text-xs px-2 py-0.5 rounded-full font-medium"
+            style={{ backgroundColor: highCount > 0 ? '#fee2e2' : '#fff7ed', color: highCount > 0 ? '#991b1b' : '#9a3412' }}
+          >
+            {anomalies.length} {anomalies.length === 1 ? 'issue' : 'issues'}
+          </span>
+        </div>
+        <p className="text-xs" style={{ color: '#a09a94' }}>vs. prior period</p>
+      </div>
+      <div className="divide-y" style={{ borderColor: '#f0ece4' }}>
+        {shown.map((a, i) => {
+          const s = ANOMALY_STYLE[a.severity]
+          return (
+            <div key={i} className="px-4 py-3 flex items-start gap-3">
+              <span
+                className="mt-0.5 w-2 h-2 rounded-full shrink-0"
+                style={{ backgroundColor: s.dot, marginTop: 6 }}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-medium" style={{ color: '#1a1714' }}>{a.title}</span>
+                  <span
+                    className="text-xs px-1.5 py-0.5 rounded font-medium"
+                    style={{ backgroundColor: s.bg, color: s.text, border: `1px solid ${s.border}` }}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+                <p className="text-xs mt-0.5" style={{ color: '#6b6560' }}>{a.detail}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      {anomalies.length > 3 && (
+        <div className="px-4 py-2.5 border-t" style={{ borderColor: '#f0ece4' }}>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-xs font-medium transition-colors"
+            style={{ color: '#b8734a' }}
+          >
+            {expanded ? 'Show less ↑' : `Show ${anomalies.length - 3} more ↓`}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ClientSummaryIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <rect x="1" y="1" width="12" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M4 5h6M4 7h6M4 9h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
     </svg>
   )
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { CategorizationJob, Transaction } from '@/types'
 import type { AuditEvent } from '@/lib/auditTrail'
 import { formatAuditEvent } from '@/lib/auditTrail'
+import type { FirmSettings } from '@/lib/firmSettings'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -478,6 +479,157 @@ function escHtml(s: string): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Client Summary (branded, client-facing)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function buildClientSummaryHtml(job: CategorizationJob, firm: FirmSettings): string {
+  const approved   = job.transactions.filter((t) => t.status === 'approved' || t.status === 'edited')
+  const pending    = job.transactions.filter((t) => t.status === 'pending').length
+  const flagged    = job.transactions.filter((t) => t.status === 'flagged').length
+  const categoryRows = buildCategoryBreakdown(approved)
+  const totalDebits  = approved.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0)
+  const totalCredits = approved.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0)
+  const netFlow      = totalCredits - totalDebits
+  const generatedAt  = new Date().toLocaleDateString('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric',
+  })
+
+  const accent     = escHtml(firm.accentColor || '#2d5a27')
+  const firmName   = firm.firmName   || 'Your Accounting Firm'
+  const tagline    = firm.firmTagline || 'Certified Public Accountants'
+  const preparedBy = firm.preparedBy || firmName
+
+  const catRows = categoryRows.slice(0, 20).map((r) => `
+    <tr>
+      <td>${escHtml(r.cat)}</td>
+      <td class="num">${r.count}</td>
+      <td class="num mono${r.debit > 0 ? ' debit' : ''}">${r.debit > 0 ? `$${fmt(r.debit)}` : '—'}</td>
+      <td class="num mono${r.credit > 0 ? ' credit' : ''}">${r.credit > 0 ? `$${fmt(r.credit)}` : '—'}</td>
+    </tr>`).join('')
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Month-End Summary — ${escHtml(job.client_name)}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Georgia', serif; font-size: 11pt; color: #1a1714; background: #fff; line-height: 1.5; }
+    .page { max-width: 800px; margin: 0 auto; padding: 48px 48px 60px; }
+    .header-bar { background: ${accent}; color: #fff; padding: 20px 32px; border-radius: 10px; margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between; }
+    .firm-name { font-size: 18pt; letter-spacing: -0.01em; font-weight: bold; }
+    .firm-tagline { font-size: 9pt; opacity: 0.8; margin-top: 3px; font-family: Arial, sans-serif; }
+    .header-right { text-align: right; font-family: Arial, sans-serif; font-size: 9pt; opacity: 0.9; line-height: 1.6; }
+    .section { margin-bottom: 32px; }
+    .section-label { font-family: Arial, sans-serif; font-size: 8pt; font-weight: bold; letter-spacing: 0.14em; text-transform: uppercase; color: ${accent}; margin-bottom: 8px; }
+    h2 { font-size: 14pt; letter-spacing: -0.01em; color: #1a1714; margin-bottom: 12px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 8px; }
+    .kpi { border: 1.5px solid #e0dbd4; border-radius: 10px; padding: 16px 18px; }
+    .kpi .val { font-size: 22pt; font-weight: bold; line-height: 1; }
+    .kpi .lbl { font-family: Arial, sans-serif; font-size: 8.5pt; color: #6b6560; margin-top: 5px; }
+    .kpi.accent { border-color: ${accent}; background: #f6faf5; }
+    .kpi.accent .val { color: ${accent}; }
+    .net-flow { padding: 14px 18px; border-radius: 10px; font-family: Arial, sans-serif; font-size: 10pt; }
+    .net-flow.positive { background: #f0fdf4; border: 1.5px solid #86efac; color: #166534; }
+    .net-flow.negative { background: #fef2f2; border: 1.5px solid #fca5a5; color: #991b1b; }
+    .net-flow strong { font-size: 13pt; }
+    table { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 9pt; }
+    th { text-align: left; font-size: 8pt; font-weight: bold; letter-spacing: 0.08em; text-transform: uppercase; color: #6b6560; border-bottom: 1.5px solid #e0dbd4; padding: 7px 8px; background: #faf8f4; }
+    td { padding: 7px 8px; border-bottom: 1px solid #f0ebe3; color: #1a1714; }
+    tr:last-child td { border-bottom: none; }
+    .num { text-align: right; white-space: nowrap; }
+    .mono { font-family: 'Courier New', monospace; }
+    .debit { color: #991b1b; }
+    .credit { color: #166534; }
+    .totals-row td { border-top: 1.5px solid #1a1714; font-weight: bold; }
+    .notice { background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; font-family: Arial, sans-serif; font-size: 9pt; color: #854d0e; margin-top: 8px; }
+    .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #e0dbd4; font-family: Arial, sans-serif; font-size: 8pt; color: #a09a94; display: flex; justify-content: space-between; align-items: center; }
+    .print-bar { position: fixed; top: 0; left: 0; right: 0; background: #1a1714; color: #fff; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; font-family: Arial, sans-serif; font-size: 9pt; z-index: 100; }
+    .print-bar button { background: ${accent}; color: #fff; border: none; padding: 7px 18px; border-radius: 8px; font-size: 9pt; font-weight: bold; cursor: pointer; }
+    @media screen { body { padding-top: 46px; } }
+    @media print { .print-bar { display: none; } body { padding-top: 0; font-size: 10pt; } .page { padding: 24px 36px 40px; max-width: 100%; } }
+  </style>
+</head>
+<body>
+  <div class="print-bar">
+    <span><strong>${escHtml(firmName)}</strong> · Month-End Summary for ${escHtml(job.client_name)}</span>
+    <button onclick="window.print()">⬇ Save as PDF</button>
+  </div>
+  <div class="page">
+    <div class="header-bar">
+      <div>
+        <div class="firm-name">${escHtml(firmName)}</div>
+        <div class="firm-tagline">${escHtml(tagline)}</div>
+      </div>
+      <div class="header-right">
+        <strong>${escHtml(job.client_name)}</strong><br/>
+        Month-End Summary<br/>
+        ${generatedAt}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Overview</div>
+      <h2>Your ${fmtDate(job.created_at)} Close</h2>
+      <div class="kpi-grid">
+        <div class="kpi accent">
+          <div class="val">${approved.length}</div>
+          <div class="lbl">Transactions Reviewed &amp; Approved</div>
+        </div>
+        <div class="kpi">
+          <div class="val">$${fmt(totalDebits)}</div>
+          <div class="lbl">Total Expenses</div>
+        </div>
+        <div class="kpi">
+          <div class="val">$${fmt(totalCredits)}</div>
+          <div class="lbl">Total Income</div>
+        </div>
+      </div>
+      <div class="net-flow ${netFlow >= 0 ? 'positive' : 'negative'}">
+        Net cash flow this period: <strong>${netFlow >= 0 ? '+' : ''}$${fmt(Math.abs(netFlow))}</strong>
+        ${netFlow >= 0 ? '(income exceeds expenses)' : '(expenses exceed income)'}
+      </div>
+      ${pending > 0 || flagged > 0 ? `
+      <div class="notice" style="margin-top:12px">
+        ⚠ ${pending > 0 ? `${pending} transaction${pending !== 1 ? 's' : ''} still under review` : ''}${pending > 0 && flagged > 0 ? ' · ' : ''}${flagged > 0 ? `${flagged} flagged for follow-up` : ''}. Your accountant will reach out if any clarification is needed.
+      </div>` : ''}
+    </div>
+
+    <div class="section">
+      <div class="section-label">Expense &amp; Income Breakdown</div>
+      <h2>By Category</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th style="text-align:right">Transactions</th>
+            <th style="text-align:right">Expenses</th>
+            <th style="text-align:right">Income</th>
+          </tr>
+        </thead>
+        <tbody>${catRows}</tbody>
+        <tfoot>
+          <tr class="totals-row">
+            <td>Total</td>
+            <td class="num">${approved.length}</td>
+            <td class="num mono debit">$${fmt(totalDebits)}</td>
+            <td class="num mono credit">$${fmt(totalCredits)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <footer class="footer">
+      <span>Prepared by <strong>${escHtml(preparedBy)}</strong></span>
+      <span>Confidential — prepared for ${escHtml(job.client_name)} · ${generatedAt}</span>
+    </footer>
+  </div>
+</body>
+</html>`
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Route handler
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -489,7 +641,20 @@ export async function POST(request: Request) {
 
   const job         = body.job as CategorizationJob
   const auditEvents = (body.auditEvents ?? []) as AuditEvent[]
-  const html        = buildHtml(job, auditEvents)
+  const mode        = body.mode as string | undefined
+
+  if (mode === 'client-summary') {
+    const firm = (body.firmSettings ?? {}) as FirmSettings
+    const html = buildClientSummaryHtml(job, firm)
+    return new NextResponse(html, {
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Content-Disposition': `inline; filename="${job.client_name.replace(/\s+/g, '_')}_month_end_summary.html"`,
+      },
+    })
+  }
+
+  const html = buildHtml(job, auditEvents)
 
   return new NextResponse(html, {
     headers: {

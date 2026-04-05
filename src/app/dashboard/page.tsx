@@ -9,8 +9,13 @@ import AppFooter from '@/components/AppFooter'
 import { getJobs, deleteJob } from '@/lib/storage'
 import { getQBOConnection } from '@/lib/integrations'
 import ActivityFeed from '@/components/ActivityFeed'
+import { calcCumulativeROI, fmtHours } from '@/lib/roiCalc'
+import { getClientCloseStatuses } from '@/lib/clientStatus'
+import { getCorrectionStats } from '@/lib/corrections'
 import type { CategorizationJob } from '@/types'
 import type { QBOConnection } from '@/lib/integrations'
+import type { ClientCloseStatus, CloseStatus } from '@/lib/clientStatus'
+import type { CorrectionStats } from '@/lib/corrections'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -487,15 +492,18 @@ function ClientPortalSection({ sectionRef }: { sectionRef: React.RefObject<HTMLD
 // ---------------------------------------------------------------------------
 
 export default function DashboardPage() {
-  const [jobs, setJobs]           = useState<CategorizationJob[]>([])
-  const [mounted, setMounted]     = useState(false)
+  const [jobs, setJobs]                 = useState<CategorizationJob[]>([])
+  const [mounted, setMounted]           = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const [qboConn, setQboConn]     = useState<QBOConnection | null>(null)
+  const [qboConn, setQboConn]           = useState<QBOConnection | null>(null)
+  const [activeTab, setActiveTab]       = useState<'overview' | 'war-room'>('overview')
+  const [corrStats, setCorrStats]       = useState<CorrectionStats | null>(null)
   const portalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setJobs(getJobs())
     setQboConn(getQBOConnection())
+    setCorrStats(getCorrectionStats())
     setMounted(true)
     if (needsOnboarding()) setShowOnboarding(true)
   }, [])
@@ -566,6 +574,40 @@ export default function DashboardPage() {
           <SummaryStats jobs={jobs} />
         ) : null}
 
+        {/* Cumulative ROI strip */}
+        {mounted && jobs.length > 0 && (() => {
+          const roi = calcCumulativeROI(jobs)
+          if (roi.hoursSaved < 0.1) return null
+          const autoPct = roi.totalTx > 0 ? Math.round((roi.autoApproved / roi.totalTx) * 100) : 0
+          return (
+            <div
+              className="flex flex-wrap items-center gap-4 rounded-xl border px-5 py-4"
+              style={{ borderColor: '#d4e8d0', backgroundColor: '#f0f7ee' }}
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="7" fill="#2d5a27" />
+                  <path d="M5 9l1.5-3L8 8.5l1.5-4L11 9" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#2d5a27' }}>
+                  AI Savings
+                </span>
+              </div>
+              <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 flex-1">
+                <span className="text-sm font-bold tabular-nums" style={{ color: '#2d5a27' }}>
+                  {fmtHours(roi.hoursSaved)} saved
+                </span>
+                <span className="text-sm font-bold tabular-nums" style={{ color: '#2d5a27' }}>
+                  ${roi.valueSaved.toLocaleString()} recovered
+                </span>
+                <span className="text-xs" style={{ color: '#4a7c43' }}>
+                  {roi.autoApproved.toLocaleString()} of {roi.totalTx.toLocaleString()} auto-approved ({autoPct}%)
+                </span>
+              </div>
+            </div>
+          )
+        })()}
+
         {/* Connected integrations strip */}
         {mounted && qboConn && (
           <div
@@ -600,6 +642,37 @@ export default function DashboardPage() {
             </Link>
           </div>
         )}
+
+        {/* Tab bar */}
+        {mounted && jobs.length > 1 && (
+          <div className="flex gap-1 border-b" style={{ borderColor: '#e8e0d4' }}>
+            {([['overview', 'Overview'], ['war-room', 'Practice View']] as const).map(([tab, label]) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className="px-4 py-2.5 text-sm font-medium transition-colors -mb-px border-b-2"
+                style={{
+                  color: activeTab === tab ? '#2d5a27' : '#6b6560',
+                  borderBottomColor: activeTab === tab ? '#2d5a27' : 'transparent',
+                  backgroundColor: 'transparent',
+                }}
+                onMouseEnter={(e) => { if (activeTab !== tab) e.currentTarget.style.color = '#1a1714' }}
+                onMouseLeave={(e) => { if (activeTab !== tab) e.currentTarget.style.color = '#6b6560' }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* War Room tab */}
+        {mounted && activeTab === 'war-room' && jobs.length > 0 && (
+          <WarRoomView jobs={jobs} />
+        )}
+
+        {/* Overview tab (default) */}
+        {(activeTab === 'overview' || !mounted || jobs.length <= 1) && (
+          <>
 
         {/* Quick Actions */}
         <QuickActions onPortalClick={scrollToPortal} />
@@ -673,6 +746,11 @@ export default function DashboardPage() {
           )}
         </div>
 
+        {/* Firm Intelligence Card */}
+        {mounted && corrStats && corrStats.totalCorrections > 0 && (
+          <FirmIntelligenceCard stats={corrStats} />
+        )}
+
         {/* Activity feed */}
         {mounted && (
           <div
@@ -682,8 +760,224 @@ export default function DashboardPage() {
             <ActivityFeed limit={8} />
           </div>
         )}
+
+          </> // end overview tab
+        )}
+
       </main>
       <AppFooter />
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Firm Intelligence Card
+// ---------------------------------------------------------------------------
+
+function FirmIntelligenceCard({ stats }: { stats: CorrectionStats }) {
+  const { totalCorrections, estimatedAccuracy, topCorrectedFrom } = stats
+  const barWidth = Math.round(((estimatedAccuracy - 80) / 17) * 100) // map 80-97 → 0-100%
+
+  return (
+    <div
+      className="rounded-2xl border p-5 space-y-4"
+      style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ backgroundColor: '#f0f7ee' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="6" r="3" stroke="#2d5a27" strokeWidth="1.4" />
+              <path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="#2d5a27" strokeWidth="1.4" strokeLinecap="round" />
+              <path d="M11 2l1 1-3 3" stroke="#2d5a27" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: '#1a1714' }}>Firm Intelligence</p>
+            <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>
+              AI is learning your firm&apos;s preferences
+            </p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-bold tabular-nums" style={{ color: '#2d5a27' }}>
+            {estimatedAccuracy}%
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: '#6b6560' }}>est. accuracy</p>
+        </div>
+      </div>
+
+      {/* Accuracy bar */}
+      <div>
+        <div className="flex justify-between text-xs mb-1.5" style={{ color: '#a09a94' }}>
+          <span>Model calibration</span>
+          <span>{totalCorrections} correction{totalCorrections !== 1 ? 's' : ''} applied</span>
+        </div>
+        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece4' }}>
+          <div
+            className="h-full rounded-full transition-all duration-700"
+            style={{ width: `${barWidth}%`, backgroundColor: '#2d5a27' }}
+          />
+        </div>
+        <div className="flex justify-between text-xs mt-1" style={{ color: '#c4bdb8' }}>
+          <span>Baseline 82%</span>
+          <span>Target 97%</span>
+        </div>
+      </div>
+
+      {topCorrectedFrom.length > 0 && (
+        <div>
+          <p className="text-xs font-medium mb-2" style={{ color: '#6b6560' }}>
+            Frequently adjusted categories
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {topCorrectedFrom.map((c) => (
+              <span
+                key={c.category}
+                className="px-2 py-1 rounded-lg text-xs"
+                style={{ backgroundColor: '#faf8f4', color: '#6b6560', border: '1px solid #e8e0d4' }}
+              >
+                {c.category}
+                <span className="ml-1 font-medium" style={{ color: '#b8734a' }}>×{c.count}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <p className="text-xs" style={{ color: '#a09a94' }}>
+        Every correction trains the AI to match your firm&apos;s categorization style. The more you use CloseBooks, the less you&apos;ll need to correct.
+      </p>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// War Room
+// ---------------------------------------------------------------------------
+
+const WAR_ROOM_STYLE: Record<CloseStatus, { bg: string; text: string; dot: string; label: string; border: string }> = {
+  needs_review:    { bg: '#fef2f2', text: '#991b1b', dot: '#ef4444', label: 'Needs Review',    border: '#fca5a5' },
+  in_progress:     { bg: '#fff7ed', text: '#9a3412', dot: '#f97316', label: 'In Progress',      border: '#fed7aa' },
+  not_started:     { bg: '#f5f5f5', text: '#525252', dot: '#a3a3a3', label: 'Not Started',      border: '#e5e5e5' },
+  ready_to_export: { bg: '#eff6ff', text: '#1e40af', dot: '#3b82f6', label: 'Ready to Export',  border: '#bfdbfe' },
+  complete:        { bg: '#ecfdf5', text: '#065f46', dot: '#059669', label: 'Complete',          border: '#6ee7b7' },
+}
+
+function WarRoomView({ jobs }: { jobs: CategorizationJob[] }) {
+  const router = useRouter()
+  const statuses = getClientCloseStatuses(jobs)
+
+  const counts = statuses.reduce((acc, s) => {
+    acc[s.status] = (acc[s.status] ?? 0) + 1
+    return acc
+  }, {} as Record<CloseStatus, number>)
+
+  return (
+    <div className="space-y-5">
+      {/* Summary pills */}
+      <div className="flex flex-wrap gap-2">
+        {(Object.entries(WAR_ROOM_STYLE) as [CloseStatus, typeof WAR_ROOM_STYLE[CloseStatus]][])
+          .filter(([status]) => counts[status] > 0)
+          .map(([status, s]) => (
+            <div
+              key={status}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border"
+              style={{ backgroundColor: s.bg, color: s.text, borderColor: s.border }}
+            >
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.dot }} />
+              {counts[status]} {s.label}
+            </div>
+          ))}
+      </div>
+
+      {/* Client list */}
+      <div className="rounded-xl border overflow-hidden" style={{ borderColor: '#e8e0d4' }}>
+        <table className="w-full text-sm">
+          <thead>
+            <tr style={{ backgroundColor: '#faf8f4', borderBottom: '1px solid #e8e0d4' }}>
+              <th className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider" style={{ color: '#6b6560' }}>Client</th>
+              <th className="px-4 py-3 text-left font-medium text-xs uppercase tracking-wider" style={{ color: '#6b6560' }}>Status</th>
+              <th className="px-4 py-3 text-right font-medium text-xs uppercase tracking-wider hidden sm:table-cell" style={{ color: '#6b6560' }}>Progress</th>
+              <th className="px-4 py-3 text-right font-medium text-xs uppercase tracking-wider hidden sm:table-cell" style={{ color: '#6b6560' }}>Flagged</th>
+              <th className="px-4 py-3 text-right font-medium text-xs uppercase tracking-wider hidden md:table-cell" style={{ color: '#6b6560' }}>Last Updated</th>
+              <th className="px-4 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {statuses.map((cs, i) => {
+              const s = WAR_ROOM_STYLE[cs.status]
+              return (
+                <tr
+                  key={cs.clientName}
+                  className="cursor-pointer transition-colors"
+                  style={{
+                    borderBottom: i < statuses.length - 1 ? '1px solid #f0ece4' : 'none',
+                    backgroundColor: '#ffffff',
+                  }}
+                  onClick={() => cs.job && router.push(`/dashboard/review/${cs.job.id}`)}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#faf8f4' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
+                >
+                  <td className="px-4 py-3.5">
+                    <span className="font-medium" style={{ color: '#1a1714' }}>{cs.clientName}</span>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border"
+                      style={{ backgroundColor: s.bg, color: s.text, borderColor: s.border }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.dot }} />
+                      {s.label}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3.5 hidden sm:table-cell">
+                    <div className="flex items-center gap-2 justify-end">
+                      <div
+                        className="w-20 h-1.5 rounded-full overflow-hidden"
+                        style={{ backgroundColor: '#f0ece4' }}
+                      >
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{
+                            width: `${cs.reviewPct}%`,
+                            backgroundColor: cs.reviewPct === 100 ? '#059669' : '#2d5a27',
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs tabular-nums" style={{ color: '#6b6560' }}>
+                        {cs.reviewPct}%
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3.5 text-right hidden sm:table-cell">
+                    {cs.flagged > 0 ? (
+                      <span className="text-xs font-medium tabular-nums" style={{ color: '#dc2626' }}>
+                        {cs.flagged} flagged
+                      </span>
+                    ) : (
+                      <span style={{ color: '#a09a94' }}>—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3.5 text-right hidden md:table-cell text-xs" style={{ color: '#a09a94' }}>
+                    {cs.lastJobDate
+                      ? new Date(cs.lastJobDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                      : '—'}
+                  </td>
+                  <td className="px-4 py-3.5 text-right">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: '#c4bdb8', display: 'inline' }}>
+                      <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
