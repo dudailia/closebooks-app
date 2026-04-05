@@ -428,9 +428,6 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
   return (
     <div className="space-y-3 font-sans">
 
-      {/* Summary bar */}
-      <SummaryBar transactions={transactions} />
-
       {/* Post-approve result banner */}
       {approveResult && (
         <div
@@ -447,109 +444,99 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
         </div>
       )}
 
-      {/* Controls row */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Controls — filter tabs + search + bulk actions on one line */}
+      <div className="flex items-center gap-2 border-b" style={{ borderColor: '#e0dbd4' }}>
 
-        {/* Search */}
-        <div className="relative flex-1 min-w-[180px]">
-          <SearchIcon />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search descriptions…"
-            className="w-full pl-8 pr-3 py-1.5 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-[#2d5a27]"
-            style={{ borderColor: '#e0dbd4', backgroundColor: '#faf8f4', color: '#1a1714' }}
-          />
+        {/* Filter tabs */}
+        <div className="flex gap-0.5 shrink-0">
+          {(['all', 'pending', 'approved', 'flagged'] as FilterTab[]).map((tab) => {
+            const labels: Record<FilterTab, string> = {
+              all: 'All', pending: 'Pending', approved: 'Approved', flagged: 'Flagged',
+            }
+            const active = activeTab === tab
+            return (
+              <button
+                key={tab}
+                onClick={() => { setActiveTab(tab); setSelected(new Set()) }}
+                className="px-3 py-2 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap"
+                style={{
+                  borderBottomColor: active ? '#2d5a27' : 'transparent',
+                  color: active ? '#2d5a27' : '#6b6560',
+                }}
+              >
+                {labels[tab]}
+                <span
+                  className="ml-1.5 font-mono text-xs px-1.5 py-0.5 rounded-full"
+                  style={{
+                    backgroundColor: active ? '#d4e8d0' : '#f5f0ea',
+                    color: active ? '#2d5a27' : '#a09a94',
+                  }}
+                >
+                  {counts[tab]}
+                </span>
+              </button>
+            )
+          })}
         </div>
 
-        {/* Approve high confidence */}
+        <div className="flex-1" />
+
+        {/* Approve high-confidence */}
         {highConfidencePending > 0 && (
           <button
             onClick={handleApproveHighConfidenceClick}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white shrink-0 transition-all"
             style={{ backgroundColor: '#2d5a27' }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27'; e.currentTarget.style.transform = 'none' }}
-            title={`Approve all ${highConfidencePending} transactions with confidence ≥ 85%`}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+            title={`Approve ${highConfidencePending} transactions ≥ 85% confidence`}
           >
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-              <path d="M2 6.5l3 3 6-6" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            <svg width="11" height="11" viewBox="0 0 13 13" fill="none">
+              <path d="M2 6.5l3 3 6-6" stroke="white" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Approve {highConfidencePending} high-confidence
           </button>
         )}
 
-        {/* Bulk actions — only when rows are selected */}
+        {/* Bulk actions */}
         {someSelected && (
           <div
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs shrink-0"
             style={{ borderColor: '#e0dbd4', backgroundColor: '#f5f0ea' }}
           >
             <span style={{ color: '#6b6560' }}>{selected.size} selected</span>
             <span style={{ color: '#e0dbd4' }}>|</span>
-            <button
-              onClick={bulkApprove}
-              className="font-medium transition-colors"
-              style={{ color: '#166534' }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = '#14532d' }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = '#166534' }}
-            >
+            <button onClick={bulkApprove} className="font-semibold transition-colors" style={{ color: '#166534' }}>
               Approve
             </button>
-            <button
-              onClick={bulkFlag}
-              className="font-medium transition-colors"
-              style={{ color: '#991b1b' }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = '#7f1d1d' }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = '#991b1b' }}
-            >
+            <button onClick={bulkFlag} className="font-semibold transition-colors" style={{ color: '#991b1b' }}>
               Flag
             </button>
-            <button
-              onClick={() => setSelected(new Set())}
-              className="text-xs"
-              style={{ color: '#a09a94' }}
-            >
-              ✕ clear
+            <button onClick={() => setSelected(new Set())} className="text-xs" style={{ color: '#a09a94' }}>
+              ✕
             </button>
           </div>
         )}
 
-        {/* Keyboard shortcuts help */}
-        <ShortcutsPopover />
-      </div>
+        {/* Search */}
+        <div className="relative shrink-0 w-52 pb-px">
+          <SearchIcon />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search…"
+            className="w-full pl-7 pr-3 py-1.5 rounded-lg border text-sm focus:outline-none"
+            style={{ borderColor: '#e0dbd4', backgroundColor: '#faf8f4', color: '#1a1714' }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#2d5a27' }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = '#e0dbd4' }}
+          />
+        </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-1 border-b" style={{ borderColor: '#e0dbd4' }}>
-        {(['all', 'pending', 'approved', 'flagged'] as FilterTab[]).map((tab) => {
-          const labels: Record<FilterTab, string> = {
-            all: 'All', pending: 'Pending Review', approved: 'Approved', flagged: 'Flagged',
-          }
-          const active = activeTab === tab
-          return (
-            <button
-              key={tab}
-              onClick={() => { setActiveTab(tab); setSelected(new Set()) }}
-              className="px-3 py-2 text-sm font-medium transition-colors border-b-2 -mb-px"
-              style={{
-                borderBottomColor: active ? '#2d5a27' : 'transparent',
-                color: active ? '#2d5a27' : '#6b6560',
-              }}
-            >
-              {labels[tab]}
-              <span
-                className="ml-1.5 font-mono text-xs px-1.5 py-0.5 rounded-full"
-                style={{
-                  backgroundColor: active ? '#d4e8d0' : '#f5f0ea',
-                  color: active ? '#2d5a27' : '#a09a94',
-                }}
-              >
-                {counts[tab]}
-              </span>
-            </button>
-          )
-        })}
+        {/* Keyboard shortcuts */}
+        <div className="pb-px shrink-0">
+          <ShortcutsPopover />
+        </div>
       </div>
 
       {/* Table */}
@@ -567,7 +554,7 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
           <table className="w-full min-w-[640px]">
             <thead>
               <tr style={{ backgroundColor: '#f5f0ea', borderBottom: '1px solid #e0dbd4' }}>
-                <th className="pl-3 pr-1 py-2.5 w-8">
+                <th className="pl-3 pr-1 py-2.5" style={{ width: 32 }}>
                   <input
                     type="checkbox"
                     checked={allVisibleSelected}
@@ -578,18 +565,18 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
                   />
                 </th>
                 {[
-                  ['Date',        'text-left  w-28',              ''],
-                  ['Description', 'text-left  max-w-[220px]',     ''],
-                  ['Category',    'text-left',                    ''],
-                  ['Confidence',  'text-right w-32 hidden sm:table-cell', ''],
-                  ['Amount',      'text-right w-28',              ''],
-                  ['Status',      'text-left  w-24',              ''],
-                  ['Actions',     'text-left  w-24',              ''],
-                ].map(([label, cls]) => (
+                  { label: 'Date',       cls: 'text-left',               style: { width: 100 } },
+                  { label: 'Description',cls: 'text-left',               style: {} },
+                  { label: 'Category',   cls: 'text-left',               style: { width: 160 } },
+                  { label: 'Confidence', cls: 'text-right hidden sm:table-cell', style: { width: 80 } },
+                  { label: 'Amount',     cls: 'text-right',              style: { width: 120 } },
+                  { label: 'Status',     cls: 'text-left',               style: { width: 100 } },
+                  { label: 'Actions',    cls: 'text-left',               style: { width: 120 } },
+                ].map(({ label, cls, style }) => (
                   <th
                     key={label}
                     className={`px-3 py-2.5 text-xs font-medium uppercase tracking-wide ${cls}`}
-                    style={{ color: '#6b6560' }}
+                    style={{ color: '#6b6560', ...style }}
                   >
                     {label}
                   </th>

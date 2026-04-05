@@ -198,14 +198,17 @@ function ExportDropdown({ onExport, loading, approvedCount }: ExportDropdownProp
 }
 
 // ---------------------------------------------------------------------------
-// Stat card
+// Stat pill
 // ---------------------------------------------------------------------------
 
-function Stat({ label, value, color, bg }: { label: string; value: number; color: string; bg: string }) {
+function StatPill({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="rounded-xl border px-4 py-4" style={{ borderColor: '#e8e0d4', backgroundColor: bg }}>
-      <p className="font-mono text-2xl font-semibold leading-none" style={{ color }}>{value}</p>
-      <p className="text-xs font-medium mt-1.5" style={{ color: '#6b6560' }}>{label}</p>
+    <div
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border"
+      style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+    >
+      <span className="font-mono text-sm font-bold tabular-nums" style={{ color }}>{value}</span>
+      <span className="text-xs" style={{ color: '#a09a94' }}>{label}</span>
     </div>
   )
 }
@@ -826,6 +829,8 @@ export default function ReviewPage() {
   const [chatHighlightIds, setChatHighlightIds] = useState<Set<string>>(new Set())
   const [showEmailDraft, setShowEmailDraft]     = useState(false)
   const [clientIndustry, setClientIndustry]     = useState<ClientIndustry | null>(null)
+  type PanelTab = 'transactions' | 'anomalies' | 'recurring' | 'benchmarks' | 'audit'
+  const [activePanel, setActivePanel]           = useState<PanelTab>('transactions')
   const [toasts, setToasts]     = useState<ToastState[]>([])
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([])
   const toastId = useRef(0)
@@ -1252,12 +1257,26 @@ export default function ReviewPage() {
           </div>
         </div>
 
-        {/* Summary stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Stat label="Total"    value={job.total_transactions} color="#1a1714" bg="#ffffff" />
-          <Stat label="Approved" value={job.approved}           color="#059669" bg="#ecfdf5" />
-          <Stat label="Pending"  value={pending}                color="#d97706" bg="#fefce8" />
-          <Stat label="Flagged"  value={job.flagged}            color="#ef4444" bg="#fef2f2" />
+        {/* Stats pills row */}
+        <div className="flex flex-wrap items-center gap-2">
+          <StatPill label="Total"    value={job.total_transactions} color="#1a1714" />
+          <StatPill label="Approved" value={job.approved}           color="#059669" />
+          <StatPill label="Pending"  value={pending}                color="#d97706" />
+          <StatPill label="Flagged"  value={job.flagged}            color="#ef4444" />
+          {(job.auto_categorized ?? 0) > 0 && (() => {
+            const roi = calcROI(job)
+            return (
+              <>
+                <span className="text-sm" style={{ color: '#e8e0d4' }}>·</span>
+                <span className="text-xs" style={{ color: '#4a7c43' }}>
+                  <span className="font-mono font-semibold">{fmtHours(roi.hoursSaved)}</span>
+                  {' saved · '}
+                  <span className="font-mono font-semibold">${roi.valueSaved.toLocaleString()}</span>
+                  {' value recovered'}
+                </span>
+              </>
+            )
+          })()}
         </div>
 
         {/* Copilot */}
@@ -1273,27 +1292,9 @@ export default function ReviewPage() {
           }}
         />
 
-        {/* ROI Counter */}
-        {(job.auto_categorized ?? 0) > 0 && <ROICard job={job} />}
-
-        {/* Anomaly Alerts */}
-        {anomalies.length > 0 && <AnomalyPanel anomalies={anomalies} />}
-
         {/* Progress bar */}
-        <div
-          className="rounded-xl border px-4 py-3"
-          style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
-        >
-          <div className="flex justify-between text-xs mb-2" style={{ color: '#a09a94' }}>
-            <span>Review progress</span>
-            <span
-              className="font-mono font-medium"
-              style={{ color: pct === 100 ? '#059669' : '#1a1714' }}
-            >
-              {pct}% reviewed
-            </span>
-          </div>
-          <div className="h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece4' }}>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece4' }}>
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
@@ -1302,21 +1303,13 @@ export default function ReviewPage() {
               }}
             />
           </div>
+          <span
+            className="font-mono text-xs font-medium shrink-0 tabular-nums"
+            style={{ color: pct === 100 ? '#059669' : '#a09a94' }}
+          >
+            {pct}% reviewed
+          </span>
         </div>
-
-        {/* Category breakdown */}
-        <CategoryBreakdown transactions={job.transactions} />
-
-        {/* Industry benchmarks */}
-        <BenchmarkPanel
-          job={job}
-          industry={clientIndustry}
-          onIndustryChange={(ind) => {
-            setClientIndustry(ind)
-            const client = getClients().find((c) => c.business_name === job.client_name)
-            if (client) saveClient({ ...client, industry: ind })
-          }}
-        />
 
         {/* Review complete summary */}
         {allReviewed && (
@@ -1329,25 +1322,94 @@ export default function ReviewPage() {
           />
         )}
 
-        {/* AI Insights */}
-        <JobInsightsPanel job={job} autoGenerate />
+        {/* Tabbed panels */}
+        <div
+          className="rounded-xl border overflow-hidden"
+          style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+        >
+          {/* Tab bar */}
+          <div className="flex border-b" style={{ borderColor: '#e8e0d4', backgroundColor: '#faf8f4' }}>
+            {([
+              { key: 'transactions', label: 'Transactions',                      badge: null },
+              { key: 'anomalies',    label: 'Anomalies',                          badge: anomalies.length > 0 ? anomalies.length : null },
+              { key: 'recurring',    label: 'Recurring',                          badge: recurringPatterns.length > 0 ? recurringPatterns.length : null },
+              { key: 'benchmarks',   label: 'Benchmarks',                         badge: null },
+              { key: 'audit',        label: 'Audit Trail',                        badge: auditEvents.length > 0 ? auditEvents.length : null },
+            ] as { key: PanelTab; label: string; badge: number | null }[]).map(({ key, label, badge }) => {
+              const isActive = activePanel === key
+              return (
+                <button
+                  key={key}
+                  onClick={() => setActivePanel(key)}
+                  className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap"
+                  style={{
+                    borderBottomColor: isActive ? '#2d5a27' : 'transparent',
+                    color: isActive ? '#2d5a27' : '#6b6560',
+                    backgroundColor: isActive ? '#ffffff' : 'transparent',
+                  }}
+                >
+                  {label}
+                  {badge !== null && (
+                    <span
+                      className="font-mono text-xs px-1.5 py-0.5 rounded-full"
+                      style={{
+                        backgroundColor: key === 'anomalies' && anomalies.some(a => a.severity === 'high') ? '#fee2e2'
+                          : isActive ? '#d4e8d0' : '#f0ece4',
+                        color: key === 'anomalies' && anomalies.some(a => a.severity === 'high') ? '#991b1b'
+                          : isActive ? '#2d5a27' : '#a09a94',
+                      }}
+                    >
+                      {badge}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
 
-        {/* Recurring transactions panel */}
-        <RecurringPanel patterns={recurringPatterns} />
-
-        {/* Transaction table */}
-        <TransactionTable
-          initialTransactions={job.transactions}
-          chartOfAccounts={job.chart_of_accounts}
-          onTransactionsChange={handleTransactionsChange}
-          recurringIds={recurringIds}
-          onAudit={logAudit}
-          auditEvents={auditEvents}
-          highlightIds={chatHighlightIds}
-        />
-
-        {/* Audit trail panel */}
-        <AuditPanel auditEvents={auditEvents} />
+          {/* Tab content */}
+          <div className="p-5 space-y-5">
+            {activePanel === 'transactions' && (
+              <>
+                <CategoryBreakdown transactions={job.transactions} />
+                <TransactionTable
+                  initialTransactions={job.transactions}
+                  chartOfAccounts={job.chart_of_accounts}
+                  onTransactionsChange={handleTransactionsChange}
+                  recurringIds={recurringIds}
+                  onAudit={logAudit}
+                  auditEvents={auditEvents}
+                  highlightIds={chatHighlightIds}
+                />
+                <JobInsightsPanel job={job} autoGenerate />
+              </>
+            )}
+            {activePanel === 'anomalies' && (
+              anomalies.length === 0
+                ? <p className="text-sm py-8 text-center" style={{ color: '#a09a94' }}>No anomalies detected for this job.</p>
+                : <AnomalyPanel anomalies={anomalies} />
+            )}
+            {activePanel === 'recurring' && (
+              recurringPatterns.length === 0
+                ? <p className="text-sm py-8 text-center" style={{ color: '#a09a94' }}>No recurring patterns found.</p>
+                : <RecurringPanel patterns={recurringPatterns} />
+            )}
+            {activePanel === 'benchmarks' && (
+              <BenchmarkPanel
+                job={job}
+                industry={clientIndustry}
+                onIndustryChange={(ind) => {
+                  setClientIndustry(ind)
+                  const client = getClients().find((c) => c.business_name === job.client_name)
+                  if (client) saveClient({ ...client, industry: ind })
+                }}
+              />
+            )}
+            {activePanel === 'audit' && (
+              <AuditPanel auditEvents={auditEvents} />
+            )}
+          </div>
+        </div>
       </main>
 
       {/* Close Chat — floating */}
@@ -1441,35 +1503,6 @@ function RecurIconLg() {
   )
 }
 
-function ROICard({ job }: { job: CategorizationJob }) {
-  const roi = calcROI(job)
-  const pct = roi.totalTx > 0 ? Math.round((roi.autoApproved / roi.totalTx) * 100) : 0
-  return (
-    <div
-      className="rounded-xl border px-5 py-4 flex flex-wrap items-center gap-6"
-      style={{ borderColor: '#d4e8d0', backgroundColor: '#f0f7ee' }}
-    >
-      <div className="flex items-center gap-2.5">
-        <span className="text-2xl font-bold tabular-nums" style={{ color: '#2d5a27' }}>
-          {fmtHours(roi.hoursSaved)}
-        </span>
-        <span className="text-sm" style={{ color: '#4a7c43' }}>saved</span>
-      </div>
-      <div className="w-px h-8 hidden sm:block" style={{ backgroundColor: '#c0debb' }} />
-      <div className="flex items-center gap-2.5">
-        <span className="text-2xl font-bold tabular-nums" style={{ color: '#2d5a27' }}>
-          ${roi.valueSaved.toLocaleString()}
-        </span>
-        <span className="text-sm" style={{ color: '#4a7c43' }}>value recovered</span>
-      </div>
-      <div className="w-px h-8 hidden sm:block" style={{ backgroundColor: '#c0debb' }} />
-      <div className="text-xs space-y-0.5" style={{ color: '#4a7c43' }}>
-        <p>{roi.autoApproved} of {roi.totalTx} transactions auto-approved ({pct}%)</p>
-        <p style={{ color: '#6b9e64' }}>at ${roi.ratePerHour}/hr · 3 min manual baseline</p>
-      </div>
-    </div>
-  )
-}
 
 const ANOMALY_STYLE: Record<string, { border: string; bg: string; dot: string; text: string; label: string }> = {
   high:   { border: '#fca5a5', bg: '#fef2f2', dot: '#ef4444', text: '#991b1b', label: 'High'   },

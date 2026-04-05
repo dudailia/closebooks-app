@@ -30,32 +30,13 @@ function StatusBadge({ status }: { status: Transaction['status'] }) {
   )
 }
 
-function ConfidenceBar({ value }: { value: number }) {
-  const pct        = Math.round(value * 100)
-  const color      = value >= 0.85 ? '#059669' : value >= 0.7 ? '#d97706' : '#ef4444'
-  const trackColor = value >= 0.85 ? '#d1fae5' : value >= 0.7 ? '#fef3c7' : '#fee2e2'
-  const label      = value >= 0.85 ? 'High'    : value >= 0.7 ? 'Med'     : 'Low'
+function ConfidenceDot({ value }: { value: number }) {
+  const pct   = Math.round(value * 100)
+  const color = value >= 0.85 ? '#059669' : value >= 0.7 ? '#d97706' : '#ef4444'
   return (
-    <div className="flex items-center gap-2 justify-end">
-      <div className="flex flex-col items-end gap-0.5">
-        <span className="font-mono text-xs font-semibold" style={{ color }}>
-          {pct}%
-        </span>
-        <span className="text-xs" style={{ color: '#c4bdb8', fontSize: 10 }}>{label}</span>
-      </div>
-      <div
-        className="w-14 h-2 rounded-full overflow-hidden"
-        style={{ backgroundColor: trackColor }}
-      >
-        <div
-          className="h-full rounded-full"
-          style={{
-            width: `${pct}%`,
-            backgroundColor: color,
-            transition: 'width 0.4s ease',
-          }}
-        />
-      </div>
+    <div className="flex items-center gap-1.5 justify-end">
+      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+      <span className="font-mono text-xs tabular-nums" style={{ color }}>{pct}%</span>
     </div>
   )
 }
@@ -239,16 +220,23 @@ export default function TransactionRow({
         </td>
 
         {/* Description */}
-        <td className="px-3 py-2.5 max-w-[220px]">
-          <div className="flex items-center gap-1.5 min-w-0">
+        <td className="px-3 py-2.5">
+          <div className="flex items-start gap-1.5">
             {isRecurring && (
-              <span title="Recurring transaction">
+              <span title="Recurring transaction" className="mt-0.5 shrink-0">
                 <RecurringIcon />
               </span>
             )}
             <span
-              className="text-sm block truncate"
-              style={{ color: '#1a1714' }}
+              className="text-sm"
+              style={{
+                color: '#1a1714',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                wordBreak: 'break-word',
+              }}
               title={transaction.description}
             >
               {transaction.description}
@@ -271,9 +259,9 @@ export default function TransactionRow({
         </td>
 
         {/* Confidence */}
-        <td className="px-3 py-2.5 w-32 hidden sm:table-cell">
+        <td className="px-3 py-2.5 hidden sm:table-cell">
           {transaction.confidence > 0
-            ? <ConfidenceBar value={transaction.confidence} />
+            ? <ConfidenceDot value={transaction.confidence} />
             : <span className="text-xs font-mono" style={{ color: '#a09a94' }}>—</span>
           }
         </td>
@@ -295,65 +283,68 @@ export default function TransactionRow({
         </td>
 
         {/* Actions */}
-        <td className="px-3 py-2.5 w-28" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center gap-1">
-            <ActionButton
-              label="✓"
+        <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-0.5">
+            <IconBtn
               title="Approve"
+              active={transaction.status === 'approved' || transaction.status === 'edited'}
+              activeColor="#166534" activeBg="#dcfce7" activeBorder="#16a34a"
               onClick={handleApprove}
-              active={transaction.status === 'approved'}
-              activeStyle={{ backgroundColor: '#dcfce7', color: '#166534', borderColor: '#16a34a' }}
-            />
-            <ActionButton
-              label="⚑"
-              title="Flag"
-              onClick={handleFlag}
+            >
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <path d="M2 6.5l3 3 6-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </IconBtn>
+            <IconBtn
+              title="Flag for review"
               active={transaction.status === 'flagged'}
-              activeStyle={{ backgroundColor: '#fee2e2', color: '#991b1b', borderColor: '#dc2626' }}
-            />
-            {/* Audit history icon — amber when events exist */}
+              activeColor="#991b1b" activeBg="#fee2e2" activeBorder="#dc2626"
+              onClick={handleFlag}
+            >
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <path d="M3 2v9M3 2h7l-2 3 2 3H3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </IconBtn>
             <div className="relative">
-              <button
-                onClick={() => setExpanded(true)}
+              <IconBtn
                 title={txAuditEvents.length > 0 ? `${txAuditEvents.length} audit event${txAuditEvents.length !== 1 ? 's' : ''}` : 'No audit history'}
-                className="px-1.5 py-1 rounded border text-xs transition-colors"
-                style={{
-                  borderColor: txAuditEvents.length > 0 ? '#d97706' : '#e0dbd4',
-                  color:       txAuditEvents.length > 0 ? '#d97706' : '#c4bdb8',
-                  backgroundColor: txAuditEvents.length > 0 ? '#fffbeb' : '#faf8f4',
-                }}
+                active={txAuditEvents.length > 0}
+                activeColor="#d97706" activeBg="#fffbeb" activeBorder="#d97706"
+                onClick={() => setExpanded(true)}
               >
                 <ClockIcon />
-              </button>
+              </IconBtn>
               {txAuditEvents.length > 0 && (
                 <span
-                  className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-white"
+                  className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-white pointer-events-none"
                   style={{ backgroundColor: '#d97706', fontSize: 8, lineHeight: 1 }}
                 >
                   {txAuditEvents.length > 9 ? '9+' : txAuditEvents.length}
                 </span>
               )}
             </div>
-            <button
+            <IconBtn
+              title={expanded ? 'Collapse' : 'Expand details'}
+              active={expanded}
+              activeColor="#2d5a27" activeBg="#e8f0e6" activeBorder="#2d5a27"
               onClick={() => setExpanded((v) => !v)}
-              title={expanded ? 'Collapse' : 'Expand'}
-              className="px-1.5 py-1 rounded border text-xs transition-colors"
-              style={{
-                borderColor: expanded ? '#2d5a27' : '#e0dbd4',
-                color: expanded ? '#2d5a27' : '#a09a94',
-                backgroundColor: expanded ? '#f0ece4' : '#faf8f4',
-              }}
             >
-              {expanded ? '▲' : '▼'}
-            </button>
+              <svg
+                width="12" height="12" viewBox="0 0 12 12" fill="none"
+                style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
+              >
+                <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </IconBtn>
           </div>
         </td>
       </tr>
 
       {/* Expanded detail row */}
       {expanded && (
-        <tr style={{ backgroundColor: '#f5f0ea', borderTop: '1px solid #e0dbd4', borderLeft: focusBorder }}>
-          <td colSpan={8} className="px-6 py-4">
+        <tr style={{ backgroundColor: '#faf8f4', borderTop: '1px solid #e8e0d4', borderLeft: focusBorder }}>
+          <td colSpan={8} className="p-0">
+          <div className="px-5 py-5 animate-expand-row">
 
             {/* Smart suggestions — shown for flagged / low-confidence */}
             {suggestions.length > 0 && (
@@ -466,24 +457,30 @@ export default function TransactionRow({
             </div>
 
             {/* Approve / Flag buttons */}
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-2 mt-5 pt-4" style={{ borderTop: '1px solid #e8e0d4' }}>
               <button
                 onClick={handleApprove}
-                className="px-4 py-1.5 rounded-lg text-sm font-medium text-white transition-opacity"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold text-white transition-opacity"
                 style={{ backgroundColor: '#2d5a27' }}
                 onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85' }}
                 onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
               >
-                ✓ Approve
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M1.5 6l3 3 6-6" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Approve
               </button>
               <button
                 onClick={handleFlag}
-                className="px-4 py-1.5 rounded-lg text-sm font-medium border transition-colors"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium border transition-colors"
                 style={{ borderColor: '#dc2626', color: '#991b1b', backgroundColor: '#fff' }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fee2e2' }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff' }}
               >
-                ⚑ Flag for review
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 1.5v9M3 1.5h6l-1.5 3 1.5 3H3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Flag for review
               </button>
             </div>
 
@@ -513,6 +510,7 @@ export default function TransactionRow({
                 </ol>
               </div>
             )}
+          </div>
           </td>
         </tr>
       )}
@@ -567,32 +565,34 @@ function RecurringIcon() {
 }
 
 // ---------------------------------------------------------------------------
-// Tiny helper
+// Icon button
 // ---------------------------------------------------------------------------
 
-function ActionButton({
-  label, title, onClick, active, activeStyle,
+function IconBtn({
+  title, active, activeColor, activeBg, activeBorder, onClick, children,
 }: {
-  label: string
   title: string
-  onClick: () => void
   active: boolean
-  activeStyle: React.CSSProperties
+  activeColor: string
+  activeBg: string
+  activeBorder: string
+  onClick: () => void
+  children: React.ReactNode
 }) {
   return (
     <button
       title={title}
       onClick={onClick}
-      className="px-1.5 py-1 rounded border text-xs transition-colors"
+      className="w-7 h-7 flex items-center justify-center rounded-lg border transition-colors"
       style={
         active
-          ? activeStyle
-          : { borderColor: '#e0dbd4', color: '#a09a94', backgroundColor: '#faf8f4' }
+          ? { color: activeColor, backgroundColor: activeBg, borderColor: activeBorder }
+          : { color: '#c4bdb8', backgroundColor: '#faf8f4', borderColor: '#e8e0d4' }
       }
-      onMouseEnter={(e) => { if (!active) e.currentTarget.style.borderColor = '#6b6560' }}
-      onMouseLeave={(e) => { if (!active) e.currentTarget.style.borderColor = '#e0dbd4' }}
+      onMouseEnter={(e) => { if (!active) { e.currentTarget.style.color = '#6b6560'; e.currentTarget.style.borderColor = '#c4bdb8' } }}
+      onMouseLeave={(e) => { if (!active) { e.currentTarget.style.color = '#c4bdb8'; e.currentTarget.style.borderColor = '#e8e0d4' } }}
     >
-      {label}
+      {children}
     </button>
   )
 }
