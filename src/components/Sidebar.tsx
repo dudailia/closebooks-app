@@ -54,10 +54,13 @@ function buildSections(pendingCount: number): NavSection[] {
       id: 'ai',
       label: 'AI TOOLS',
       items: [
-        { href: '/dashboard/copilot',   label: 'Copilot',   icon: SparkleIcon },
-        { href: '/dashboard/autopilot', label: 'Autopilot', icon: RocketIcon },
-        { href: '/dashboard/radar',     label: 'Radar',     icon: RadarIcon },
-        { href: '/dashboard/tax-draft', label: 'TaxDraft',  icon: TaxIcon },
+        { href: '/dashboard/copilot',       label: 'Copilot',       icon: SparkleIcon },
+        { href: '/dashboard/autopilot',     label: 'Autopilot',     icon: RocketIcon },
+        { href: '/dashboard/radar',         label: 'Radar',         icon: RadarIcon },
+        { href: '/dashboard/tax-draft',     label: 'TaxDraft',      icon: TaxIcon },
+        { href: '/dashboard/tax-strategy',  label: 'Tax Strategy',  icon: TaxStrategyIcon },
+        { href: '/dashboard/1099',          label: '1099 Filing',   icon: Form1099Icon },
+        { href: '/dashboard/audit-defense', label: 'Audit Defense', icon: AuditIcon },
       ],
     },
     {
@@ -77,6 +80,16 @@ function buildSections(pendingCount: number): NavSection[] {
         { href: '/dashboard/network',    label: 'Network',    icon: NetworkIcon },
         { href: '/dashboard/advisory',   label: 'Advisory',   icon: MessageIcon },
         { href: '/dashboard/compliance', label: 'Compliance', icon: ShieldIcon },
+      ],
+    },
+    {
+      id: 'growth',
+      label: 'GROWTH',
+      items: [
+        { href: '/dashboard/profile',       label: 'My Profile',    icon: ProfileIcon },
+        { href: '/dashboard/connect',       label: 'Connect API',   icon: ApiIcon },
+        { href: '/dashboard/certification', label: 'Certification', icon: CertIcon },
+        { href: '/dashboard/referrals',     label: 'Refer & Earn',  icon: GiftIcon },
       ],
     },
     {
@@ -319,11 +332,14 @@ export default function Sidebar() {
   // Persist collapse state
   useEffect(() => {
     const saved = localStorage.getItem('cb_sidebar_collapsed')
-    if (saved === 'true') setCollapsed(true)
+    const isCollapsed = saved === 'true'
+    if (isCollapsed) setCollapsed(true)
+    document.documentElement.style.setProperty('--sb-width', isCollapsed ? '52px' : '220px')
   }, [])
 
   useEffect(() => {
     localStorage.setItem('cb_sidebar_collapsed', String(collapsed))
+    document.documentElement.style.setProperty('--sb-width', collapsed ? '52px' : '220px')
   }, [collapsed])
 
   // Close mobile sidebar on route change
@@ -350,15 +366,18 @@ export default function Sidebar() {
   const sidebarContent = (
     <aside style={{
       width: W,
-      minHeight: '100vh',
+      height: '100vh',
       backgroundColor: '#ffffff',
       borderRight: '1px solid #e8e0d4',
       display: 'flex',
       flexDirection: 'column',
       transition: 'width 0.2s ease',
       overflowX: 'hidden',
+      overflowY: 'auto',
       flexShrink: 0,
-      position: 'relative',
+      position: 'fixed',
+      left: 0,
+      top: 0,
       zIndex: 30,
     }}>
 
@@ -469,36 +488,6 @@ export default function Sidebar() {
         padding: collapsed ? '8px 4px' : '10px',
         flexShrink: 0,
       }}>
-        {/* Refer */}
-        <Link
-          href="/dashboard/referrals"
-          title={collapsed ? 'Refer & Earn' : undefined}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: collapsed ? 0 : 8,
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            padding: collapsed ? '7px 0' : '7px 8px',
-            borderRadius: 8,
-            textDecoration: 'none',
-            color: '#6b6560',
-            fontSize: 13,
-            marginBottom: 6,
-          }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#f5f0ea'; e.currentTarget.style.color = '#1a1714' }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6b6560' }}
-        >
-          <GiftIcon />
-          <span style={{
-            overflow: 'hidden', whiteSpace: 'nowrap',
-            maxWidth: collapsed ? 0 : 160,
-            opacity: collapsed ? 0 : 1,
-            transition: 'max-width 0.18s ease, opacity 0.12s ease',
-          }}>
-            Refer &amp; Earn
-          </span>
-        </Link>
-
         {/* Upgrade */}
         <Link
           href="/pricing"
@@ -615,3 +604,9 @@ function ChevronLeftIcon() { return <svg width="14" height="14" viewBox="0 0 14 
 function ChevronRightIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg> }
 function HamburgerIcon() { return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg> }
 function SignOutIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h3M9 10l3-3-3-3M12 7H5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> }
+function TaxStrategyIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 3 5-7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" fill="none"/><circle cx="13" cy="3.5" r="1.5" stroke="currentColor" strokeWidth="1.1" fill="none"/></svg> }
+function Form1099Icon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="1.5" width="9" height="12" rx="1.2" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M4 5h5M4 7.5h5M4 10h3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/><path d="M11 9.5l2 2M13 9.5l-2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> }
+function AuditIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1.5L2 4v3.5c0 3.5 2.5 5.5 6 7 3.5-1.5 6-3.5 6-7V4L8 1.5z" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinejoin="round"/><path d="M5.5 7.5l1.5 1.5 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> }
+function ProfileIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5.5" r="2.5" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M3 13c0-2.5 2.2-4 5-4s5 1.5 5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none"/><path d="M11.5 2.5l1 1M13 4l-1-1" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity=".5"/></svg> }
+function ApiIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 4h12v8H2z" stroke="currentColor" strokeWidth="1.2" fill="none" rx="1.5"/><path d="M4.5 8l1.5-1.5L7.5 8 6 9.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/><path d="M9 6.5h3M9 9.5h2" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg> }
+function CertIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="7" r="4" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M5.5 7l1.5 1.5 3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M5.5 11l-1 3L8 13l3.5 1-1-3" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round" fill="none"/></svg> }

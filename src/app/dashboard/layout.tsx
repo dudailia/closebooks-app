@@ -3,9 +3,18 @@ import TopBar from '@/components/TopBar'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#faf8f4' }}>
+    <div style={{ backgroundColor: '#faf8f4', minHeight: '100vh' }}>
       <Sidebar />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflowX: 'hidden' }}>
+      {/* margin-left matches sidebar width; Sidebar.tsx updates --sb-width on toggle */}
+      <div style={{
+        marginLeft: 'var(--sb-width, 220px)',
+        transition: 'margin-left 0.2s ease',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        minWidth: 0,
+        overflowX: 'hidden',
+      }}>
         <TopBar />
         <main style={{ flex: 1 }}>
           {children}
