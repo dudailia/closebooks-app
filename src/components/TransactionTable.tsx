@@ -551,10 +551,20 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
             </p>
           </div>
         ) : (
-          <table className="w-full min-w-[640px]">
+          <table className="w-full" style={{ tableLayout: 'fixed' }}>
+            <colgroup>
+              <col style={{ width: 40 }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '35%' }} />
+              <col style={{ width: '12%' }} />
+              <col style={{ width: '8%' }} />
+              <col style={{ width: '12%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '13%' }} />
+            </colgroup>
             <thead>
               <tr style={{ backgroundColor: '#f5f0ea', borderBottom: '1px solid #e0dbd4' }}>
-                <th className="pl-3 pr-1 py-2.5" style={{ width: 32 }}>
+                <th className="pl-3 pr-1 py-2.5">
                   <input
                     type="checkbox"
                     checked={allVisibleSelected}
@@ -565,18 +575,18 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
                   />
                 </th>
                 {[
-                  { label: 'Date',       cls: 'text-left',               style: { width: 90, whiteSpace: 'nowrap' as const } },
-                  { label: 'Description',cls: 'text-left',               style: { minWidth: 250 } },
-                  { label: 'Category',   cls: 'text-left',               style: { width: 130 } },
-                  { label: 'Confidence', cls: 'text-right hidden sm:table-cell', style: { width: 70 } },
-                  { label: 'Amount',     cls: 'text-right',              style: { width: 110, whiteSpace: 'nowrap' as const } },
-                  { label: 'Status',     cls: 'text-left',               style: { width: 90 } },
-                  { label: 'Actions',    cls: 'text-left',               style: { width: 110 } },
-                ].map(({ label, cls, style }) => (
+                  { label: 'Date',        cls: 'text-left' },
+                  { label: 'Description', cls: 'text-left' },
+                  { label: 'Category',    cls: 'text-left' },
+                  { label: 'Confidence',  cls: 'text-right hidden sm:table-cell' },
+                  { label: 'Amount',      cls: 'text-right' },
+                  { label: 'Status',      cls: 'text-left' },
+                  { label: 'Actions',     cls: 'text-left' },
+                ].map(({ label, cls }) => (
                   <th
                     key={label}
                     className={`px-3 py-2.5 text-xs font-medium uppercase tracking-wide ${cls}`}
-                    style={{ color: '#6b6560', ...style }}
+                    style={{ color: '#6b6560' }}
                   >
                     {label}
                   </th>

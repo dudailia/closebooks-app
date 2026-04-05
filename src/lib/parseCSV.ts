@@ -172,6 +172,24 @@ export function parseTransactionCSV(csvContent: string): ParseCSVResult {
     return idx !== undefined ? (row[idx] ?? '').trim() : ''
   }
 
+  // --- Step 2b: detect sign convention for single-amount columns -----------
+  // Some bank CSVs export all amounts as negative. In that case, negative means
+  // outgoing (debit) and "positive" means incoming (credit) — but since every row
+  // is negative, we need to detect the description-based polarity instead.
+  // If ≥ 90% of parseable amounts in the single-amount column are negative, we
+  // assume all-negative convention and flip: negative → credit, positive → debit.
+  let allNegativeConvention = false
+  if (colAmount) {
+    const parsedAmounts = dataRows
+      .filter((row) => !row.every((c) => !c.trim()))
+      .map((row) => parseAmount(cell(row, colAmount)))
+      .filter((v): v is number => v !== null && v !== 0)
+    if (parsedAmounts.length > 0) {
+      const negCount = parsedAmounts.filter((v) => v < 0).length
+      allNegativeConvention = negCount / parsedAmounts.length >= 0.9
+    }
+  }
+
   // --- Step 3: process each data row ----------------------------------------
   dataRows.forEach((row, rowNum) => {
     // Skip blank rows
@@ -191,7 +209,13 @@ export function parseTransactionCSV(csvContent: string): ParseCSVResult {
         return
       }
       amount = Math.abs(parsed)
-      type = parsed < 0 ? 'debit' : 'credit'
+      // If all-negative convention (e.g. some bank CSV formats), flip polarity:
+      // negative = money IN (credit), positive = money OUT (debit)
+      if (allNegativeConvention) {
+        type = parsed < 0 ? 'credit' : 'debit'
+      } else {
+        type = parsed < 0 ? 'debit' : 'credit'
+      }
     } else {
       // Separate debit / credit columns
       const debitRaw = cell(row, colDebit)

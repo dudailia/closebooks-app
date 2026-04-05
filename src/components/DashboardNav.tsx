@@ -160,8 +160,14 @@ export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void
           <NavLink href="/dashboard/analytics" active={path.startsWith('/dashboard/analytics')}>
             Analytics
           </NavLink>
+          <NavLink href="/dashboard/calendar" active={path.startsWith('/dashboard/calendar')}>
+            Calendar
+          </NavLink>
           <NavLink href="/dashboard/integrations" active={path.startsWith('/dashboard/integrations')}>
             Integrations
+          </NavLink>
+          <NavLink href="/dashboard/developers" active={path.startsWith('/dashboard/developers')}>
+            Developers
           </NavLink>
           <NavLink href="/dashboard/templates" active={path.startsWith('/dashboard/templates')}>
             Templates
@@ -172,11 +178,20 @@ export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void
           <NavLink href="/dashboard/copilot" active={path.startsWith('/dashboard/copilot')}>
             Copilot
           </NavLink>
+          <NavLink href="/dashboard/autopilot" active={path.startsWith('/dashboard/autopilot')}>
+            <span className="flex items-center gap-1">
+              <RocketNavIcon />
+              Autopilot
+            </span>
+          </NavLink>
           <NavLink href="/dashboard/referrals" active={path.startsWith('/dashboard/referrals')}>
             <span className="flex items-center gap-1">
               <GiftNavIcon />
               Refer
             </span>
+          </NavLink>
+          <NavLink href="/dashboard/team" active={path.startsWith('/dashboard/team')}>
+            Team
           </NavLink>
           <NavLink href="/dashboard/settings" active={path.startsWith('/dashboard/settings')}>
             Settings
@@ -284,6 +299,23 @@ function PlusIcon() {
   return (
     <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
       <path d="M5.5 1v9M1 5.5h9" stroke="white" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function RocketNavIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+      <path
+        d="M6 1c0 0-2.5 2-2.5 5.5l1 1c.5-1.5 1-2.5 1.5-3 .5.5 1 1.5 1.5 3l1-1C8.5 3 6 1 6 1z"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      <path d="M4.5 7.5l-1.5 1.5M7.5 7.5l1.5 1.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+      <circle cx="6" cy="6.5" r="0.8" fill="currentColor" />
     </svg>
   )
 }

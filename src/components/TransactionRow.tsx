@@ -219,15 +219,24 @@ export default function TransactionRow({
           {transaction.date}
         </td>
 
-        {/* Description — flexible growing column, no truncation */}
-        <td className="px-3 py-2.5">
-          <div className="flex items-start gap-1.5">
+        {/* Description — truncated with ellipsis, full text on hover */}
+        <td className="px-3 py-2.5" style={{ overflow: 'hidden' }}>
+          <div className="flex items-center gap-1.5" style={{ minWidth: 0 }}>
             {isRecurring && (
-              <span title="Recurring transaction" className="mt-0.5 shrink-0">
+              <span title="Recurring transaction" className="shrink-0">
                 <RecurringIcon />
               </span>
             )}
-            <span className="text-sm" style={{ color: '#1a1714' }}>
+            <span
+              className="text-sm block"
+              style={{
+                color: '#1a1714',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+              title={transaction.description}
+            >
               {transaction.description}
             </span>
           </div>

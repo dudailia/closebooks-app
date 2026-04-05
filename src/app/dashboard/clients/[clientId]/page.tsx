@@ -110,6 +110,145 @@ function EditModal({ client, onSave, onClose }: { client: Client; onSave: (c: Cl
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Health score helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function calcHealthScore(jobs: CategorizationJob[]): { score: number; label: string; color: string; factors: { name: string; points: number; max: number; detail: string }[] } {
+  if (jobs.length === 0) return { score: 0, label: 'No data', color: '#a09a94', factors: [] }
+
+  const allTx      = jobs.flatMap((j) => j.transactions)
+  const approved   = allTx.filter((t) => t.status === 'approved' || t.status === 'edited').length
+  const flagged    = allTx.filter((t) => t.status === 'flagged').length
+  const totalTx    = allTx.length
+  const allConfs   = allTx.filter((t) => t.confidence > 0).map((t) => t.confidence)
+  const avgConf    = allConfs.length > 0 ? allConfs.reduce((a, b) => a + b, 0) / allConfs.length : 0
+  const completedJobs = jobs.filter((j) => j.status === 'completed').length
+
+  // Confidence score: 0–40 points
+  const confPts = Math.round(avgConf * 40)
+
+  // Low flagged ratio: 0–30 points (fewer flags = more points)
+  const flagRatio  = totalTx > 0 ? flagged / totalTx : 0
+  const flagPts    = Math.round(Math.max(0, (1 - flagRatio * 5)) * 30)
+
+  // Completion rate: 0–20 points
+  const compRate   = jobs.length > 0 ? completedJobs / jobs.length : 0
+  const compPts    = Math.round(compRate * 20)
+
+  // History / data richness: 0–10 points
+  const histPts    = Math.min(10, jobs.length * 2)
+
+  const score = Math.min(100, confPts + flagPts + compPts + histPts)
+  const label = score >= 85 ? 'Excellent' : score >= 70 ? 'Good' : score >= 50 ? 'Fair' : 'Needs Attention'
+  const color = score >= 85 ? '#059669' : score >= 70 ? '#2d5a27' : score >= 50 ? '#d97706' : '#dc2626'
+
+  return {
+    score,
+    label,
+    color,
+    factors: [
+      { name: 'AI Confidence',    points: confPts, max: 40, detail: `${Math.round(avgConf * 100)}% avg confidence` },
+      { name: 'Clean Bookkeeping',points: flagPts, max: 30, detail: `${flagged} of ${totalTx} tx flagged` },
+      { name: 'Close Completion', points: compPts, max: 20, detail: `${completedJobs}/${jobs.length} closes complete` },
+      { name: 'History',          points: histPts, max: 10, detail: `${jobs.length} close${jobs.length !== 1 ? 's' : ''} on file` },
+    ],
+  }
+}
+
+function HealthScoreCard({ jobs, clientName }: { jobs: CategorizationJob[]; clientName: string }) {
+  const { score, label, color, factors } = calcHealthScore(jobs)
+  const r = 36
+  const circumference = 2 * Math.PI * r
+  const offset = circumference * (1 - score / 100)
+
+  function exportReport() {
+    const lines = [
+      `Client Health Report — ${clientName}`,
+      `Generated: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
+      '',
+      `Overall Score: ${score}/100 (${label})`,
+      '',
+      'Score Breakdown:',
+      ...factors.map((f) => `  ${f.name}: ${f.points}/${f.max} pts — ${f.detail}`),
+      '',
+      `Total Jobs: ${jobs.length}`,
+      `Total Transactions: ${jobs.reduce((s, j) => s + j.total_transactions, 0)}`,
+      `Auto-categorized: ${jobs.reduce((s, j) => s + j.auto_categorized, 0)}`,
+    ]
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `${clientName.toLowerCase().replace(/\s+/g, '-')}-health-report.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  if (jobs.length === 0) return null
+
+  return (
+    <div className="rounded-xl border p-5" style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#a09a94' }}>Client Health Score</p>
+        <button
+          onClick={exportReport}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors"
+          style={{ borderColor: '#e0dbd4', color: '#6b6560', backgroundColor: '#ffffff' }}
+          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f0ea' }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
+        >
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <path d="M2 10h8M6 2v6M3.5 5.5l2.5 3 2.5-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Export Report
+        </button>
+      </div>
+
+      <div className="flex items-center gap-6">
+        {/* Circular gauge */}
+        <div className="relative shrink-0">
+          <svg width="100" height="100" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r={r} fill="none" stroke="#f0ece4" strokeWidth="8" />
+            <circle
+              cx="50" cy="50" r={r} fill="none"
+              stroke={color} strokeWidth="8"
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+              strokeLinecap="round"
+              transform="rotate(-90 50 50)"
+              style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="font-mono text-xl font-bold leading-none" style={{ color }}>{score}</span>
+            <span className="text-xs font-medium mt-0.5" style={{ color: '#6b6560' }}>{label}</span>
+          </div>
+        </div>
+
+        {/* Factors */}
+        <div className="flex-1 space-y-2">
+          {factors.map((f) => (
+            <div key={f.name}>
+              <div className="flex items-center justify-between text-xs mb-0.5">
+                <span style={{ color: '#6b6560' }}>{f.name}</span>
+                <span className="font-mono" style={{ color: '#1a1714' }}>{f.points}/{f.max}</span>
+              </div>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece4' }}>
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${(f.points / f.max) * 100}%`, backgroundColor: color, transition: 'width 0.6s ease' }}
+                />
+              </div>
+              <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>{f.detail}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Close card (read-only)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -358,6 +497,9 @@ export default function ClientDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Health Score */}
+        <HealthScoreCard jobs={jobs} clientName={client.business_name} />
 
         {/* Close history */}
         <div>
