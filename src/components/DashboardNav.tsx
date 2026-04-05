@@ -175,6 +175,24 @@ export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void
               Advisory
             </span>
           </NavLink>
+          <NavLink href="/dashboard/radar" active={path.startsWith('/dashboard/radar')}>
+            <span className="flex items-center gap-1">
+              <RadarNavIcon />
+              Radar
+            </span>
+          </NavLink>
+          <NavLink href="/dashboard/inbox" active={path.startsWith('/dashboard/inbox')}>
+            <span className="flex items-center gap-1">
+              <InboxNavIcon />
+              Inbox
+            </span>
+          </NavLink>
+          <NavLink href="/dashboard/tax-draft" active={path.startsWith('/dashboard/tax-draft')}>
+            <span className="flex items-center gap-1">
+              <TaxNavIcon />
+              TaxDraft
+            </span>
+          </NavLink>
           <NavLink href="/dashboard/billing" active={path.startsWith('/dashboard/billing')}>
             Billing
           </NavLink>
@@ -372,6 +390,36 @@ function AdvisoryNavIcon() {
     <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
       <path d="M2 2h8a1 1 0 011 1v5a1 1 0 01-1 1H7l-2 2V9H2a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.1" fill="none" strokeLinejoin="round" />
       <path d="M4 5h4M4 7h2" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function RadarNavIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+      <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.1" fill="none" />
+      <circle cx="6" cy="6" r="2" stroke="currentColor" strokeWidth="1.1" fill="none" />
+      <circle cx="6" cy="6" r="0.7" fill="currentColor" />
+      <path d="M6 6L9.5 2.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" opacity="0.5" />
+    </svg>
+  )
+}
+
+function InboxNavIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+      <path d="M1 4l5 3.5L11 4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="1" y="2" width="10" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.1" fill="none" />
+    </svg>
+  )
+}
+
+function TaxNavIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+      <rect x="1.5" y="1" width="7" height="10" rx="1" stroke="currentColor" strokeWidth="1.1" fill="none" />
+      <path d="M3.5 4h4M3.5 6h4M3.5 8h2" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+      <path d="M8.5 7l1.5 1.5L12 6" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
