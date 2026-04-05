@@ -172,49 +172,9 @@ export function parseTransactionCSV(csvContent: string): ParseCSVResult {
     return idx !== undefined ? (row[idx] ?? '').trim() : ''
   }
 
-  // --- Step 2b: detect sign convention for single-amount columns -----------
-  // Standard convention: positive = credit (money in), negative = debit (money out).
-  // Some banks export ALL amounts as negative — we detect this with a 90% threshold
-  // AND verify with balance-column direction and credit-keyword descriptions.
-  // Only flip if BOTH the 90% rule passes AND credit-keyword rows also appear negative.
-  const CREDIT_KEYWORDS = /\b(deposit|credit|payment from|client payment|wire in|interest earned|refund|reimbursement|incoming|received)\b/i
-
-  let allNegativeConvention = false
-  if (colAmount) {
-    const nonBlankRows = dataRows.filter((row) => !row.every((c) => !c.trim()))
-    const parsedAmounts = nonBlankRows
-      .map((row) => parseAmount(cell(row, colAmount)))
-      .filter((v): v is number => v !== null && v !== 0)
-
-    if (parsedAmounts.length > 0) {
-      const negCount = parsedAmounts.filter((v) => v < 0).length
-      const overwhelminglyNegative = negCount / parsedAmounts.length >= 0.9
-
-      if (overwhelminglyNegative) {
-        // Secondary check: do rows with credit-like descriptions also show as negative?
-        // If yes, we know the bank flipped all signs → flip them back.
-        // If credit-keyword rows are actually positive, standard convention is correct.
-        const creditKeywordRows = nonBlankRows.filter((row) =>
-          CREDIT_KEYWORDS.test(cell(row, colDescription))
-        )
-        if (creditKeywordRows.length > 0) {
-          const creditKeywordAmounts = creditKeywordRows
-            .map((row) => parseAmount(cell(row, colAmount)))
-            .filter((v): v is number => v !== null && v !== 0)
-          const creditKeywordNegCount = creditKeywordAmounts.filter((v) => v < 0).length
-          // Only flip if credit-keyword rows are also predominantly negative
-          allNegativeConvention =
-            creditKeywordAmounts.length > 0 &&
-            creditKeywordNegCount / creditKeywordAmounts.length >= 0.7
-        } else {
-          // No credit-keyword rows to verify — use 90% rule but only if no positive amounts exist
-          allNegativeConvention = parsedAmounts.every((v) => v < 0)
-        }
-      }
-    }
-  }
-
   // --- Step 3: process each data row ----------------------------------------
+  // Sign convention: positive number = credit (money in), negative = debit (money out).
+  // We trust the sign in the CSV exactly as written. No auto-detection, no flipping.
   dataRows.forEach((row, rowNum) => {
     // Skip blank rows
     if (row.every((c) => !c.trim())) return
@@ -226,47 +186,28 @@ export function parseTransactionCSV(csvContent: string): ParseCSVResult {
     let type: 'debit' | 'credit'
 
     if (colAmount) {
-      // Single amount column
+      // Single amount column — trust the sign as-is
       const parsed = parseAmount(cell(row, colAmount))
       if (parsed === null) {
         errors.push(`Row ${headerRowIndex + rowNum + 2}: could not parse amount "${cell(row, colAmount)}" — row skipped.`)
         return
       }
+      // positive = credit (deposit/income), negative = debit (expense/payment)
       amount = Math.abs(parsed)
-
-      if (allNegativeConvention) {
-        // All-negative convention: negative = money IN (credit), positive = money OUT (debit)
-        type = parsed < 0 ? 'credit' : 'debit'
-      } else {
-        // Standard convention: positive = credit, negative = debit
-        // Override with description keywords for high-confidence signals
-        const descUpper = rawDesc.toUpperCase()
-        const isObviousCredit = CREDIT_KEYWORDS.test(rawDesc)
-        const isObviousDebit = /\b(check|payment to|fee|charge|purchase|withdrawal|debit|expense)\b/i.test(rawDesc)
-
-        if (isObviousCredit && !isObviousDebit && parsed > 0) {
-          type = 'credit'
-        } else if (isObviousDebit && !isObviousCredit && parsed < 0) {
-          type = 'debit'
-        } else {
-          // No strong keyword signal — trust the sign from the CSV
-          type = parsed < 0 ? 'debit' : 'credit'
-        }
-        void descUpper // suppress unused warning
-      }
+      type = parsed >= 0 ? 'credit' : 'debit'
     } else {
-      // Separate debit / credit columns
+      // Separate debit / credit columns — debit column = money out, credit column = money in
       const debitRaw = cell(row, colDebit)
       const creditRaw = cell(row, colCredit)
       const debitVal = parseAmount(debitRaw)
       const creditVal = parseAmount(creditRaw)
 
-      if (debitVal !== null && debitVal !== 0) {
-        amount = Math.abs(debitVal)
-        type = 'debit'
-      } else if (creditVal !== null && creditVal !== 0) {
+      if (creditVal !== null && creditVal !== 0) {
         amount = Math.abs(creditVal)
         type = 'credit'
+      } else if (debitVal !== null && debitVal !== 0) {
+        amount = Math.abs(debitVal)
+        type = 'debit'
       } else {
         // Both empty — skip silently (often a balance-only row)
         return

@@ -162,6 +162,8 @@ function parseCSV(text: string): RawTransaction[] {
         amount: Math.abs(parseFloat(cols[amtIdx]) || 0),
         type: (cols[typeIdx]?.toLowerCase().includes('credit')
           ? 'credit'
+          : parseFloat(cols[amtIdx]) >= 0
+          ? 'credit'
           : 'debit') as 'debit' | 'credit',
       }
     })

@@ -107,13 +107,17 @@ ${pdfText.slice(0, 60000)}`
       return
     }
 
-    const amount = Math.abs(Number(raw.amount))
+    const rawNum = Number(raw.amount)
+    const amount = Math.abs(rawNum)
     if (isNaN(amount)) {
       errors.push(`Row ${i + 1}: invalid amount "${raw.amount}" — skipped.`)
       return
     }
 
-    const type: 'debit' | 'credit' = raw.type === 'credit' ? 'credit' : 'debit'
+    // Trust sign from parsed value if no explicit type field: positive = credit, negative = debit
+    const type: 'debit' | 'credit' = raw.type === 'credit' ? 'credit'
+      : raw.type === 'debit' ? 'debit'
+      : rawNum >= 0 ? 'credit' : 'debit'
 
     transactions.push({
       id:                   `pdf-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
