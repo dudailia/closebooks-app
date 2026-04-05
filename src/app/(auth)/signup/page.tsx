@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient, supabaseConfigured } from '@/lib/supabase/client'
+import { dbEnsureFirm } from '@/lib/db'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared input components
@@ -114,7 +115,7 @@ export default function SignupPage() {
     const supabase = createClient()
     if (!supabase) { setError('Auth not configured.'); setLoading(false); return }
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -127,6 +128,12 @@ export default function SignupPage() {
     })
 
     if (error) { setError(error.message); setLoading(false); return }
+
+    // Create firm record in Supabase (fire-and-forget — app works without it)
+    if (data.user) {
+      dbEnsureFirm(firmName || email.split('@')[0], data.user.id).catch(() => {})
+    }
+
     router.push('/dashboard')
   }
 

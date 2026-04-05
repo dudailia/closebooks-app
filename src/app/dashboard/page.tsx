@@ -7,6 +7,7 @@ import DashboardNav from '@/components/DashboardNav'
 import OnboardingModal, { needsOnboarding } from '@/components/OnboardingModal'
 import AppFooter from '@/components/AppFooter'
 import { getJobs, deleteJob } from '@/lib/storage'
+import { dbGetJobs, dbDeleteJob } from '@/lib/db'
 import { getQBOConnection } from '@/lib/integrations'
 import ActivityFeed from '@/components/ActivityFeed'
 import { calcCumulativeROI, fmtHours } from '@/lib/roiCalc'
@@ -501,15 +502,28 @@ export default function DashboardPage() {
   const portalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setJobs(getJobs())
+    // Show localStorage data immediately for instant UI, then merge Supabase data
+    const localJobs = getJobs()
+    setJobs(localJobs)
     setQboConn(getQBOConnection())
     setCorrStats(getCorrectionStats())
     setMounted(true)
     if (needsOnboarding()) setShowOnboarding(true)
+    // Load from Supabase in background — replaces local list if successful
+    dbGetJobs().then((remoteJobs) => {
+      if (remoteJobs.length > 0) {
+        // Merge: remote jobs take precedence, but preserve localStorage transactions
+        // for jobs that are missing them from the remote listing
+        setJobs(remoteJobs.map(rj => {
+          const local = localJobs.find(lj => lj.id === rj.id)
+          return (local && rj.transactions.length === 0) ? { ...rj, transactions: local.transactions } : rj
+        }))
+      }
+    }).catch(() => { /* keep localStorage jobs */ })
   }, [])
 
   function handleDelete(id: string) {
-    deleteJob(id)
+    dbDeleteJob(id).catch(() => { /* localStorage fallback already handled */ })
     setJobs((prev) => prev.filter((j) => j.id !== id))
   }
 

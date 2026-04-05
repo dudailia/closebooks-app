@@ -7,6 +7,7 @@ import AppFooter from '@/components/AppFooter'
 import FileUpload from '@/components/FileUpload'
 import ChartOfAccountsUpload from '@/components/ChartOfAccountsUpload'
 import { saveJob } from '@/lib/storage'
+import { dbSaveJob } from '@/lib/db'
 import { getRecentCorrections } from '@/lib/corrections'
 import { notify } from '@/lib/notify'
 import { logActivity } from '@/lib/activity'
@@ -158,7 +159,8 @@ function CategorizeStep({
         chart_of_accounts: chartOfAccounts,
       }
 
-      saveJob(job)
+      // Save to localStorage immediately, then sync to Supabase in background
+      dbSaveJob(job).catch(() => { /* fallback already written to localStorage */ })
       logActivity({
         type: 'transactions_categorized',
         description: `${categorized.length} transactions categorized for ${clientName}`,

@@ -6,6 +6,7 @@ import DashboardNav from '@/components/DashboardNav'
 import AppFooter from '@/components/AppFooter'
 import TransactionTable from '@/components/TransactionTable'
 import { getJob, saveJob, getJobs } from '@/lib/storage'
+import { dbGetJob, dbSaveJob } from '@/lib/db'
 import { detectRecurring } from '@/lib/recurringDetection'
 import { logActivity } from '@/lib/activity'
 import { getQBOConnection, recordQBOSync } from '@/lib/integrations'
@@ -842,25 +843,42 @@ export default function ReviewPage() {
   const [pushStep,   setPushStep]   = useState<PushStep>('confirm')
 
   useEffect(() => {
-    const found = getJob(jobId)
-    if (!found) { setNotFound(true); return }
-    setJob(found)
-    setQboConn(getQBOConnection())
-    // Load client industry
-    const client = getClients().find((c) => c.business_name === found.client_name)
-    if (client) setClientIndustry(client.industry)
-    // Load audit trail; log job_created on first open if trail is empty
-    const existing = getAuditTrail(jobId)
-    if (existing.length === 0) {
-      logAuditEvent(jobId, {
-        action: 'job_created',
-        actor: 'system',
-        details: { txCount: found.total_transactions },
-      })
-      setAuditEvents(getAuditTrail(jobId))
-    } else {
-      setAuditEvents(existing)
-    }
+    // Try Supabase first, fall back to localStorage
+    dbGetJob(jobId).then((found) => {
+      if (!found) { setNotFound(true); return }
+      setJob(found)
+      setQboConn(getQBOConnection())
+      // Load client industry from localStorage (fast, always available)
+      const client = getClients().find((c) => c.business_name === found.client_name)
+      if (client) setClientIndustry(client.industry)
+      // Load audit trail; log job_created on first open if trail is empty
+      const existing = getAuditTrail(jobId)
+      if (existing.length === 0) {
+        logAuditEvent(jobId, {
+          action: 'job_created',
+          actor: 'system',
+          details: { txCount: found.total_transactions },
+        })
+        setAuditEvents(getAuditTrail(jobId))
+      } else {
+        setAuditEvents(existing)
+      }
+    }).catch(() => {
+      // Supabase failed, fall back to localStorage
+      const found = getJob(jobId)
+      if (!found) { setNotFound(true); return }
+      setJob(found)
+      setQboConn(getQBOConnection())
+      const client = getClients().find((c) => c.business_name === found.client_name)
+      if (client) setClientIndustry(client.industry)
+      const existing = getAuditTrail(jobId)
+      if (existing.length === 0) {
+        logAuditEvent(jobId, { action: 'job_created', actor: 'system', details: { txCount: found.total_transactions } })
+        setAuditEvents(getAuditTrail(jobId))
+      } else {
+        setAuditEvents(existing)
+      }
+    })
   }, [jobId])
 
   const logAudit: AuditCallback = useCallback((event) => {
@@ -908,7 +926,7 @@ export default function ReviewPage() {
     const flagged  = updated.filter((t) => t.status === 'flagged').length
     const next: CategorizationJob = { ...job, transactions: updated, approved, flagged }
     setJob(next)
-    saveJob(next)
+    dbSaveJob(next).catch(() => { /* localStorage fallback already written inside dbSaveJob */ })
   }
 
   async function handleExport(format: ExportFormat) {
@@ -1033,7 +1051,7 @@ export default function ReviewPage() {
     if (!job) return
     setCompleting(true)
     const next: CategorizationJob = { ...job, status: 'completed' }
-    saveJob(next)
+    dbSaveJob(next).catch(() => { /* localStorage fallback already written inside dbSaveJob */ })
     setJob(next)
     setCompleting(false)
     logAuditEvent(jobId, {
