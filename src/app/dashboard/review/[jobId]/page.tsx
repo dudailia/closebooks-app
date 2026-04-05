@@ -14,8 +14,15 @@ import { getAuditTrail, logAuditEvent, auditGroup, formatAuditEvent, fmtAuditTs 
 import { calcROI, fmtHours } from '@/lib/roiCalc'
 import { detectAnomalies } from '@/lib/anomalyDetection'
 import { loadFirmSettings } from '@/lib/firmSettings'
+import CopilotPanel from '@/components/CopilotPanel'
+import CloseChat from '@/components/CloseChat'
+import TaxHandoffButton from '@/components/TaxHandoffButton'
+import ClientEmailDraft from '@/components/ClientEmailDraft'
+import BenchmarkPanel from '@/components/BenchmarkPanel'
+import { getClients, saveClient } from '@/lib/storage'
 import type { QBOConnection } from '@/lib/integrations'
 import type { CategorizationJob, Transaction } from '@/types'
+import type { ClientIndustry } from '@/types'
 import type { RecurringPattern } from '@/lib/recurringDetection'
 import type { AuditEvent, AuditCallback } from '@/lib/auditTrail'
 import type { Anomaly } from '@/lib/anomalyDetection'
@@ -816,6 +823,9 @@ export default function ReviewPage() {
   const [reporting, setReporting]         = useState(false)
   const [clientSummary, setClientSummary] = useState(false)
   const [completing, setCompleting]       = useState(false)
+  const [chatHighlightIds, setChatHighlightIds] = useState<Set<string>>(new Set())
+  const [showEmailDraft, setShowEmailDraft]     = useState(false)
+  const [clientIndustry, setClientIndustry]     = useState<ClientIndustry | null>(null)
   const [toasts, setToasts]     = useState<ToastState[]>([])
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([])
   const toastId = useRef(0)
@@ -830,6 +840,9 @@ export default function ReviewPage() {
     if (!found) { setNotFound(true); return }
     setJob(found)
     setQboConn(getQBOConnection())
+    // Load client industry
+    const client = getClients().find((c) => c.business_name === found.client_name)
+    if (client) setClientIndustry(client.industry)
     // Load audit trail; log job_created on first open if trail is empty
     const existing = getAuditTrail(jobId)
     if (existing.length === 0) {
@@ -868,20 +881,20 @@ export default function ReviewPage() {
     [recurringPatterns]
   )
 
+  // All jobs for anomaly detection and tax handoff
+  const allClientJobs = useMemo(() => {
+    if (!job) return []
+    return getJobs().filter((j) => j.client_name === job.client_name)
+  }, [job])
+
   // Anomaly detection — compare current job to previous job for same client
   const anomalies = useMemo(() => {
     if (!job) return []
-    const allJobs = getJobs()
-    const prevJob = allJobs
-      .filter(
-        (j) =>
-          j.client_name === job.client_name &&
-          j.id !== job.id &&
-          j.created_at < job.created_at
-      )
+    const prevJob = allClientJobs
+      .filter((j) => j.id !== job.id && j.created_at < job.created_at)
       .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
     return detectAnomalies(job.transactions, prevJob?.transactions ?? null)
-  }, [job])
+  }, [job, allClientJobs])
 
   function handleTransactionsChange(updated: Transaction[]) {
     if (!job) return
@@ -1190,6 +1203,24 @@ export default function ReviewPage() {
               {clientSummary ? 'Generating…' : 'Client Summary'}
             </button>
 
+            <TaxHandoffButton
+              job={job}
+              allClientJobs={allClientJobs}
+              onError={(msg) => addToast(msg, 'error')}
+            />
+
+            <button
+              onClick={() => setShowEmailDraft(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors"
+              style={{ borderColor: '#e8e0d4', color: '#1a1714', backgroundColor: '#ffffff' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#2d5a27' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e8e0d4' }}
+              title="Draft a plain-English email summary for the client"
+            >
+              <EmailIcon />
+              Email Client
+            </button>
+
             {/* Push to QuickBooks — only shown when connected */}
             {qboConn && approvedCount > 0 && (
               <button
@@ -1229,6 +1260,19 @@ export default function ReviewPage() {
           <Stat label="Flagged"  value={job.flagged}            color="#ef4444" bg="#fef2f2" />
         </div>
 
+        {/* Copilot */}
+        <CopilotPanel
+          job={job}
+          jobId={jobId}
+          onTransactionsUpdated={(txs) => {
+            const approved = txs.filter((t) => t.status === 'approved' || t.status === 'edited').length
+            const flagged  = txs.filter((t) => t.status === 'flagged').length
+            const next: CategorizationJob = { ...job, transactions: txs, approved, flagged }
+            setJob(next)
+            saveJob(next)
+          }}
+        />
+
         {/* ROI Counter */}
         {(job.auto_categorized ?? 0) > 0 && <ROICard job={job} />}
 
@@ -1263,6 +1307,17 @@ export default function ReviewPage() {
         {/* Category breakdown */}
         <CategoryBreakdown transactions={job.transactions} />
 
+        {/* Industry benchmarks */}
+        <BenchmarkPanel
+          job={job}
+          industry={clientIndustry}
+          onIndustryChange={(ind) => {
+            setClientIndustry(ind)
+            const client = getClients().find((c) => c.business_name === job.client_name)
+            if (client) saveClient({ ...client, industry: ind })
+          }}
+        />
+
         {/* Review complete summary */}
         {allReviewed && (
           <ReviewSummary
@@ -1288,11 +1343,29 @@ export default function ReviewPage() {
           recurringIds={recurringIds}
           onAudit={logAudit}
           auditEvents={auditEvents}
+          highlightIds={chatHighlightIds}
         />
 
         {/* Audit trail panel */}
         <AuditPanel auditEvents={auditEvents} />
       </main>
+
+      {/* Close Chat — floating */}
+      <CloseChat
+        jobId={jobId}
+        clientName={job.client_name}
+        transactions={job.transactions}
+        onHighlight={setChatHighlightIds}
+      />
+
+      {/* Client Email Draft modal */}
+      {showEmailDraft && (
+        <ClientEmailDraft
+          job={job}
+          previousJob={allClientJobs.find((j) => j.id !== job.id && j.created_at < job.created_at) ?? null}
+          onClose={() => setShowEmailDraft(false)}
+        />
+      )}
 
       {/* Toast stack */}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
@@ -1477,6 +1550,15 @@ function ClientSummaryIcon() {
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
       <rect x="1" y="1" width="12" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.3" />
       <path d="M4 5h6M4 7h6M4 9h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function EmailIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M1 4.5l6 4 6-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
     </svg>
   )
 }

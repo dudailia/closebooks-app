@@ -53,3 +53,42 @@ export type CategorizationJob = {
   transactions: Transaction[]
   chart_of_accounts: ChartOfAccounts[]
 }
+
+// ─── Copilot ─────────────────────────────────────────────────────────────────
+
+export type CopilotRunStatus =
+  | 'running'
+  | 'complete'
+  | 'failed'
+
+export interface CopilotRun {
+  id: string
+  jobId: string
+  clientName: string
+  startedAt: string
+  completedAt: string | null
+  status: CopilotRunStatus
+  autoApproved: number
+  flagged: number
+  leftPending: number
+  totalProcessed: number
+  briefing: string
+  confidenceThreshold: number
+  error: string | null
+}
+
+export interface CopilotConfig {
+  confidenceThreshold: number   // 0.75–0.95, default 0.85
+  maxAutoAmount: number         // never auto-approve above this, default 5000
+  autoFlagThreshold: number     // flag anything below this, default 0.60
+}
+
+// ─── Chat ────────────────────────────────────────────────────────────────────
+
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: string
+  highlightIds?: string[]
+}

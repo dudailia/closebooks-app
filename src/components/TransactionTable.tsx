@@ -18,6 +18,7 @@ interface Props {
   recurringIds?: Set<string>
   onAudit?: AuditCallback
   auditEvents?: AuditEvent[]
+  highlightIds?: Set<string>
 }
 
 // ---------------------------------------------------------------------------
@@ -204,7 +205,7 @@ function ShortcutsPopover() {
 // TransactionTable
 // ---------------------------------------------------------------------------
 
-export default function TransactionTable({ initialTransactions, chartOfAccounts, onTransactionsChange, recurringIds, onAudit, auditEvents = [] }: Props) {
+export default function TransactionTable({ initialTransactions, chartOfAccounts, onTransactionsChange, recurringIds, onAudit, auditEvents = [], highlightIds }: Props) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions)
   const [activeTab, setActiveTab]       = useState<FilterTab>('all')
   const [search, setSearch]             = useState('')
@@ -597,20 +598,28 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
             </thead>
             <tbody>
               {visible.map((tx) => (
-                <TransactionRow
+                <tr
                   key={tx.id}
-                  transaction={tx}
-                  chartOfAccounts={chartOfAccounts}
-                  selected={selected.has(tx.id)}
-                  onToggleSelect={toggleSelect}
-                  onChange={handleChange}
-                  isRecurring={recurringIds?.has(tx.id) ?? false}
-                  isFocused={focusedId === tx.id}
-                  onFocus={() => setFocusedId(tx.id)}
-                  enterTrigger={focusedId === tx.id ? enterTrigger : 0}
-                  onAudit={onAudit}
-                  txAuditEvents={auditEvents.filter((e) => e.txId === tx.id)}
-                />
+                  style={highlightIds?.has(tx.id) ? {
+                    outline: '2px solid #b8734a',
+                    outlineOffset: -2,
+                    backgroundColor: '#fff7ed',
+                  } : undefined}
+                >
+                  <TransactionRow
+                    transaction={tx}
+                    chartOfAccounts={chartOfAccounts}
+                    selected={selected.has(tx.id)}
+                    onToggleSelect={toggleSelect}
+                    onChange={handleChange}
+                    isRecurring={recurringIds?.has(tx.id) ?? false}
+                    isFocused={focusedId === tx.id}
+                    onFocus={() => setFocusedId(tx.id)}
+                    enterTrigger={focusedId === tx.id ? enterTrigger : 0}
+                    onAudit={onAudit}
+                    txAuditEvents={auditEvents.filter((e) => e.txId === tx.id)}
+                  />
+                </tr>
               ))}
             </tbody>
           </table>
