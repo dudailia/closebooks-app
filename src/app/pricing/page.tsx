@@ -218,7 +218,7 @@ function PricingCard({ plan }: { plan: typeof PLANS[number] }) {
       ) : (
         <>
           <Link
-            href="/dashboard/upload"
+            href="/get-started"
             className="block text-center py-3 rounded-xl text-sm font-semibold text-white transition-opacity"
             style={{ backgroundColor: plan.color }}
             onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88' }}

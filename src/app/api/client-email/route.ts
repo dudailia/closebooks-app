@@ -145,6 +145,7 @@ Return a JSON object with these exact fields:
     </div>
     <div style="background:#faf8f4;padding:14px 24px;border-top:1px solid #e0dbd4">
       <p style="margin:0;font-size:8.5pt;color:#a09a94">This email was prepared by ${firm.firmName || 'your accounting firm'}. Please do not reply to this email directly.</p>
+      <p style="margin:6px 0 0;font-size:7.5pt;color:#c4bdb8">Powered by <a href="https://closebooks-app.vercel.app" style="color:#2d5a27;text-decoration:none">CloseBooks</a> — AI-Powered Month-End Close</p>
     </div>
   </div>
 </body>

@@ -826,6 +826,7 @@ export default function ReviewPage() {
   const [reporting, setReporting]         = useState(false)
   const [clientSummary, setClientSummary] = useState(false)
   const [completing, setCompleting]       = useState(false)
+  const [showShareModal, setShowShareModal]     = useState(false)
   const [chatHighlightIds, setChatHighlightIds] = useState<Set<string>>(new Set())
   const [showEmailDraft, setShowEmailDraft]     = useState(false)
   const [clientIndustry, setClientIndustry]     = useState<ClientIndustry | null>(null)
@@ -1042,6 +1043,7 @@ export default function ReviewPage() {
     })
     setAuditEvents(getAuditTrail(jobId))
     addToast('Close marked as complete.', 'success')
+    setShowShareModal(true)
     logActivity({
       type: 'close_completed',
       description: `Close completed for ${job.client_name}`,
@@ -1429,9 +1431,156 @@ export default function ReviewPage() {
         />
       )}
 
+      {/* Share modal */}
+      {showShareModal && (
+        <ShareModal job={job} onClose={() => setShowShareModal(false)} />
+      )}
+
       {/* Toast stack */}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
       <AppFooter />
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Share modal (Feature 5 — social sharing after close complete)
+// ---------------------------------------------------------------------------
+
+function ShareModal({ job, onClose }: { job: CategorizationJob; onClose: () => void }) {
+  const roi = calcROI(job)
+  const autoApproved = job.transactions.filter((t) => t.status === 'approved' || t.status === 'edited').length
+  const accuracy = job.total_transactions > 0
+    ? Math.round((autoApproved / job.total_transactions) * 100)
+    : 0
+
+  const shareText = `Just closed ${job.client_name}'s books in ${fmtHours(roi.hoursSaved)} with @CloseBooks AI — ${autoApproved} transactions auto-categorized at ${accuracy}% accuracy. What used to take days now takes minutes. #accounting #AI #CPA`
+
+  const linkedInUrl = `https://www.linkedin.com/shareArticle?mini=true&url=https%3A%2F%2Fclosebooks-app.vercel.app&title=${encodeURIComponent('CloseBooks — AI Month-End Close')}&summary=${encodeURIComponent(shareText)}`
+  const twitterUrl  = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=https%3A%2F%2Fclosebooks-app.vercel.app`
+
+  const [copied, setCopied] = useState(false)
+  function handleCopy() {
+    navigator.clipboard.writeText(shareText).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2500)
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(26,23,20,0.5)', backdropFilter: 'blur(2px)' }}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl border shadow-2xl overflow-hidden"
+        style={{ backgroundColor: '#ffffff', borderColor: '#e8e0d4' }}
+      >
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xl">🎉</span>
+              <p className="text-base font-semibold" style={{ color: '#1a1714' }}>
+                Close complete!
+              </p>
+            </div>
+            <p className="text-sm" style={{ color: '#6b6560' }}>
+              Share your win with your network
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg transition-colors"
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f0ece4' }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M3 3l10 10M13 3L3 13" stroke="#6b6560" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Stats card */}
+        <div className="mx-6 mb-4 rounded-xl p-4" style={{ backgroundColor: '#f6faf5', border: '1px solid #d4e8d0' }}>
+          <p className="text-xs font-medium mb-2" style={{ color: '#6b6560' }}>Your results</p>
+          <div className="flex gap-4">
+            <div>
+              <p className="font-mono text-lg font-bold" style={{ color: '#2d5a27' }}>{fmtHours(roi.hoursSaved)}</p>
+              <p className="text-xs" style={{ color: '#6b6560' }}>saved</p>
+            </div>
+            <div>
+              <p className="font-mono text-lg font-bold" style={{ color: '#2d5a27' }}>${roi.valueSaved.toLocaleString()}</p>
+              <p className="text-xs" style={{ color: '#6b6560' }}>value</p>
+            </div>
+            <div>
+              <p className="font-mono text-lg font-bold" style={{ color: '#2d5a27' }}>{accuracy}%</p>
+              <p className="text-xs" style={{ color: '#6b6560' }}>accuracy</p>
+            </div>
+            <div>
+              <p className="font-mono text-lg font-bold" style={{ color: '#2d5a27' }}>{autoApproved}</p>
+              <p className="text-xs" style={{ color: '#6b6560' }}>auto-done</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Pre-written share text */}
+        <div className="mx-6 mb-4">
+          <p className="text-xs font-medium mb-1.5" style={{ color: '#6b6560' }}>Pre-written post</p>
+          <div
+            className="rounded-xl border p-3 text-sm leading-relaxed"
+            style={{ borderColor: '#e8e0d4', backgroundColor: '#faf8f4', color: '#1a1714' }}
+          >
+            {shareText}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="px-6 pb-6 flex gap-2 flex-wrap">
+          <button
+            onClick={() => window.open(linkedInUrl, '_blank')}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-white transition-opacity"
+            style={{ backgroundColor: '#0077b5' }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88' }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+              <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/>
+              <circle cx="4" cy="4" r="2" fill="white"/>
+            </svg>
+            Share on LinkedIn
+          </button>
+          <button
+            onClick={() => window.open(twitterUrl, '_blank')}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-white transition-opacity"
+            style={{ backgroundColor: '#000000' }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.80' }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.845L1.254 2.25H8.08l4.259 5.63L18.244 2.25zM17.083 19.77h1.833L7.084 4.126H5.117L17.083 19.77z"/>
+            </svg>
+            Share on X
+          </button>
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border transition-colors"
+            style={{
+              borderColor: copied ? '#059669' : '#e8e0d4',
+              color: copied ? '#059669' : '#6b6560',
+              backgroundColor: copied ? '#ecfdf5' : '#ffffff',
+            }}
+          >
+            {copied ? '✓ Copied' : 'Copy text'}
+          </button>
+          <button
+            onClick={onClose}
+            className="ml-auto text-sm"
+            style={{ color: '#a09a94' }}
+          >
+            Skip
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

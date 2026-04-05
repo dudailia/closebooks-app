@@ -122,7 +122,7 @@ function Nav() {
             Sign In
           </Link>
           <Link
-            href="/dashboard/upload"
+            href="/get-started"
             className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity"
             style={{ backgroundColor: '#2d5a27' }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
@@ -164,7 +164,7 @@ function Nav() {
             <Link href="/dashboard" className="block text-center py-2.5 rounded-xl text-sm font-medium border" style={{ borderColor: '#c8c0b8', color: '#1a1714' }}>
               Sign In
             </Link>
-            <Link href="/dashboard/upload" className="block text-center py-2.5 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#2d5a27' }}>
+            <Link href="/get-started" className="block text-center py-2.5 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#2d5a27' }}>
               Start Free Trial
             </Link>
           </div>
@@ -242,7 +242,7 @@ function Hero() {
         {/* CTA buttons */}
         <div className="flex flex-wrap items-center justify-center gap-3 mb-5">
           <Link
-            href="/dashboard/upload"
+            href="/get-started"
             className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold text-white transition-all shadow-md"
             style={{ backgroundColor: '#2d5a27', boxShadow: '0 4px 14px rgba(45,90,39,0.3)' }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a'; e.currentTarget.style.transform = 'translateY(-1px)' }}
@@ -392,7 +392,7 @@ function PlanCard({ plan, delay }: { plan: typeof PLANS[number]; delay: number }
           </li>
         ))}
       </ul>
-      <Link href="/dashboard/upload" className="block text-center py-3 rounded-xl text-sm font-semibold text-white transition-opacity" style={{ backgroundColor: plan.color }}
+      <Link href="/get-started" className="block text-center py-3 rounded-xl text-sm font-semibold text-white transition-opacity" style={{ backgroundColor: plan.color }}
         onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88' }}
         onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}>
         Start Free Trial
@@ -637,7 +637,7 @@ function Demo() {
         {/* Secondary CTA */}
         <div className="mt-8 text-center">
           <Link
-            href="/dashboard/upload"
+            href="/get-started"
             className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold text-white transition-all"
             style={{ backgroundColor: '#2d5a27', boxShadow: '0 4px 14px rgba(45,90,39,0.25)' }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a'; e.currentTarget.style.transform = 'translateY(-1px)' }}

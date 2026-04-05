@@ -14,8 +14,9 @@ import type { Client, ClientIndustry, AccountingSoftware } from '@/types'
 // ─────────────────────────────────────────────────────────────────────────────
 
 const INDUSTRIES: ClientIndustry[] = [
-  'Restaurant', 'Retail', 'Professional Services',
-  'Construction', 'Healthcare', 'E-commerce', 'Other',
+  'Restaurant', 'Retail', 'Professional Services', 'Construction',
+  'Healthcare', 'E-commerce', 'Technology', 'Manufacturing',
+  'Real Estate', 'Nonprofit', 'Legal Services', 'Transportation', 'Other',
 ]
 
 const SOFTWARE: AccountingSoftware[] = ['QuickBooks', 'Xero', 'Other']
@@ -27,6 +28,12 @@ const INDUSTRY_STYLE: Record<ClientIndustry, { bg: string; text: string }> = {
   'Construction':          { bg: '#f1f5f9', text: '#334155' },
   'Healthcare':            { bg: '#eff6ff', text: '#1d4ed8' },
   'E-commerce':            { bg: '#fdf4ff', text: '#7e22ce' },
+  'Technology':            { bg: '#f0f9ff', text: '#0369a1' },
+  'Manufacturing':         { bg: '#f8fafc', text: '#475569' },
+  'Real Estate':           { bg: '#f0fdf4', text: '#15803d' },
+  'Nonprofit':             { bg: '#fef3c7', text: '#92400e' },
+  'Legal Services':        { bg: '#faf5ff', text: '#6d28d9' },
+  'Transportation':        { bg: '#ecfeff', text: '#0e7490' },
   'Other':                 { bg: '#f5f5f4', text: '#57534e' },
 }
 

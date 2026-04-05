@@ -172,6 +172,12 @@ export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void
           <NavLink href="/dashboard/copilot" active={path.startsWith('/dashboard/copilot')}>
             Copilot
           </NavLink>
+          <NavLink href="/dashboard/referrals" active={path.startsWith('/dashboard/referrals')}>
+            <span className="flex items-center gap-1">
+              <GiftNavIcon />
+              Refer
+            </span>
+          </NavLink>
           <NavLink href="/dashboard/settings" active={path.startsWith('/dashboard/settings')}>
             Settings
           </NavLink>
@@ -278,6 +284,16 @@ function PlusIcon() {
   return (
     <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
       <path d="M5.5 1v9M1 5.5h9" stroke="white" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function GiftNavIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+      <rect x="1" y="5" width="10" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
+      <path d="M1 5h10M6 5v6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M6 5c0-1.5 1.5-2 1.5-2S6.5 4.5 6 5M6 5c0-1.5-1.5-2-1.5-2S5.5 4.5 6 5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
     </svg>
   )
 }

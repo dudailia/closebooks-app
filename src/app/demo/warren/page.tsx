@@ -197,7 +197,7 @@ function MiniNav() {
           </span>
         </Link>
         <Link
-          href="/dashboard/upload"
+          href="/get-started"
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white"
           style={{ backgroundColor: '#2d5a27' }}
           onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
@@ -248,7 +248,7 @@ export default function WarrenDemoPage() {
             </p>
           </div>
           <Link
-            href="/dashboard/upload"
+            href="/get-started"
             className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-white whitespace-nowrap"
             style={{ backgroundColor: '#b8734a' }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#9a5c38' }}
@@ -540,7 +540,7 @@ export default function WarrenDemoPage() {
             </div>
             <div className="flex flex-col items-start sm:items-end gap-3 shrink-0">
               <Link
-                href="/dashboard/upload"
+                href="/get-started"
                 className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white text-sm whitespace-nowrap transition-all duration-150"
                 style={{ backgroundColor: '#2d5a27' }}
                 onMouseEnter={(e) => {

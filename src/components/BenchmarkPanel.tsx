@@ -14,8 +14,9 @@ interface Props {
 }
 
 const INDUSTRIES: ClientIndustry[] = [
-  'Restaurant', 'Retail', 'Professional Services',
-  'Construction', 'Healthcare', 'E-commerce', 'Other',
+  'Restaurant', 'Retail', 'Professional Services', 'Construction',
+  'Healthcare', 'E-commerce', 'Technology', 'Manufacturing',
+  'Real Estate', 'Nonprofit', 'Legal Services', 'Transportation', 'Other',
 ]
 
 const POSITION_STYLE: Record<BenchmarkResult['position'], { dot: string; badge: string; badgeText: string; label: string }> = {
@@ -124,7 +125,7 @@ export default function BenchmarkPanel({ job, industry, onIndustryChange }: Prop
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowPicker(false)} />
                 <div
-                  className="absolute right-0 top-full mt-1 z-20 rounded-xl border shadow-lg overflow-hidden min-w-[180px]"
+                  className="absolute right-0 top-full mt-1 z-20 rounded-xl border shadow-lg min-w-[200px] max-h-72 overflow-y-auto"
                   style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}
                 >
                   {INDUSTRIES.filter((i) => i !== 'Other').map((ind) => (

@@ -219,7 +219,7 @@ export default function TransactionRow({
           {transaction.date}
         </td>
 
-        {/* Description */}
+        {/* Description — flexible growing column, no truncation */}
         <td className="px-3 py-2.5">
           <div className="flex items-start gap-1.5">
             {isRecurring && (
@@ -227,18 +227,7 @@ export default function TransactionRow({
                 <RecurringIcon />
               </span>
             )}
-            <span
-              className="text-sm"
-              style={{
-                color: '#1a1714',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                wordBreak: 'break-word',
-              }}
-              title={transaction.description}
-            >
+            <span className="text-sm" style={{ color: '#1a1714' }}>
               {transaction.description}
             </span>
           </div>

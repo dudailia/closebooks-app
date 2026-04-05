@@ -565,13 +565,13 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
                   />
                 </th>
                 {[
-                  { label: 'Date',       cls: 'text-left',               style: { width: 100 } },
-                  { label: 'Description',cls: 'text-left',               style: {} },
-                  { label: 'Category',   cls: 'text-left',               style: { width: 160 } },
-                  { label: 'Confidence', cls: 'text-right hidden sm:table-cell', style: { width: 80 } },
-                  { label: 'Amount',     cls: 'text-right',              style: { width: 120 } },
-                  { label: 'Status',     cls: 'text-left',               style: { width: 100 } },
-                  { label: 'Actions',    cls: 'text-left',               style: { width: 120 } },
+                  { label: 'Date',       cls: 'text-left',               style: { width: 90, whiteSpace: 'nowrap' as const } },
+                  { label: 'Description',cls: 'text-left',               style: { minWidth: 250 } },
+                  { label: 'Category',   cls: 'text-left',               style: { width: 130 } },
+                  { label: 'Confidence', cls: 'text-right hidden sm:table-cell', style: { width: 70 } },
+                  { label: 'Amount',     cls: 'text-right',              style: { width: 110, whiteSpace: 'nowrap' as const } },
+                  { label: 'Status',     cls: 'text-left',               style: { width: 90 } },
+                  { label: 'Actions',    cls: 'text-left',               style: { width: 110 } },
                 ].map(({ label, cls, style }) => (
                   <th
                     key={label}

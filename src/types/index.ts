@@ -27,6 +27,12 @@ export type ClientIndustry =
   | 'Construction'
   | 'Healthcare'
   | 'E-commerce'
+  | 'Technology'
+  | 'Manufacturing'
+  | 'Real Estate'
+  | 'Nonprofit'
+  | 'Legal Services'
+  | 'Transportation'
   | 'Other'
 
 export type AccountingSoftware = 'QuickBooks' | 'Xero' | 'Other'

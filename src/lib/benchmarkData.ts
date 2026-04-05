@@ -258,6 +258,214 @@ export const BENCHMARKS: Record<ClientIndustry, IndustryBenchmarks> = {
     },
   },
 
+  Technology: {
+    industry: 'Technology',
+    dataSource: 'SaaS & Tech Industry Benchmarks (KeyBanc, OpenView)',
+    sampleDescription: 'Software, SaaS, and technology services companies',
+    metrics: {
+      'Payroll & Wages': {
+        p25: 40, median: 55, p75: 68,
+        label: 'Labor Cost (R&D + G&A)',
+        insight: {
+          above: 'Labor is high — review headcount efficiency and contractor spend.',
+          below: 'Labor is lean for a tech company — strong operational efficiency.',
+        },
+      },
+      'Software & SaaS': {
+        p25: 5, median: 10, p75: 18,
+        label: 'Software & Infrastructure',
+        insight: {
+          above: 'Tech stack costs are elevated — audit subscriptions and hosting.',
+          below: 'Infrastructure costs are well-managed.',
+        },
+      },
+      'Marketing & Advertising': {
+        p25: 8, median: 15, p75: 25,
+        label: 'Sales & Marketing',
+        insight: {
+          above: 'S&M spend is high — review CAC and pipeline efficiency.',
+          below: 'Low S&M spend — may limit growth velocity.',
+        },
+      },
+    },
+  },
+
+  Manufacturing: {
+    industry: 'Manufacturing',
+    dataSource: 'NAM & US Census Manufacturing Survey',
+    sampleDescription: 'Small and mid-size manufacturers',
+    metrics: {
+      'Materials & Supplies': {
+        p25: 35, median: 45, p75: 58,
+        label: 'Raw Materials & COGS',
+        insight: {
+          above: 'Material costs are high — review supplier contracts and waste.',
+          below: 'Strong materials cost management.',
+        },
+      },
+      'Payroll & Wages': {
+        p25: 18, median: 25, p75: 33,
+        label: 'Direct & Indirect Labor',
+        insight: {
+          above: 'Labor costs are above average — review shift efficiency.',
+          below: 'Labor costs are well-controlled for manufacturing.',
+        },
+      },
+      'Equipment': {
+        p25: 4, median: 7, p75: 12,
+        label: 'Equipment & Maintenance',
+        insight: {
+          above: 'Equipment costs are elevated — review maintenance schedules.',
+          below: 'Equipment costs are lean.',
+        },
+      },
+      'Utilities': {
+        p25: 2, median: 5, p75: 9,
+        label: 'Utilities & Energy',
+        insight: {
+          above: 'Utility costs are high — consider energy efficiency investments.',
+          below: 'Energy costs are well-managed.',
+        },
+      },
+    },
+  },
+
+  'Real Estate': {
+    industry: 'Real Estate',
+    dataSource: 'NAR & CCIM Real Estate Business Benchmarks',
+    sampleDescription: 'Real estate brokerages, property managers, and agencies',
+    metrics: {
+      'Payroll & Wages': {
+        p25: 20, median: 30, p75: 42,
+        label: 'Labor & Commission Cost',
+        insight: {
+          above: 'Labor and commission costs are high relative to GCI.',
+          below: 'Strong labor efficiency — high GCI per agent.',
+        },
+      },
+      'Marketing & Advertising': {
+        p25: 5, median: 10, p75: 18,
+        label: 'Marketing & Lead Gen',
+        insight: {
+          above: 'Marketing spend is elevated — review cost per lead.',
+          below: 'Low marketing spend — relies on referrals or organic pipeline.',
+        },
+      },
+      'Rent & Occupancy': {
+        p25: 2, median: 5, p75: 9,
+        label: 'Office Occupancy',
+        insight: {
+          above: 'Office costs are high for a real estate business.',
+          below: 'Lean office footprint.',
+        },
+      },
+    },
+  },
+
+  Nonprofit: {
+    industry: 'Nonprofit',
+    dataSource: 'GuideStar & Nonprofit Finance Fund Benchmarks',
+    sampleDescription: '501(c)(3) organizations and charitable nonprofits',
+    metrics: {
+      'Payroll & Wages': {
+        p25: 40, median: 55, p75: 68,
+        label: 'Program & Admin Staff',
+        insight: {
+          above: 'Personnel costs are above average — review staffing vs. program delivery.',
+          below: 'Lean staffing structure relative to revenue/grants.',
+        },
+      },
+      'Rent & Occupancy': {
+        p25: 3, median: 7, p75: 12,
+        label: 'Facility Cost',
+        insight: {
+          above: 'Facility costs are high relative to budget — consider shared space.',
+          below: 'Good occupancy cost management.',
+        },
+      },
+      'Marketing & Advertising': {
+        p25: 1, median: 4, p75: 8,
+        label: 'Fundraising & Outreach',
+        insight: {
+          above: 'Fundraising spend is elevated relative to budget.',
+          below: 'Low fundraising spend — strong organic donor retention likely.',
+        },
+      },
+    },
+  },
+
+  'Legal Services': {
+    industry: 'Legal Services',
+    dataSource: 'ALM Legal Intelligence & ILTA Law Firm Benchmarks',
+    sampleDescription: 'Small and mid-size law firms',
+    metrics: {
+      'Payroll & Wages': {
+        p25: 38, median: 50, p75: 62,
+        label: 'Attorney & Staff Labor',
+        insight: {
+          above: 'Labor costs are high — review attorney utilization and billing rates.',
+          below: 'Strong labor efficiency — high revenue per attorney.',
+        },
+      },
+      'Rent & Occupancy': {
+        p25: 3, median: 6, p75: 10,
+        label: 'Office Occupancy',
+        insight: {
+          above: 'Office costs are high — consider remote or hybrid models.',
+          below: 'Lean occupancy for a law firm.',
+        },
+      },
+      'Software & SaaS': {
+        p25: 2, median: 4, p75: 7,
+        label: 'Legal Tech & Software',
+        insight: {
+          above: 'Legal tech costs are elevated — audit practice management tools.',
+          below: 'Tech costs are lean.',
+        },
+      },
+      'Marketing & Advertising': {
+        p25: 1, median: 3, p75: 6,
+        label: 'Business Development',
+        insight: {
+          above: 'BD spend is elevated — review lead quality and referral pipeline.',
+          below: 'Low BD spend — referral-based model likely.',
+        },
+      },
+    },
+  },
+
+  Transportation: {
+    industry: 'Transportation',
+    dataSource: 'ATA & US DOT Transportation Industry Survey',
+    sampleDescription: 'Trucking, logistics, and freight companies',
+    metrics: {
+      'Payroll & Wages': {
+        p25: 28, median: 36, p75: 45,
+        label: 'Driver & Staff Labor',
+        insight: {
+          above: 'Labor costs are above average — review driver utilization.',
+          below: 'Strong labor cost management for transportation.',
+        },
+      },
+      'Fuel & Fleet': {
+        p25: 18, median: 25, p75: 33,
+        label: 'Fuel & Fleet Operating Cost',
+        insight: {
+          above: 'Fuel/fleet costs are high — review route efficiency and fuel hedging.',
+          below: 'Good fleet cost management.',
+        },
+      },
+      'Equipment': {
+        p25: 5, median: 9, p75: 15,
+        label: 'Vehicle & Equipment',
+        insight: {
+          above: 'Vehicle costs are elevated — review lease vs. own decisions.',
+          below: 'Vehicle costs are well-managed.',
+        },
+      },
+    },
+  },
+
   Other: {
     industry: 'Other',
     dataSource: 'General small business benchmarks (SBA)',
