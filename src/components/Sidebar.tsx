@@ -56,6 +56,8 @@ function buildSections(pendingCount: number): NavSection[] {
       items: [
         { href: '/dashboard/copilot',       label: 'Copilot',       icon: SparkleIcon },
         { href: '/dashboard/autopilot',     label: 'Autopilot',     icon: RocketIcon },
+        { href: '/dashboard/agent',         label: 'Agent Mode',    icon: AgentIcon },
+        { href: '/dashboard/predict',       label: 'Predict Close', icon: PredictIcon },
         { href: '/dashboard/radar',         label: 'Radar',         icon: RadarIcon },
         { href: '/dashboard/tax-draft',     label: 'TaxDraft',      icon: TaxIcon },
         { href: '/dashboard/tax-strategy',  label: 'Tax Strategy',  icon: TaxStrategyIcon },
@@ -86,6 +88,9 @@ function buildSections(pendingCount: number): NavSection[] {
       id: 'growth',
       label: 'GROWTH',
       items: [
+        { href: '/dashboard/portal',        label: 'Client Portal', icon: PortalIcon },
+        { href: '/dashboard/whitelabel',    label: 'White-Label',   icon: WhitelabelIcon },
+        { href: '/dashboard/voice',         label: 'Voice AI',      icon: VoiceIcon },
         { href: '/dashboard/profile',       label: 'My Profile',    icon: ProfileIcon },
         { href: '/dashboard/connect',       label: 'Connect API',   icon: ApiIcon },
         { href: '/dashboard/certification', label: 'Certification', icon: CertIcon },
@@ -604,6 +609,11 @@ function ChevronLeftIcon() { return <svg width="14" height="14" viewBox="0 0 14 
 function ChevronRightIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg> }
 function HamburgerIcon() { return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg> }
 function SignOutIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h3M9 10l3-3-3-3M12 7H5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> }
+function AgentIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M2 14c0-3 2.5-5 6-5s6 2 6 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none"/><path d="M11 2l1.5 1.5M13 4l-1.5-1.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" opacity=".6"/><circle cx="12.5" cy="2.5" r="1" fill="currentColor" opacity=".5"/></svg> }
+function PredictIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 13l3-4 2.5 2 3-5 3.5 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" fill="none"/><path d="M13 5v3M13 5h-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> }
+function PortalIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M1.5 6.5h13" stroke="currentColor" strokeWidth="1.2"/><circle cx="4.5" cy="9.5" r="1" fill="currentColor"/><path d="M7 9.5h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> }
+function WhitelabelIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2" width="13" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M5 5h6M5 8h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M1.5 5h13" stroke="currentColor" strokeWidth="1.1" opacity=".4"/><circle cx="3.5" cy="3.5" r=".8" fill="currentColor" opacity=".5"/></svg> }
+function VoiceIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="5.5" y="1.5" width="5" height="8" rx="2.5" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M3 8c0 2.8 2.2 5 5 5s5-2.2 5-5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none"/><path d="M8 13v2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> }
 function TaxStrategyIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 3 5-7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" fill="none"/><circle cx="13" cy="3.5" r="1.5" stroke="currentColor" strokeWidth="1.1" fill="none"/></svg> }
 function Form1099Icon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="1.5" width="9" height="12" rx="1.2" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M4 5h5M4 7.5h5M4 10h3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/><path d="M11 9.5l2 2M13 9.5l-2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> }
 function AuditIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1.5L2 4v3.5c0 3.5 2.5 5.5 6 7 3.5-1.5 6-3.5 6-7V4L8 1.5z" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinejoin="round"/><path d="M5.5 7.5l1.5 1.5 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> }
