@@ -202,6 +202,115 @@ function ShortcutsPopover() {
 }
 
 // ---------------------------------------------------------------------------
+// Mobile card (< md breakpoint)
+// ---------------------------------------------------------------------------
+
+function MobileTransactionCard({
+  transaction,
+  selected,
+  onToggleSelect,
+  onChange,
+  chartOfAccounts,
+  onAudit,
+}: {
+  transaction: Transaction
+  selected: boolean
+  onToggleSelect: (id: string) => void
+  onChange: (t: Transaction) => void
+  chartOfAccounts: ChartOfAccounts[]
+  onAudit?: AuditCallback
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const isCredit = transaction.type === 'credit'
+  const amtFormatted = transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+  const statusColors: Record<Transaction['status'], string> = {
+    approved: '#065f46',
+    pending: '#854d0e',
+    flagged: '#991b1b',
+    edited: '#1d4ed8',
+  }
+  const statusBgs: Record<Transaction['status'], string> = {
+    approved: '#ecfdf5',
+    pending: '#fef9c3',
+    flagged: '#fef2f2',
+    edited: '#eff6ff',
+  }
+
+  function handleApprove() {
+    onAudit?.({ action: 'tx_approved', txId: transaction.id, txDescription: transaction.description, details: { category: transaction.suggested_category ?? '' } })
+    onChange({ ...transaction, status: 'approved', final_category: transaction.suggested_category, final_account_code: transaction.suggested_account_code })
+    setExpanded(false)
+  }
+  function handleFlag() {
+    onAudit?.({ action: 'tx_flagged', txId: transaction.id, txDescription: transaction.description, details: { reason: '' } })
+    onChange({ ...transaction, status: 'flagged' })
+    setExpanded(false)
+  }
+
+  return (
+    <div
+      className="rounded-xl border"
+      style={{ backgroundColor: selected ? '#fdf2e9' : '#ffffff', borderColor: selected ? '#b8734a' : '#e0dbd4' }}
+    >
+      <div
+        className="flex items-start gap-3 px-3 py-3 cursor-pointer"
+        onClick={() => setExpanded(v => !v)}
+      >
+        <div onClick={e => { e.stopPropagation(); onToggleSelect(transaction.id) }} className="mt-0.5">
+          <input type="checkbox" checked={selected} onChange={() => onToggleSelect(transaction.id)} style={{ accentColor: '#2d5a27' }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-mono" style={{ color: '#6b6560' }}>{transaction.date}</span>
+            <span className="font-mono text-sm font-semibold" style={{ color: isCredit ? '#166534' : '#991b1b', fontVariantNumeric: 'tabular-nums' }}>
+              {isCredit ? '+' : '−'}${amtFormatted}
+            </span>
+          </div>
+          <p className="text-sm mt-0.5 truncate font-medium" style={{ color: '#1a1714' }} title={transaction.description}>
+            {transaction.description}
+          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: statusBgs[transaction.status], color: statusColors[transaction.status] }}>
+              {transaction.status}
+            </span>
+            {transaction.suggested_category && (
+              <span className="text-xs truncate" style={{ color: '#6b6560' }}>{transaction.suggested_category}</span>
+            )}
+          </div>
+        </div>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', flexShrink: 0, marginTop: 4 }}>
+          <path d="M2 4l4 4 4-4" stroke="#6b6560" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+      {expanded && (
+        <div className="px-3 pb-3 pt-1 border-t flex gap-2" style={{ borderColor: '#f0ebe3' }}>
+          <button onClick={handleApprove} className="flex-1 py-2 rounded-lg text-sm font-semibold text-white" style={{ backgroundColor: '#2d5a27' }}>
+            Approve
+          </button>
+          <button onClick={handleFlag} className="flex-1 py-2 rounded-lg text-sm font-medium border" style={{ borderColor: '#dc2626', color: '#991b1b' }}>
+            Flag
+          </button>
+          <select
+            value={transaction.final_account_code ?? transaction.suggested_account_code ?? ''}
+            onChange={e => {
+              const acct = chartOfAccounts.find(a => a.code === e.target.value)
+              onChange({ ...transaction, status: 'edited', final_account_code: e.target.value, final_category: acct?.name ?? e.target.value })
+            }}
+            className="flex-1 border rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+            style={{ borderColor: '#e0dbd4', color: '#1a1714' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <option value="">Category…</option>
+            {chartOfAccounts.map(a => <option key={a.code} value={a.code}>[{a.code}] {a.name}</option>)}
+          </select>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // TransactionTable
 // ---------------------------------------------------------------------------
 
@@ -539,9 +648,30 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
         </div>
       </div>
 
-      {/* Table */}
+      {/* Mobile card list (< md) */}
+      <div className="md:hidden space-y-2">
+        {visible.length === 0 ? (
+          <div className="py-12 text-center">
+            <p className="text-sm" style={{ color: '#a09a94' }}>
+              {search ? 'No transactions match your search.' : 'No transactions in this category.'}
+            </p>
+          </div>
+        ) : visible.map((tx) => (
+          <MobileTransactionCard
+            key={tx.id}
+            transaction={tx}
+            selected={selected.has(tx.id)}
+            onToggleSelect={toggleSelect}
+            onChange={handleChange}
+            chartOfAccounts={chartOfAccounts}
+            onAudit={onAudit}
+          />
+        ))}
+      </div>
+
+      {/* Table (≥ md) */}
       <div
-        className="rounded-xl border overflow-hidden overflow-x-auto"
+        className="hidden md:block rounded-xl border overflow-hidden"
         style={{ borderColor: '#e0dbd4' }}
       >
         {visible.length === 0 ? (
@@ -551,13 +681,13 @@ export default function TransactionTable({ initialTransactions, chartOfAccounts,
             </p>
           </div>
         ) : (
-          <table className="w-full" style={{ tableLayout: 'fixed' }}>
+          <table className="w-full" style={{ tableLayout: 'fixed', minWidth: 0 }}>
             <colgroup>
-              <col style={{ width: 40 }} />
+              <col style={{ width: '3%' }} />
               <col style={{ width: '10%' }} />
-              <col style={{ width: '35%' }} />
+              <col style={{ width: '30%' }} />
               <col style={{ width: '12%' }} />
-              <col style={{ width: '8%' }} />
+              <col style={{ width: '10%' }} />
               <col style={{ width: '12%' }} />
               <col style={{ width: '10%' }} />
               <col style={{ width: '13%' }} />

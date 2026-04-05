@@ -201,7 +201,7 @@ export default function TransactionRow({
         onClick={() => { setExpanded((v) => !v); onFocus?.() }}
       >
         {/* Checkbox */}
-        <td className="pl-3 pr-1 py-2.5 w-8" onClick={(e) => e.stopPropagation()}>
+        <td className="pl-3 pr-1 py-2.5" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
             checked={selected}
@@ -265,10 +265,14 @@ export default function TransactionRow({
         </td>
 
         {/* Amount */}
-        <td className="px-3 py-2.5 text-right whitespace-nowrap w-28">
+        <td className="px-3 py-2.5 text-right">
           <span
             className="font-mono text-sm"
-            style={{ color: transaction.type === 'debit' ? '#991b1b' : '#166534' }}
+            style={{
+              color: transaction.type === 'debit' ? '#991b1b' : '#166534',
+              fontVariantNumeric: 'tabular-nums',
+              whiteSpace: 'nowrap',
+            }}
           >
             {transaction.type === 'debit' ? '−' : '+'}
             ${transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -276,7 +280,7 @@ export default function TransactionRow({
         </td>
 
         {/* Status */}
-        <td className="px-3 py-2.5 w-24">
+        <td className="px-3 py-2.5">
           <StatusBadge status={transaction.status} />
         </td>
 
