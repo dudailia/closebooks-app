@@ -163,6 +163,30 @@ export default function DashboardNav({ onHelpClick }: { onHelpClick?: () => void
           <NavLink href="/dashboard/calendar" active={path.startsWith('/dashboard/calendar')}>
             Calendar
           </NavLink>
+          <NavLink href="/dashboard/network" active={path.startsWith('/dashboard/network')}>
+            <span className="flex items-center gap-1">
+              <NetworkNavIcon />
+              Network
+            </span>
+          </NavLink>
+          <NavLink href="/dashboard/advisory" active={path.startsWith('/dashboard/advisory')}>
+            <span className="flex items-center gap-1">
+              <AdvisoryNavIcon />
+              Advisory
+            </span>
+          </NavLink>
+          <NavLink href="/dashboard/billing" active={path.startsWith('/dashboard/billing')}>
+            Billing
+          </NavLink>
+          <NavLink href="/dashboard/vault" active={path.startsWith('/dashboard/vault')}>
+            Vault
+          </NavLink>
+          <NavLink href="/dashboard/compliance" active={path.startsWith('/dashboard/compliance')}>
+            <span className="flex items-center gap-1">
+              <ShieldNavIcon />
+              Compliance
+            </span>
+          </NavLink>
           <NavLink href="/dashboard/integrations" active={path.startsWith('/dashboard/integrations')}>
             Integrations
           </NavLink>
@@ -326,6 +350,37 @@ function GiftNavIcon() {
       <rect x="1" y="5" width="10" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
       <path d="M1 5h10M6 5v6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
       <path d="M6 5c0-1.5 1.5-2 1.5-2S6.5 4.5 6 5M6 5c0-1.5-1.5-2-1.5-2S5.5 4.5 6 5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function NetworkNavIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+      <circle cx="6" cy="6" r="1.5" stroke="currentColor" strokeWidth="1.1" fill="none" />
+      <circle cx="2" cy="2" r="1" stroke="currentColor" strokeWidth="1.1" fill="none" />
+      <circle cx="10" cy="2" r="1" stroke="currentColor" strokeWidth="1.1" fill="none" />
+      <circle cx="2" cy="10" r="1" stroke="currentColor" strokeWidth="1.1" fill="none" />
+      <circle cx="10" cy="10" r="1" stroke="currentColor" strokeWidth="1.1" fill="none" />
+      <path d="M3 3l2 2M7 5l2-2M5 7l-2 2M7 7l2 2" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function AdvisoryNavIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+      <path d="M2 2h8a1 1 0 011 1v5a1 1 0 01-1 1H7l-2 2V9H2a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.1" fill="none" strokeLinejoin="round" />
+      <path d="M4 5h4M4 7h2" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function ShieldNavIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+      <path d="M6 1L2 3v3c0 2.5 1.5 4.5 4 5 2.5-.5 4-2.5 4-5V3L6 1z" stroke="currentColor" strokeWidth="1.1" fill="none" strokeLinejoin="round" />
+      <path d="M4 6l1.5 1.5L8 4.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
