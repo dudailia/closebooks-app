@@ -1,62 +1,225 @@
+import { REGULATORY_ALERTS } from './regulatoryDatabase'
 import type { RegulatoryAlert, ClientAlertStatus } from '@/types/compliance'
-import { REGULATORY_ALERTS } from '@/lib/regulatoryDatabase'
-import type { Client } from '@/types'
+import type { ClientIndustry } from '@/types'
 
-const STORAGE_KEY = 'cb_compliance_statuses'
+// ─────────────────────────────────────────────────────────────────────────────
+// Alert matching
+// ─────────────────────────────────────────────────────────────────────────────
 
-// ─── Storage ────────────────────────────────────────────────────────────────
+/**
+ * Match alerts to a specific client based on industry, state, employee count,
+ * and annual revenue. Returns alerts sorted: critical first, then important,
+ * then informational.
+ */
+export function getAlertsForClient(
+  client: { business_name: string; industry: ClientIndustry },
+  options?: { state?: string; employeeCount?: number; annualRevenue?: number }
+): RegulatoryAlert[] {
+  const { state, employeeCount, annualRevenue } = options ?? {}
 
-export function loadAlertStatuses(): ClientAlertStatus[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
+  const matched = REGULATORY_ALERTS.filter((alert) => {
+    // Industry filter: empty = all industries
+    if (alert.affectedIndustries.length > 0) {
+      if (!alert.affectedIndustries.includes(client.industry)) return false
+    }
 
-export function saveAlertStatus(status: ClientAlertStatus): void {
-  const all = loadAlertStatuses()
-  const idx = all.findIndex(s => s.alertId === status.alertId && s.clientName === status.clientName)
-  if (idx >= 0) all[idx] = status
-  else all.push(status)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
-}
+    // State filter: empty = federal/nationwide
+    if (alert.affectedStates.length > 0) {
+      if (!state || !alert.affectedStates.includes(state)) return false
+    }
 
-export function getAlertStatus(alertId: string, clientName: string): ClientAlertStatus | null {
-  return loadAlertStatuses().find(s => s.alertId === alertId && s.clientName === clientName) ?? null
-}
+    // Employee minimum filter
+    if (alert.employeeMin !== undefined && alert.employeeMin > 0) {
+      if (!employeeCount || employeeCount < alert.employeeMin) return false
+    }
 
-// ─── Matching ────────────────────────────────────────────────────────────────
+    // Revenue minimum filter
+    if (alert.revenueMin !== undefined && alert.revenueMin > 0) {
+      if (!annualRevenue || annualRevenue < alert.revenueMin) return false
+    }
 
-export function getAlertsForClient(client: Client): RegulatoryAlert[] {
-  return REGULATORY_ALERTS.filter(alert => {
-    // Industry filter
-    if (alert.affectedIndustries.length > 0 && !alert.affectedIndustries.includes(client.industry)) return false
     return true
+  })
+
+  // Sort: critical → important → informational, then by effectiveDate desc
+  const severityOrder: Record<string, number> = { critical: 0, important: 1, informational: 2 }
+  return matched.sort((a, b) => {
+    const sev = severityOrder[a.severity] - severityOrder[b.severity]
+    if (sev !== 0) return sev
+    return b.effectiveDate.localeCompare(a.effectiveDate)
   })
 }
 
+/**
+ * Get all unique alerts affecting any client in an array, along with the list
+ * of client names affected by each alert.
+ */
+export function getAlertsForFirm(
+  clients: { business_name: string; industry: ClientIndustry }[]
+): { alert: RegulatoryAlert; affectedClients: string[] }[] {
+  const alertMap = new Map<string, { alert: RegulatoryAlert; affectedClients: string[] }>()
+
+  for (const client of clients) {
+    const alerts = getAlertsForClient(client)
+    for (const alert of alerts) {
+      if (!alertMap.has(alert.id)) {
+        alertMap.set(alert.id, { alert, affectedClients: [] })
+      }
+      const entry = alertMap.get(alert.id)!
+      if (!entry.affectedClients.includes(client.business_name)) {
+        entry.affectedClients.push(client.business_name)
+      }
+    }
+  }
+
+  const results = Array.from(alertMap.values())
+  const severityOrder: Record<string, number> = { critical: 0, important: 1, informational: 2 }
+  return results.sort((a, b) => {
+    const sev = severityOrder[a.alert.severity] - severityOrder[b.alert.severity]
+    if (sev !== 0) return sev
+    return b.alert.effectiveDate.localeCompare(a.alert.effectiveDate)
+  })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// localStorage status tracking
+// ─────────────────────────────────────────────────────────────────────────────
+
+const STATUS_KEY = 'cb_alert_statuses'
+
+function loadStatuses(): ClientAlertStatus[] {
+  if (typeof window === 'undefined') return []
+  try {
+    return JSON.parse(localStorage.getItem(STATUS_KEY) ?? '[]') as ClientAlertStatus[]
+  } catch {
+    return []
+  }
+}
+
+function saveStatuses(statuses: ClientAlertStatus[]): void {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(STATUS_KEY, JSON.stringify(statuses))
+}
+
+export function getAlertStatus(alertId: string, clientName: string): ClientAlertStatus | null {
+  const all = loadStatuses()
+  return (
+    all.find(
+      (s) => s.alertId === alertId && s.clientName === clientName
+    ) ?? null
+  )
+}
+
+export function updateAlertStatus(
+  alertId: string,
+  clientName: string,
+  update: Partial<ClientAlertStatus>
+): void {
+  const all = loadStatuses()
+  const idx = all.findIndex(
+    (s) => s.alertId === alertId && s.clientName === clientName
+  )
+
+  if (idx >= 0) {
+    all[idx] = { ...all[idx], ...update }
+  } else {
+    all.push({
+      alertId,
+      clientName,
+      status: 'new',
+      ...update,
+    })
+  }
+  saveStatuses(all)
+}
+
+/**
+ * Count alerts that are unreviewed (no reviewed/client-notified status and
+ * not firm-wide dismissed). Uses REGULATORY_ALERTS as source of truth.
+ */
+export function getUnreviewedCount(): number {
+  const statuses = loadStatuses()
+  let count = 0
+  for (const alert of REGULATORY_ALERTS) {
+    const relevant = statuses.filter((s) => s.alertId === alert.id)
+    const hasReviewed = relevant.some(
+      (s) => s.status === 'reviewed' || s.status === 'client-notified'
+    )
+    const allDismissed =
+      relevant.length > 0 && relevant.every((s) => s.status === 'dismissed')
+    if (!hasReviewed && !allDismissed) count++
+  }
+  return count
+}
+
+export function getCriticalUnreviewedCount(): number {
+  const statuses = loadStatuses()
+  let count = 0
+  for (const alert of REGULATORY_ALERTS.filter((a) => a.severity === 'critical')) {
+    const relevant = statuses.filter((s) => s.alertId === alert.id)
+    const hasReviewed = relevant.some(
+      (s) => s.status === 'reviewed' || s.status === 'client-notified'
+    )
+    const allDismissed =
+      relevant.length > 0 && relevant.every((s) => s.status === 'dismissed')
+    if (!hasReviewed && !allDismissed) count++
+  }
+  return count
+}
+
+/**
+ * Dismiss an alert for all clients by storing a firm-wide sentinel entry.
+ */
+export function dismissAlertForAll(alertId: string): void {
+  const all = loadStatuses()
+  const idx = all.findIndex(
+    (s) => s.alertId === alertId && s.clientName === '__ALL__'
+  )
+  const entry: ClientAlertStatus = {
+    alertId,
+    clientName: '__ALL__',
+    status: 'dismissed',
+    dismissedAt: new Date().toISOString(),
+  }
+  if (idx >= 0) {
+    all[idx] = entry
+  } else {
+    all.push(entry)
+  }
+  saveStatuses(all)
+}
+
+/**
+ * Check if an alert has been dismissed firm-wide.
+ */
+export function isAlertDismissedForAll(alertId: string): boolean {
+  const all = loadStatuses()
+  return all.some(
+    (s) => s.alertId === alertId && s.clientName === '__ALL__' && s.status === 'dismissed'
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Convenience helpers used by page components
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function getAllAlerts(): RegulatoryAlert[] {
-  return REGULATORY_ALERTS
+  const severityOrder: Record<string, number> = { critical: 0, important: 1, informational: 2 }
+  return [...REGULATORY_ALERTS].sort((a, b) => {
+    const sev = severityOrder[a.severity] - severityOrder[b.severity]
+    if (sev !== 0) return sev
+    return b.effectiveDate.localeCompare(a.effectiveDate)
+  })
 }
 
 export function getAlertById(id: string): RegulatoryAlert | null {
-  return REGULATORY_ALERTS.find(a => a.id === id) ?? null
+  return REGULATORY_ALERTS.find((a) => a.id === id) ?? null
 }
 
-export function countCriticalAlerts(): number {
-  return REGULATORY_ALERTS.filter(a => a.severity === 'critical').length
+export function loadAlertStatuses(): ClientAlertStatus[] {
+  return loadStatuses()
 }
 
-export function getUnreviewedCount(clients: Client[]): number {
-  const statuses = loadAlertStatuses()
-  let unreviewedCount = 0
-  for (const alert of REGULATORY_ALERTS) {
-    for (const client of clients) {
-      if (alert.affectedIndustries.length > 0 && !alert.affectedIndustries.includes(client.industry)) continue
-      const status = statuses.find(s => s.alertId === alert.id && s.clientName === client.business_name)
-      if (!status || status.status === 'new') unreviewedCount++
-    }
-  }
-  return unreviewedCount
+export function saveAlertStatus(status: ClientAlertStatus): void {
+  updateAlertStatus(status.alertId, status.clientName, status)
 }

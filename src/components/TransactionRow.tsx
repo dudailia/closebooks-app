@@ -271,7 +271,7 @@ export default function TransactionRow({
             style={{ color: transaction.type === 'debit' ? '#991b1b' : '#166534' }}
           >
             {transaction.type === 'debit' ? '−' : '+'}
-            {transaction.amount.toFixed(2)}
+            ${transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </td>
 

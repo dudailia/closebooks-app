@@ -1,29 +1,84 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import type { RegulatoryAlert } from '@/types/compliance'
 
-const anthropic = new Anthropic()
+interface RequestBody {
+  alert: RegulatoryAlert
+  clientName: string
+  firmName: string
+  tone?: string
+}
+
+function replacePlaceholders(template: string, clientName: string, firmName: string, effectiveDate: string): string {
+  return template
+    .replace(/\[CLIENT_NAME\]/g, clientName)
+    .replace(/\[FIRM_NAME\]/g, firmName)
+    .replace(/\[EFFECTIVE_DATE\]/g, effectiveDate)
+}
+
+function letterToHtml(text: string): string {
+  const paragraphs = text
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => {
+      // Convert newlines within a paragraph to <br>
+      const inner = p.replace(/\n/g, '<br/>')
+      return `<p style="margin:0 0 14px 0;line-height:1.6;">${inner}</p>`
+    })
+    .join('')
+  return `<div style="font-family:Georgia,serif;font-size:14px;color:#1a1714;max-width:620px;margin:0 auto;">${paragraphs}</div>`
+}
 
 export async function POST(req: NextRequest) {
+  const body: RequestBody = await req.json()
+  const { alert, clientName, firmName, tone } = body
+
+  // Always start with the template with placeholders replaced
+  const baseText = replacePlaceholders(
+    alert.draftLetterTemplate,
+    clientName,
+    firmName,
+    alert.effectiveDate
+  )
+
+  // Check if Anthropic API key is available
+  const hasApiKey = !!process.env.ANTHROPIC_API_KEY
+
+  if (!hasApiKey) {
+    // Fallback: return template with placeholders replaced, no AI personalization
+    const subject = `Important Regulatory Update: ${alert.title}`
+    return NextResponse.json({
+      subject,
+      bodyText: baseText,
+      bodyHtml: letterToHtml(baseText),
+    })
+  }
+
   try {
-    const { alert, clientName, firmName } = await req.json()
+    const anthropic = new Anthropic()
 
-    const prompt = `You are a professional CPA firm advisor. Write a concise, professional client advisory letter about the following regulatory update.
+    const toneInstruction = tone
+      ? `Use a ${tone} tone.`
+      : 'Use a warm but professional tone — approachable, not overly formal.'
 
-Alert: ${alert.title}
-Summary: ${alert.summary}
-Effective Date: ${alert.effectiveDate}
-Action Required: ${alert.actionRequired}
+    const prompt = `You are a CPA firm advisor helping to personalize a regulatory advisory letter for a specific client.
 
-Client Name: ${clientName}
-Firm Name: ${firmName}
+Here is the draft letter:
+---
+${baseText}
+---
 
-Write a 3-4 paragraph advisory letter that:
-1. Opens with the regulatory update and its significance
-2. Explains how it applies to the client's situation
-3. States the specific action the client needs to take
-4. Closes professionally
+Please improve this letter by:
+1. Making the language more specific and personal to "${clientName}"
+2. Adding one concrete, actionable next step the client should take immediately
+3. Keeping it professional and clear — no jargon
+4. ${toneInstruction}
+5. Keep the same general structure (greeting, body paragraphs, closing)
+6. Do NOT use markdown formatting — plain text only
+7. Keep the letter under 280 words
 
-Use a warm but professional tone. Be specific and actionable. Format as a letter with "Dear ${clientName}," opening and closing with "Warm regards,\n${firmName}". Do not use markdown formatting.`
+Return only the improved letter text, starting with "Dear ${clientName}," and ending with the sign-off.`
 
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
@@ -31,10 +86,23 @@ Use a warm but professional tone. Be specific and actionable. Format as a letter
       messages: [{ role: 'user', content: prompt }],
     })
 
-    const letter = message.content[0].type === 'text' ? message.content[0].text : ''
+    const bodyText =
+      message.content[0].type === 'text' ? message.content[0].text.trim() : baseText
 
-    return NextResponse.json({ letter })
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to generate letter' }, { status: 500 })
+    const subject = `Important Regulatory Update: ${alert.title}`
+
+    return NextResponse.json({
+      subject,
+      bodyText,
+      bodyHtml: letterToHtml(bodyText),
+    })
+  } catch {
+    // If AI call fails, fall back to the template
+    const subject = `Important Regulatory Update: ${alert.title}`
+    return NextResponse.json({
+      subject,
+      bodyText: baseText,
+      bodyHtml: letterToHtml(baseText),
+    })
   }
 }
