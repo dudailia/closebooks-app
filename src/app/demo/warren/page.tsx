@@ -522,6 +522,68 @@ export default function WarrenDemoPage() {
 
         {/* ── CTA ──────────────────────────────────────────────────────────── */}
         <section>
+          {/* Live product demo CTA — primary */}
+          <div style={{
+            backgroundColor: '#0f0e0d',
+            borderRadius: 16,
+            padding: '40px 48px',
+            marginBottom: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+            gap: 20,
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              fontSize: 12, color: '#4ade80', fontWeight: 600, letterSpacing: '0.06em',
+            }}>
+              <span style={{
+                display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+                backgroundColor: '#4ade80',
+                animation: 'pulse-dot 2s infinite',
+              }} />
+              LIVE DEMO — CLICK TO WATCH IN REAL TIME
+            </div>
+            <h2 style={{
+              fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
+              fontSize: 28, fontWeight: 400, color: '#fff', letterSpacing: '-0.02em',
+              maxWidth: 500,
+            }}>
+              Watch CloseBooks close these books right now
+            </h2>
+            <p style={{ color: '#9ca3af', fontSize: 14, maxWidth: 440 }}>
+              847 transactions. 4 minutes. Zero human intervention.
+              Click below to see the live terminal as it runs.
+            </p>
+            <Link
+              href="/dashboard/autopilot/smith-2024/run"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 10,
+                backgroundColor: '#2d5a27', color: '#fff',
+                padding: '14px 32px', borderRadius: 12,
+                fontSize: 15, fontWeight: 700, textDecoration: 'none',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.backgroundColor = '#1e3d1a'
+                e.currentTarget.style.transform = 'translateY(-1px)'
+                e.currentTarget.style.boxShadow = '0 6px 24px rgba(45,90,39,0.4)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.backgroundColor = '#2d5a27'
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <polygon points="5,3 13,8 5,13" fill="white" />
+              </svg>
+              Watch CloseBooks Close These Books →
+            </Link>
+          </div>
+
+          {/* Secondary CTA */}
           <div
             className="rounded-2xl border p-8 sm:p-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
             style={{ backgroundColor: '#f0f5ef', borderColor: '#c4d9c0' }}

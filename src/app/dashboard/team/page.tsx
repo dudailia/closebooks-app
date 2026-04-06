@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { SkeletonBlock, SkeletonTable } from '@/components/Skeleton'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -598,8 +599,16 @@ export default function TeamPage() {
     saveMembers(updated)
   }
 
+  if (!mounted) return (
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
+      <SkeletonBlock height={32} width={160} style={{ marginBottom: 8 }} />
+      <SkeletonBlock height={16} width={260} style={{ marginBottom: 32 }} />
+      <SkeletonTable rows={5} cols={4} />
+    </div>
+  )
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
+    <div className="min-h-screen flex flex-col page-content" style={{ backgroundColor: '#faf8f4' }}>
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-5 py-8 space-y-6 page-enter">
 

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { getClients, saveClient, deleteClient, getJobsForClient } from '@/lib/storage'
 import { logActivity } from '@/lib/activity'
 import type { Client, ClientIndustry, AccountingSoftware } from '@/types'
+import { SkeletonBlock, SkeletonTable, StatsSkeleton } from '@/components/Skeleton'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -360,8 +361,17 @@ export default function ClientsPage() {
     return matchesSearch && matchesIndustry
   })
 
+  if (!mounted) return (
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
+      <SkeletonBlock height={32} width={200} style={{ marginBottom: 8 }} />
+      <SkeletonBlock height={16} width={280} style={{ marginBottom: 32 }} />
+      <StatsSkeleton count={3} />
+      <SkeletonTable rows={6} cols={5} />
+    </div>
+  )
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
+    <div className="min-h-screen flex flex-col page-content" style={{ backgroundColor: '#faf8f4' }}>
       {showModal && (
         <ClientModal
           client={editing}

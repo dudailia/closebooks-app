@@ -296,3 +296,27 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* Sidebar nav — hide scrollbar while keeping scroll functionality */
+.cb-sidebar-nav::-webkit-scrollbar { display: none; }
+.cb-sidebar-nav { scrollbar-width: none; -ms-overflow-style: none; }
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.cb-skeleton {
+  background: linear-gradient(90deg, #f0ebe3 25%, #e8e0d4 50%, #f0ebe3 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Page fade-in for dashboard content */
+@keyframes pageFadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-content {
+  animation: pageFadeUp 0.18s ease both;
+}

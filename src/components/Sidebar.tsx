@@ -378,7 +378,7 @@ export default function Sidebar() {
       flexDirection: 'column',
       transition: 'width 0.2s ease',
       overflowX: 'hidden',
-      overflowY: 'auto',
+      overflow: 'hidden',
       flexShrink: 0,
       position: 'fixed',
       left: 0,
@@ -456,7 +456,7 @@ export default function Sidebar() {
       )}
 
       {/* Nav sections */}
-      <nav style={{ flex: 1, overflowY: 'auto', padding: collapsed ? '8px 4px' : '8px 10px' }}>
+      <nav className="cb-sidebar-nav" style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: collapsed ? '8px 4px' : '8px 10px' }}>
         {sections.map((section, si) => (
           <div key={section.id} style={{ marginTop: si === 0 ? 0 : 20 }}>
             {section.label && !collapsed && (

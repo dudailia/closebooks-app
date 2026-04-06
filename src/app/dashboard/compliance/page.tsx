@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { SkeletonBlock, SkeletonTable, StatsSkeleton } from '@/components/Skeleton'
 import ComplianceAlertCard from '@/components/ComplianceAlertCard'
 import RegulatoryLetterModal from '@/components/RegulatoryLetterModal'
 import { getAllAlerts, loadAlertStatuses, saveAlertStatus } from '@/lib/regulatoryAlerts'
@@ -29,12 +30,14 @@ export default function CompliancePage() {
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null)
   const [firmName, setFirmName] = useState('CloseBooks')
   const [clients, setClients] = useState<Client[]>([])
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setStatuses(loadAlertStatuses())
     setClients(getClientsFromStorage())
     const settings = loadFirmSettings()
     if (settings?.firm_name) setFirmName(settings.firm_name)
+    setMounted(true)
   }, [])
 
   function refreshStatuses() {
@@ -85,8 +88,17 @@ export default function CompliancePage() {
 
   const selectedAlert = selectedAlertId ? alerts.find(a => a.id === selectedAlertId) : null
 
+  if (!mounted) return (
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
+      <SkeletonBlock height={32} width={220} style={{ marginBottom: 8 }} />
+      <SkeletonBlock height={16} width={320} style={{ marginBottom: 32 }} />
+      <StatsSkeleton count={3} />
+      <SkeletonTable rows={7} cols={5} />
+    </div>
+  )
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
+    <div className="min-h-screen flex flex-col page-content" style={{ backgroundColor: '#faf8f4' }}>
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-5 py-8">
         {/* Header */}

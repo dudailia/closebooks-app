@@ -4,6 +4,46 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
+// ─── Confetti ────────────────────────────────────────────────────────────────
+
+function ConfettiBurst({ active }: { active: boolean }) {
+  if (!active) return null
+  const colors = ['#2d5a27', '#b8734a', '#4ade80', '#fbbf24', '#60a5fa', '#f472b6']
+  const pieces = Array.from({ length: 36 }, (_, i) => ({
+    id: i,
+    left: `${5 + Math.random() * 90}%`,
+    delay: `${Math.random() * 0.4}s`,
+    duration: `${1.2 + Math.random() * 0.8}s`,
+    color: colors[i % colors.length],
+    size: 4 + Math.floor(Math.random() * 6),
+    rotate: Math.floor(Math.random() * 360),
+  }))
+  return (
+    <>
+      <style>{`
+        @keyframes confetti-fall {
+          0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+          80% { opacity: 1; }
+          100% { transform: translateY(80vh) rotate(720deg); opacity: 0; }
+        }
+      `}</style>
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 200, overflow: 'hidden' }}>
+        {pieces.map(p => (
+          <div key={p.id} style={{
+            position: 'absolute', top: 0, left: p.left,
+            width: p.size, height: p.size,
+            backgroundColor: p.color,
+            borderRadius: p.size / 4,
+            transform: `rotate(${p.rotate}deg)`,
+            animation: `confetti-fall ${p.duration} ease-in forwards`,
+            animationDelay: p.delay,
+          }} />
+        ))}
+      </div>
+    </>
+  )
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Prediction {
@@ -399,11 +439,23 @@ export default function ClientPredictPage() {
   const clientId = typeof params.clientId === 'string' ? params.clientId : 'smith-2024'
   const clientInfo = CLIENT_INFO[clientId] ?? CLIENT_INFO['smith-2024']
   const unknownRef = useRef<HTMLDivElement>(null)
+  const [showConfetti, setShowConfetti] = useState(false)
+
+  const confirmedCount = clientInfo.confirmed
+  const totalPredictions = clientInfo.predicted
+
+  useEffect(() => {
+    if (confirmedCount > 0 && confirmedCount >= totalPredictions) {
+      setShowConfetti(true)
+      setTimeout(() => setShowConfetti(false), 3000)
+    }
+  }, [confirmedCount, totalPredictions])
 
   const badgeColor = clientInfo.certainty >= 90 ? '#2d5a27' : clientInfo.certainty >= 75 ? '#86efac' : '#f59e0b'
 
   return (
     <div style={{ padding: '32px 40px', maxWidth: 1400, margin: '0 auto' }}>
+      <ConfettiBurst active={showConfetti} />
       {/* Back link */}
       <Link href="/dashboard/predict" style={{ fontSize: 13, color: '#6b6560', textDecoration: 'none', display: 'inline-block', marginBottom: 20 }}>
         ← Predictive Close

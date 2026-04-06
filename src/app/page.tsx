@@ -714,6 +714,200 @@ function Features() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// What's New
+// ─────────────────────────────────────────────────────────────────────────────
+
+function WhatsNew() {
+  return (
+    <>
+      {/* ─── NEW: What's New section ──────────────────────────────────────────────── */}
+      <section style={{ padding: '80px 24px', backgroundColor: '#faf8f4' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0',
+              borderRadius: 20, padding: '4px 14px', marginBottom: 16,
+              fontSize: 12, fontWeight: 700, color: '#166534', letterSpacing: '0.06em',
+            }}>
+              ✦ JUST SHIPPED
+            </div>
+            <h2 style={{
+              fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
+              fontSize: 36, fontWeight: 400, color: '#1a1714',
+              letterSpacing: '-0.02em', marginBottom: 12,
+            }}>
+              The operating system for every CPA firm
+            </h2>
+            <p style={{ color: '#6b6560', fontSize: 16, maxWidth: 500, margin: '0 auto' }}>
+              Five features that change what&#39;s possible in accounting.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 20 }}>
+            {[
+              {
+                href: '/dashboard/agent',
+                badge: 'AI AGENT',
+                badgeColor: '#dcfce7', badgeText: '#166534',
+                title: 'Agent Mode',
+                desc: 'The first AI that closes the books without a human. Runs nightly. Emails your client. Escalates only what matters.',
+                stat: '847 transactions · 4 minutes · 0 errors',
+                icon: (
+                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <circle cx="14" cy="9" r="5" stroke="#2d5a27" strokeWidth="1.8" fill="none"/>
+                    <path d="M4 26c0-5.5 4.5-9 10-9s10 3.5 10 9" stroke="#2d5a27" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+                    <circle cx="22" cy="5" r="3" fill="#b8734a"/>
+                    <path d="M21 5h2M22 4v2" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
+                  </svg>
+                ),
+              },
+              {
+                href: '/dashboard/predict',
+                badge: 'PREDICTION',
+                badgeColor: '#dbeafe', badgeText: '#1e40af',
+                title: 'Predictive Close',
+                desc: 'AI predicts next month\'s transactions from 18 months of history. Close your books 5 days before month end.',
+                stat: '94% accuracy · pre-confirmed automatically',
+                icon: (
+                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <path d="M4 22l6-7 4 4 5-9 6 5" stroke="#2d5a27" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <circle cx="23" cy="6" r="3" stroke="#b8734a" strokeWidth="1.5" fill="none"/>
+                    <path d="M23 4v4M21 6h4" stroke="#b8734a" strokeWidth="1.3" strokeLinecap="round"/>
+                  </svg>
+                ),
+              },
+              {
+                href: '/portal/miller-cpa/demo-token',
+                badge: 'CLIENT PORTAL',
+                badgeColor: '#f3e8ff', badgeText: '#6b21a8',
+                title: 'Client Financial OS',
+                desc: 'Beautiful real-time dashboards your clients check every morning. Cash position, burn rate, upcoming bills. They love it.',
+                stat: 'Daily active use · makes churn impossible',
+                icon: (
+                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <rect x="2" y="5" width="24" height="18" rx="3" stroke="#2d5a27" strokeWidth="1.8" fill="none"/>
+                    <path d="M2 11h24" stroke="#2d5a27" strokeWidth="1.5"/>
+                    <path d="M8 17h4M8 20h6" stroke="#b8734a" strokeWidth="1.5" strokeLinecap="round"/>
+                    <circle cx="19" cy="18.5" r="3" stroke="#2d5a27" strokeWidth="1.3" fill="none"/>
+                    <path d="M18 18.5l1 1 2-2" stroke="#2d5a27" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                ),
+              },
+            ].map(card => (
+              <a
+                key={card.href}
+                href={card.href}
+                style={{
+                  display: 'block',
+                  backgroundColor: '#fff',
+                  border: '1px solid #e8e0d4',
+                  borderRadius: 16,
+                  padding: 28,
+                  textDecoration: 'none',
+                  transition: 'all 0.18s',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.10)'
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.borderColor = '#c4d9c0'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.boxShadow = 'none'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.borderColor = '#e8e0d4'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                  {card.icon}
+                  <span style={{
+                    fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
+                    backgroundColor: card.badgeColor, color: card.badgeText,
+                    padding: '3px 8px', borderRadius: 20,
+                  }}>{card.badge}</span>
+                </div>
+                <h3 style={{
+                  fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
+                  fontSize: 20, fontWeight: 400, color: '#1a1714',
+                  marginBottom: 8, letterSpacing: '-0.01em',
+                }}>{card.title}</h3>
+                <p style={{ fontSize: 13, color: '#6b6560', lineHeight: 1.6, marginBottom: 16 }}>{card.desc}</p>
+                <div style={{ fontSize: 11, color: '#2d5a27', fontWeight: 600 }}>{card.stat}</div>
+              </a>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            {[
+              {
+                href: '/dashboard/voice',
+                badge: 'VOICE AI',
+                badgeColor: '#fef3c7', badgeText: '#92400e',
+                title: 'Voice Assistant',
+                desc: 'Call +1 (844) CLOSE-BOOKS and say "Close the books for Smith Construction." Done in 4 minutes. No keyboard required.',
+                cta: 'Try voice demo →',
+                icon: '📞',
+              },
+              {
+                href: '/dashboard/whitelabel',
+                badge: 'WHITE-LABEL',
+                badgeColor: '#ffe4e6', badgeText: '#9f1239',
+                title: 'White-Label Platform',
+                desc: 'Rebrand CloseBooks as your firm\'s own software. 50,000 CPA firms become your sales team. You keep 70% of every subscription.',
+                cta: 'See the platform →',
+                icon: '🏷',
+              },
+            ].map(card => (
+              <a
+                key={card.href}
+                href={card.href}
+                style={{
+                  display: 'block',
+                  backgroundColor: '#fff',
+                  border: '1px solid #e8e0d4',
+                  borderRadius: 16,
+                  padding: 28,
+                  textDecoration: 'none',
+                  transition: 'all 0.18s',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.10)'
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.borderColor = '#c4d9c0'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.boxShadow = 'none'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.borderColor = '#e8e0d4'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                  <span style={{ fontSize: 32 }}>{card.icon}</span>
+                  <span style={{
+                    fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
+                    backgroundColor: card.badgeColor, color: card.badgeText,
+                    padding: '3px 8px', borderRadius: 20,
+                  }}>{card.badge}</span>
+                </div>
+                <h3 style={{
+                  fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
+                  fontSize: 22, fontWeight: 400, color: '#1a1714',
+                  marginBottom: 8, letterSpacing: '-0.01em',
+                }}>{card.title}</h3>
+                <p style={{ fontSize: 13, color: '#6b6560', lineHeight: 1.6, marginBottom: 16 }}>{card.desc}</p>
+                <div style={{ fontSize: 13, color: '#b8734a', fontWeight: 600 }}>{card.cta}</div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+      {/* ─── End What's New ──────────────────────────────────────────────────────── */}
+    </>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Pricing
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -993,6 +1187,7 @@ export default function HomePage() {
         <Demo />
         <Features />
         <Pricing />
+        <WhatsNew />
         <SocialProof />
         <Waitlist />
       </main>

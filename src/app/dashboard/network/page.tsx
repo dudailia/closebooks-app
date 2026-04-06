@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import SpendComparisonChart from '@/components/SpendComparisonChart'
+import { SkeletonBlock, SkeletonCard, SkeletonTable } from '@/components/Skeleton'
 import {
   getNetworkStats,
   getClientBenchmarks,
@@ -150,18 +151,20 @@ export default function NetworkPage() {
     [industryBenchmarks],
   )
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen" style={{ backgroundColor: '#faf8f4' }}>
-        <div className="max-w-6xl mx-auto px-5 py-10">
-          <div className="h-8 w-64 rounded animate-pulse" style={{ backgroundColor: '#e8e0d4' }} />
-        </div>
+  if (!mounted) return (
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
+      <SkeletonBlock height={32} width={220} style={{ marginBottom: 8 }} />
+      <SkeletonBlock height={16} width={340} style={{ marginBottom: 32 }} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
+        <SkeletonCard lines={4} />
+        <SkeletonCard lines={4} />
       </div>
-    )
-  }
+      <SkeletonTable rows={5} cols={4} />
+    </div>
+  )
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
+    <div className="min-h-screen flex flex-col page-content" style={{ backgroundColor: '#faf8f4' }}>
 
       <main className="flex-1 max-w-6xl mx-auto px-5 py-8 w-full space-y-8">
 

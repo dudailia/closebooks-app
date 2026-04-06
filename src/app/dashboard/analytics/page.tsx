@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getJobs } from '@/lib/storage'
 import type { CategorizationJob, Transaction } from '@/types'
+import { SkeletonBlock, StatsSkeleton } from '@/components/Skeleton'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data derivation helpers
@@ -364,8 +365,26 @@ export default function AnalyticsPage() {
 
   const isEmpty = mounted && analytics?.totalTransactions === 0
 
+  if (!mounted) return (
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
+      <SkeletonBlock height={32} width={200} style={{ marginBottom: 8 }} />
+      <SkeletonBlock height={16} width={280} style={{ marginBottom: 32 }} />
+      <StatsSkeleton count={4} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{ backgroundColor: '#fff', border: '1px solid #e8e0d4', borderRadius: 12, padding: 24, height: 260 }}>
+          <SkeletonBlock height={16} width="40%" style={{ marginBottom: 16 }} />
+          <SkeletonBlock height={200} borderRadius={8} />
+        </div>
+        <div style={{ backgroundColor: '#fff', border: '1px solid #e8e0d4', borderRadius: 12, padding: 24, height: 260 }}>
+          <SkeletonBlock height={16} width="40%" style={{ marginBottom: 16 }} />
+          <SkeletonBlock height={200} borderRadius={8} />
+        </div>
+      </div>
+    </div>
+  )
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
+    <div className="min-h-screen flex flex-col page-content" style={{ backgroundColor: '#faf8f4' }}>
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-5 py-10 space-y-10 page-enter">
 

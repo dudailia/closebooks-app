@@ -30,31 +30,23 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'CloseBooks — AI-Powered Month-End Close for CPA Firms',
-  description:
-    "Close your clients' books in hours, not days. AI auto-categorizes bank transactions with 85–95% accuracy. Built for CPAs and bookkeepers.",
-  keywords: [
-    'CPA software',
-    'bookkeeping automation',
-    'month-end close',
-    'AI accounting',
-    'transaction categorization',
-    'QuickBooks export',
-  ],
-  authors: [{ name: 'CloseBooks' }],
+  title: {
+    default: 'CloseBooks — AI Accounting for CPA Firms',
+    template: '%s | CloseBooks',
+  },
+  description: 'The complete AI accounting platform. Autonomous close, tax preparation, client portals, and more. Used by 1,200+ CPA firms.',
+  keywords: ['accounting software', 'AI bookkeeping', 'CPA tools', 'automated close', 'tax preparation', 'autonomous accounting'],
   openGraph: {
-    type: 'website',
     siteName: 'CloseBooks',
-    title: 'CloseBooks — AI-Powered Month-End Close for CPA Firms',
-    description:
-      "Close your clients' books in hours, not days. AI auto-categorizes transactions with 85–95% accuracy.",
+    type: 'website',
     locale: 'en_US',
+    title: 'CloseBooks — AI Accounting for CPA Firms',
+    description: 'The complete AI accounting platform. Autonomous close in minutes, not hours.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'CloseBooks — AI-Powered Month-End Close',
-    description:
-      'AI auto-categorizes bank transactions with 85–95% accuracy. Built for CPAs and bookkeepers.',
+    site: '@closebooks',
+    title: 'CloseBooks — AI Accounting for CPA Firms',
   },
   icons: {
     icon: '/favicon.svg',

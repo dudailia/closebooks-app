@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { SkeletonBlock, SkeletonCard } from '@/components/Skeleton'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -590,18 +591,26 @@ export default function CalendarPage() {
   const dueThisWeek = deadlines.filter((d) => d.status === 'due-soon').length
   const upcoming   = deadlines.filter((d) => d.status === 'upcoming').length
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-        <main className="flex-1 max-w-6xl mx-auto w-full px-5 py-10">
-          <div className="h-8 w-48 rounded-lg animate-pulse" style={{ backgroundColor: '#e8e0d4' }} />
-        </main>
+  if (!mounted) return (
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
+      <SkeletonBlock height={32} width={180} style={{ marginBottom: 8 }} />
+      <SkeletonBlock height={16} width={300} style={{ marginBottom: 32 }} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 24 }}>
+        <div>
+          <SkeletonBlock height={48} style={{ marginBottom: 16 }} />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} style={{ marginBottom: 12 }}>
+              <SkeletonBlock height={72} borderRadius={10} />
+            </div>
+          ))}
+        </div>
+        <SkeletonCard lines={5} />
       </div>
-    )
-  }
+    </div>
+  )
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
+    <div className="min-h-screen flex flex-col page-content" style={{ backgroundColor: '#faf8f4' }}>
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-5 py-8">
 

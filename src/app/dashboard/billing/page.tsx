@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { SkeletonBlock, SkeletonTable, StatsSkeleton } from '@/components/Skeleton'
 import InvoiceCard from '@/components/InvoiceCard'
 import RateCardEditor from '@/components/RateCardEditor'
 import InvoiceGenerateModal from '@/components/InvoiceGenerateModal'
@@ -135,6 +136,7 @@ const TEMPLATE_LABEL: Record<EngagementLetter['template'], string> = {
 
 export default function BillingPage() {
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const [mainTab, setMainTab] = useState<MainTab>('invoices')
   const [invoiceFilter, setInvoiceFilter] = useState<InvoiceFilter>('all')
   const [invoices, setInvoices] = useState<Invoice[]>([])
@@ -176,6 +178,7 @@ export default function BillingPage() {
     setClients(getClientsFromStorage())
     setRateCard(loadRateCard())
     reload()
+    setMounted(true)
   }, [reload])
 
   function handleMarkPaid(id: string) {
@@ -228,8 +231,17 @@ export default function BillingPage() {
       ? invoices.reduce((s, inv) => s + inv.total, 0) / invoices.length
       : 0
 
+  if (!mounted) return (
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
+      <SkeletonBlock height={32} width={160} style={{ marginBottom: 8 }} />
+      <SkeletonBlock height={16} width={280} style={{ marginBottom: 32 }} />
+      <StatsSkeleton count={4} />
+      <SkeletonTable rows={6} cols={5} />
+    </div>
+  )
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
+    <div className="min-h-screen flex flex-col page-content" style={{ backgroundColor: '#faf8f4' }}>
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-5 py-8 space-y-6">
         {/* Page header */}

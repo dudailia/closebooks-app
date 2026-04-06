@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import OnboardingModal, { needsOnboarding } from '@/components/OnboardingModal'
+import { SkeletonBlock, SkeletonTable, StatsSkeleton } from '@/components/Skeleton'
 import { getJobs, deleteJob } from '@/lib/storage'
 import { dbGetJobs, dbDeleteJob } from '@/lib/db'
 import { getQBOConnection } from '@/lib/integrations'
@@ -540,8 +541,23 @@ export default function DashboardPage() {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
+  if (!mounted) return (
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
+      <SkeletonBlock height={36} width={280} style={{ marginBottom: 6 }} />
+      <SkeletonBlock height={16} width={200} style={{ marginBottom: 32 }} />
+      <StatsSkeleton count={4} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24 }}>
+        <SkeletonTable rows={8} cols={4} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      </div>
+    </div>
+  )
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
+    <div className="min-h-screen flex flex-col page-content" style={{ backgroundColor: '#faf8f4' }}>
       {showOnboarding && <OnboardingModal onClose={handleOnboardingClose} />}
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-5 py-10 space-y-8 page-enter">

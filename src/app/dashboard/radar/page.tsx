@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { CategorizationJob } from '@/types'
 import RadarClientCard from '@/components/RadarClientCard'
+import { SkeletonBlock, StatsSkeleton, ClientCardsSkeleton } from '@/components/Skeleton'
 import {
   calculateMonthlyBurn,
   calculateCashRunway,
@@ -44,6 +45,7 @@ export default function RadarPage() {
   const router = useRouter()
   const [clients, setClients] = useState<RadarClient[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const [filter, setFilter] = useState<'all' | 'red' | 'yellow' | 'green'>('all')
   const [search, setSearch] = useState('')
   const [alertModal, setAlertModal] = useState<AlertModal | null>(null)
@@ -134,6 +136,7 @@ export default function RadarPage() {
       setClients(rows)
     } finally {
       setIsLoading(false)
+      setMounted(true)
     }
   }, [])
 
@@ -198,8 +201,17 @@ export default function RadarPage() {
 
   // ─────────────────────────────────────────────────────────────────────────────
 
+  if (!mounted) return (
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
+      <SkeletonBlock height={32} width={180} style={{ marginBottom: 8 }} />
+      <SkeletonBlock height={16} width={320} style={{ marginBottom: 32 }} />
+      <StatsSkeleton count={3} />
+      <ClientCardsSkeleton count={4} />
+    </div>
+  )
+
   return (
-    <>
+    <div className="page-content">
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -586,6 +598,6 @@ export default function RadarPage() {
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }

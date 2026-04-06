@@ -1,10 +1,13 @@
 import Sidebar from '@/components/Sidebar'
 import TopBar from '@/components/TopBar'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ backgroundColor: '#faf8f4', minHeight: '100vh' }}>
-      <Sidebar />
+      <ErrorBoundary>
+        <Sidebar />
+      </ErrorBoundary>
       {/* margin-left matches sidebar width; Sidebar.tsx updates --sb-width on toggle */}
       <div style={{
         marginLeft: 'var(--sb-width, 220px)',
@@ -16,8 +19,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         overflowX: 'hidden',
       }}>
         <TopBar />
-        <main style={{ flex: 1 }}>
-          {children}
+        <main style={{ flex: 1 }} className="page-content">
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </main>
       </div>
     </div>
