@@ -119,10 +119,12 @@ Return a JSON object with these exact fields:
     })
     const text = msg.content.find((c) => c.type === 'text')?.text ?? ''
 
-    // Extract JSON
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0])
+    // Use index-based extraction to handle nested JSON correctly
+    const stripped = text.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim()
+    const start = stripped.indexOf('{')
+    const end = stripped.lastIndexOf('}')
+    if (start !== -1 && end > start) {
+      const parsed = JSON.parse(stripped.slice(start, end + 1))
       if (parsed.subject) subject   = parsed.subject
       if (parsed.body)    body_text = parsed.body
     }

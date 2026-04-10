@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CloseBooks — AI-Powered Month-End Close for CPA Firms
+
+**CloseBooks** is the fastest way for CPA firms to close their clients' books. Upload a bank statement CSV, let Claude AI categorize every transaction in seconds, review and approve, then export to QuickBooks or generate a branded client report.
+
+## Features
+
+| Area | What it does |
+|------|-------------|
+| **AI Categorize** | Upload CSV → Claude categorizes every transaction against your chart of accounts with confidence scores |
+| **Close Copilot** | Configurable automation — auto-approves high-confidence items, flags anything uncertain |
+| **Autopilot** | Fully automated close: categorize → journal entries → P&L → exceptions in one click |
+| **Agent Mode** | Background close agent that runs on a schedule for all your clients |
+| **Predict Close** | Forecasts next month's transactions from 18+ months of history |
+| **TaxDraft** | AI-generated tax returns with opportunity identification |
+| **Tax Strategy** | Claude-powered tax planning by entity type and industry |
+| **1099 Filing** | Automated vendor 1099 identification and filing |
+| **Audit Defense** | Build IRS response packages with AI |
+| **Radar** | Client health monitoring — cash position, burn rate, runway |
+| **Advisory Memos** | AI-written client advisory letters in three tones |
+| **Client Portal** | Branded portal where clients view their financials |
+| **Vault & Inbox** | Document storage + inbound email parsing (Postmark) |
+| **Compliance** | Regulatory alert monitoring |
+| **Analytics** | Firm-wide performance metrics |
+| **White-Label** | Rebrand CloseBooks under your firm |
+| **Voice AI** | Voice command interface for hands-free operation |
+| **Connect API** | API keys for integrating CloseBooks with your stack |
+
+## Tech Stack
+
+- **Framework:** Next.js 14 (App Router)
+- **UI:** React 18, Tailwind CSS 3.4, DM Sans / DM Serif fonts
+- **AI:** Anthropic Claude (`claude-sonnet-4-6` for complex tasks, `claude-haiku-4-5` for fast extraction)
+- **Auth & Database:** Supabase (Postgres + Auth) — optional, falls back to localStorage
+- **Payments:** Stripe
+- **Parsing:** PapaParse (CSV), pdf-parse (PDF)
 
 ## Getting Started
 
-First, run the development server:
+### 1. Clone and install
+
+```bash
+git clone https://github.com/dudailia/closebooks-app.git
+cd closebooks-app
+npm install
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` — at minimum you need:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Everything else is optional. The app runs in demo mode without Supabase or Stripe.
+
+### 3. Set up Supabase (optional but recommended)
+
+1. Create a project at [app.supabase.com](https://app.supabase.com)
+2. Run the SQL in `.env.example` to create all tables and RLS policies
+3. Add your Supabase URL and keys to `.env.local`
+
+### 4. Run locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploying to Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Push to GitHub
+2. Go to [vercel.com/new](https://vercel.com/new), import your repo
+3. Add all environment variables from `.env.local` in the Vercel dashboard
+4. Deploy — `vercel.json` is pre-configured with proper function timeouts
 
-## Learn More
+**Important:** Set `SUPABASE_SERVICE_ROLE_KEY` in Vercel env vars (never expose it client-side). The Stripe webhook URL will be `https://your-app.vercel.app/api/stripe/webhook`.
 
-To learn more about Next.js, take a look at the following resources:
+## Architecture
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/
+│   ├── (auth)/          # Login, signup pages
+│   ├── api/             # 47 API route handlers
+│   ├── dashboard/       # All dashboard pages (~30 routes)
+│   ├── portal/          # Client-facing portal
+│   └── page.tsx         # Marketing landing page
+├── components/          # ~67 shared React components
+├── lib/                 # Business logic, storage, AI helpers
+│   ├── categorize.ts    # Core Claude categorization engine
+│   ├── db.ts            # Supabase data layer with localStorage fallback
+│   ├── storage.ts       # localStorage CRUD
+│   └── autopilot/       # Journal entries, P&L, exception detection
+└── types/               # TypeScript type definitions
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Key design pattern:** All data operations go through `lib/db.ts` on the client. It tries Supabase first; on any failure (no config, no session, network error) it falls back to localStorage transparently. The app never crashes due to database issues.
 
-## Deploy on Vercel
+## Environment Variables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+See `.env.example` for the complete list with descriptions and the full Supabase SQL schema.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+Private — all rights reserved.
