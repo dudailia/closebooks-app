@@ -111,8 +111,11 @@ export async function dbGetJob(id: string): Promise<CategorizationJob | null> {
     const supabase = createClient()
     if (!supabase) return lsGetJob(id)
 
+    const firmId = await getFirmId()
+    if (!firmId) return lsGetJob(id)
+
     const [jobResult, txResult] = await Promise.all([
-      supabase.from('jobs').select('*').eq('id', id).maybeSingle(),
+      supabase.from('jobs').select('*').eq('id', id).eq('firm_id', firmId).maybeSingle(),
       supabase.from('transactions').select('*').eq('job_id', id).order('date', { ascending: true }),
     ])
 

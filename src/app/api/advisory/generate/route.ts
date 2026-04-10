@@ -6,7 +6,9 @@ import type { AdvisoryMemo, AdvisorySection } from '@/types/advisory'
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function uuid(): string {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36)
+  const bytes = new Uint8Array(12)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('') + Date.now().toString(36)
 }
 
 function buildContext(
@@ -235,11 +237,14 @@ export async function POST(request: NextRequest) {
     const rawText =
       message.content[0].type === 'text' ? message.content[0].text : ''
 
-    // Parse JSON from response
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) throw new Error('No JSON found in response')
+    // Strip markdown fences first, then find the outermost JSON object.
+    // Using index-based extraction avoids the greedy-regex issue with nested braces.
+    const stripped = rawText.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim()
+    const start = stripped.indexOf('{')
+    const end = stripped.lastIndexOf('}')
+    if (start === -1 || end === -1 || end <= start) throw new Error('No JSON found in response')
 
-    const parsed = JSON.parse(jsonMatch[0]) as {
+    const parsed = JSON.parse(stripped.slice(start, end + 1)) as {
       headline: string
       sections: AdvisorySection[]
     }
