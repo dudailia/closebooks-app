@@ -802,7 +802,7 @@ export default function DashboardPage() {
 
 function FirmIntelligenceCard({ stats }: { stats: CorrectionStats }) {
   const { totalCorrections, estimatedAccuracy, topCorrectedFrom } = stats
-  const barWidth = Math.round(((estimatedAccuracy - 80) / 17) * 100) // map 80-97 → 0-100%
+  const barWidth = Math.min(100, Math.max(0, Math.round(((estimatedAccuracy - 80) / 17) * 100))) // map 80-97 → 0-100%, clamped
 
   return (
     <div

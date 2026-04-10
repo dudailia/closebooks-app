@@ -97,17 +97,25 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Runway note: if credits < debits for 2+ consecutive months
+  // Runway note: count trailing consecutive deficit months (expenses > income)
   let runwayNote: string | null = null
-  const deficitMonths = sorted.filter(
-    (_, i) => creditTotals[i] < expenseTotals[i],
-  ).length
+  let consecutiveDeficits = 0
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    if (creditTotals[i] < expenseTotals[i]) {
+      consecutiveDeficits++
+    } else {
+      break
+    }
+  }
 
-  if (deficitMonths >= 2) {
+  if (consecutiveDeficits >= 2) {
+    const deficitSlice = sorted.slice(sorted.length - consecutiveDeficits)
     const avgDeficit =
-      sorted.reduce((s, _, i) => s + (expenseTotals[i] - creditTotals[i]), 0) /
-      sorted.length
-    runwayNote = `Expenses have exceeded income for ${deficitMonths} consecutive month${deficitMonths !== 1 ? 's' : ''}. Average monthly shortfall: $${avgDeficit.toFixed(2)}. Review cash reserves and consider reducing discretionary spending.`
+      deficitSlice.reduce((s, _, i) => {
+        const idx = sorted.length - consecutiveDeficits + i
+        return s + (expenseTotals[idx] - creditTotals[idx])
+      }, 0) / consecutiveDeficits
+    runwayNote = `Expenses have exceeded income for ${consecutiveDeficits} consecutive month${consecutiveDeficits !== 1 ? 's' : ''}. Average monthly shortfall: $${avgDeficit.toFixed(2)}. Review cash reserves and consider reducing discretionary spending.`
   }
 
   return NextResponse.json({
