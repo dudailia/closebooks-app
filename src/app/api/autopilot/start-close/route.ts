@@ -123,17 +123,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // If AI returned fewer entries than transactions, fill with rule-based
+    // If AI returned fewer entries than transactions, supplement with rule-based entries
+    // for the missing ones rather than discarding all successful AI work.
     if (aiJournalEntries.length < categorized.length) {
-      const fallback = generateJournalEntries(categorized)
-      aiJournalEntries = fallback.map(je => ({
-        date: je.date,
-        description: je.description,
-        debitAccount: je.debitAccount,
-        creditAccount: je.creditAccount,
-        amount: je.amount,
-        reasoning: je.aiReasoning,
-      }))
+      const coveredDescriptions = new Set(aiJournalEntries.map(e => `${e.date}:${e.description}:${e.amount}`))
+      const uncovered = categorized.filter(tx => !coveredDescriptions.has(`${tx.date}:${tx.description}:${tx.amount}`))
+      if (uncovered.length > 0) {
+        const fallback = generateJournalEntries(uncovered)
+        const fallbackMapped = fallback.map(je => ({
+          date: je.date,
+          description: je.description,
+          debitAccount: je.debitAccount,
+          creditAccount: je.creditAccount,
+          amount: je.amount,
+          reasoning: je.aiReasoning,
+        }))
+        aiJournalEntries = aiJournalEntries.concat(fallbackMapped)
+      }
     }
 
     // Step 3: Detect exceptions
