@@ -48,8 +48,11 @@ const keyStore: ApiKey[] = [...DEMO_KEYS]
 
 function generateSecureKey(type: 'live' | 'test'): { full: string; masked: string; prefix: string } {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
-  const rand = (len: number) =>
-    Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+  const rand = (len: number) => {
+    const bytes = new Uint8Array(len)
+    crypto.getRandomValues(bytes)
+    return Array.from(bytes, (b) => chars[b % chars.length]).join('')
+  }
 
   const prefix = type === 'live' ? 'sk_live' : 'sk_test'
   const body = rand(32)
@@ -59,7 +62,9 @@ function generateSecureKey(type: 'live' | 'test'): { full: string; masked: strin
 }
 
 function generateId(): string {
-  return `key_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+  const bytes = new Uint8Array(4)
+  crypto.getRandomValues(bytes)
+  return `key_${Date.now().toString(36)}_${Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')}`
 }
 
 // ---------------------------------------------------------------------------

@@ -44,9 +44,12 @@ export function getActivity(clientName?: string): ActivityEvent[] {
 export function logActivity(event: Omit<ActivityEvent, 'id' | 'timestamp'>): void {
   if (typeof window === 'undefined') return
   const all = getActivity()
+  const bytes = new Uint8Array(4)
+  crypto.getRandomValues(bytes)
+  const rand = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
   const next: ActivityEvent = {
     ...event,
-    id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: `act-${Date.now()}-${rand}`,
     timestamp: new Date().toISOString(),
   }
   all.unshift(next)

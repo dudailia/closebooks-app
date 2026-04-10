@@ -1,5 +1,20 @@
 import type Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+
+// ---------------------------------------------------------------------------
+// Supabase helper — uses service-role key when available, falls back to anon.
+// Webhook handlers are not user-scoped, so we need elevated access.
+// ---------------------------------------------------------------------------
+
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!url || (!serviceKey && !anonKey)) return null
+  return createSupabaseClient(url, serviceKey ?? anonKey!)
+}
 
 export async function POST(request: NextRequest) {
   const key    = process.env.STRIPE_SECRET_KEY
@@ -30,6 +45,8 @@ export async function POST(request: NextRequest) {
 
   console.log(`[webhook] Received event: ${event.type} (${event.id})`)
 
+  const supabase = getSupabase()
+
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session
@@ -49,7 +66,23 @@ export async function POST(request: NextRequest) {
         amountTotal:    session.amount_total,
         currency:       session.currency,
       })
-      // TODO: persist to Supabase
+
+      if (supabase) {
+        const { error } = await supabase.from('subscriptions').upsert({
+          stripe_customer_id:    customerId,
+          stripe_subscription_id: subscriptionId,
+          customer_email:        customerEmail,
+          status:                'active',
+          amount_total:          session.amount_total,
+          currency:              session.currency,
+          checkout_session_id:   session.id,
+          created_at:            new Date().toISOString(),
+          updated_at:            new Date().toISOString(),
+        }, { onConflict: 'stripe_subscription_id' })
+
+        if (error) console.error('[webhook] Supabase upsert (checkout) failed:', error.message)
+        else console.log('[webhook] Subscription persisted to Supabase:', subscriptionId)
+      }
       break
     }
 
@@ -60,7 +93,18 @@ export async function POST(request: NextRequest) {
         status:         sub.status,
         customerId:     sub.customer,
       })
-      // TODO: update subscription status in Supabase
+
+      if (supabase) {
+        const { error } = await supabase.from('subscriptions').upsert({
+          stripe_subscription_id: sub.id,
+          stripe_customer_id:    typeof sub.customer === 'string' ? sub.customer : sub.customer.id,
+          status:                sub.status,
+          updated_at:            new Date().toISOString(),
+        }, { onConflict: 'stripe_subscription_id' })
+
+        if (error) console.error('[webhook] Supabase upsert (sub updated) failed:', error.message)
+        else console.log('[webhook] Subscription status updated in Supabase:', sub.id, sub.status)
+      }
       break
     }
 
@@ -70,7 +114,18 @@ export async function POST(request: NextRequest) {
         subscriptionId: sub.id,
         customerId:     sub.customer,
       })
-      // TODO: revoke access in Supabase
+
+      if (supabase) {
+        const { error } = await supabase.from('subscriptions').upsert({
+          stripe_subscription_id: sub.id,
+          stripe_customer_id:    typeof sub.customer === 'string' ? sub.customer : sub.customer.id,
+          status:                'canceled',
+          updated_at:            new Date().toISOString(),
+        }, { onConflict: 'stripe_subscription_id' })
+
+        if (error) console.error('[webhook] Supabase upsert (sub deleted) failed:', error.message)
+        else console.log('[webhook] Subscription marked canceled in Supabase:', sub.id)
+      }
       break
     }
 
