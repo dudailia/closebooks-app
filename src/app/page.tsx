@@ -113,7 +113,7 @@ function Nav() {
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-2">
           <Link
-            href="/dashboard"
+            href="/login"
             className="px-4 py-2 rounded-xl text-sm font-medium border transition-colors"
             style={{ borderColor: '#c8c0b8', color: '#1a1714' }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f0ece4' }}
@@ -161,7 +161,7 @@ function Nav() {
             </a>
           ))}
           <div className="pt-3 flex flex-col gap-2">
-            <Link href="/dashboard" className="block text-center py-2.5 rounded-xl text-sm font-medium border" style={{ borderColor: '#c8c0b8', color: '#1a1714' }}>
+            <Link href="/login" className="block text-center py-2.5 rounded-xl text-sm font-medium border" style={{ borderColor: '#c8c0b8', color: '#1a1714' }}>
               Sign In
             </Link>
             <Link href="/get-started" className="block text-center py-2.5 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#2d5a27' }}>
@@ -253,27 +253,52 @@ function Hero() {
           </Link>
           <Link
             href="/demo"
-            className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-medium border transition-all"
-            style={{ borderColor: '#b8734a', color: '#b8734a', backgroundColor: '#ffffff' }}
+            className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold border transition-all"
+            style={{ borderColor: '#b8734a', color: '#b8734a', backgroundColor: '#fff', boxShadow: '0 2px 8px rgba(184,115,74,0.15)' }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.transform = 'translateY(0)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.transform = 'translateY(0)' }}
           >
-            Try Live Demo
+            <span>▶</span> Try Live Demo — Free
           </Link>
-          <a
-            href="#how-it-works"
-            className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-medium border transition-all"
-            style={{ borderColor: '#c8c0b8', color: '#1a1714', backgroundColor: 'transparent' }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f0ece4'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.transform = 'translateY(0)' }}
-          >
-            See How It Works
-          </a>
+        </div>
+
+        {/* Demo teaser */}
+        <div className="mx-auto mt-6 rounded-2xl border overflow-hidden" style={{ maxWidth: 560, borderColor: '#e0dbd4', backgroundColor: '#fff', boxShadow: '0 8px 40px rgba(26,23,20,0.10)' }}>
+          <div className="flex items-center gap-2 px-4 py-2.5 border-b" style={{ backgroundColor: '#f5f0ea', borderColor: '#e8e0d4' }}>
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: '#dc2626' }} />
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22c55e' }} />
+            <span className="text-xs font-medium ml-2" style={{ color: '#6b6560' }}>closebooks.ai / demo — live AI categorization</span>
+          </div>
+          <div className="p-4 space-y-2">
+            {[
+              { desc: 'GUSTO PAYROLL MAR 16-31', amt: '-$14,250', cat: 'Payroll & Wages', conf: 99, status: 'approved' },
+              { desc: 'DEPOSIT - CLIENT PMT ACME CORP', amt: '+$8,500', cat: 'Service Revenue', conf: 97, status: 'approved' },
+              { desc: 'AMAZON WEB SERVICES', amt: '-$847', cat: 'Software & SaaS', conf: 93, status: 'approved' },
+              { desc: 'GIBSONS BAR AND STEAKHOUSE', amt: '-$313', cat: 'Meals & Entertainment', conf: 79, status: 'pending' },
+              { desc: 'ACH DEBIT 021000089 MISC PMT', amt: '-$1,850', cat: 'Miscellaneous', conf: 38, status: 'flagged' },
+            ].map((r, i) => (
+              <div key={i} className="flex items-center gap-3 text-xs">
+                <span className="w-20 font-mono shrink-0 text-right" style={{ color: r.amt.startsWith('+') ? '#059669' : '#1a1714' }}>{r.amt}</span>
+                <span className="flex-1 truncate" style={{ color: '#1a1714' }}>{r.desc}</span>
+                <span className="shrink-0 font-medium" style={{ color: '#6b6560' }}>{r.cat}</span>
+                <span className="shrink-0 px-1.5 py-0.5 rounded-full font-semibold" style={{
+                  backgroundColor: r.status === 'approved' ? '#dcfce7' : r.status === 'pending' ? '#fef9c3' : '#fef2f2',
+                  color: r.status === 'approved' ? '#166534' : r.status === 'pending' ? '#854d0e' : '#991b1b',
+                }}>{r.conf}%</span>
+              </div>
+            ))}
+            <div className="pt-2 text-center">
+              <Link href="/demo" className="text-xs font-semibold" style={{ color: '#b8734a' }}>
+                Try this live with your own CSV →
+              </Link>
+            </div>
+          </div>
         </div>
 
         {/* Trust note */}
-        <p className="text-xs" style={{ color: '#a09a94' }}>
-          No credit card required&nbsp;&nbsp;·&nbsp;&nbsp;50% off for early access firms
+        <p className="text-xs mt-6" style={{ color: '#a09a94' }}>
+          No credit card required&nbsp;&nbsp;·&nbsp;&nbsp;14-day free trial&nbsp;&nbsp;·&nbsp;&nbsp;50% off for early access firms
         </p>
       </div>
     </section>
