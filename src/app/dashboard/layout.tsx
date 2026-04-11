@@ -8,16 +8,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <ErrorBoundary>
         <Sidebar />
       </ErrorBoundary>
-      {/* margin-left matches sidebar width; Sidebar.tsx updates --sb-width on toggle */}
-      <div style={{
-        marginLeft: 'var(--sb-width, 220px)',
-        transition: 'margin-left 0.2s ease',
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        minWidth: 0,
-        overflowX: 'hidden',
-      }}>
+      {/*
+        On desktop: margin-left = sidebar width (updated by Sidebar via CSS var)
+        On mobile (< 768px): sidebar is hidden as overlay; content takes full width
+        We use a CSS class + inline style combo so the media query can override the var.
+      */}
+      <div
+        className="dashboard-content-wrapper"
+        style={{
+          marginLeft: 'var(--sb-width, 220px)',
+          transition: 'margin-left 0.2s ease',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
+          minWidth: 0,
+          overflowX: 'hidden',
+        }}
+      >
         <TopBar />
         <main style={{ flex: 1 }} className="page-content">
           <ErrorBoundary>

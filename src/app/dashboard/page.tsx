@@ -560,7 +560,7 @@ export default function DashboardPage() {
     <div className="min-h-screen flex flex-col page-content" style={{ backgroundColor: '#faf8f4' }}>
       {showOnboarding && <OnboardingModal onClose={handleOnboardingClose} />}
 
-      <main className="flex-1 max-w-4xl mx-auto w-full px-5 py-10 space-y-8 page-enter">
+      <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-5 py-6 sm:py-10 space-y-6 sm:space-y-8 page-enter">
 
         {/* Header */}
         <div className="flex items-start justify-between gap-4">

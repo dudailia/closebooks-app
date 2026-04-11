@@ -119,7 +119,7 @@ export default function LoginPage() {
   // ── Main form ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ backgroundColor: '#faf8f4' }}>
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12" style={{ backgroundColor: '#faf8f4' }}>
       <div className="w-full max-w-md">
 
         {/* Logo */}
@@ -177,14 +177,28 @@ export default function LoginPage() {
               placeholder="you@yourfirm.com"
               autoComplete="email"
             />
-            <Field
-              label="Password"
-              type="password"
-              value={password}
-              onChange={setPassword}
-              placeholder="••••••••"
-              autoComplete="current-password"
-            />
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium" style={{ color: '#1a1714' }}>Password</label>
+                <Link href="/forgot-password" className="text-xs" style={{ color: '#b8734a' }}
+                  onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline' }}
+                  onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none' }}>
+                  Forgot password?
+                </Link>
+              </div>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                required
+                className={inputCls}
+                style={inputStyle}
+                onFocus={e => { Object.assign(e.currentTarget.style, inputFocusStyle) }}
+                onBlur={e => { Object.assign(e.currentTarget.style, inputStyle) }}
+              />
+            </div>
 
             {error && (
               <div

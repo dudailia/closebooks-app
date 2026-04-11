@@ -26,7 +26,10 @@ const dmSerif = DM_Serif_Display({
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 5,
   themeColor: '#2d5a27',
+  // Prevent iOS text size adjustment on rotate
+  userScalable: true,
 }
 
 export const metadata: Metadata = {
