@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { getJobs } from '@/lib/storage'
+import type { CategorizationJob } from '@/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,54 +19,57 @@ interface TaxReturn {
   createdAt: string
 }
 
-// ─── Demo Data ────────────────────────────────────────────────────────────────
+// ─── Storage helpers ──────────────────────────────────────────────────────────
 
-const DEMO_RETURNS: TaxReturn[] = [
-  {
-    id: 'smith-2024',
-    client: 'Smith Construction LLC',
-    formType: '1120S',
-    taxYear: 2024,
-    status: 'draft',
-    opportunities: 5,
-    opportunitySavings: 71200,
-    liability: 284000,
-    createdAt: '2025-01-06',
-  },
-  {
-    id: 'bella-2024',
-    client: 'Bella Vista Restaurant',
-    formType: '1065',
-    taxYear: 2024,
-    status: 'review',
-    opportunities: 2,
-    opportunitySavings: 18400,
-    liability: 156000,
-    createdAt: '2025-01-05',
-  },
-  {
-    id: 'chen-2024',
-    client: 'Chen Medical Practice',
-    formType: '1040-S',
-    taxYear: 2024,
-    status: 'approved',
-    opportunities: 3,
-    opportunitySavings: 34700,
-    liability: 412000,
-    createdAt: '2025-01-04',
-  },
-  {
-    id: 'techflow-2024',
-    client: 'TechFlow Inc',
-    formType: '1120',
-    taxYear: 2024,
-    status: 'draft',
-    opportunities: 4,
-    opportunitySavings: 52100,
-    liability: 198000,
-    createdAt: '2025-01-03',
-  },
-]
+const TAX_RETURNS_KEY = 'cb_tax_returns'
+
+function loadSavedReturns(): TaxReturn[] {
+  if (typeof window === 'undefined') return []
+  try { return JSON.parse(localStorage.getItem(TAX_RETURNS_KEY) ?? '[]') } catch { return [] }
+}
+
+function buildReturnsFromJobs(jobs: CategorizationJob[]): TaxReturn[] {
+  const saved = loadSavedReturns()
+  const savedIds = new Set(saved.map(r => r.id))
+
+  // Build a return card for each job that doesn't already have one
+  const fromJobs: TaxReturn[] = []
+  const byClient = new Map<string, CategorizationJob>()
+  for (const job of jobs) {
+    const existing = byClient.get(job.client_name)
+    if (!existing || new Date(job.created_at) > new Date(existing.created_at)) {
+      byClient.set(job.client_name, job)
+    }
+  }
+
+  for (const [, job] of Array.from(byClient.entries())) {
+    const id = `taxreturn-${job.client_name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`
+    if (savedIds.has(id)) continue
+
+    const debits = job.transactions.filter((t: { type: string }) => t.type === 'debit')
+    const credits = job.transactions.filter((t: { type: string }) => t.type === 'credit')
+    const totalDebits = debits.reduce((s: number, t: { amount: number }) => s + t.amount, 0)
+    const totalCredits = credits.reduce((s: number, t: { amount: number }) => s + t.amount, 0)
+    const taxableIncome = Math.max(0, totalCredits - totalDebits)
+    const estimatedLiability = Math.round(taxableIncome * 0.21)
+    const opportunitySavings = Math.round(estimatedLiability * 0.12)
+
+    fromJobs.push({
+      id,
+      client: job.client_name,
+      formType: '1120S',
+      taxYear: new Date(job.created_at).getFullYear(),
+      status: 'draft',
+      opportunities: opportunitySavings > 1000 ? 3 : 1,
+      opportunitySavings,
+      liability: estimatedLiability,
+      createdAt: job.created_at.slice(0, 10),
+    })
+  }
+
+  // Merge: saved returns first (user-created), then job-derived
+  return [...saved, ...fromJobs]
+}
 
 const STATUS_CONFIG = {
   draft:    { label: 'Draft',        bg: '#fef3c7', color: '#92400e' },
@@ -89,10 +94,18 @@ function fmt(n: number) {
 
 export default function TaxDraftPage() {
   const [filter, setFilter] = useState<'all' | 'draft' | 'review' | 'approved'>('all')
+  const [returns, setReturns] = useState<TaxReturn[]>([])
+  const [mounted, setMounted] = useState(false)
 
-  const filtered = DEMO_RETURNS.filter(r => filter === 'all' || r.status === filter)
-  const totalSavings = DEMO_RETURNS.reduce((s, r) => s + r.opportunitySavings, 0)
-  const totalOpps = DEMO_RETURNS.reduce((s, r) => s + r.opportunities, 0)
+  useEffect(() => {
+    const jobs = getJobs()
+    setReturns(buildReturnsFromJobs(jobs))
+    setMounted(true)
+  }, [])
+
+  const filtered = returns.filter(r => filter === 'all' || r.status === filter)
+  const totalSavings = returns.reduce((s, r) => s + r.opportunitySavings, 0)
+  const totalOpps = returns.reduce((s, r) => s + r.opportunities, 0)
 
   return (
     <div style={{ backgroundColor: '#faf8f4', minHeight: '100vh' }}>
@@ -125,7 +138,7 @@ export default function TaxDraftPage() {
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 32 }}>
           {[
-            { label: 'Total Returns', value: String(DEMO_RETURNS.length) },
+            { label: 'Total Returns', value: mounted ? String(returns.length) : '—' },
             { label: 'Opportunities Found', value: String(totalOpps), sub: fmt(totalSavings) + ' potential savings', color: '#2d5a27' },
             { label: 'Forms Supported', value: '5', sub: '1120 · 1120S · 1065 · 1040 · 1041' },
           ].map(s => (
@@ -156,6 +169,20 @@ export default function TaxDraftPage() {
             </button>
           ))}
         </div>
+
+        {/* Empty state */}
+        {mounted && returns.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '60px 24px', backgroundColor: '#fff', borderRadius: 14, border: '1px solid #e8e0d4' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
+            <h3 style={{ fontSize: 18, fontWeight: 600, color: '#1a1714', marginBottom: 8 }}>No tax returns yet</h3>
+            <p style={{ fontSize: 14, color: '#6b6560', maxWidth: 360, margin: '0 auto 24px' }}>
+              Upload a close first, then create a tax return from that client&apos;s data.
+            </p>
+            <Link href="/dashboard/upload" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', borderRadius: 10, backgroundColor: '#2d5a27', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+              + New Close
+            </Link>
+          </div>
+        )}
 
         {/* Returns grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
