@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import AuditRiskBadge from '@/components/AuditRiskBadge'
+import { getJobs } from '@/lib/storage'
+import type { CategorizationJob } from '@/types'
 
-// ─── Demo data ────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ActiveAudit {
   id: string
@@ -28,30 +30,55 @@ interface ClientReadiness {
   industry: string
 }
 
-const ACTIVE_AUDITS: ActiveAudit[] = [
-  {
-    id: 'audit-001',
-    client: 'Miller Construction LLC',
-    auditType: 'CP2000 — Underreported Income',
-    auditTypeCode: 'CP2000',
-    taxYear: 2022,
-    responseDueDays: 45,
-    status: 'in-progress',
-    description: 'IRS automated notice proposing additional tax due to discrepancy between reported income and information returns (1099s) filed by third parties.',
-    amountInQuestion: 47200,
-  },
-]
+const AUDITS_KEY = 'cb_active_audits'
 
-const CLIENT_READINESS: ClientReadiness[] = [
-  { id: 'c1',  name: 'Miller Construction LLC',  documentationScore: 72,  missingDocs: 3, lastClose: '2024-09-30', risk: 'high',   industry: 'Construction' },
-  { id: 'c2',  name: 'Rivera Restaurant Group',  documentationScore: 91,  missingDocs: 1, lastClose: '2024-10-31', risk: 'low',    industry: 'Restaurant' },
-  { id: 'c3',  name: 'Summit Wellness Center',   documentationScore: 85,  missingDocs: 2, lastClose: '2024-10-31', risk: 'medium', industry: 'Healthcare' },
-  { id: 'c4',  name: 'Apex Digital Marketing',   documentationScore: 96,  missingDocs: 0, lastClose: '2024-10-31', risk: 'low',    industry: 'Technology' },
-  { id: 'c5',  name: 'Lakewood Property Mgmt',   documentationScore: 63,  missingDocs: 5, lastClose: '2024-08-31', risk: 'high',   industry: 'Real Estate' },
-  { id: 'c6',  name: 'Martinez Legal Services',  documentationScore: 88,  missingDocs: 1, lastClose: '2024-10-31', risk: 'low',    industry: 'Legal Services' },
-  { id: 'c7',  name: 'Blue Ridge Trucking Co',   documentationScore: 54,  missingDocs: 7, lastClose: '2024-07-31', risk: 'critical', industry: 'Transportation' },
-  { id: 'c8',  name: 'Chen Family Restaurant',   documentationScore: 79,  missingDocs: 3, lastClose: '2024-09-30', risk: 'medium', industry: 'Restaurant' },
-]
+function loadActiveAudits(): ActiveAudit[] {
+  if (typeof window === 'undefined') return []
+  try { return JSON.parse(localStorage.getItem(AUDITS_KEY) ?? '[]') } catch { return [] }
+}
+
+function computeReadiness(jobs: CategorizationJob[]): ClientReadiness[] {
+  const byClient = new Map<string, CategorizationJob>()
+  for (const job of jobs) {
+    const existing = byClient.get(job.client_name)
+    if (!existing || new Date(job.created_at) > new Date(existing.created_at)) {
+      byClient.set(job.client_name, job)
+    }
+  }
+
+  return Array.from(byClient.entries()).map(([name, job], i) => {
+    const approvedPct = job.total_transactions > 0
+      ? (job.approved / job.total_transactions) * 100
+      : 0
+    const flaggedPct = job.total_transactions > 0
+      ? (job.flagged / job.total_transactions) * 100
+      : 0
+
+    // Documentation score based on how complete the close is
+    const docScore = Math.min(99, Math.round(
+      approvedPct * 0.7 +
+      (job.auto_categorized / Math.max(1, job.total_transactions)) * 30
+    ))
+
+    const missingDocs = job.flagged
+
+    const risk: ClientReadiness['risk'] =
+      docScore >= 90 ? 'low'
+      : docScore >= 75 ? 'medium'
+      : docScore >= 60 ? 'high'
+      : 'critical'
+
+    return {
+      id: `c${i + 1}`,
+      name,
+      documentationScore: docScore,
+      missingDocs,
+      lastClose: job.created_at.slice(0, 10),
+      risk,
+      industry: 'Business',
+    }
+  })
+}
 
 // ─── Score bar ────────────────────────────────────────────────────────────────
 
@@ -108,6 +135,19 @@ function AuditStatusBadge({ status }: { status: ActiveAudit['status'] }) {
 
 export default function AuditDefensePage() {
   const [sortBy, setSortBy] = useState<'score' | 'risk' | 'name'>('score')
+  const [clientReadiness, setClientReadiness] = useState<ClientReadiness[]>([])
+  const [activeAudits, setActiveAudits] = useState<ActiveAudit[]>([])
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    const jobs = getJobs()
+    setClientReadiness(computeReadiness(jobs))
+    setActiveAudits(loadActiveAudits())
+    setMounted(true)
+  }, [])
+
+  const CLIENT_READINESS = clientReadiness
+  const ACTIVE_AUDITS = activeAudits
 
   const sorted = [...CLIENT_READINESS].sort((a, b) => {
     if (sortBy === 'score') return a.documentationScore - b.documentationScore
