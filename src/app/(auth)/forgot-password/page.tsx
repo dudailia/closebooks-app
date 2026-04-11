@@ -4,38 +4,79 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { createClient, supabaseConfigured } from '@/lib/supabase/client'
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function friendlyError(msg: string): { title: string; body: string; isRateLimit: boolean } {
+  const lower = msg.toLowerCase()
+  if (lower.includes('rate limit') || lower.includes('too many') || lower.includes('429') || lower.includes('exceeded')) {
+    return {
+      title: 'Too many requests',
+      body: 'Supabase limits password reset emails on the free tier. Please wait 60 minutes before trying again, or contact us and we\'ll reset your password manually.',
+      isRateLimit: true,
+    }
+  }
+  if (lower.includes('user not found') || lower.includes('no user')) {
+    return {
+      title: 'Email not found',
+      body: 'No account exists with that email address. Check for typos or sign up for a new account.',
+      isRateLimit: false,
+    }
+  }
+  return { title: 'Something went wrong', body: msg, isRateLimit: false }
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [errInfo, setErrInfo] = useState<{ title: string; body: string; isRateLimit: boolean } | null>(null)
   const [loading, setLoading] = useState(false)
+  const [focused, setFocused] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    setError(null)
+    setErrInfo(null)
 
     const supabase = createClient()
-    if (!supabase) { setError('Auth not configured.'); setLoading(false); return }
+    if (!supabase) {
+      // No Supabase configured — tell user to contact support
+      setErrInfo({
+        title: 'Auth not configured',
+        body: 'Password reset is not available in demo mode. Please contact support.',
+        isRateLimit: false,
+      })
+      setLoading(false)
+      return
+    }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${window.location.origin}/auth/reset-password`,
     })
 
     setLoading(false)
-    if (error) { setError(error.message); return }
+
+    if (error) {
+      setErrInfo(friendlyError(error.message))
+      return
+    }
+
     setSent(true)
   }
 
   if (!supabaseConfigured) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#faf8f4' }}>
-        <div className="w-full max-w-md rounded-2xl border p-8 text-center" style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}>
+        <div className="w-full max-w-md rounded-2xl border p-8 text-center space-y-4" style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}>
           <Logo />
-          <h1 className="mt-4 text-xl font-semibold" style={{ color: '#1a1714' }}>Auth not configured</h1>
-          <p className="mt-2 text-sm" style={{ color: '#6b6560' }}>Configure Supabase to enable password reset.</p>
-          <Link href="/login" className="mt-6 inline-block px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#2d5a27' }}>
-            Back to login
+          <h1 className="text-xl font-semibold" style={{ color: '#1a1714' }}>Password reset unavailable</h1>
+          <p className="text-sm" style={{ color: '#6b6560' }}>
+            This app is running in demo mode without authentication configured.<br />
+            You can access all features directly from the dashboard.
+          </p>
+          <Link href="/dashboard" className="inline-block mt-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#2d5a27' }}>
+            Go to Dashboard →
           </Link>
         </div>
       </div>
@@ -43,31 +84,49 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ backgroundColor: '#faf8f4' }}>
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12" style={{ backgroundColor: '#faf8f4' }}>
       <div className="w-full max-w-md">
+
         <div className="flex justify-center mb-8">
           <Link href="/"><Logo /></Link>
         </div>
 
-        <div className="rounded-2xl border p-8" style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}>
+        <div className="rounded-2xl border p-6 sm:p-8" style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}>
+
           {sent ? (
+            /* ── Success state ── */
             <div className="text-center space-y-4">
-              <div className="text-4xl">📬</div>
+              <div className="text-5xl">📬</div>
               <h1 className="text-xl font-semibold" style={{ color: '#1a1714' }}>Check your email</h1>
               <p className="text-sm" style={{ color: '#6b6560' }}>
-                We sent a password reset link to <strong>{email}</strong>. Check your inbox — it should arrive within a minute.
+                We sent a password reset link to <strong>{email}</strong>.
+                It should arrive within a minute — check your spam folder if you don&apos;t see it.
               </p>
               <p className="text-xs" style={{ color: '#a09a94' }}>
-                Didn&apos;t get it? Check your spam folder or{' '}
-                <button onClick={() => setSent(false)} className="underline" style={{ color: '#b8734a' }}>try again</button>.
+                Didn&apos;t get it?{' '}
+                <button
+                  onClick={() => { setSent(false); setErrInfo(null) }}
+                  className="underline"
+                  style={{ color: '#b8734a', cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
+                >
+                  Try again
+                </button>
               </p>
-              <Link href="/login" className="inline-block mt-4 text-sm font-medium" style={{ color: '#2d5a27' }}>
+              <Link
+                href="/login"
+                className="inline-block text-sm font-medium"
+                style={{ color: '#2d5a27' }}
+              >
                 ← Back to sign in
               </Link>
             </div>
           ) : (
+            /* ── Form state ── */
             <>
-              <h1 className="text-2xl mb-1" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#1a1714', letterSpacing: '-0.02em' }}>
+              <h1
+                className="text-2xl mb-1"
+                style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#1a1714', letterSpacing: '-0.02em' }}
+              >
                 Reset your password
               </h1>
               <p className="text-sm mb-6" style={{ color: '#a09a94' }}>
@@ -76,30 +135,61 @@ export default function ForgotPasswordPage() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium" style={{ color: '#1a1714' }}>Email</label>
+                  <label className="block text-sm font-medium" style={{ color: '#1a1714' }}>Email address</label>
                   <input
                     type="email"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder="you@yourfirm.com"
                     required
-                    className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
-                    style={{ borderColor: '#e0dbd4', color: '#1a1714', backgroundColor: '#faf8f4' }}
-                    onFocus={e => { e.currentTarget.style.borderColor = '#b8734a' }}
-                    onBlur={e => { e.currentTarget.style.borderColor = '#e0dbd4' }}
+                    autoComplete="email"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-colors"
+                    style={{
+                      borderColor: focused ? '#b8734a' : '#e0dbd4',
+                      color: '#1a1714',
+                      backgroundColor: '#faf8f4',
+                      fontSize: '16px',
+                      boxShadow: focused ? '0 0 0 3px rgba(184,115,74,0.12)' : 'none',
+                    }}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
                   />
                 </div>
 
-                {error && (
-                  <div className="rounded-lg px-3 py-2.5 text-sm" style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
-                    {error}
+                {/* Error message */}
+                {errInfo && (
+                  <div
+                    className="rounded-xl px-4 py-3 space-y-1"
+                    style={{
+                      backgroundColor: errInfo.isRateLimit ? '#fffbeb' : '#fef2f2',
+                      border: `1px solid ${errInfo.isRateLimit ? '#fde68a' : '#fecaca'}`,
+                      color: errInfo.isRateLimit ? '#92400e' : '#991b1b',
+                    }}
+                  >
+                    <p className="text-sm font-semibold">{errInfo.isRateLimit ? '⏳' : '⚠'} {errInfo.title}</p>
+                    <p className="text-xs" style={{ opacity: 0.85 }}>{errInfo.body}</p>
+                    {errInfo.isRateLimit && (
+                      <p className="text-xs mt-2">
+                        Need immediate help?{' '}
+                        <a
+                          href="mailto:hello@closebooks.app?subject=Password Reset Help"
+                          className="underline font-medium"
+                          style={{ color: '#92400e' }}
+                        >
+                          Email us directly
+                        </a>
+                        {' '}and we&apos;ll sort it out right away.
+                      </p>
+                    )}
                   </div>
                 )}
 
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-50"
+                  disabled={loading || !email.trim()}
+                  className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-50"
                   style={{ backgroundColor: '#2d5a27' }}
                   onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#1e3d1a' }}
                   onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
@@ -110,15 +200,33 @@ export default function ForgotPasswordPage() {
 
               <p className="mt-5 text-sm text-center" style={{ color: '#6b6560' }}>
                 Remembered it?{' '}
-                <Link href="/login" className="font-medium" style={{ color: '#b8734a' }}>Sign in</Link>
+                <Link
+                  href="/login"
+                  className="font-medium"
+                  style={{ color: '#b8734a' }}
+                  onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline' }}
+                  onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none' }}
+                >
+                  Sign in
+                </Link>
               </p>
             </>
           )}
         </div>
+
+        {/* Rate limit info note */}
+        <p className="mt-4 text-center text-xs" style={{ color: '#a09a94' }}>
+          Having trouble?{' '}
+          <a href="mailto:hello@closebooks.app" style={{ color: '#a09a94', textDecoration: 'underline' }}>
+            Contact support
+          </a>
+        </p>
       </div>
     </div>
   )
 }
+
+// ─── Logo ─────────────────────────────────────────────────────────────────────
 
 function Logo() {
   return (
