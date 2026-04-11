@@ -12,6 +12,7 @@ import {
 import { getJobs, getClients } from '@/lib/storage'
 import type { AdvisoryMemo } from '@/types/advisory'
 import type { CategorizationJob, Client } from '@/types'
+import type { CashFlowAlert } from '@/app/api/cash-flow-alerts/route'
 
 // ─── Tone & status labels ─────────────────────────────────────────────────────
 
@@ -161,6 +162,8 @@ export default function AdvisoryPage() {
   const [pendingPrevJob, setPendingPrevJob] = useState<CategorizationJob | null>(null)
   const [showGenModal, setShowGenModal] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [cashAlerts, setCashAlerts] = useState<CashFlowAlert[]>([])
+  const [loadingAlerts, setLoadingAlerts] = useState(false)
 
   function reload() {
     setMemos(getAdvisoryMemos())
@@ -168,6 +171,30 @@ export default function AdvisoryPage() {
 
   useEffect(() => {
     reload()
+    // Load cash flow alerts for all clients
+    const jobs = getJobs()
+    if (jobs.length === 0) return
+    const byClient = new Map<string, CategorizationJob[]>()
+    for (const job of jobs) {
+      const list = byClient.get(job.client_name) ?? []
+      list.push(job)
+      byClient.set(job.client_name, list)
+    }
+    setLoadingAlerts(true)
+    const clientEntries = Array.from(byClient.entries())
+    Promise.all(
+      clientEntries.map(([clientName, clientJobs]) =>
+        fetch('/api/cash-flow-alerts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobs: clientJobs, clientName, useAI: false }),
+        }).then(r => r.ok ? r.json() : { alerts: [] }).then(d => d.alerts as CashFlowAlert[])
+        .catch(() => [] as CashFlowAlert[])
+      )
+    ).then(results => {
+      setCashAlerts(results.flat())
+      setLoadingAlerts(false)
+    })
   }, [])
 
   const filtered = useMemo(() => {
@@ -252,6 +279,38 @@ export default function AdvisoryPage() {
             Generate New Memo
           </button>
         </div>
+
+        {/* Cash Flow Alerts */}
+        {cashAlerts.length > 0 && (
+          <div className="rounded-2xl border overflow-hidden" style={{ borderColor: '#fde68a', backgroundColor: '#fffbeb' }}>
+            <div className="flex items-center gap-2 px-5 py-3 border-b" style={{ borderColor: '#fde68a' }}>
+              <span style={{ fontSize: 16 }}>⚡</span>
+              <h3 className="text-sm font-semibold" style={{ color: '#92400e' }}>
+                Cash Flow Alerts ({cashAlerts.length})
+              </h3>
+            </div>
+            <div className="divide-y" style={{ borderColor: '#fef3c7' }}>
+              {cashAlerts.slice(0, 5).map(alert => (
+                <div key={alert.id} className="flex items-start gap-3 px-5 py-3">
+                  <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>
+                    {alert.severity === 'critical' ? '🚨' : alert.severity === 'warning' ? '⚠️' : 'ℹ️'}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: '#1a1714' }}>{alert.clientName} — {alert.title}</p>
+                    <p className="text-xs mt-0.5" style={{ color: '#6b6560' }}>{alert.description}</p>
+                    <p className="text-xs mt-1 font-medium" style={{ color: '#2d5a27' }}>→ {alert.recommendation}</p>
+                  </div>
+                  <button
+                    onClick={() => setShowJobSelector(true)}
+                    className="shrink-0 text-xs font-medium px-2.5 py-1 rounded-lg"
+                    style={{ backgroundColor: '#fff', border: '1px solid #fde68a', color: '#92400e' }}>
+                    Write Memo
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Stats row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

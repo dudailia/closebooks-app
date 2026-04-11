@@ -19,6 +19,7 @@ import TaxHandoffButton from '@/components/TaxHandoffButton'
 import ClientEmailDraft from '@/components/ClientEmailDraft'
 import BenchmarkPanel from '@/components/BenchmarkPanel'
 import { getClients, saveClient } from '@/lib/storage'
+import { startSession, endSession } from '@/lib/timeTracking'
 import type { QBOConnection } from '@/lib/integrations'
 import type { CategorizationJob, Transaction } from '@/types'
 import type { ClientIndustry } from '@/types'
@@ -840,11 +841,26 @@ export default function ReviewPage() {
   const [showPush,   setShowPush]   = useState(false)
   const [pushStep,   setPushStep]   = useState<PushStep>('confirm')
 
+  // Time tracking
+  const sessionIdRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!jobId) return
+    // We'll start a session after job loads — need clientName
+    return () => {
+      // End session when leaving the review page
+      if (sessionIdRef.current) endSession(sessionIdRef.current)
+    }
+  }, [jobId])
+
   useEffect(() => {
     // Try Supabase first, fall back to localStorage
     dbGetJob(jobId).then((found) => {
       if (!found) { setNotFound(true); return }
       setJob(found)
+      // Start time tracking for this review session
+      if (!sessionIdRef.current) {
+        sessionIdRef.current = startSession(jobId, found.client_name, 'review')
+      }
       setQboConn(getQBOConnection())
       // Load client industry from localStorage (fast, always available)
       const client = getClients().find((c) => c.business_name === found.client_name)

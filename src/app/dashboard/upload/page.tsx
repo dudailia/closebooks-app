@@ -10,6 +10,7 @@ import { getRecentCorrections } from '@/lib/corrections'
 import { notify } from '@/lib/notify'
 import { logActivity } from '@/lib/activity'
 import { canStartClose, recordCloseUsed, getTrialStatus } from '@/lib/freeTrial'
+import { startSession, endSession } from '@/lib/timeTracking'
 import type { Transaction, ChartOfAccounts, CategorizationJob } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -136,6 +137,8 @@ function CategorizeStep({
     setBatchTotal(numBatches)
     // Record usage immediately so the banner updates
     recordCloseUsed()
+    // Start time tracking
+    const sessionId = startSession('upload', clientName, 'upload')
     setPhase('sending')
 
     try {
@@ -187,6 +190,7 @@ function CategorizeStep({
         auto_approved: job.auto_categorized,
         flagged: job.flagged,
       })
+      endSession(sessionId)
       router.push(`/dashboard/review/${job.id}`)
     } catch (err) {
       if (timerRef.current) clearInterval(timerRef.current)

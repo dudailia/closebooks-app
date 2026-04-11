@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import NotificationBell from '@/components/NotificationBell'
 
 // ─── Route label map ──────────────────────────────────────────────────────────
 
@@ -28,6 +29,10 @@ const LABELS: Record<string, string> = {
   integrations: 'Integrations',
   developers:   'Developers',
   referrals:    'Refer & Earn',
+  requests:     'Document Requests',
+  messages:     'Messages',
+  time:         'Time Tracking',
+  'bulk-close': 'Bulk Close',
   'close-report': 'Close Report',
   run:          'Live Close',
   new:          'New Return',
@@ -105,32 +110,35 @@ export default function TopBar() {
       </nav>
 
       {/* Actions */}
-      {!isUpload && (
-        <Link
-          href="/dashboard/upload"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '6px 14px',
-            borderRadius: 8,
-            backgroundColor: '#2d5a27',
-            color: '#fff',
-            fontSize: 12,
-            fontWeight: 600,
-            textDecoration: 'none',
-            flexShrink: 0,
-            whiteSpace: 'nowrap',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
-        >
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-            <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-          </svg>
-          New Close
-        </Link>
-      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <NotificationBell />
+        {!isUpload && (
+          <Link
+            href="/dashboard/upload"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 14px',
+              borderRadius: 8,
+              backgroundColor: '#2d5a27',
+              color: '#fff',
+              fontSize: 12,
+              fontWeight: 600,
+              textDecoration: 'none',
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+          >
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+              <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+            New Close
+          </Link>
+        )}
+      </div>
     </header>
   )
 }
