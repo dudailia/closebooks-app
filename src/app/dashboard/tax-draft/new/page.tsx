@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { getJobs } from '@/lib/storage'
+import type { CategorizationJob } from '@/types'
 
 const FORM_TYPES = [
   { id: '1120S', label: 'Form 1120-S', description: 'S-Corporation tax return', icon: 'S' },
@@ -10,11 +12,6 @@ const FORM_TYPES = [
   { id: '1040',  label: 'Form 1040',   description: 'Individual / Sole proprietor', icon: 'I' },
   { id: '1120',  label: 'Form 1120',   description: 'C-Corporation tax return', icon: 'C' },
   { id: '1041',  label: 'Form 1041',   description: 'Estate or trust return', icon: 'E' },
-]
-
-const DEMO_CLIENTS = [
-  'Smith Construction LLC', 'Bella Vista Restaurant', 'Chen Medical Practice',
-  'TechFlow Inc', 'Green Valley Farms', 'Meridian Consulting Group',
 ]
 
 export default function NewTaxReturnPage() {
@@ -25,6 +22,19 @@ export default function NewTaxReturnPage() {
   const [hasPriorYear, setHasPriorYear] = useState<boolean | null>(null)
   const [fileName, setFileName] = useState('')
   const [generating, setGenerating] = useState(false)
+  const [jobs, setJobs] = useState<CategorizationJob[]>([])
+  const [clientNames, setClientNames] = useState<string[]>([])
+
+  useEffect(() => {
+    const stored = getJobs()
+    setJobs(stored)
+    // Unique client names from jobs + demo fallbacks
+    const seen = new Set<string>()
+    const fromJobs = stored.map(j => j.client_name).filter(n => { if (seen.has(n)) return false; seen.add(n); return true })
+    const demos = ['Smith Construction LLC', 'Bella Vista Restaurant', 'Chen Medical Practice', 'TechFlow Inc']
+    const merged = [...fromJobs, ...demos.filter(d => !fromJobs.includes(d))]
+    setClientNames(merged)
+  }, [])
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
@@ -33,9 +43,32 @@ export default function NewTaxReturnPage() {
 
   async function handleGenerate() {
     setGenerating(true)
-    // Simulate generation delay
-    await new Promise(r => setTimeout(r, 1800))
-    router.push('/dashboard/tax-draft/smith-2024')
+    try {
+      // Find jobs for selected client
+      const clientJobs = jobs.filter(j => j.client_name === client)
+      const latestJob = clientJobs[0]
+
+      if (latestJob && latestJob.transactions.length > 0) {
+        // Call real API
+        const res = await fetch('/api/tax-draft/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job: latestJob, formType, taxYear: new Date().getFullYear() - 1 }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const returnId = data.taxReturn?.id ?? `${client.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
+          router.push(`/dashboard/tax-draft/${returnId}`)
+          return
+        }
+      }
+
+      // Demo fallback
+      await new Promise(r => setTimeout(r, 1800))
+      router.push('/dashboard/tax-draft/smith-2024')
+    } finally {
+      setGenerating(false)
+    }
   }
 
   const canProceed1 = client.trim().length > 0
@@ -82,7 +115,7 @@ export default function NewTaxReturnPage() {
             <div>
               <h2 style={{ fontSize: 17, fontWeight: 600, color: '#1a1714', marginBottom: 20 }}>Which client is this return for?</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
-                {DEMO_CLIENTS.map(c => (
+                {clientNames.map(c => (
                   <button
                     key={c}
                     onClick={() => setClient(c)}
@@ -98,7 +131,7 @@ export default function NewTaxReturnPage() {
                 <div style={{ position: 'relative' }}>
                   <input
                     placeholder="Or type a client name..."
-                    value={DEMO_CLIENTS.includes(client) ? '' : client}
+                    value={clientNames.includes(client) ? '' : client}
                     onChange={e => setClient(e.target.value)}
                     style={{
                       width: '100%', padding: '12px 16px', borderRadius: 10, boxSizing: 'border-box',
