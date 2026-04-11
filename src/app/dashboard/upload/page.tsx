@@ -9,6 +9,7 @@ import { dbSaveJob } from '@/lib/db'
 import { getRecentCorrections } from '@/lib/corrections'
 import { notify } from '@/lib/notify'
 import { logActivity } from '@/lib/activity'
+import { canStartClose, recordCloseUsed, getTrialStatus } from '@/lib/freeTrial'
 import type { Transaction, ChartOfAccounts, CategorizationJob } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -122,10 +123,19 @@ function CategorizeStep({
   }, [state, numBatches])
 
   async function handleCategorize() {
+    // Check free trial limit before starting
+    if (!canStartClose()) {
+      setError('You have used all 5 free closes. Please upgrade to continue.')
+      setState('error')
+      return
+    }
+
     setState('loading')
     setError(null)
     setBatchCurrent(0)
     setBatchTotal(numBatches)
+    // Record usage immediately so the banner updates
+    recordCloseUsed()
     setPhase('sending')
 
     try {
@@ -248,21 +258,34 @@ function CategorizeStep({
             className="px-4 py-3 rounded-xl text-sm space-y-1"
             style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b' }}
           >
-            <p className="font-semibold">Categorization failed</p>
-            <p className="text-xs opacity-80">
-              {error.includes('API') || error.includes('key') || error.includes('auth')
-                ? 'The AI service is temporarily unavailable. Please try again in a moment.'
-                : error.includes('rate') || error.includes('429')
-                ? 'Too many requests. Wait a moment and try again.'
-                : error.includes('timeout') || error.includes('network') || error.includes('fetch')
-                ? 'Network error. Check your connection and try again.'
-                : error.length > 120
-                ? 'An unexpected error occurred with the AI service.'
-                : error}
+            <p className="font-semibold">
+              {error.includes('free closes') ? '🔒 Free trial limit reached' : 'Categorization failed'}
             </p>
-            <p className="text-xs" style={{ color: '#b91c1c' }}>
-              Click &ldquo;Try again&rdquo; below to retry.
-            </p>
+            {error.includes('free closes') ? (
+              <div className="space-y-2">
+                <p className="text-xs">You&apos;ve used all 5 free closes. Upgrade to continue with unlimited closes.</p>
+                <a href="/pricing" className="inline-block text-xs font-semibold px-3 py-1.5 rounded-lg text-white" style={{ backgroundColor: '#b8734a' }}>
+                  View pricing plans →
+                </a>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs opacity-80">
+                  {error.includes('API') || error.includes('key') || error.includes('auth')
+                    ? 'The AI service is temporarily unavailable. Please try again in a moment.'
+                    : error.includes('rate') || error.includes('429')
+                    ? 'Too many requests. Wait a moment and try again.'
+                    : error.includes('timeout') || error.includes('network') || error.includes('fetch')
+                    ? 'Network error. Check your connection and try again.'
+                    : error.length > 120
+                    ? 'An unexpected error occurred with the AI service.'
+                    : error}
+                </p>
+                <p className="text-xs" style={{ color: '#b91c1c' }}>
+                  Click &ldquo;Try again&rdquo; below to retry.
+                </p>
+              </>
+            )}
           </div>
         )}
 
@@ -308,6 +331,11 @@ export default function UploadPage() {
   const [clientNameError, setClientNameError] = useState<string | null>(null)
   const [chartOfAccounts, setChartOfAccounts] = useState<ChartOfAccounts[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [trialStatus, setTrialStatus] = useState<ReturnType<typeof getTrialStatus> | null>(null)
+
+  useEffect(() => {
+    setTrialStatus(getTrialStatus())
+  }, [])
 
   // Pre-fill client name if navigated from a client detail page
   useEffect(() => {
@@ -327,6 +355,27 @@ export default function UploadPage() {
     setStep(1)
   }
 
+  // Trial exhausted gate
+  if (trialStatus?.hasExhaustedTrial && step < 2) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-5" style={{ backgroundColor: '#f5f0ea' }}>
+        <div className="max-w-md w-full text-center rounded-2xl border p-8" style={{ backgroundColor: '#fff', borderColor: '#e0dbd4' }}>
+          <div className="text-4xl mb-4">🔒</div>
+          <h2 className="text-xl font-bold mb-2" style={{ color: '#1a1714' }}>Free trial complete</h2>
+          <p className="text-sm mb-6" style={{ color: '#6b6560' }}>
+            You&apos;ve used all 5 free closes. Upgrade to continue — plans start at $99/month with unlimited closes.
+          </p>
+          <a href="/pricing" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#2d5a27' }}>
+            View pricing & upgrade →
+          </a>
+          <p className="mt-4 text-xs" style={{ color: '#a09a94' }}>
+            Already upgraded? <a href="/dashboard" style={{ color: '#b8734a' }}>Go to dashboard</a>
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f5f0ea' }}>
 
@@ -340,6 +389,11 @@ export default function UploadPage() {
           <p className="text-sm mt-1" style={{ color: '#6b6560' }}>
             Upload a bank statement and categorize transactions with AI.
           </p>
+          {trialStatus?.isOnFreeTier && !trialStatus.hasExhaustedTrial && (
+            <p className="text-xs mt-1" style={{ color: '#b8734a' }}>
+              {trialStatus.closesRemaining} free {trialStatus.closesRemaining === 1 ? 'close' : 'closes'} remaining
+            </p>
+          )}
         </div>
 
         {/* Step indicator */}

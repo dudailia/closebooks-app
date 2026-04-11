@@ -206,13 +206,13 @@ function PricingCard({ plan }: { plan: typeof PLANS[number] }) {
             onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88' }}
             onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
           >
-            {loading ? 'Redirecting to Stripe…' : 'Start Free Trial'}
+            {loading ? 'Redirecting to Stripe…' : 'Get Started'}
           </button>
           {error && (
             <p className="text-xs mt-2 text-center" style={{ color: '#ef4444' }}>{error}</p>
           )}
           <p className="text-xs text-center mt-2" style={{ color: '#a09a94' }}>
-            14-day free trial · No credit card required to start
+            First 5 closes free · No credit card required
           </p>
         </>
       ) : (
@@ -224,10 +224,10 @@ function PricingCard({ plan }: { plan: typeof PLANS[number] }) {
             onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88' }}
             onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
           >
-            Start Free Trial
+            Get Started Free
           </Link>
           <p className="text-xs text-center mt-2" style={{ color: '#a09a94' }}>
-            14-day free trial · No credit card required
+            First 5 closes free · No credit card required
           </p>
         </>
       )}
@@ -277,7 +277,7 @@ export default function PricingPage() {
             Simple, honest pricing
           </h1>
           <p className="text-lg mt-2 mx-auto max-w-xl" style={{ color: '#6b6560' }}>
-            14-day free trial on every plan. Cancel any time.
+            First 5 closes free — no credit card required. Cancel any time.
           </p>
 
           {/* Early access callout */}
@@ -312,7 +312,7 @@ export default function PricingPage() {
             },
             {
               q: 'How does the free trial work?',
-              a: '14 days, full access, no credit card required. You\'ll only be charged if you choose to continue.',
+              a: 'Your first 5 closes are completely free — no credit card required. After that, choose a plan to continue.',
             },
           ].map(({ q, a }) => (
             <div key={q}>

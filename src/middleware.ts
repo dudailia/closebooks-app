@@ -51,7 +51,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Redirect authenticated users away from login/signup pages (not from reset flows)
+  // Redirect authenticated users away from login/signup pages
+  // But NOT from forgot-password or reset-password (they might need to reset even when logged in)
   if (user && (pathname === '/login' || pathname === '/signup')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
@@ -64,6 +65,6 @@ export const config = {
     '/dashboard/:path*',
     '/login',
     '/signup',
-    '/forgot-password',
+    // '/forgot-password' intentionally NOT here — always accessible
   ],
 }

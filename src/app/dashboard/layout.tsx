@@ -1,6 +1,7 @@
 import Sidebar from '@/components/Sidebar'
 import TopBar from '@/components/TopBar'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import TrialBanner from '@/components/TrialBanner'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,7 +12,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/*
         On desktop: margin-left = sidebar width (updated by Sidebar via CSS var)
         On mobile (< 768px): sidebar is hidden as overlay; content takes full width
-        We use a CSS class + inline style combo so the media query can override the var.
       */}
       <div
         className="dashboard-content-wrapper"
@@ -26,6 +26,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }}
       >
         <TopBar />
+        <TrialBanner />
         <main style={{ flex: 1 }} className="page-content">
           <ErrorBoundary>
             {children}

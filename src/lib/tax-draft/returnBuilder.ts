@@ -100,7 +100,7 @@ export function buildReturnFromTransactions(
   let totalCOGS = 0
   const operatingExpenses: Record<string, number> = {}
 
-  for (const [cat, agg] of aggregates) {
+  for (const [cat, agg] of Array.from(aggregates.entries())) {
     if (matchesCategory(cat, REVENUE_CATEGORIES)) {
       totalRevenue += agg.total
     } else if (matchesCategory(cat, COGS_CATEGORIES)) {
