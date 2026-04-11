@@ -25,7 +25,7 @@ const LS_THRESHOLD      = 'cb_autopilot_threshold'
 const LS_FLAG_LOW       = 'cb_autopilot_flag_low'
 const LS_EMAIL_DIGEST   = 'cb_autopilot_email_digest'
 const LS_DEFAULT_CLIENT = 'cb_autopilot_default_client'
-const LS_JOBS           = 'cb_jobs'
+const LS_JOBS           = 'closebooks_jobs'
 
 function readBool(key: string, fallback: boolean): boolean {
   if (typeof window === 'undefined') return fallback

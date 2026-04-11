@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import InboxDocumentCard, { type InboxDocumentCardProps } from '@/components/InboxDocumentCard'
 import InboxSetupBanner from '@/components/InboxSetupBanner'
 import ReceiptAnimation from '@/components/ReceiptAnimation'
+import { getDocuments } from '@/lib/vaultStorage'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -271,7 +272,32 @@ function StatCard({ value, label, accent }: { value: number | string; label: str
 export default function InboxPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<FilterTab>('all')
-  const [docs]  = useState<DocItem[]>(DEMO_DOCS)
+  const [docs, setDocs] = useState<DocItem[]>(DEMO_DOCS)
+
+  useEffect(() => {
+    // Merge real vault documents into inbox view
+    try {
+      const vaultDocs = getDocuments()
+      const vaultAsInbox: DocItem[] = vaultDocs.map(d => ({
+        id: d.id,
+        source: 'email' as const,
+        documentType: (d.type as DocItem['documentType']) ?? 'receipt',
+        title: d.name,
+        merchantName: d.clientName ?? 'Unknown',
+        amount: undefined,
+        date: d.uploadedAt.slice(0, 10),
+        clientName: d.clientName,
+        status: 'matched' as const,
+        matchConfidence: 0.9,
+        processingDuration: 1000,
+        category: d.category ?? 'Document',
+      }))
+      // Merge: vault docs first, then demo docs (only keep demo if no real vault docs)
+      if (vaultDocs.length > 0) {
+        setDocs([...vaultAsInbox, ...DEMO_DOCS])
+      }
+    } catch { /* ignore */ }
+  }, [])
 
   // Demo animation state — clicking a matched receipt triggers it
   const [animTrigger, setAnimTrigger] = useState(false)

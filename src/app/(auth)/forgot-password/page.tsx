@@ -6,23 +6,45 @@ import { createClient, supabaseConfigured } from '@/lib/supabase/client'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function friendlyError(msg: string): { title: string; body: string; isRateLimit: boolean } {
+function friendlyError(msg: string): { title: string; body: string; isRateLimit: boolean; isConfig: boolean } {
   const lower = msg.toLowerCase()
+
   if (lower.includes('rate limit') || lower.includes('too many') || lower.includes('429') || lower.includes('exceeded')) {
     return {
       title: 'Too many requests',
-      body: 'Supabase limits password reset emails on the free tier. Please wait 60 minutes before trying again, or contact us and we\'ll reset your password manually.',
+      body: 'Password reset emails are temporarily limited. Please wait 60 minutes before trying again.',
       isRateLimit: true,
+      isConfig: false,
     }
   }
+
+  // "Error sending reset password" — Supabase SMTP not configured or redirect URL not whitelisted
+  if (
+    lower.includes('error sending') ||
+    lower.includes('smtp') ||
+    lower.includes('sending confirmation') ||
+    lower.includes('failed to send') ||
+    lower.includes('email not sent') ||
+    lower.includes('unable to send')
+  ) {
+    return {
+      title: 'Email delivery unavailable',
+      body: 'Our email service is not yet configured. You can still access your account — contact us and we\'ll reset your password immediately.',
+      isRateLimit: false,
+      isConfig: true,
+    }
+  }
+
   if (lower.includes('user not found') || lower.includes('no user')) {
     return {
       title: 'Email not found',
       body: 'No account exists with that email address. Check for typos or sign up for a new account.',
       isRateLimit: false,
+      isConfig: false,
     }
   }
-  return { title: 'Something went wrong', body: msg, isRateLimit: false }
+
+  return { title: 'Something went wrong', body: msg, isRateLimit: false, isConfig: false }
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -30,7 +52,7 @@ function friendlyError(msg: string): { title: string; body: string; isRateLimit:
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
-  const [errInfo, setErrInfo] = useState<{ title: string; body: string; isRateLimit: boolean } | null>(null)
+  const [errInfo, setErrInfo] = useState<{ title: string; body: string; isRateLimit: boolean; isConfig: boolean } | null>(null)
   const [loading, setLoading] = useState(false)
   const [focused, setFocused] = useState(false)
 
@@ -163,25 +185,40 @@ export default function ForgotPasswordPage() {
                   <div
                     className="rounded-xl px-4 py-3 space-y-1"
                     style={{
-                      backgroundColor: errInfo.isRateLimit ? '#fffbeb' : '#fef2f2',
-                      border: `1px solid ${errInfo.isRateLimit ? '#fde68a' : '#fecaca'}`,
-                      color: errInfo.isRateLimit ? '#92400e' : '#991b1b',
+                      backgroundColor: errInfo.isRateLimit ? '#fffbeb' : errInfo.isConfig ? '#eff6ff' : '#fef2f2',
+                      border: `1px solid ${errInfo.isRateLimit ? '#fde68a' : errInfo.isConfig ? '#bfdbfe' : '#fecaca'}`,
+                      color: errInfo.isRateLimit ? '#92400e' : errInfo.isConfig ? '#1e40af' : '#991b1b',
                     }}
                   >
-                    <p className="text-sm font-semibold">{errInfo.isRateLimit ? '⏳' : '⚠'} {errInfo.title}</p>
+                    <p className="text-sm font-semibold">{errInfo.isRateLimit ? '⏳' : errInfo.isConfig ? 'ℹ️' : '⚠'} {errInfo.title}</p>
                     <p className="text-xs" style={{ opacity: 0.85 }}>{errInfo.body}</p>
-                    {errInfo.isRateLimit && (
-                      <p className="text-xs mt-2">
-                        Need immediate help?{' '}
-                        <a
-                          href="mailto:hello@closebooks.app?subject=Password Reset Help"
-                          className="underline font-medium"
-                          style={{ color: '#92400e' }}
-                        >
-                          Email us directly
-                        </a>
-                        {' '}and we&apos;ll sort it out right away.
-                      </p>
+                    {(errInfo.isRateLimit || errInfo.isConfig) && (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs font-medium">Your options right now:</p>
+                        <p className="text-xs">
+                          1.{' '}
+                          <a
+                            href="mailto:hello@closebooks.app?subject=Password Reset Request&body=Please reset the password for: "
+                            className="underline font-semibold"
+                            style={{ color: errInfo.isConfig ? '#1d4ed8' : '#92400e' }}
+                          >
+                            Email us
+                          </a>
+                          {' '}and we&apos;ll reset it manually within minutes.
+                        </p>
+                        <p className="text-xs">
+                          2. Or{' '}
+                          <a href="/signup" className="underline" style={{ color: errInfo.isConfig ? '#1d4ed8' : '#92400e' }}>
+                            create a new account
+                          </a>
+                          {' '}— your demo data is saved in your browser.
+                        </p>
+                        {errInfo.isConfig && (
+                          <p className="text-xs opacity-70">
+                            (This is a temporary configuration issue — we&apos;re working on it)
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
