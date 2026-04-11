@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient, supabaseConfigured } from '@/lib/supabase/client'
@@ -13,7 +13,9 @@ const inputCls = 'w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none tr
 const inputBase = { borderColor: '#e0dbd4', color: '#1a1714', backgroundColor: '#faf8f4', fontSize: '16px' }
 const inputFocus = { borderColor: '#b8734a', backgroundColor: '#ffffff', boxShadow: '0 0 0 3px rgba(184,115,74,0.12)' }
 
-export default function LoginPage() {
+// ─── Inner component that uses useSearchParams (must be in Suspense) ──────────
+
+function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const nextPath = searchParams.get('next') ?? '/dashboard'
@@ -224,6 +226,20 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+// ─── Default export wrapped in Suspense (required for useSearchParams) ────────
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#faf8f4' }}>
+        <div className="text-sm" style={{ color: '#a09a94' }}>Loading…</div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }
 
