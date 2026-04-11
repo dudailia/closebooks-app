@@ -107,6 +107,8 @@ export default function SignupPage() {
   const [loading,   setLoading]   = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
+  const [emailConfirmRequired, setEmailConfirmRequired] = useState(false)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
@@ -129,12 +131,21 @@ export default function SignupPage() {
 
     if (error) { setError(error.message); setLoading(false); return }
 
+    // If email confirmation is required, the user object will be present but
+    // the session will be null. Show a confirmation notice instead of redirecting.
+    if (data.user && !data.session) {
+      setEmailConfirmRequired(true)
+      setLoading(false)
+      return
+    }
+
     // Create firm record in Supabase (fire-and-forget — app works without it)
     if (data.user) {
       dbEnsureFirm(firmName || email.split('@')[0], data.user.id).catch(() => {})
     }
 
     router.push('/dashboard')
+    setLoading(false)
   }
 
   async function handleGoogle() {
@@ -149,6 +160,34 @@ export default function SignupPage() {
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
     if (error) { setError(error.message); setGoogleLoading(false) }
+  }
+
+  // ── Email confirmation notice ─────────────────────────────────────────────
+
+  if (emailConfirmRequired) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#faf8f4' }}>
+        <div className="w-full max-w-md rounded-2xl border p-8 text-center space-y-4" style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}>
+          <LedgerLogo />
+          <div className="text-4xl mt-2">📬</div>
+          <h1 className="text-xl font-semibold" style={{ color: '#1a1714' }}>Check your email</h1>
+          <p className="text-sm" style={{ color: '#6b6560' }}>
+            We sent a confirmation link to <strong>{email}</strong>.<br />
+            Click the link to activate your account and go straight to your dashboard.
+          </p>
+          <p className="text-xs" style={{ color: '#a09a94' }}>
+            Didn&apos;t get it? Check spam or{' '}
+            <button onClick={() => setEmailConfirmRequired(false)} className="underline" style={{ color: '#b8734a' }}>
+              try again
+            </button>
+            .
+          </p>
+          <Link href="/demo" className="inline-block text-sm font-medium mt-2" style={{ color: '#2d5a27' }}>
+            While you wait, try the live demo →
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   // ── Unconfigured fallback ──────────────────────────────────────────────────

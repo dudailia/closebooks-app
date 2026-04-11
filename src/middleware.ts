@@ -51,7 +51,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Redirect authenticated users away from login/signup pages
+  // Redirect authenticated users away from login/signup pages (not from reset flows)
   if (user && (pathname === '/login' || pathname === '/signup')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
@@ -64,5 +64,6 @@ export const config = {
     '/dashboard/:path*',
     '/login',
     '/signup',
+    '/forgot-password',
   ],
 }

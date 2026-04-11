@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import AgentTerminal from '@/components/agent/AgentTerminal'
+import { getJobs } from '@/lib/storage'
 
 interface ExceptionCard {
   id: string
@@ -69,8 +70,11 @@ export default function ClientAgentDetailPage() {
   const [runBtnHover, setRunBtnHover] = useState(false)
   const [scheduleBtnHover, setScheduleBtnHover] = useState(false)
   const [expandedRun, setExpandedRun] = useState<number | null>(null)
+  const [runId, setRunId] = useState<string | null>(null)
+  const [runStatus, setRunStatus] = useState<'idle' | 'running' | 'complete'>('idle')
+  const [liveExceptions, setLiveExceptions] = useState<ExceptionCard[]>([])
 
-  const exceptions = clientId === 'smith-2024' ? SMITH_EXCEPTIONS : []
+  const exceptions = liveExceptions.length > 0 ? liveExceptions : (clientId === 'smith-2024' ? SMITH_EXCEPTIONS : [])
   const [resolved, setResolved] = useState<Record<string, boolean>>({})
   const [editingId, setEditingId] = useState<string | null>(null)
   const [overrides, setOverrides] = useState<Record<string, string>>({})
@@ -82,15 +86,84 @@ export default function ClientAgentDetailPage() {
     setEditingId(null)
   }, [])
 
-  const statusCfg = STATUS_CONFIGS[client.status]
+  const statusCfg = STATUS_CONFIGS[isLive && runStatus === 'running' ? 'running' : client.status]
+
+  // Poll agent status when running
+  useEffect(() => {
+    if (!runId || runStatus !== 'running') return
+    const timer = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/agent/status/${runId}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.status === 'complete') {
+            setRunStatus('complete')
+            setIsLive(false)
+            clearInterval(timer)
+          }
+        }
+      } catch { /* ignore */ }
+    }, 3000)
+    return () => clearInterval(timer)
+  }, [runId, runStatus])
 
   async function handleRunNow() {
-    await fetch('/api/agent/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientId }),
-    })
     setIsLive(true)
+    setRunStatus('running')
+    setLiveExceptions([])
+
+    // Get real transactions for this client if available
+    const jobs = getJobs()
+    const clientJob = jobs.find(j => j.client_name.toLowerCase().replace(/\s+/g, '-').includes(clientId.split('-')[0]))
+
+    try {
+      // Start the agent run
+      const startRes = await fetch('/api/agent/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId }),
+      })
+      if (startRes.ok) {
+        const startData = await startRes.json()
+        setRunId(startData.runId)
+      }
+
+      // If we have real transactions, run autopilot
+      if (clientJob && clientJob.transactions.length > 0) {
+        const autopilotRes = await fetch('/api/autopilot/start-close', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientId,
+            periodStart: clientJob.created_at.slice(0, 10),
+            periodEnd: new Date().toISOString().slice(0, 10),
+            transactions: clientJob.transactions,
+          }),
+        })
+        if (autopilotRes.ok) {
+          const autopilotData = await autopilotRes.json()
+          // Map exceptions to our ExceptionCard format
+          const mapped: ExceptionCard[] = (autopilotData.exceptions ?? []).slice(0, 5).map((exc: {
+            id: string; description: string; amount: number; aiSuggestion: string; confidence: number
+          }) => ({
+            id: exc.id,
+            description: exc.description,
+            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            amount: exc.amount,
+            agentSuggestion: exc.aiSuggestion ?? 'General Expense',
+            confidence: exc.confidence ?? 0.7,
+            reasoning: 'Flagged by AI — requires review',
+          }))
+          if (mapped.length > 0) setLiveExceptions(mapped)
+          setRunStatus('complete')
+          setIsLive(false)
+          return
+        }
+      }
+    } catch { /* fall through to animation */ }
+
+    // If no real data, just animate
+    setTimeout(() => { setRunStatus('complete'); setIsLive(false) }, 15000)
   }
 
   return (
