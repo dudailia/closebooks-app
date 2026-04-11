@@ -297,6 +297,133 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ─── Mobile / Touch Optimizations ──────────────────────────────────────────── */
+
+/* Prevent iOS font size bump on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Minimum tap target size for accessibility (iOS HIG: 44pt) */
+button,
+a,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"],
+select {
+  min-height: 44px;
+  cursor: pointer;
+}
+
+/* But don't inflate inline anchors like footnotes */
+p a,
+.text-xs a,
+.text-sm a,
+span a {
+  min-height: unset;
+}
+
+/* Prevent double-tap zoom on buttons */
+button,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+/* Smooth momentum scrolling on iOS */
+.overflow-y-auto,
+.overflow-x-auto,
+.overflow-auto,
+[class*="overflow-y"],
+[class*="overflow-x"] {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure full width on mobile */
+@media (max-width: 640px) {
+  /* Base font slightly smaller to fit more on screen */
+  body {
+    font-size: 14px;
+  }
+
+  /* Inputs should be at least 16px to prevent iOS zoom */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Tables scroll horizontally instead of breaking layout */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+  }
+
+  /* Prevent horizontal overflow from stretching the page */
+  main,
+  section,
+  article,
+  .page-content {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Cards get full-width on mobile */
+  .mobile-full {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Stack grid columns on small screens */
+  .mobile-stack {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tighter padding on mobile */
+  .mobile-px {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  /* Smaller headlines on mobile */
+  h1 { font-size: clamp(1.5rem, 7vw, 2.5rem) !important; }
+  h2 { font-size: clamp(1.2rem, 5vw, 1.8rem) !important; }
+
+  /* Modal gets full height on mobile */
+  .mobile-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 50vh;
+    border-radius: 20px 20px 0 0 !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+  }
+}
+
+/* Dashboard layout: on mobile, remove the sidebar margin and show full width */
+@media (max-width: 767px) {
+  .dashboard-content-wrapper {
+    margin-left: 0 !important;
+  }
+}
+
+/* Safe area insets for iPhone notch / home indicator */
+@supports (padding: max(0px)) {
+  .safe-bottom {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  .safe-top {
+    padding-top: max(0px, env(safe-area-inset-top));
+  }
+  .fixed-bottom-bar {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+}
+
 /* Sidebar nav — hide scrollbar while keeping scroll functionality */
 .cb-sidebar-nav::-webkit-scrollbar { display: none; }
 .cb-sidebar-nav { scrollbar-width: none; -ms-overflow-style: none; }

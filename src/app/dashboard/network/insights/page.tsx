@@ -49,7 +49,7 @@ const ALL_INSIGHTS: Insight[] = [
     type: 'trend',
     title: 'AI Software Subscriptions emerging as new category',
     description:
-      "A new expense category is solidifying across the network: 'AI Software Subscriptions' (ChatGPT, Claude, Midjourney, Copilot, etc.). Currently 67% of tech firms and 43% of professional services firms have these expenses scattered across SaaS, Office, or Miscellaneous. Creating a dedicated category now improves deduction tracking and positions clients for potential new deduction guidance.",
+      "A new expense category is solidifying across the network: 'AI Software Subscriptions' (ChatGPT, Midjourney, Copilot, etc.). Currently 67% of tech firms and 43% of professional services firms have these expenses scattered across SaaS, Office, or Miscellaneous. Creating a dedicated category now improves deduction tracking and positions clients for potential new deduction guidance.",
     affectedClients: 0,
     source: 'Based on 2,100+ firms this quarter',
     actionLabel: 'Apply to My Clients',

@@ -244,7 +244,7 @@ export default function PricingPage() {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
       <DashboardNav />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-5 py-16 page-enter">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-5 py-10 sm:py-16 page-enter">
 
         {/* Breadcrumb */}
         <Link
