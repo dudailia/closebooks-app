@@ -298,7 +298,7 @@ function Hero() {
 
         {/* Trust note */}
         <p className="text-xs mt-6" style={{ color: '#a09a94' }}>
-          No credit card required&nbsp;&nbsp;·&nbsp;&nbsp;14-day free trial&nbsp;&nbsp;·&nbsp;&nbsp;50% off for early access firms
+          First 5 closes free&nbsp;&nbsp;·&nbsp;&nbsp;No credit card required&nbsp;&nbsp;·&nbsp;&nbsp;50% off for early access firms
         </p>
       </div>
     </section>

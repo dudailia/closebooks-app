@@ -1,79 +1,71 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient, supabaseConfigured } from '@/lib/supabase/client'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Shared input style
+// Login page — works with or without Supabase configured
 // ─────────────────────────────────────────────────────────────────────────────
 
-const inputCls =
-  'w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-colors'
-const inputStyle = { borderColor: '#e0dbd4', color: '#1a1714', backgroundColor: '#faf8f4' }
-const inputFocusStyle = { borderColor: '#b8734a', backgroundColor: '#ffffff', boxShadow: '0 0 0 3px rgba(184,115,74,0.12)' }
-
-function Field({
-  label,
-  type,
-  value,
-  onChange,
-  placeholder,
-  autoComplete,
-}: {
-  label: string
-  type: string
-  value: string
-  onChange: (v: string) => void
-  placeholder?: string
-  autoComplete?: string
-}) {
-  const [focused, setFocused] = useState(false)
-  return (
-    <div className="space-y-1.5">
-      <label className="block text-sm font-medium" style={{ color: '#1a1714' }}>
-        {label}
-      </label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        required
-        className={inputCls}
-        style={focused ? { ...inputStyle, ...inputFocusStyle } : inputStyle}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-      />
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Page
-// ─────────────────────────────────────────────────────────────────────────────
+const inputCls = 'w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-colors'
+const inputBase = { borderColor: '#e0dbd4', color: '#1a1714', backgroundColor: '#faf8f4', fontSize: '16px' }
+const inputFocus = { borderColor: '#b8734a', backgroundColor: '#ffffff', boxShadow: '0 0 0 3px rgba(184,115,74,0.12)' }
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail]       = useState('')
+  const searchParams = useSearchParams()
+  const nextPath = searchParams.get('next') ?? '/dashboard'
+
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError]       = useState<string | null>(null)
-  const [loading, setLoading]   = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [focusedField, setFocusedField] = useState<string | null>(null)
+
+  // If Supabase not configured, go straight to dashboard
+  useEffect(() => {
+    if (!supabaseConfigured) {
+      router.replace('/dashboard')
+    }
+  }, [router])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!email.trim() || !password.trim()) {
+      setError('Please enter your email and password.')
+      return
+    }
     setLoading(true)
     setError(null)
 
     const supabase = createClient()
-    if (!supabase) { setError('Auth not configured.'); setLoading(false); return }
+    if (!supabase) {
+      // No Supabase — just let them through to dashboard in demo mode
+      router.push('/dashboard')
+      return
+    }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { setError(error.message); setLoading(false); return }
-    router.push('/dashboard')
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (authError) {
+      setLoading(false)
+      // Make error messages friendlier
+      if (authError.message.toLowerCase().includes('invalid login')) {
+        setError('Incorrect email or password. Please try again.')
+      } else if (authError.message.toLowerCase().includes('email not confirmed')) {
+        setError('Please check your email and click the confirmation link first.')
+      } else {
+        setError(authError.message)
+      }
+      return
+    }
+
+    // Success — refresh router to pick up new session cookie
+    router.push(nextPath)
+    router.refresh()
   }
 
   async function handleGoogle() {
@@ -81,42 +73,30 @@ export default function LoginPage() {
     setError(null)
 
     const supabase = createClient()
-    if (!supabase) { setError('Auth not configured.'); setGoogleLoading(false); return }
+    if (!supabase) {
+      router.push('/dashboard')
+      return
+    }
 
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error: authError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}` },
     })
-    if (error) { setError(error.message); setGoogleLoading(false) }
-    // on success Supabase redirects the browser — no router.push needed
+    if (authError) {
+      setError(authError.message)
+      setGoogleLoading(false)
+    }
+    // On success, Supabase redirects the browser — no router.push needed
   }
 
-  // ── Unconfigured fallback ──────────────────────────────────────────────────
-
+  // Show loading while checking Supabase config
   if (!supabaseConfigured) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#faf8f4' }}>
-        <div className="w-full max-w-md rounded-2xl border p-8 text-center" style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}>
-          <LedgerLogo />
-          <h1 className="mt-4 text-xl font-semibold" style={{ color: '#1a1714' }}>Auth not configured</h1>
-          <p className="mt-2 text-sm" style={{ color: '#6b6560' }}>
-            Set <code className="font-mono text-xs bg-stone-100 px-1 py-0.5 rounded">NEXT_PUBLIC_SUPABASE_URL</code> and{' '}
-            <code className="font-mono text-xs bg-stone-100 px-1 py-0.5 rounded">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in{' '}
-            <code className="font-mono text-xs bg-stone-100 px-1 py-0.5 rounded">.env.local</code> to enable login.
-          </p>
-          <Link
-            href="/dashboard"
-            className="mt-6 inline-block px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-            style={{ backgroundColor: '#2d5a27' }}
-          >
-            Go to Dashboard →
-          </Link>
-        </div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#faf8f4' }}>
+        <div className="text-sm" style={{ color: '#a09a94' }}>Redirecting…</div>
       </div>
     )
   }
-
-  // ── Main form ──────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12" style={{ backgroundColor: '#faf8f4' }}>
@@ -124,65 +104,71 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <Link href="/" className="flex items-center gap-2.5 select-none">
+          <Link href="/" className="flex items-center gap-2.5 select-none" aria-label="CloseBooks home">
             <LedgerLogo />
           </Link>
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl border p-8" style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}>
+        <div className="rounded-2xl border p-6 sm:p-8" style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}>
 
-          <h1
-            className="text-2xl mb-1"
-            style={{
-              fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
-              color: '#1a1714',
-              letterSpacing: '-0.02em',
-            }}
-          >
+          <h1 className="text-2xl mb-1" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#1a1714', letterSpacing: '-0.02em' }}>
             Welcome back
           </h1>
           <p className="text-sm mb-6" style={{ color: '#a09a94' }}>
             Sign in to your CloseBooks account
           </p>
 
-          {/* Google */}
+          {/* Google OAuth */}
           <button
             type="button"
             onClick={handleGoogle}
             disabled={googleLoading || loading}
-            className="w-full flex items-center justify-center gap-3 rounded-xl border py-2.5 text-sm font-medium transition-colors disabled:opacity-50 mb-5"
+            className="w-full flex items-center justify-center gap-3 rounded-xl border py-3 text-sm font-medium transition-colors disabled:opacity-50 mb-5"
             style={{ borderColor: '#e0dbd4', color: '#1a1714', backgroundColor: '#faf8f4' }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f0ebe3' }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#faf8f4' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#f0ebe3' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#faf8f4' }}
           >
             <GoogleIcon />
             {googleLoading ? 'Redirecting…' : 'Continue with Google'}
           </button>
 
-          {/* Divider */}
           <div className="flex items-center gap-3 mb-5">
             <div className="flex-1 h-px" style={{ backgroundColor: '#e8e0d4' }} />
             <span className="text-xs" style={{ color: '#a09a94' }}>or sign in with email</span>
             <div className="flex-1 h-px" style={{ backgroundColor: '#e8e0d4' }} />
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Field
-              label="Email"
-              type="email"
-              value={email}
-              onChange={setEmail}
-              placeholder="you@yourfirm.com"
-              autoComplete="email"
-            />
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            {/* Email */}
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium" style={{ color: '#1a1714' }}>Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@yourfirm.com"
+                autoComplete="email"
+                autoCapitalize="none"
+                inputMode="email"
+                className={inputCls}
+                style={focusedField === 'email' ? { ...inputBase, ...inputFocus } : inputBase}
+                onFocus={() => setFocusedField('email')}
+                onBlur={() => setFocusedField(null)}
+              />
+            </div>
+
+            {/* Password with Forgot link */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
                 <label className="block text-sm font-medium" style={{ color: '#1a1714' }}>Password</label>
-                <Link href="/forgot-password" className="text-xs" style={{ color: '#b8734a' }}
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-medium transition-colors"
+                  style={{ color: '#b8734a' }}
                   onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline' }}
-                  onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none' }}>
+                  onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none' }}
+                >
                   Forgot password?
                 </Link>
               </div>
@@ -192,30 +178,28 @@ export default function LoginPage() {
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
                 autoComplete="current-password"
-                required
                 className={inputCls}
-                style={inputStyle}
-                onFocus={e => { Object.assign(e.currentTarget.style, inputFocusStyle) }}
-                onBlur={e => { Object.assign(e.currentTarget.style, inputStyle) }}
+                style={focusedField === 'password' ? { ...inputBase, ...inputFocus } : inputBase}
+                onFocus={() => setFocusedField('password')}
+                onBlur={() => setFocusedField(null)}
               />
             </div>
 
+            {/* Error message */}
             {error && (
-              <div
-                className="rounded-lg px-3 py-2.5 text-sm"
-                style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}
-              >
-                {error}
+              <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
+                <span className="font-semibold">⚠ </span>{error}
               </div>
             )}
 
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading || googleLoading}
-              className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-50"
+              className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-50"
               style={{ backgroundColor: '#2d5a27' }}
-              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#1e3d1a' }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#1e3d1a' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
             >
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
@@ -224,9 +208,8 @@ export default function LoginPage() {
           <p className="mt-5 text-sm text-center" style={{ color: '#6b6560' }}>
             Don&apos;t have an account?{' '}
             <Link href="/signup" className="font-medium" style={{ color: '#b8734a' }}
-              onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline' }}
-              onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none' }}
-            >
+              onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline' }}
+              onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none' }}>
               Sign up free
             </Link>
           </p>
@@ -234,10 +217,9 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-xs" style={{ color: '#a09a94' }}>
           <Link href="/demo" style={{ color: '#a09a94' }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = '#6b6560' }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = '#a09a94' }}
-          >
-            Try the demo first — no account needed →
+            onMouseEnter={e => { e.currentTarget.style.color = '#6b6560' }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#a09a94' }}>
+            Try the live demo first — no account needed →
           </Link>
         </p>
       </div>
@@ -245,9 +227,7 @@ export default function LoginPage() {
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Icons
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 function LedgerLogo() {
   return (
@@ -258,7 +238,7 @@ function LedgerLogo() {
         <rect x="13" y="4" width="5" height="13" rx="1.5" fill="#b8734a" opacity="0.15" />
         <path d="M14 7h3M14 10h3M14 13h2" stroke="#b8734a" strokeWidth="1.1" strokeLinecap="round" opacity="0.6" />
       </svg>
-      <span style={{ fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif', fontSize: '20px', letterSpacing: '-0.01em', lineHeight: 1 }}>
+      <span style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', fontSize: '20px', letterSpacing: '-0.01em', lineHeight: 1 }}>
         <span style={{ color: '#1a1714' }}>Close</span>
         <span style={{ color: '#b8734a' }}>Books</span>
       </span>

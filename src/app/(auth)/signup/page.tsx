@@ -115,7 +115,18 @@ export default function SignupPage() {
     setError(null)
 
     const supabase = createClient()
-    if (!supabase) { setError('Auth not configured.'); setLoading(false); return }
+    if (!supabase) {
+      // Demo mode — save firm info and go to dashboard
+      if (firmName) {
+        try {
+          const existing = JSON.parse(localStorage.getItem('closebooks_firm_settings') ?? '{}')
+          localStorage.setItem('closebooks_firm_settings', JSON.stringify({ ...existing, firmName, preparedBy: fullName }))
+        } catch { /* ignore */ }
+      }
+      router.push('/dashboard')
+      setLoading(false)
+      return
+    }
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -145,6 +156,7 @@ export default function SignupPage() {
     }
 
     router.push('/dashboard')
+    router.refresh()
     setLoading(false)
   }
 
@@ -153,7 +165,10 @@ export default function SignupPage() {
     setError(null)
 
     const supabase = createClient()
-    if (!supabase) { setError('Auth not configured.'); setGoogleLoading(false); return }
+    if (!supabase) {
+      router.push('/dashboard')
+      return
+    }
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -190,27 +205,23 @@ export default function SignupPage() {
     )
   }
 
-  // ── Unconfigured fallback ──────────────────────────────────────────────────
+  // ── Unconfigured: redirect to dashboard (demo mode) ──────────────────────
 
   if (!supabaseConfigured) {
+    // In demo mode (no Supabase), just create a local account and go to dashboard
+    if (typeof window !== 'undefined') {
+      // Save basic firm info to localStorage so dashboard can use it
+      if (firmName) {
+        try {
+          const existing = JSON.parse(localStorage.getItem('closebooks_firm_settings') ?? '{}')
+          localStorage.setItem('closebooks_firm_settings', JSON.stringify({ ...existing, firmName, preparedBy: fullName }))
+        } catch { /* ignore */ }
+      }
+      window.location.href = '/dashboard'
+    }
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#faf8f4' }}>
-        <div className="w-full max-w-md rounded-2xl border p-8 text-center" style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}>
-          <LedgerLogo />
-          <h1 className="mt-4 text-xl font-semibold" style={{ color: '#1a1714' }}>Auth not configured</h1>
-          <p className="mt-2 text-sm" style={{ color: '#6b6560' }}>
-            Set <code className="font-mono text-xs bg-stone-100 px-1 py-0.5 rounded">NEXT_PUBLIC_SUPABASE_URL</code> and{' '}
-            <code className="font-mono text-xs bg-stone-100 px-1 py-0.5 rounded">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in{' '}
-            <code className="font-mono text-xs bg-stone-100 px-1 py-0.5 rounded">.env.local</code> to enable sign-up.
-          </p>
-          <Link
-            href="/dashboard"
-            className="mt-6 inline-block px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-            style={{ backgroundColor: '#2d5a27' }}
-          >
-            Go to Dashboard →
-          </Link>
-        </div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#faf8f4' }}>
+        <div className="text-sm" style={{ color: '#a09a94' }}>Setting up your account…</div>
       </div>
     )
   }
