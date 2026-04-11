@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { getJobs } from '@/lib/storage'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,13 +77,30 @@ function StatusBadge({ status }: { status: Status }) {
 
 // ─── Import modal ─────────────────────────────────────────────────────────────
 
-function ImportModal({ onClose }: { onClose: () => void }) {
+function ImportModal({ onClose, onImported }: { onClose: () => void; onImported: (count: number) => void }) {
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
+  const [importedCount, setImportedCount] = useState(0)
 
-  function handleImport() {
+  async function handleImport() {
     setLoading(true)
-    setTimeout(() => { setLoading(false); setDone(true) }, 2000)
+    try {
+      const jobs = getJobs()
+      const allTx = jobs.flatMap(j => j.transactions)
+      const res = await fetch('/api/1099/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactions: allTx }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const count = data.vendors?.length ?? 0
+        setImportedCount(count)
+        onImported(count)
+      }
+    } catch { /* ignore */ }
+    setLoading(false)
+    setDone(true)
   }
 
   return (
@@ -107,7 +125,10 @@ function ImportModal({ onClose }: { onClose: () => void }) {
             <div style={{ fontSize: '40px', marginBottom: '12px' }}>✓</div>
             <div style={{ fontSize: '16px', fontWeight: 700, color: '#2d5a27', marginBottom: '4px' }}>Import Complete</div>
             <div style={{ fontSize: '14px', color: '#6b6560', marginBottom: '24px' }}>
-              Found 18 vendors eligible for 1099. 6 need TIN verification.
+              {importedCount > 0
+                ? `Found ${importedCount} vendors from your transaction history. Review below.`
+                : 'Scan complete. Upload more closes to identify additional 1099 vendors.'
+              }
             </div>
             <button
               onClick={onClose}
@@ -260,6 +281,7 @@ export default function Filing1099Page() {
   const [activeTab, setActiveTab] = useState<FilterTab>('all')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [showImport, setShowImport] = useState(false)
+  const [importedVendorCount, setImportedVendorCount] = useState(0)
   const [showFileModal, setShowFileModal] = useState(false)
   const [fileTargets, setFileTargets] = useState<Recipient[]>([])
   const [filedIds, setFiledIds] = useState<Set<string>>(new Set(['r15', 'r16', 'r17']))
@@ -658,7 +680,7 @@ export default function Filing1099Page() {
       </div>
 
       {/* Modals */}
-      {showImport && <ImportModal onClose={() => setShowImport(false)} />}
+      {showImport && <ImportModal onClose={() => setShowImport(false)} onImported={(count) => { setImportedVendorCount(count); setShowImport(false) }} />}
       {showFileModal && fileTargets.length > 0 && (
         <FileConfirmModal
           recipients={fileTargets}
