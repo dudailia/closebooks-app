@@ -13,7 +13,7 @@ interface StepInfo { id: DemoStep; label: string; desc: string }
 
 const STEPS: StepInfo[] = [
   { id: 'upload',       label: '1. Upload Statement',     desc: 'Drop a CSV bank statement' },
-  { id: 'categorizing', label: '2. AI Categorizes',       desc: 'Claude analyzes every transaction' },
+  { id: 'categorizing', label: '2. AI Categorizes',       desc: 'CloseBooks AI analyzes every transaction' },
   { id: 'review',       label: '3. Review & Approve',     desc: 'Approve, edit, or flag items' },
   { id: 'export',       label: '4. Export to QuickBooks', desc: 'Download QBO-ready file' },
 ]
@@ -236,7 +236,7 @@ function CategorizingStep({ onNext }: CategorizingStepProps) {
 
   const steps = [
     { id: 'parsing', label: 'Parsing CSV — 20 transactions found', done: phase !== 'parsing' },
-    { id: 'sending', label: 'Sending to Claude AI (Sonnet)', done: phase === 'ai' || phase === 'done' },
+    { id: 'sending', label: 'Sending to CloseBooks AI engine', done: phase === 'ai' || phase === 'done' },
     { id: 'ai',      label: `Categorizing against ${DEMO_COA.length} accounts…`, done: phase === 'done' },
   ]
 
@@ -250,7 +250,7 @@ function CategorizingStep({ onNext }: CategorizingStepProps) {
           Step 2 of 4
         </div>
         <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#1a1714' }}>
-          Claude AI is categorizing your transactions
+          CloseBooks AI is categorizing your transactions
         </h2>
         <p className="text-sm" style={{ color: '#6b6560' }}>
           Every transaction is matched to your chart of accounts with a confidence score
@@ -377,32 +377,37 @@ function ReviewStep({ transactions, onNext }: { transactions: Transaction[]; onN
       )}
 
       {/* Transaction list */}
-      <div className="space-y-1 max-h-72 overflow-y-auto rounded-xl border" style={{ borderColor: '#e8e0d4' }}>
+      <div className="space-y-1 max-h-64 sm:max-h-72 overflow-y-auto rounded-xl border" style={{ borderColor: '#e8e0d4' }}>
         {visible.map(tx => {
           const sc = STATUS_COLORS[tx.status]
           return (
-            <div key={tx.id} className="flex items-center gap-3 px-3 py-2.5 border-b last:border-b-0 group"
+            <div key={tx.id} className="flex items-start sm:items-center gap-2 sm:gap-3 px-3 py-2.5 border-b last:border-b-0"
               style={{ borderColor: '#f0ece4', backgroundColor: '#fff' }}>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium truncate" style={{ color: '#1a1714' }}>{tx.description}</p>
                 <p className="text-xs" style={{ color: '#a09a94' }}>
-                  {tx.suggested_category || tx.final_category || '—'} · {Math.round(tx.confidence * 100)}% confidence
+                  {tx.suggested_category || tx.final_category || '—'} · {Math.round(tx.confidence * 100)}%
                 </p>
               </div>
-              <span className="text-xs font-semibold tabular-nums shrink-0" style={{ color: tx.type === 'credit' ? '#059669' : '#1a1714' }}>
-                {tx.type === 'credit' ? '+' : '-'}${tx.amount.toFixed(2)}
-              </span>
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold shrink-0"
-                style={{ backgroundColor: sc.bg, color: sc.text }}>
-                <span className="inline-block w-1.5 h-1.5 rounded-full mr-1" style={{ backgroundColor: sc.dot }} />
-                {tx.status}
-              </span>
-              {tx.status === 'pending' && (
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => approve(tx.id)} className="px-2 py-0.5 rounded text-xs font-semibold text-white" style={{ backgroundColor: '#2d5a27' }}>✓</button>
-                  <button onClick={() => flag(tx.id)} className="px-2 py-0.5 rounded text-xs font-semibold text-white" style={{ backgroundColor: '#dc2626' }}>⚑</button>
-                </div>
-              )}
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <span className="text-xs font-semibold tabular-nums" style={{ color: tx.type === 'credit' ? '#059669' : '#1a1714' }}>
+                  {tx.type === 'credit' ? '+' : '-'}${tx.amount.toFixed(0)}
+                </span>
+                <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: sc.bg }}>
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: sc.dot }} />
+                </span>
+                {tx.status === 'pending' && (
+                  <div className="flex gap-1">
+                    <button onClick={() => approve(tx.id)}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold"
+                      style={{ backgroundColor: '#2d5a27', minHeight: 'auto' }}>✓</button>
+                    <button onClick={() => flag(tx.id)}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs"
+                      style={{ backgroundColor: '#dc2626', minHeight: 'auto' }}>⚑</button>
+                  </div>
+                )}
+              </div>
             </div>
           )
         })}
@@ -554,43 +559,43 @@ export default function DemoPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-5 pt-24 pb-16">
+      <main className="max-w-5xl mx-auto px-4 sm:px-5 pt-20 sm:pt-24 pb-16">
 
         {/* Page title */}
-        <div className="text-center mb-10">
-          <h1 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#1a1714', letterSpacing: '-0.02em' }}>
+        <div className="text-center mb-6 sm:mb-10">
+          <h1 className="text-2xl sm:text-3xl mb-2" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#1a1714', letterSpacing: '-0.02em' }}>
             Watch CloseBooks close books — live
           </h1>
           <p className="text-sm" style={{ color: '#6b6560' }}>
-            Real AI. Real transactions. No signup required. This is exactly what your firm will use.
+            Real AI. Real transactions. No signup required.
           </p>
         </div>
 
-        {/* Step progress */}
-        <div className="flex items-center justify-center gap-0 mb-10 overflow-x-auto pb-2">
+        {/* Step progress — compact on mobile */}
+        <div className="flex items-center justify-center mb-8 overflow-x-auto pb-1 -mx-1 px-1">
           {STEPS.map((s, i) => {
             const idx = STEPS.findIndex(x => x.id === step)
             const done = i < idx
             const active = s.id === step
             return (
-              <div key={s.id} className="flex items-center">
+              <div key={s.id} className="flex items-center shrink-0">
                 <button
                   onClick={() => done && goTo(s.id)}
-                  className="flex flex-col items-center px-3 py-1 rounded-lg transition-all"
-                  style={{ opacity: done || active ? 1 : 0.4, cursor: done ? 'pointer' : 'default' }}>
-                  <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+                  className="flex flex-col items-center px-1.5 sm:px-3 py-1 rounded-lg transition-all"
+                  style={{ opacity: done || active ? 1 : 0.4, cursor: done ? 'pointer' : 'default', minHeight: 'auto' }}>
+                  <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shrink-0"
                     style={{
                       backgroundColor: done ? '#2d5a27' : active ? '#1a1714' : '#e8e0d4',
                       color: done || active ? '#fff' : '#a09a94',
                     }}>
                     {done ? '✓' : i + 1}
                   </span>
-                  <span className="text-xs font-medium mt-1 whitespace-nowrap hidden sm:block" style={{ color: active ? '#1a1714' : '#a09a94' }}>
+                  <span className="text-xs font-medium mt-1 whitespace-nowrap hidden sm:block" style={{ color: active ? '#1a1714' : '#a09a94', fontSize: 11 }}>
                     {s.label}
                   </span>
                 </button>
                 {i < STEPS.length - 1 && (
-                  <div className="w-8 sm:w-16 h-0.5 mx-1 mb-4" style={{ backgroundColor: i < idx ? '#2d5a27' : '#e8e0d4' }} />
+                  <div className="w-6 sm:w-12 h-0.5 mx-0.5 sm:mx-1 mb-3 sm:mb-4 shrink-0" style={{ backgroundColor: i < idx ? '#2d5a27' : '#e8e0d4' }} />
                 )}
               </div>
             )
@@ -598,10 +603,10 @@ export default function DemoPage() {
         </div>
 
         {/* Two-column layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
 
           {/* Left: Interactive step */}
-          <div className="rounded-2xl border p-6 lg:p-8" style={{ borderColor: '#e8e0d4', backgroundColor: '#fff' }}>
+          <div className="rounded-2xl border p-4 sm:p-6 lg:p-8" style={{ borderColor: '#e8e0d4', backgroundColor: '#fff' }}>
             {step === 'upload' && (
               <UploadStep onNext={() => goTo('categorizing')} />
             )}
@@ -635,7 +640,7 @@ export default function DemoPage() {
               )}
               {step === 'categorizing' && (
                 <div className="space-y-2">
-                  <p className="text-sm" style={{ color: '#1a1714' }}><strong>Claude Sonnet</strong> reads every transaction description and maps it to the right account — with a confidence score.</p>
+                  <p className="text-sm" style={{ color: '#1a1714' }}><strong>CloseBooks AI</strong> reads every transaction description and maps it to the right account — with a confidence score.</p>
                   <p className="text-sm" style={{ color: '#6b6560' }}>Payroll, rent, SaaS subscriptions, client payments — recognized instantly.</p>
                   <ul className="text-xs space-y-1 mt-3" style={{ color: '#6b6560' }}>
                     <li>✓ Learns your firm&apos;s past corrections</li>

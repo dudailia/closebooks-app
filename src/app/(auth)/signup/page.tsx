@@ -218,7 +218,7 @@ export default function SignupPage() {
   // ── Main form ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ backgroundColor: '#faf8f4' }}>
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12" style={{ backgroundColor: '#faf8f4' }}>
       <div className="w-full max-w-md">
 
         {/* Logo */}
@@ -268,7 +268,7 @@ export default function SignupPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field
                 label="Full Name"
                 value={fullName}
@@ -296,7 +296,7 @@ export default function SignupPage() {
               minLength={8}
             />
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field
                 label="Firm Name"
                 value={firmName}

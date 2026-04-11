@@ -251,7 +251,7 @@ function CategorizeStep({
             <p className="font-semibold">Categorization failed</p>
             <p className="text-xs opacity-80">
               {error.includes('API') || error.includes('key') || error.includes('auth')
-                ? 'The AI service is unavailable. Check that ANTHROPIC_API_KEY is set.'
+                ? 'The AI service is temporarily unavailable. Please try again in a moment.'
                 : error.includes('rate') || error.includes('429')
                 ? 'Too many requests. Wait a moment and try again.'
                 : error.includes('timeout') || error.includes('network') || error.includes('fetch')
