@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { shouldAllowDashboardAccess } from '@/lib/middlewareSubscription'
 
 const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? ''
 const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -43,12 +44,24 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const isDashboard = pathname.startsWith('/dashboard')
+  const subscriptionExempt =
+    pathname === '/dashboard/subscription' || pathname.startsWith('/dashboard/subscription/')
 
   // Redirect unauthenticated users away from the dashboard
   if (isDashboard && !user) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('next', pathname)
     return NextResponse.redirect(loginUrl)
+  }
+
+  // Paid access: no active sub / trial → pricing (except subscription page & checkout success)
+  if (user?.email && isDashboard && !subscriptionExempt) {
+    const allowed = await shouldAllowDashboardAccess(request, user.email, user.id)
+    if (!allowed) {
+      const pricingUrl = new URL('/pricing', request.url)
+      pricingUrl.searchParams.set('required', '1')
+      return NextResponse.redirect(pricingUrl)
+    }
   }
 
   // Redirect authenticated users away from login/signup pages
