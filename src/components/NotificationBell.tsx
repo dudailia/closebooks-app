@@ -8,6 +8,7 @@ import {
   markAllRead,
   markRead,
   clearNotification,
+  clearAllNotifications,
   generateSmartNotifications,
   isRead,
   type AppNotification,
@@ -203,5 +204,5 @@ export default function NotificationBell() {
 }
 
 function clearAll() {
-  if (typeof window !== 'undefined') localStorage.removeItem('cb_notifications')
+  clearAllNotifications()
 }

@@ -1,51 +1,62 @@
 import type { CopilotRun, CopilotConfig } from '@/types'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { getSupabaseAndFirm } from '@/lib/syncSupabase'
+import { loadPayloadRows, upsertPayloadRow } from '@/lib/supabaseJsonTable'
 
-const RUNS_KEY   = 'closebooks_copilot_runs'
-const CONFIG_KEY = 'closebooks_copilot_config'
-const MAX_RUNS   = 50
+const MAX_RUNS = 50
 
 export const DEFAULT_CONFIG: CopilotConfig = {
   confidenceThreshold: 0.85,
-  maxAutoAmount:       5000,
-  autoFlagThreshold:   0.60,
+  maxAutoAmount: 5000,
+  autoFlagThreshold: 0.6,
 }
 
-// ─── Config ──────────────────────────────────────────────────────────────────
+let _config: CopilotConfig = { ...DEFAULT_CONFIG }
+let _runs: CopilotRun[] = []
+
+export async function hydrateCopilot(supabase: SupabaseClient, firmId: string): Promise<void> {
+  const { data } = await supabase.from('copilot_config').select('payload').eq('firm_id', firmId).maybeSingle()
+  _config = data?.payload ? { ...DEFAULT_CONFIG, ...(data.payload as CopilotConfig) } : { ...DEFAULT_CONFIG }
+  _runs = await loadPayloadRows<CopilotRun>(supabase, 'copilot_runs', firmId)
+}
+
+async function persistConfig(): Promise<void> {
+  const ctx = await getSupabaseAndFirm()
+  if (!ctx) return
+  await ctx.supabase.from('copilot_config').upsert(
+    { firm_id: ctx.firmId, payload: _config },
+    { onConflict: 'firm_id' }
+  )
+}
+
+async function persistRuns(): Promise<void> {
+  const ctx = await getSupabaseAndFirm()
+  if (!ctx) return
+  for (const r of _runs) {
+    await upsertPayloadRow(ctx.supabase, 'copilot_runs', ctx.firmId, r.id, r as unknown as Record<string, unknown>)
+  }
+}
 
 export function loadCopilotConfig(): CopilotConfig {
-  if (typeof window === 'undefined') return { ...DEFAULT_CONFIG }
-  try {
-    const raw = localStorage.getItem(CONFIG_KEY)
-    if (!raw) return { ...DEFAULT_CONFIG }
-    return { ...DEFAULT_CONFIG, ...JSON.parse(raw) }
-  } catch {
-    return { ...DEFAULT_CONFIG }
-  }
+  return { ..._config }
 }
 
 export function saveCopilotConfig(config: CopilotConfig): void {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(CONFIG_KEY, JSON.stringify(config))
+  _config = { ...config }
+  void persistConfig()
 }
 
-// ─── Runs ─────────────────────────────────────────────────────────────────────
-
 export function getCopilotRuns(): CopilotRun[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem(RUNS_KEY) ?? '[]') as CopilotRun[]
-  } catch {
-    return []
-  }
+  return _runs
 }
 
 export function saveCopilotRun(run: CopilotRun): void {
-  if (typeof window === 'undefined') return
-  const all = getCopilotRuns().filter((r) => r.id !== run.id)
-  all.unshift(run)
-  localStorage.setItem(RUNS_KEY, JSON.stringify(all.slice(0, MAX_RUNS)))
+  _runs = _runs.filter((r) => r.id !== run.id)
+  _runs.unshift(run)
+  _runs = _runs.slice(0, MAX_RUNS)
+  void persistRuns()
 }
 
 export function getRunsForJob(jobId: string): CopilotRun[] {
-  return getCopilotRuns().filter((r) => r.jobId === jobId)
+  return _runs.filter((r) => r.jobId === jobId)
 }

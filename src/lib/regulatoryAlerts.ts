@@ -1,6 +1,8 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { REGULATORY_ALERTS } from './regulatoryDatabase'
 import type { RegulatoryAlert, ClientAlertStatus } from '@/types/compliance'
 import type { ClientIndustry } from '@/types'
+import { getSupabaseAndFirm } from '@/lib/syncSupabase'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Alert matching
@@ -82,23 +84,37 @@ export function getAlertsForFirm(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// localStorage status tracking
+// Postgres status tracking (regulatory_alert_statuses)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const STATUS_KEY = 'cb_alert_statuses'
+let _statuses: ClientAlertStatus[] = []
 
-function loadStatuses(): ClientAlertStatus[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem(STATUS_KEY) ?? '[]') as ClientAlertStatus[]
-  } catch {
-    return []
+export async function hydrateRegulatoryStatuses(supabase: SupabaseClient, firmId: string): Promise<void> {
+  const { data } = await supabase.from('regulatory_alert_statuses').select('payload').eq('firm_id', firmId)
+  _statuses = (data ?? []).map((r) => (r as { payload: ClientAlertStatus }).payload)
+}
+
+async function saveStatuses(statuses: ClientAlertStatus[]): Promise<void> {
+  _statuses = statuses
+  const ctx = await getSupabaseAndFirm()
+  if (!ctx) return
+  await ctx.supabase.from('regulatory_alert_statuses').delete().eq('firm_id', ctx.firmId)
+  for (const s of statuses) {
+    await ctx.supabase.from('regulatory_alert_statuses').upsert(
+      {
+        firm_id: ctx.firmId,
+        alert_id: s.alertId,
+        client_name: s.clientName,
+        payload: s as unknown as Record<string, unknown>,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'firm_id,alert_id,client_name' }
+    )
   }
 }
 
-function saveStatuses(statuses: ClientAlertStatus[]): void {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(STATUS_KEY, JSON.stringify(statuses))
+function loadStatuses(): ClientAlertStatus[] {
+  return _statuses
 }
 
 export function getAlertStatus(alertId: string, clientName: string): ClientAlertStatus | null {
@@ -115,22 +131,14 @@ export function updateAlertStatus(
   clientName: string,
   update: Partial<ClientAlertStatus>
 ): void {
-  const all = loadStatuses()
-  const idx = all.findIndex(
-    (s) => s.alertId === alertId && s.clientName === clientName
-  )
-
+  const all = [...loadStatuses()]
+  const idx = all.findIndex((s) => s.alertId === alertId && s.clientName === clientName)
   if (idx >= 0) {
     all[idx] = { ...all[idx], ...update }
   } else {
-    all.push({
-      alertId,
-      clientName,
-      status: 'new',
-      ...update,
-    })
+    all.push({ alertId, clientName, status: 'new', ...update })
   }
-  saveStatuses(all)
+  void saveStatuses(all)
 }
 
 /**
@@ -171,7 +179,7 @@ export function getCriticalUnreviewedCount(): number {
  * Dismiss an alert for all clients by storing a firm-wide sentinel entry.
  */
 export function dismissAlertForAll(alertId: string): void {
-  const all = loadStatuses()
+  const all = [...loadStatuses()]
   const idx = all.findIndex(
     (s) => s.alertId === alertId && s.clientName === '__ALL__'
   )
@@ -186,7 +194,7 @@ export function dismissAlertForAll(alertId: string): void {
   } else {
     all.push(entry)
   }
-  saveStatuses(all)
+  void saveStatuses(all)
 }
 
 /**

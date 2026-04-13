@@ -12,7 +12,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // If Supabase is not configured, allow all routes through.
-  // The app functions in demo/localStorage mode without auth.
+  // The app can run without auth; API routes still enforce secrets where needed.
   if (!supabaseConfigured) {
     return NextResponse.next()
   }

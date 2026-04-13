@@ -170,24 +170,25 @@ export default function PortalPage() {
     setLoading(true)
     setError(null)
 
-    // Simulate async save (replace with real upload when backend is ready)
-    await new Promise((r) => setTimeout(r, 800))
-
-    // Persist to localStorage so the CPA dashboard can see it
     const uploadRecord = {
-      id:           `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       firmId,
       businessName: businessName.trim(),
       period,
-      notes:        notes.trim(),
-      fileNames:    files.map((f) => f.name),
-      uploadedAt:   new Date().toISOString(),
+      notes: notes.trim(),
+      fileNames: files.map((f) => f.name),
+      uploadedAt: new Date().toISOString(),
     }
 
     try {
-      const existing = JSON.parse(localStorage.getItem('portal_uploads') ?? '[]')
-      localStorage.setItem('portal_uploads', JSON.stringify([uploadRecord, ...existing]))
-    } catch { /* ignore */ }
+      await fetch('/api/portal/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firmSlug: firmId, payload: uploadRecord }),
+      })
+    } catch {
+      /* non-blocking */
+    }
 
     router.push(
       `/portal/${firmId}/success?business=${encodeURIComponent(businessName.trim())}&period=${period}&files=${files.length}`

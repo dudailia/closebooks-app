@@ -1,6 +1,6 @@
-// ---------------------------------------------------------------------------
-// Activity event system — stored in localStorage, read anywhere client-side
-// ---------------------------------------------------------------------------
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { getSupabaseAndFirm } from '@/lib/syncSupabase'
+import { loadPayloadRows, upsertPayloadRow } from '@/lib/supabaseJsonTable'
 
 export type ActivityEventType =
   | 'close_started'
@@ -15,35 +15,37 @@ export type ActivityEventType =
 export interface ActivityEvent {
   id: string
   type: ActivityEventType
-  /** Human-readable sentence shown in the feed */
   description: string
   clientName?: string
   jobId?: string
-  timestamp: string  // ISO
+  timestamp: string
 }
 
-const ACTIVITY_KEY = 'closebooks_activity'
-const MAX_EVENTS   = 200
+const MAX_EVENTS = 200
 
-// ---------------------------------------------------------------------------
-// Read / write
-// ---------------------------------------------------------------------------
+let _events: ActivityEvent[] = []
 
-export function getActivity(clientName?: string): ActivityEvent[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const all = JSON.parse(localStorage.getItem(ACTIVITY_KEY) ?? '[]') as ActivityEvent[]
-    if (!clientName) return all
-    const lower = clientName.toLowerCase()
-    return all.filter((e) => e.clientName?.toLowerCase() === lower)
-  } catch {
-    return []
+export async function hydrateActivity(supabase: SupabaseClient, firmId: string): Promise<void> {
+  const rows = await loadPayloadRows<ActivityEvent>(supabase, 'activity_events', firmId)
+  _events = rows.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, MAX_EVENTS)
+}
+
+async function persist(): Promise<void> {
+  const ctx = await getSupabaseAndFirm()
+  if (!ctx) return
+  await ctx.supabase.from('activity_events').delete().eq('firm_id', ctx.firmId)
+  for (const e of _events) {
+    await upsertPayloadRow(ctx.supabase, 'activity_events', ctx.firmId, e.id, e as unknown as Record<string, unknown>)
   }
 }
 
+export function getActivity(clientName?: string): ActivityEvent[] {
+  if (!clientName) return _events
+  const lower = clientName.toLowerCase()
+  return _events.filter((e) => e.clientName?.toLowerCase() === lower)
+}
+
 export function logActivity(event: Omit<ActivityEvent, 'id' | 'timestamp'>): void {
-  if (typeof window === 'undefined') return
-  const all = getActivity()
   const bytes = new Uint8Array(4)
   crypto.getRandomValues(bytes)
   const rand = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
@@ -52,28 +54,24 @@ export function logActivity(event: Omit<ActivityEvent, 'id' | 'timestamp'>): voi
     id: `act-${Date.now()}-${rand}`,
     timestamp: new Date().toISOString(),
   }
-  all.unshift(next)
-  localStorage.setItem(ACTIVITY_KEY, JSON.stringify(all.slice(0, MAX_EVENTS)))
+  _events.unshift(next)
+  _events = _events.slice(0, MAX_EVENTS)
+  void persist()
 }
 
 export function clearActivity(): void {
-  if (typeof window === 'undefined') return
-  localStorage.removeItem(ACTIVITY_KEY)
+  _events = []
+  void (async () => {
+    const ctx = await getSupabaseAndFirm()
+    if (ctx) await ctx.supabase.from('activity_events').delete().eq('firm_id', ctx.firmId)
+  })()
 }
-
-// ---------------------------------------------------------------------------
-// Relative timestamp helper
-// ---------------------------------------------------------------------------
 
 export function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
-  const s    = Math.floor(diff / 1000)
-  if (s < 60)   return 'just now'
-  const m = Math.floor(s / 60)
-  if (m < 60)   return `${m}m ago`
-  const h = Math.floor(m / 60)
-  if (h < 24)   return `${h}h ago`
-  const d = Math.floor(h / 24)
-  if (d < 7)    return `${d}d ago`
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const s = Math.floor(diff / 1000)
+  if (s < 60) return 'just now'
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`
+  return `${Math.floor(s / 86400)}d ago`
 }

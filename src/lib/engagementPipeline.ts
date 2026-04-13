@@ -1,15 +1,8 @@
-/**
- * Engagement letter / proposal pipeline (localStorage) — e-signature style stages.
- */
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { getSupabaseAndFirm } from '@/lib/syncSupabase'
+import { loadPayloadRows, upsertPayloadRow, deletePayloadRow } from '@/lib/supabaseJsonTable'
 
-const KEY = 'cb_engagement_pipeline'
-
-export type PipelineStage =
-  | 'draft'
-  | 'sent'
-  | 'viewed'
-  | 'signed'
-  | 'lost'
+export type PipelineStage = 'draft' | 'sent' | 'viewed' | 'signed' | 'lost'
 
 export interface PipelineEntry {
   id: string
@@ -20,45 +13,47 @@ export interface PipelineEntry {
   notes?: string
 }
 
-function load(): PipelineEntry[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem(KEY) ?? '[]') as PipelineEntry[]
-  } catch {
-    return []
+let _rows: PipelineEntry[] = []
+
+export async function hydratePipeline(supabase: SupabaseClient, firmId: string): Promise<void> {
+  _rows = await loadPayloadRows<PipelineEntry>(supabase, 'pipeline_entries', firmId)
+}
+
+async function persist(): Promise<void> {
+  const ctx = await getSupabaseAndFirm()
+  if (!ctx) return
+  for (const r of _rows) {
+    await upsertPayloadRow(ctx.supabase, 'pipeline_entries', ctx.firmId, r.id, r as unknown as Record<string, unknown>)
   }
 }
 
-function save(rows: PipelineEntry[]): void {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(KEY, JSON.stringify(rows))
-}
-
 export function listPipeline(): PipelineEntry[] {
-  return load().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  return [..._rows].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 }
 
 export function upsertPipeline(entry: Omit<PipelineEntry, 'updatedAt'> & { updatedAt?: string }): void {
-  const rows = load()
-  const idx = rows.findIndex((r) => r.id === entry.id)
   const row: PipelineEntry = {
     ...entry,
     updatedAt: entry.updatedAt ?? new Date().toISOString(),
   }
-  if (idx >= 0) rows[idx] = row
-  else rows.unshift(row)
-  save(rows)
+  const idx = _rows.findIndex((r) => r.id === entry.id)
+  if (idx >= 0) _rows[idx] = row
+  else _rows.unshift(row)
+  void persist()
 }
 
 export function deletePipeline(id: string): void {
-  save(load().filter((r) => r.id !== id))
+  _rows = _rows.filter((r) => r.id !== id)
+  void (async () => {
+    const ctx = await getSupabaseAndFirm()
+    if (ctx) await deletePayloadRow(ctx.supabase, 'pipeline_entries', ctx.firmId, id)
+  })()
 }
 
 export function seedFromEngagementLetters(
   letters: Array<{ id: string; clientName: string; status: string; monthlyFee: number }>
 ): void {
-  const existing = load()
-  const existingIds = new Set(existing.map((e) => e.id))
+  const existingIds = new Set(_rows.map((e) => e.id))
   for (const L of letters) {
     if (existingIds.has(L.id)) continue
     const stage: PipelineStage =

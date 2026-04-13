@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { getClient, getJobsForClient, saveClient } from '@/lib/storage'
+import { setUploadPrefillClient } from '@/lib/uploadPrefill'
 import ActivityFeed from '@/components/ActivityFeed'
 import { ClientInsightsPanel } from '@/components/InsightsPanel'
 import type { Client, ClientIndustry, AccountingSoftware, CategorizationJob } from '@/types'
@@ -329,8 +330,7 @@ export default function ClientDetailPage() {
 
   function handleNewClose() {
     if (!client) return
-    // Store prefill in sessionStorage for the upload page to pick up
-    sessionStorage.setItem('closebooks_prefill_client', client.business_name)
+    setUploadPrefillClient(client.business_name)
     router.push('/dashboard/upload')
   }
 

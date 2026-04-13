@@ -6,16 +6,9 @@ import { useState, useEffect } from 'react'
 import RegulatoryLetterModal from '@/components/RegulatoryLetterModal'
 import { getAlertById, loadAlertStatuses, saveAlertStatus } from '@/lib/regulatoryAlerts'
 import { loadFirmSettings } from '@/lib/firmSettings'
+import { getClients } from '@/lib/storage'
 import type { ClientAlertStatus } from '@/types/compliance'
 import type { Client } from '@/types'
-
-function getClientsFromStorage(): Client[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem('cb_clients')
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
 
 const SEVERITY_STYLES: Record<string, { bg: string; border: string; text: string }> = {
   critical:      { bg: '#fef2f2', border: '#fecaca', text: '#991b1b' },
@@ -34,10 +27,10 @@ export default function AlertDetailPage({ params }: { params: Promise<{ alertId:
   const [letterModal, setLetterModal] = useState<string | null>(null) // clientName
 
   useEffect(() => {
-    setClients(getClientsFromStorage())
+    setClients(getClients())
     setStatuses(loadAlertStatuses())
     const settings = loadFirmSettings()
-    if (settings?.firm_name) setFirmName(settings.firm_name)
+    if (settings?.firmName) setFirmName(settings.firmName)
   }, [])
 
   if (!alert) {

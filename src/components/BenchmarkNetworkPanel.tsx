@@ -6,6 +6,8 @@ import {
   getClientBenchmarks,
   getNetworkStats,
   submitBenchmarkContribution,
+  getBenchmarkOptIn,
+  setBenchmarkOptIn,
 } from '@/lib/benchmarkNetwork'
 import { NETWORK_BENCHMARKS } from '@/lib/benchmarkNetworkData'
 import SpendComparisonChart from './SpendComparisonChart'
@@ -17,8 +19,6 @@ const ALL_INDUSTRIES: ClientIndustry[] = [
   'E-commerce', 'Technology', 'Manufacturing', 'Real Estate', 'Nonprofit',
   'Legal Services', 'Transportation', 'Other',
 ]
-
-const OPT_IN_KEY = 'cb_network_opt_in'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -50,11 +50,8 @@ export default function BenchmarkNetworkPanel({ job, industry }: Props) {
 
   const networkStats = useMemo(() => getNetworkStats(), [])
 
-  // Load opt-in state from localStorage
   useEffect(() => {
-    try {
-      setOptedIn(localStorage.getItem(OPT_IN_KEY) === 'true')
-    } catch { /* ignore */ }
+    setOptedIn(getBenchmarkOptIn())
     setLoading(false)
   }, [])
 
@@ -69,9 +66,7 @@ export default function BenchmarkNetworkPanel({ job, industry }: Props) {
 
   function handleOptIn(checked: boolean) {
     setOptedIn(checked)
-    try {
-      localStorage.setItem(OPT_IN_KEY, String(checked))
-    } catch { /* ignore */ }
+    void setBenchmarkOptIn(checked)
 
     if (checked && !contributed) {
       submitBenchmarkContribution(job, selectedIndustry)

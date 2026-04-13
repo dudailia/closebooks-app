@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { CategorizationJob } from '@/types'
+import { getJobs } from '@/lib/storage'
 import {
   calculateMonthlyBurn,
   calculateCashRunway,
@@ -89,16 +90,12 @@ export default function RadarReportPage() {
     try {
       setIsLoading(true)
 
-      // Load real jobs from localStorage
       let rows: ClientRow[] = []
 
       if (typeof window !== 'undefined') {
         try {
-          const raw = localStorage.getItem('closebooks_jobs')
-          if (raw) {
-            const jobs = JSON.parse(raw) as CategorizationJob[]
-
-            // Deduplicate by client_name
+          const jobs = getJobs()
+          if (jobs.length > 0) {
             const seen = new Set<string>()
             for (const job of jobs) {
               if (seen.has(job.client_name)) continue

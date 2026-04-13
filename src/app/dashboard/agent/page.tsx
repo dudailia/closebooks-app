@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getJobs, getClients } from '@/lib/storage'
+import { getAgentPrefs, saveAgentPrefs } from '@/lib/agentPrefsStore'
 import type { CategorizationJob, Client } from '@/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -21,24 +22,10 @@ interface AgentClient {
   jobId?: string
 }
 
-// ─── Storage helpers ──────────────────────────────────────────────────────────
-
-const AGENT_PREFS_KEY = 'cb_agent_prefs'
-
-function loadAgentPrefs(): Record<string, { enabled: boolean; lastRun?: string }> {
-  if (typeof window === 'undefined') return {}
-  try { return JSON.parse(localStorage.getItem(AGENT_PREFS_KEY) ?? '{}') } catch { return {} }
-}
-
-function saveAgentPrefs(prefs: Record<string, { enabled: boolean; lastRun?: string }>) {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(AGENT_PREFS_KEY, JSON.stringify(prefs))
-}
-
 // ─── Build agent clients from real storage ────────────────────────────────────
 
 function buildAgentClients(jobs: CategorizationJob[], clients: Client[]): AgentClient[] {
-  const prefs = loadAgentPrefs()
+  const prefs = getAgentPrefs()
 
   // Dedupe by client name — take the most recent job per client
   const byClient = new Map<string, CategorizationJob>()

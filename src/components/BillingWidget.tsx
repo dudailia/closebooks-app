@@ -4,24 +4,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { CategorizationJob } from '@/types'
 import type { Invoice } from '@/types/billing'
-
-function getJobsFromStorage(): CategorizationJob[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem('closebooks_jobs') ?? '[]') as CategorizationJob[]
-  } catch {
-    return []
-  }
-}
-
-function getInvoicesFromStorage(): Invoice[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem('cb_invoices') ?? '[]') as Invoice[]
-  } catch {
-    return []
-  }
-}
+import { getJobs } from '@/lib/storage'
+import { getInvoices } from '@/lib/billingStorage'
 
 function fmtMoney(n: number) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
@@ -33,8 +17,8 @@ export default function BillingWidget() {
   const [overdueCount, setOverdueCount] = useState(0)
 
   useEffect(() => {
-    const jobs = getJobsFromStorage()
-    const invoices = getInvoicesFromStorage()
+    const jobs = getJobs()
+    const invoices = getInvoices()
     const billedJobIds = new Set(invoices.map((inv) => inv.jobId).filter(Boolean) as string[])
 
     const unbilled = jobs.filter(

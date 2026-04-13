@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { SkeletonBlock, SkeletonTable } from '@/components/Skeleton'
+import { getJobs } from '@/lib/storage'
+import { getTeamMembers, saveTeamMembers } from '@/lib/teamStore'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -23,9 +25,6 @@ interface TeamMember {
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
-
-const STORAGE_KEY = 'cb_team_members'
-const JOBS_KEY    = 'cb_jobs'
 
 const ROLE_COLORS: Record<Role, string> = {
   Owner:    '#2d5a27',
@@ -88,42 +87,17 @@ const ROLE_PERMISSIONS: { role: Role; perms: string[] }[] = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 function loadMembers(): TeamMember[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw) as TeamMember[]
-    // First load — seed with demo member
-    const seeded = [DEMO_MEMBER]
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded))
-    return seeded
-  } catch {
-    return []
+  let m = getTeamMembers() as TeamMember[]
+  if (m.length === 0) {
+    m = [DEMO_MEMBER]
+    saveTeamMembers(m)
   }
-}
-
-function saveMembers(members: TeamMember[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(members))
-  } catch { /* ignore */ }
+  return m
 }
 
 function loadClientNames(): string[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(JOBS_KEY)
-    if (!raw) return []
-    const jobs = JSON.parse(raw) as { clientName?: string; client?: string }[]
-    const names = Array.from(
-      new Set(
-        jobs
-          .map((j) => j.clientName || j.client || '')
-          .filter(Boolean)
-      )
-    )
-    return names
-  } catch {
-    return []
-  }
+  const jobs = getJobs()
+  return Array.from(new Set(jobs.map((j) => j.client_name).filter(Boolean)))
 }
 
 function makeInitials(name: string): string {
@@ -590,13 +564,13 @@ export default function TeamPage() {
   function handleAdd(member: TeamMember) {
     const updated = [...members, member]
     setMembers(updated)
-    saveMembers(updated)
+    saveTeamMembers(updated)
   }
 
   function handleRemove(id: string) {
     const updated = members.filter((m) => m.id !== id)
     setMembers(updated)
-    saveMembers(updated)
+    saveTeamMembers(updated)
   }
 
   if (!mounted) return (

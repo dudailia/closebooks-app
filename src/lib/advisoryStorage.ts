@@ -1,52 +1,56 @@
 import type { AdvisoryMemo } from '@/types/advisory'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { getSupabaseAndFirm } from '@/lib/syncSupabase'
+import { loadPayloadRows, upsertPayloadRow, deletePayloadRow } from '@/lib/supabaseJsonTable'
 
-const KEY = 'cb_advisory_memos'
+let _memos: AdvisoryMemo[] = []
 
-function getAll(): AdvisoryMemo[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem(KEY) ?? '[]') as AdvisoryMemo[]
-  } catch {
-    return []
+export async function hydrateAdvisory(supabase: SupabaseClient, firmId: string): Promise<void> {
+  _memos = await loadPayloadRows<AdvisoryMemo>(supabase, 'advisory_memos', firmId)
+}
+
+async function persist(): Promise<void> {
+  const ctx = await getSupabaseAndFirm()
+  if (!ctx) return
+  for (const m of _memos) {
+    await upsertPayloadRow(ctx.supabase, 'advisory_memos', ctx.firmId, m.id, m as unknown as Record<string, unknown>)
   }
 }
 
-function setAll(memos: AdvisoryMemo[]): void {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(KEY, JSON.stringify(memos))
-}
-
 export function saveAdvisoryMemo(memo: AdvisoryMemo): void {
-  const all = getAll().filter((m) => m.id !== memo.id)
-  all.unshift(memo)
-  setAll(all)
+  _memos = _memos.filter((m) => m.id !== memo.id)
+  _memos.unshift(memo)
+  void persist()
 }
 
 export function getAdvisoryMemos(): AdvisoryMemo[] {
-  return getAll()
+  return _memos
 }
 
 export function getAdvisoryMemosForClient(clientName: string): AdvisoryMemo[] {
   const lower = clientName.toLowerCase()
-  return getAll().filter((m) => m.clientName.toLowerCase() === lower)
+  return _memos.filter((m) => m.clientName.toLowerCase() === lower)
 }
 
 export function getAdvisoryMemo(id: string): AdvisoryMemo | null {
-  return getAll().find((m) => m.id === id) ?? null
+  return _memos.find((m) => m.id === id) ?? null
 }
 
 export function updateAdvisoryMemoStatus(id: string, status: AdvisoryMemo['status']): void {
-  const all = getAll()
-  const idx = all.findIndex((m) => m.id === id)
+  const idx = _memos.findIndex((m) => m.id === id)
   if (idx < 0) return
-  all[idx] = {
-    ...all[idx],
+  _memos[idx] = {
+    ..._memos[idx],
     status,
     ...(status === 'sent' ? { sentAt: new Date().toISOString() } : {}),
   }
-  setAll(all)
+  void persist()
 }
 
 export function deleteAdvisoryMemo(id: string): void {
-  setAll(getAll().filter((m) => m.id !== id))
+  _memos = _memos.filter((m) => m.id !== id)
+  void (async () => {
+    const ctx = await getSupabaseAndFirm()
+    if (ctx) await deletePayloadRow(ctx.supabase, 'advisory_memos', ctx.firmId, id)
+  })()
 }

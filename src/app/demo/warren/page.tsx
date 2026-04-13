@@ -214,11 +214,12 @@ function MiniNav() {
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
 
+let warrenDemoNotified = false
+
 export default function WarrenDemoPage() {
   useEffect(() => {
-    // Fire once per browser session so refreshes don't spam
-    if (sessionStorage.getItem('warren_notified')) return
-    sessionStorage.setItem('warren_notified', '1')
+    if (warrenDemoNotified) return
+    warrenDemoNotified = true
     notify('Warren viewed his demo page', {
       page: '/demo/warren',
       time: new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }),

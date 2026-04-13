@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { loadFirmSettings } from '@/lib/firmSettings'
+import { getReferralStats } from '@/lib/referralStore'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -17,14 +18,6 @@ function toSlug(name: string): string {
 }
 
 const BASE_URL = 'https://closebooks-app.vercel.app'
-
-function getReferralStats(): { clicks: number; signups: number } {
-  if (typeof window === 'undefined') return { clicks: 0, signups: 0 }
-  try {
-    const raw = localStorage.getItem('cb_referral_stats')
-    return raw ? JSON.parse(raw) : { clicks: 0, signups: 0 }
-  } catch { return { clicks: 0, signups: 0 } }
-}
 
 // ---------------------------------------------------------------------------
 // Copy button

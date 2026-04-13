@@ -1,80 +1,58 @@
+/**
+ * Jobs & clients — backed by in-memory cache + Supabase (see lib/db.ts, lib/hydrateFirmData.ts).
+ * No localStorage.
+ */
+
+import {
+  memoryGetJobs,
+  memoryGetJob,
+  memorySaveJob,
+  memoryDeleteJob,
+  memoryGetClients,
+  memoryGetClient,
+  memorySaveClient,
+  memoryDeleteClient,
+  memoryGetJobsForClient,
+  memoryGetPendingReviewCount,
+} from '@/lib/memoryData'
 import type { CategorizationJob, Client } from '@/types'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Jobs
-// ─────────────────────────────────────────────────────────────────────────────
-
-const JOBS_KEY = 'closebooks_jobs'
-
 export function getJobs(): CategorizationJob[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem(JOBS_KEY) ?? '[]') as CategorizationJob[]
-  } catch {
-    return []
-  }
+  return memoryGetJobs()
 }
 
 export function getJob(id: string): CategorizationJob | null {
-  return getJobs().find((j) => j.id === id) ?? null
+  return memoryGetJob(id)
 }
 
 export function saveJob(job: CategorizationJob): void {
-  if (typeof window === 'undefined') return
-  const jobs = getJobs()
-  const idx = jobs.findIndex((j) => j.id === job.id)
-  if (idx >= 0) jobs[idx] = job
-  else jobs.unshift(job)
-  localStorage.setItem(JOBS_KEY, JSON.stringify(jobs))
+  memorySaveJob(job)
 }
 
 export function deleteJob(id: string): void {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(JOBS_KEY, JSON.stringify(getJobs().filter((j) => j.id !== id)))
+  memoryDeleteJob(id)
 }
 
-/** All jobs whose client_name matches (case-insensitive). */
 export function getJobsForClient(businessName: string): CategorizationJob[] {
-  const lower = businessName.toLowerCase()
-  return getJobs().filter((j) => j.client_name.toLowerCase() === lower)
+  return memoryGetJobsForClient(businessName)
 }
 
-/** Total pending (unreviewed) transactions across all in-review jobs. */
 export function getPendingReviewCount(): number {
-  return getJobs()
-    .filter((j) => j.status === 'review')
-    .reduce((sum, j) => sum + j.transactions.filter((t) => t.status === 'pending').length, 0)
+  return memoryGetPendingReviewCount()
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Clients
-// ─────────────────────────────────────────────────────────────────────────────
-
-const CLIENTS_KEY = 'closebooks_clients'
 
 export function getClients(): Client[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem(CLIENTS_KEY) ?? '[]') as Client[]
-  } catch {
-    return []
-  }
+  return memoryGetClients()
 }
 
 export function getClient(id: string): Client | null {
-  return getClients().find((c) => c.id === id) ?? null
+  return memoryGetClient(id)
 }
 
 export function saveClient(client: Client): void {
-  if (typeof window === 'undefined') return
-  const clients = getClients()
-  const idx = clients.findIndex((c) => c.id === client.id)
-  if (idx >= 0) clients[idx] = client
-  else clients.unshift(client)
-  localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients))
+  memorySaveClient(client)
 }
 
 export function deleteClient(id: string): void {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(CLIENTS_KEY, JSON.stringify(getClients().filter((c) => c.id !== id)))
+  memoryDeleteClient(id)
 }

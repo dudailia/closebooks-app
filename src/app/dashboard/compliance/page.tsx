@@ -6,16 +6,9 @@ import ComplianceAlertCard from '@/components/ComplianceAlertCard'
 import RegulatoryLetterModal from '@/components/RegulatoryLetterModal'
 import { getAllAlerts, loadAlertStatuses, saveAlertStatus } from '@/lib/regulatoryAlerts'
 import { loadFirmSettings } from '@/lib/firmSettings'
+import { getClients } from '@/lib/storage'
 import type { RegulatoryAlert, ClientAlertStatus } from '@/types/compliance'
 import type { Client } from '@/types'
-
-function getClientsFromStorage(): Client[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem('cb_clients')
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
 
 type FilterSeverity = 'all' | 'critical' | 'important' | 'informational'
 type FilterSource = 'all' | 'IRS' | 'DOL' | 'State' | 'Industry' | 'SEC' | 'CFPB'
@@ -34,9 +27,9 @@ export default function CompliancePage() {
 
   useEffect(() => {
     setStatuses(loadAlertStatuses())
-    setClients(getClientsFromStorage())
+    setClients(getClients())
     const settings = loadFirmSettings()
-    if (settings?.firm_name) setFirmName(settings.firm_name)
+    if (settings?.firmName) setFirmName(settings.firmName)
     setMounted(true)
   }, [])
 

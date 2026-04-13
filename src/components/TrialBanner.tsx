@@ -2,17 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getTrialStatus, FREE_CLOSES } from '@/lib/freeTrial'
+import { getTrialStatus, FREE_CLOSES, TRIAL_EVENT } from '@/lib/freeTrial'
 
 export default function TrialBanner() {
   const [status, setStatus] = useState<ReturnType<typeof getTrialStatus> | null>(null)
 
   useEffect(() => {
     setStatus(getTrialStatus())
-    // Re-check when localStorage changes (e.g. after a close is recorded)
     const handler = () => setStatus(getTrialStatus())
-    window.addEventListener('storage', handler)
-    return () => window.removeEventListener('storage', handler)
+    window.addEventListener(TRIAL_EVENT, handler)
+    return () => window.removeEventListener(TRIAL_EVENT, handler)
   }, [])
 
   if (!status) return null

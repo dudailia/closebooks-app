@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient, supabaseConfigured } from '@/lib/supabase/client'
 import { dbEnsureFirm } from '@/lib/db'
+import { loadFirmSettings, saveFirmSettings } from '@/lib/firmSettings'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared input components
@@ -118,10 +119,7 @@ export default function SignupPage() {
     if (!supabase) {
       // Demo mode — save firm info and go to dashboard
       if (firmName) {
-        try {
-          const existing = JSON.parse(localStorage.getItem('closebooks_firm_settings') ?? '{}')
-          localStorage.setItem('closebooks_firm_settings', JSON.stringify({ ...existing, firmName, preparedBy: fullName }))
-        } catch { /* ignore */ }
+        void saveFirmSettings({ ...loadFirmSettings(), firmName, preparedBy: fullName })
       }
       router.push('/dashboard')
       setLoading(false)
@@ -212,10 +210,7 @@ export default function SignupPage() {
     if (typeof window !== 'undefined') {
       // Save basic firm info to localStorage so dashboard can use it
       if (firmName) {
-        try {
-          const existing = JSON.parse(localStorage.getItem('closebooks_firm_settings') ?? '{}')
-          localStorage.setItem('closebooks_firm_settings', JSON.stringify({ ...existing, firmName, preparedBy: fullName }))
-        } catch { /* ignore */ }
+        void saveFirmSettings({ ...loadFirmSettings(), firmName, preparedBy: fullName })
       }
       window.location.href = '/dashboard'
     }

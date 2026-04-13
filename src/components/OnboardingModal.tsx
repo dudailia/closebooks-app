@@ -3,17 +3,15 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-const STORAGE_KEY = 'closebooks_onboarding_done'
+import { loadFirmSettings, saveFirmSettings } from '@/lib/firmSettings'
 
 export function markOnboardingDone() {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, '1')
-  }
+  void saveFirmSettings({ ...loadFirmSettings(), onboardingComplete: true })
 }
 
 export function needsOnboarding(): boolean {
   if (typeof window === 'undefined') return false
-  return !localStorage.getItem(STORAGE_KEY)
+  return !loadFirmSettings().onboardingComplete
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

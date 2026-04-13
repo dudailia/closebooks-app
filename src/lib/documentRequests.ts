@@ -1,10 +1,10 @@
 /**
- * Document request checklists.
- * Firms create checklists of required documents per client.
- * Clients complete them via a shareable link.
+ * Document request checklists — Supabase-backed (document_requests JSON rows).
  */
 
-const KEY = 'cb_doc_requests'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { getSupabaseAndFirm } from '@/lib/syncSupabase'
+import { loadPayloadRows, upsertPayloadRow, deletePayloadRow } from '@/lib/supabaseJsonTable'
 
 export type RequestStatus = 'pending' | 'submitted' | 'approved' | 'rejected'
 
@@ -30,34 +30,38 @@ export interface DocRequest {
   status: 'open' | 'complete' | 'overdue'
 }
 
-function load(): DocRequest[] {
-  if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem(KEY) ?? '[]') } catch { return [] }
+let _requests: DocRequest[] = []
+
+export async function hydrateDocumentRequests(supabase: SupabaseClient, firmId: string): Promise<void> {
+  _requests = await loadPayloadRows<DocRequest>(supabase, 'document_requests', firmId)
 }
 
-function save(requests: DocRequest[]) {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(KEY, JSON.stringify(requests))
+async function persist(): Promise<void> {
+  const ctx = await getSupabaseAndFirm()
+  if (!ctx) return
+  for (const r of _requests) {
+    await upsertPayloadRow(ctx.supabase, 'document_requests', ctx.firmId, r.id, r as unknown as Record<string, unknown>)
+  }
 }
 
 function makeToken(): string {
   const bytes = new Uint8Array(8)
   crypto.getRandomValues(bytes)
-  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
 }
 
 function makeId(): string {
   const bytes = new Uint8Array(4)
   crypto.getRandomValues(bytes)
-  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
 }
 
 export function getDocRequests(): DocRequest[] {
-  return load()
+  return _requests
 }
 
 export function getDocRequestsForClient(clientName: string): DocRequest[] {
-  return load().filter(r => r.clientName === clientName)
+  return _requests.filter((r) => r.clientName === clientName)
 }
 
 export function createDocRequest(
@@ -71,33 +75,39 @@ export function createDocRequest(
     clientName,
     title,
     dueDate,
-    items: items.map(item => ({ ...item, id: makeId(), status: 'pending' })),
+    items: items.map((item) => ({ ...item, id: makeId(), status: 'pending' as RequestStatus })),
     createdAt: new Date().toISOString(),
     shareToken: makeToken(),
     status: 'open',
   }
-  const requests = load()
-  requests.unshift(request)
-  save(requests)
+  _requests.unshift(request)
+  void persist()
   return request
 }
 
-export function updateItemStatus(requestId: string, itemId: string, status: RequestStatus) {
-  const requests = load()
-  const req = requests.find(r => r.id === requestId)
+export function updateItemStatus(requestId: string, itemId: string, status: RequestStatus): void {
+  const req = _requests.find((r) => r.id === requestId)
   if (!req) return
-  const item = req.items.find(i => i.id === itemId)
+  const item = req.items.find((i) => i.id === itemId)
   if (!item) return
   item.status = status
   if (status === 'submitted') item.submittedAt = new Date().toISOString()
-  // Check if all required items are done
-  const allDone = req.items.filter(i => i.required).every(i => i.status === 'approved' || i.status === 'submitted')
-  if (allDone) { req.status = 'complete'; req.completedAt = new Date().toISOString() }
-  save(requests)
+  const allDone = req.items
+    .filter((i) => i.required)
+    .every((i) => i.status === 'approved' || i.status === 'submitted')
+  if (allDone) {
+    req.status = 'complete'
+    req.completedAt = new Date().toISOString()
+  }
+  void persist()
 }
 
-export function deleteDocRequest(id: string) {
-  save(load().filter(r => r.id !== id))
+export function deleteDocRequest(id: string): void {
+  _requests = _requests.filter((r) => r.id !== id)
+  void (async () => {
+    const ctx = await getSupabaseAndFirm()
+    if (ctx) await deletePayloadRow(ctx.supabase, 'document_requests', ctx.firmId, id)
+  })()
 }
 
 export const STANDARD_TEMPLATES = {

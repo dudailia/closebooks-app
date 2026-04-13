@@ -2,29 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { SkeletonBlock, SkeletonCard } from '@/components/Skeleton'
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
-type DeadlineType = 'monthly-close' | 'tax-filing' | 'payroll' | 'invoice' | 'custom'
-type DeadlineStatus = 'upcoming' | 'due-soon' | 'overdue' | 'completed'
-
-interface Deadline {
-  id: string
-  clientName: string
-  type: DeadlineType
-  dueDate: string // YYYY-MM-DD
-  status: DeadlineStatus
-  notes?: string
-}
+import {
+  loadDeadlines,
+  saveDeadlines,
+  loadClientNamesFromJobs,
+  type Deadline,
+  type DeadlineType,
+  type DeadlineStatus,
+} from '@/lib/calendarStore'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
-
-const STORAGE_KEY = 'cb_deadlines'
-const JOBS_KEY = 'closebooks_jobs'
 
 const TYPE_META: Record<DeadlineType, { label: string; color: string; bg: string }> = {
   'monthly-close': { label: 'Monthly Close', color: '#2d5a27', bg: '#e8f0e6' },
@@ -67,25 +56,8 @@ function calcStatus(dueDate: string, current: DeadlineStatus): DeadlineStatus {
   return 'upcoming'
 }
 
-function loadDeadlines(): Deadline[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]') as Deadline[]
-  } catch { return [] }
-}
-
-function saveDeadlines(deadlines: Deadline[]): void {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(deadlines))
-}
-
 function loadClientNames(): string[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const jobs = JSON.parse(localStorage.getItem(JOBS_KEY) ?? '[]') as { client_name?: string }[]
-    const names = Array.from(new Set(jobs.map((j) => j.client_name).filter(Boolean))) as string[]
-    return names
-  } catch { return [] }
+  return loadClientNamesFromJobs()
 }
 
 function uid(): string {
