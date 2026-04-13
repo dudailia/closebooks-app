@@ -1,23 +1,22 @@
 /**
- * db.ts — Supabase-first data access layer with localStorage fallback.
+ * db.ts — Supabase-first data access layer with in-memory fallback.
  *
  * All functions try Supabase first. On any error, missing config, or missing
- * session they fall back to localStorage transparently. The app never crashes
- * because of database issues.
+ * session they fall back to the client memory cache (populated after hydrate).
  *
  * Client-side only — do not import in Server Components or API routes.
  */
 
 import { createClient } from '@/lib/supabase/client'
 import {
-  getJobs as lsGetJobs,
-  getJob as lsGetJob,
-  saveJob as lsSaveJob,
-  deleteJob as lsDeleteJob,
-  getClients as lsGetClients,
-  saveClient as lsSaveClient,
-  deleteClient as lsDeleteClient,
-} from '@/lib/storage'
+  memoryGetJobs as lsGetJobs,
+  memoryGetJob as lsGetJob,
+  memorySaveJob as lsSaveJob,
+  memoryDeleteJob as lsDeleteJob,
+  memoryGetClients as lsGetClients,
+  memorySaveClient as lsSaveClient,
+  memoryDeleteClient as lsDeleteClient,
+} from '@/lib/memoryData'
 import type { CategorizationJob, Client, Transaction } from '@/types'
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
@@ -78,7 +77,7 @@ function mapJobRow(row: Record<string, unknown>, transactions: Transaction[]): C
 /**
  * Load all jobs for the current firm.
  * Returns jobs WITHOUT embedded transactions (for performance).
- * Falls back to localStorage (which includes transactions).
+ * Falls back to memory (includes transactions after hydration).
  */
 export async function dbGetJobs(): Promise<CategorizationJob[]> {
   try {
@@ -104,7 +103,7 @@ export async function dbGetJobs(): Promise<CategorizationJob[]> {
 
 /**
  * Load a single job with all its transactions.
- * Falls back to localStorage.
+ * Falls back to memory.
  */
 export async function dbGetJob(id: string): Promise<CategorizationJob | null> {
   try {
@@ -130,11 +129,9 @@ export async function dbGetJob(id: string): Promise<CategorizationJob | null> {
 
 /**
  * Save a job and all its transactions.
- * Always writes to localStorage first for instant fallback.
- * Then attempts Supabase upsert in the background.
+ * Writes to memory first, then Supabase.
  */
 export async function dbSaveJob(job: CategorizationJob): Promise<void> {
-  // localStorage first — guarantees data is always available
   lsSaveJob(job)
 
   try {
@@ -187,7 +184,7 @@ export async function dbSaveJob(job: CategorizationJob): Promise<void> {
       await supabase.from('transactions').upsert(txRows.slice(i, i + 500), { onConflict: 'id' })
     }
   } catch {
-    // localStorage already has the data — silently ignore Supabase errors
+    // memory already has the data — silently ignore Supabase errors
   }
 }
 

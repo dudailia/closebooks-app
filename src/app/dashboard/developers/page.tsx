@@ -6,8 +6,11 @@ import { useEffect, useState, useCallback } from 'react'
 // Constants
 // ---------------------------------------------------------------------------
 
-const API_KEY_STORAGE_KEY = 'cb_api_key'
-const WEBHOOK_URL_STORAGE_KEY = 'cb_webhook_url'
+import {
+  getDeveloperApiKey,
+  getDeveloperWebhook,
+  saveDeveloperSettings,
+} from '@/lib/developerStore'
 
 function generateApiKey(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -280,18 +283,14 @@ export default function DevelopersPage() {
   const [mainTab, setMainTab] = useState<MainTab>('endpoints')
   const [langTab, setLangTab] = useState<LangTab>('javascript')
 
-  // Load from localStorage on mount
   useEffect(() => {
-    let key = localStorage.getItem(API_KEY_STORAGE_KEY)
+    let key = getDeveloperApiKey()
     if (!key) {
       key = generateApiKey()
-      localStorage.setItem(API_KEY_STORAGE_KEY, key)
+      void saveDeveloperSettings(key, getDeveloperWebhook())
     }
     setApiKey(key)
-
-    const savedWebhook = localStorage.getItem(WEBHOOK_URL_STORAGE_KEY) ?? ''
-    setWebhookUrl(savedWebhook)
-
+    setWebhookUrl(getDeveloperWebhook())
     setMounted(true)
   }, [])
 
@@ -308,14 +307,14 @@ export default function DevelopersPage() {
       return
     }
     const newKey = generateApiKey()
-    localStorage.setItem(API_KEY_STORAGE_KEY, newKey)
+    void saveDeveloperSettings(newKey, webhookUrl)
     setApiKey(newKey)
     setKeyVisible(false)
     setConfirmRegen(false)
   }
 
   function handleSaveWebhook() {
-    localStorage.setItem(WEBHOOK_URL_STORAGE_KEY, webhookUrl)
+    void saveDeveloperSettings(apiKey, webhookUrl)
     setWebhookSaved(true)
     setTimeout(() => setWebhookSaved(false), 2000)
   }

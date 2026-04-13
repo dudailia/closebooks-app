@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { getAllSessions, getClientTimeSummary, type TimeSession } from '@/lib/timeTracking'
+import { getHourlyRate, setHourlyRate as persistHourlyRate } from '@/lib/firmUiPrefs'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -28,14 +29,14 @@ export default function TimeTrackingPage() {
   useEffect(() => {
     setSessions(getAllSessions().filter(s => s.durationMinutes != null))
     setSummary(getClientTimeSummary())
-    const saved = localStorage.getItem('cb_hourly_rate')
-    if (saved) setHourlyRate(Number(saved))
+    const saved = getHourlyRate()
+    if (saved != null) setHourlyRate(saved)
     setMounted(true)
   }, [])
 
   function handleRateChange(val: number) {
     setHourlyRate(val)
-    localStorage.setItem('cb_hourly_rate', String(val))
+    void persistHourlyRate(val)
   }
 
   const totalMinutes = summary.reduce((s, c) => s + c.totalMinutes, 0)

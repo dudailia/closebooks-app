@@ -11,6 +11,7 @@ import { notify } from '@/lib/notify'
 import { logActivity } from '@/lib/activity'
 import { canStartClose, recordCloseUsed, getTrialStatus } from '@/lib/freeTrial'
 import { startSession, endSession } from '@/lib/timeTracking'
+import { consumeUploadPrefillClient } from '@/lib/uploadPrefill'
 import type { Transaction, ChartOfAccounts, CategorizationJob } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -170,8 +171,7 @@ function CategorizeStep({
         chart_of_accounts: chartOfAccounts,
       }
 
-      // Save to localStorage immediately, then sync to Supabase in background
-      dbSaveJob(job).catch(() => { /* fallback already written to localStorage */ })
+      dbSaveJob(job).catch(() => { /* memory + Supabase */ })
       logActivity({
         type: 'transactions_categorized',
         description: `${categorized.length} transactions categorized for ${clientName}`,
@@ -341,13 +341,9 @@ export default function UploadPage() {
     setTrialStatus(getTrialStatus())
   }, [])
 
-  // Pre-fill client name if navigated from a client detail page
   useEffect(() => {
-    const prefill = sessionStorage.getItem('closebooks_prefill_client')
-    if (prefill) {
-      setClientName(prefill)
-      sessionStorage.removeItem('closebooks_prefill_client')
-    }
+    const prefill = consumeUploadPrefillClient()
+    if (prefill) setClientName(prefill)
   }, [])
 
   function handleClientContinue() {

@@ -366,15 +366,7 @@ export default function ClientPortalPage() {
   const clientToken = (params?.clientToken as string) || 'demo-token'
 
   const [chatOpen, setChatOpen] = useState(false)
-  const [dismissedCards, setDismissedCards] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set()
-    try {
-      const stored = localStorage.getItem(`cb_portal_dismissed_${clientToken}`)
-      return stored ? new Set(JSON.parse(stored)) : new Set()
-    } catch {
-      return new Set()
-    }
-  })
+  const [dismissedCards, setDismissedCards] = useState<Set<string>>(new Set())
 
   const [txVisible, setTxVisible] = useState<boolean[]>(Array(TRANSACTIONS.length).fill(false))
 
@@ -394,9 +386,6 @@ export default function ClientPortalPage() {
     const next = new Set(dismissedCards)
     next.add(id)
     setDismissedCards(next)
-    try {
-      localStorage.setItem(`cb_portal_dismissed_${clientToken}`, JSON.stringify(Array.from(next)))
-    } catch {}
   }
 
   const firmName = firmId.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')

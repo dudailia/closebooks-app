@@ -68,7 +68,7 @@ function RequestCard({ req, onUpdate }: RequestCardProps) {
     const r    = reqs.find((x) => x.id === req.id)
     if (r) {
       r.reminderSentAt = new Date().toISOString()
-      localStorage.setItem('cb_document_requests', JSON.stringify(reqs))
+      saveDocumentRequest(r)
       setReminderSent(true)
     }
   }

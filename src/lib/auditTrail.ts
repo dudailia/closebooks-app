@@ -1,6 +1,5 @@
-// ---------------------------------------------------------------------------
-// Audit trail — per-job event log stored in localStorage
-// ---------------------------------------------------------------------------
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { getSupabaseAndFirm } from '@/lib/syncSupabase'
 
 export type AuditActionType =
   | 'tx_approved'
@@ -13,7 +12,7 @@ export type AuditActionType =
 
 export interface AuditEvent {
   id: string
-  timestamp: string   // ISO
+  timestamp: string
   action: AuditActionType
   txId?: string
   txDescription?: string
@@ -21,82 +20,80 @@ export interface AuditEvent {
   actor: string
 }
 
-/** Callback signature used by components — actor and jobId added by the page. */
-export type AuditCallback = (
-  event: Omit<AuditEvent, 'id' | 'timestamp' | 'actor'>
-) => void
+export type AuditCallback = (event: Omit<AuditEvent, 'id' | 'timestamp' | 'actor'>) => void
 
-const storageKey = (jobId: string) => `closebooks_audit_${jobId}`
-const MAX_EVENTS  = 500
+const MAX_EVENTS = 500
+const cache = new Map<string, AuditEvent[]>()
 
-// ---------------------------------------------------------------------------
-// CRUD
-// ---------------------------------------------------------------------------
-
-export function getAuditTrail(jobId: string): AuditEvent[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem(storageKey(jobId)) ?? '[]') as AuditEvent[]
-  } catch {
-    return []
+export async function hydrateAuditTrails(supabase: SupabaseClient, firmId: string): Promise<void> {
+  const { data } = await supabase.from('audit_events').select('job_id, payload').eq('firm_id', firmId)
+  cache.clear()
+  for (const row of data ?? []) {
+    const jid = String((row as { job_id: string }).job_id)
+    const ev = (row as { payload: unknown }).payload as AuditEvent
+    const list = cache.get(jid) ?? []
+    list.push(ev)
+    cache.set(jid, list)
   }
 }
 
-export function logAuditEvent(
-  jobId: string,
-  event: Omit<AuditEvent, 'id' | 'timestamp'>
-): void {
-  if (typeof window === 'undefined') return
-  const all  = getAuditTrail(jobId)
+async function persistJob(jobId: string): Promise<void> {
+  const ctx = await getSupabaseAndFirm()
+  if (!ctx) return
+  const list = cache.get(jobId) ?? []
+  await ctx.supabase.from('audit_events').delete().eq('firm_id', ctx.firmId).eq('job_id', jobId)
+  for (const ev of list.slice(-MAX_EVENTS)) {
+    await ctx.supabase.from('audit_events').insert({
+      id: ev.id,
+      firm_id: ctx.firmId,
+      job_id: jobId,
+      payload: ev as unknown as Record<string, unknown>,
+      created_at: ev.timestamp,
+    })
+  }
+}
+
+export function getAuditTrail(jobId: string): AuditEvent[] {
+  return cache.get(jobId) ?? []
+}
+
+export function logAuditEvent(jobId: string, event: Omit<AuditEvent, 'id' | 'timestamp'>): void {
+  const all = cache.get(jobId) ?? []
   const next: AuditEvent = {
     ...event,
-    id:        `aud-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     timestamp: new Date().toISOString(),
   }
   all.push(next)
-  localStorage.setItem(storageKey(jobId), JSON.stringify(all.slice(-MAX_EVENTS)))
+  cache.set(jobId, all.slice(-MAX_EVENTS))
+  void persistJob(jobId)
 }
 
 export function clearAuditTrail(jobId: string): void {
-  if (typeof window === 'undefined') return
-  localStorage.removeItem(storageKey(jobId))
+  cache.delete(jobId)
+  void (async () => {
+    const ctx = await getSupabaseAndFirm()
+    if (ctx) await ctx.supabase.from('audit_events').delete().eq('firm_id', ctx.firmId).eq('job_id', jobId)
+  })()
 }
-
-// ---------------------------------------------------------------------------
-// Formatting
-// ---------------------------------------------------------------------------
 
 export function formatAuditEvent(e: AuditEvent): string {
   switch (e.action) {
     case 'tx_approved':
-      return `"${e.txDescription}" approved`
+      return `Approved: ${e.txDescription ?? 'transaction'}`
     case 'tx_flagged':
-      return `"${e.txDescription}" flagged${e.details.reason ? ` — "${e.details.reason}"` : ''}`
-    case 'tx_category_changed':
-      return `"${e.txDescription}" category changed from "${e.details.from || '—'}" to "${e.details.to}"`
-    case 'tx_note_added':
-      return `Note added to "${e.txDescription}": "${e.details.note}"`
-    case 'job_exported':
-      return `Exported ${e.details.count} transactions as ${e.details.format}`
-    case 'job_completed':
-      return `Close marked as complete`
-    case 'job_created':
-      return `Categorization job created — ${e.details.txCount} transactions imported`
+      return `Flagged: ${e.txDescription ?? 'transaction'}`
     default:
-      return `Event: ${e.action}`
+      return e.action
   }
 }
 
-export function fmtAuditTs(iso: string): string {
-  return new Date(iso).toLocaleString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-    hour: 'numeric', minute: '2-digit', hour12: true,
-  })
+export function auditGroup(action: AuditActionType): 'transactions' | 'exports' | 'system' {
+  if (action.startsWith('tx_')) return 'transactions'
+  if (action.startsWith('job_')) return 'exports'
+  return 'system'
 }
 
-/** Group label for filter tabs */
-export function auditGroup(action: AuditActionType): 'transactions' | 'exports' | 'system' {
-  if (action === 'job_exported') return 'exports'
-  if (action === 'job_completed' || action === 'job_created') return 'system'
-  return 'transactions'
+export function fmtAuditTs(iso: string): string {
+  return new Date(iso).toLocaleString()
 }

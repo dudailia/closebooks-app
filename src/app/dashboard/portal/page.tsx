@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { getJobs, getClients } from '@/lib/storage'
 import { loadFirmSettings } from '@/lib/firmSettings'
+import { getPortalTokens, ensurePortalToken } from '@/lib/portalTokensStore'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,34 +18,10 @@ interface PortalClient {
   portalUrl: string
 }
 
-// ─── Storage helpers ──────────────────────────────────────────────────────────
-
-const PORTAL_TOKENS_KEY = 'cb_portal_tokens'
-
-interface TokenRecord { token: string; visits: number; lastLogin: string }
-
-function loadTokens(): Record<string, TokenRecord> {
-  if (typeof window === 'undefined') return {}
-  try { return JSON.parse(localStorage.getItem(PORTAL_TOKENS_KEY) ?? '{}') } catch { return {} }
-}
-
-function ensureToken(clientName: string): string {
-  const tokens = loadTokens()
-  const key = clientName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-  if (!tokens[key]) {
-    const bytes = new Uint8Array(8)
-    crypto.getRandomValues(bytes)
-    const token = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
-    tokens[key] = { token, visits: 0, lastLogin: 'Never' }
-    localStorage.setItem(PORTAL_TOKENS_KEY, JSON.stringify(tokens))
-  }
-  return tokens[key].token
-}
-
 function buildPortalClients(): PortalClient[] {
   const jobs = getJobs()
   const clients = getClients()
-  const tokens = loadTokens()
+  const tokens = getPortalTokens()
   const firmSettings = loadFirmSettings()
   const firmSlug = (firmSettings.firmName || 'my-firm').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://closebooks-app.vercel.app'
@@ -113,7 +90,8 @@ export default function PortalManagementPage() {
   }
 
   function handleActivate(clientName: string) {
-    ensureToken(clientName)
+    const key = clientName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    ensurePortalToken(key)
     setClients(buildPortalClients())
     showToast(`Portal activated for ${clientName}!`)
   }

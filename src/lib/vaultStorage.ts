@@ -1,115 +1,105 @@
 import type { VaultDocument, DocumentRequest } from '@/types/vault'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { getSupabaseAndFirm } from '@/lib/syncSupabase'
+import { loadPayloadRows, upsertPayloadRow, deletePayloadRow } from '@/lib/supabaseJsonTable'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Storage keys
-// ─────────────────────────────────────────────────────────────────────────────
+let _docs: VaultDocument[] = []
+let _reqs: DocumentRequest[] = []
 
-const DOCS_KEY     = 'cb_vault_documents'
-const REQUESTS_KEY = 'cb_document_requests'
+export async function hydrateVault(supabase: SupabaseClient, firmId: string): Promise<void> {
+  _docs = await loadPayloadRows<VaultDocument>(supabase, 'vault_documents', firmId)
+  _reqs = await loadPayloadRows<DocumentRequest>(supabase, 'vault_document_requests', firmId)
+}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Documents
-// ─────────────────────────────────────────────────────────────────────────────
+async function persistDocs(): Promise<void> {
+  const ctx = await getSupabaseAndFirm()
+  if (!ctx) return
+  for (const d of _docs) {
+    await upsertPayloadRow(ctx.supabase, 'vault_documents', ctx.firmId, d.id, d as unknown as Record<string, unknown>)
+  }
+}
+
+async function persistReqs(): Promise<void> {
+  const ctx = await getSupabaseAndFirm()
+  if (!ctx) return
+  for (const r of _reqs) {
+    await upsertPayloadRow(ctx.supabase, 'vault_document_requests', ctx.firmId, r.id, r as unknown as Record<string, unknown>)
+  }
+}
 
 export function getDocuments(): VaultDocument[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem(DOCS_KEY) ?? '[]') as VaultDocument[]
-  } catch {
-    return []
-  }
+  return _docs
 }
 
 export function getDocumentsForClient(clientName: string): VaultDocument[] {
   const lower = clientName.toLowerCase()
-  return getDocuments().filter((d) => d.clientName.toLowerCase() === lower)
+  return _docs.filter((d) => d.clientName.toLowerCase() === lower)
 }
 
 export function getDocumentsForJob(jobId: string): VaultDocument[] {
-  return getDocuments().filter((d) => d.jobId === jobId)
+  return _docs.filter((d) => d.jobId === jobId)
 }
 
 export function saveDocument(doc: VaultDocument): void {
-  if (typeof window === 'undefined') return
-  const docs = getDocuments()
-  const idx  = docs.findIndex((d) => d.id === doc.id)
-  if (idx >= 0) docs[idx] = doc
-  else docs.unshift(doc)
-  localStorage.setItem(DOCS_KEY, JSON.stringify(docs))
+  const idx = _docs.findIndex((d) => d.id === doc.id)
+  if (idx >= 0) _docs[idx] = doc
+  else _docs.unshift(doc)
+  void persistDocs()
 }
 
 export function deleteDocument(id: string): void {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(DOCS_KEY, JSON.stringify(getDocuments().filter((d) => d.id !== id)))
+  _docs = _docs.filter((d) => d.id !== id)
+  void (async () => {
+    const ctx = await getSupabaseAndFirm()
+    if (ctx) await deletePayloadRow(ctx.supabase, 'vault_documents', ctx.firmId, id)
+  })()
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Document Requests
-// ─────────────────────────────────────────────────────────────────────────────
-
 export function getDocumentRequests(): DocumentRequest[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem(REQUESTS_KEY) ?? '[]') as DocumentRequest[]
-  } catch {
-    return []
-  }
+  return _reqs
 }
 
 export function getRequestsForClient(clientName: string): DocumentRequest[] {
   const lower = clientName.toLowerCase()
-  return getDocumentRequests().filter((r) => r.clientName.toLowerCase() === lower)
+  return _reqs.filter((r) => r.clientName.toLowerCase() === lower)
 }
 
 export function getRequestByToken(token: string): DocumentRequest | null {
-  return getDocumentRequests().find((r) => r.portalToken === token) ?? null
+  return _reqs.find((r) => r.portalToken === token) ?? null
 }
 
 export function saveDocumentRequest(req: DocumentRequest): void {
-  if (typeof window === 'undefined') return
-  const reqs = getDocumentRequests()
-  const idx  = reqs.findIndex((r) => r.id === req.id)
-  if (idx >= 0) reqs[idx] = req
-  else reqs.unshift(req)
-  localStorage.setItem(REQUESTS_KEY, JSON.stringify(reqs))
+  const idx = _reqs.findIndex((r) => r.id === req.id)
+  if (idx >= 0) _reqs[idx] = req
+  else _reqs.unshift(req)
+  void persistReqs()
 }
 
 export function updateRequestStatus(id: string, status: DocumentRequest['status']): void {
-  if (typeof window === 'undefined') return
-  const reqs = getDocumentRequests()
-  const req  = reqs.find((r) => r.id === id)
+  const req = _reqs.find((r) => r.id === id)
   if (req) {
     req.status = status
-    localStorage.setItem(REQUESTS_KEY, JSON.stringify(reqs))
+    void persistReqs()
   }
 }
 
 export function fulfillRequest(requestId: string, docId: string): void {
-  if (typeof window === 'undefined') return
-  const reqs = getDocumentRequests()
-  const req  = reqs.find((r) => r.id === requestId)
+  const req = _reqs.find((r) => r.id === requestId)
   if (req) {
-    if (!req.fulfillmentIds.includes(docId)) {
-      req.fulfillmentIds.push(docId)
-    }
-    // Auto-update status
-    if (req.fulfillmentIds.length >= req.requestedItems.length) {
-      req.status = 'complete'
-    } else if (req.fulfillmentIds.length > 0) {
-      req.status = 'partial'
-    }
-    localStorage.setItem(REQUESTS_KEY, JSON.stringify(reqs))
+    if (!req.fulfillmentIds.includes(docId)) req.fulfillmentIds.push(docId)
+    if (req.fulfillmentIds.length >= req.requestedItems.length) req.status = 'complete'
+    else if (req.fulfillmentIds.length > 0) req.status = 'partial'
+    void persistReqs()
   }
 }
 
 export function deleteDocumentRequest(id: string): void {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(REQUESTS_KEY, JSON.stringify(getDocumentRequests().filter((r) => r.id !== id)))
+  _reqs = _reqs.filter((r) => r.id !== id)
+  void (async () => {
+    const ctx = await getSupabaseAndFirm()
+    if (ctx) await deletePayloadRow(ctx.supabase, 'vault_document_requests', ctx.firmId, id)
+  })()
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Stats
-// ─────────────────────────────────────────────────────────────────────────────
 
 export function getVaultStats(): {
   totalDocuments: number
@@ -117,17 +107,13 @@ export function getVaultStats(): {
   pendingRequests: number
   documentsThisMonth: number
 } {
-  const docs     = getDocuments()
-  const requests = getDocumentRequests()
-  const now      = new Date()
+  const now = new Date()
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-
-  const uniqueClients = new Set(docs.map((d) => d.clientName.toLowerCase()))
-
+  const uniqueClients = new Set(_docs.map((d) => d.clientName.toLowerCase()))
   return {
-    totalDocuments:     docs.length,
-    totalClients:       uniqueClients.size,
-    pendingRequests:    requests.filter((r) => r.status === 'pending').length,
-    documentsThisMonth: docs.filter((d) => d.uploadedAt.startsWith(thisMonth)).length,
+    totalDocuments: _docs.length,
+    totalClients: uniqueClients.size,
+    pendingRequests: _reqs.filter((r) => r.status === 'pending').length,
+    documentsThisMonth: _docs.filter((d) => d.uploadedAt.startsWith(thisMonth)).length,
   }
 }

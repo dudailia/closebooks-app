@@ -3,6 +3,7 @@ import TopBar from '@/components/TopBar'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import TrialBanner from '@/components/TrialBanner'
 import SubscriptionSync from '@/components/SubscriptionSync'
+import FirmDataProvider from '@/components/FirmDataProvider'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -29,11 +30,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <TopBar />
         <SubscriptionSync />
         <TrialBanner />
-        <main style={{ flex: 1 }} className="page-content">
-          <ErrorBoundary>
-            {children}
-          </ErrorBoundary>
-        </main>
+        <FirmDataProvider>
+          <main style={{ flex: 1 }} className="page-content">
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+          </main>
+        </FirmDataProvider>
       </div>
     </div>
   )

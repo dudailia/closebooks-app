@@ -5,9 +5,7 @@ import Link from 'next/link'
 import type { CategorizationJob, ClientIndustry } from '@/types'
 import { getClientBenchmarks } from '@/lib/benchmarkNetwork'
 import { NETWORK_BENCHMARKS } from '@/lib/benchmarkNetworkData'
-
-// ─── LocalStorage key (matches storage.ts convention) ─────────────────────────
-const JOBS_KEY = 'closebooks_jobs'
+import { getJobs } from '@/lib/storage'
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -24,9 +22,7 @@ export default function NetworkInsightCard() {
 
   useEffect(() => {
     try {
-      const jobs: CategorizationJob[] = JSON.parse(
-        localStorage.getItem(JOBS_KEY) ?? '[]',
-      )
+      const jobs: CategorizationJob[] = getJobs()
       const completed = jobs.filter((j) => j.status === 'completed')
       if (completed.length === 0) { setLoaded(true); return }
 

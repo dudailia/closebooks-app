@@ -1,15 +1,13 @@
 /**
- * In-app notification system.
- * Generates smart alerts based on:
- * - Closing deadlines approaching
- * - Clients with no close in 30+ days
- * - High-value flagged transactions
- * - New exceptions from agent runs
- * Stored in localStorage, displayed in a notification bell in TopBar.
+ * In-app notifications — `notifications` + `notification_read_state`.
  */
 
-const KEY = 'cb_notifications'
-const READ_KEY = 'cb_notifications_read'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { getSupabaseAndFirm } from '@/lib/syncSupabase'
+import { getJobs } from '@/lib/storage'
+import { loadDeadlines } from '@/lib/calendarStore'
+
+const READ_TABLE = 'notification_read_state'
 
 export type NotifType =
   | 'deadline_7d'
@@ -32,91 +30,122 @@ export interface AppNotification {
   amount?: number
 }
 
-function load(): AppNotification[] {
-  if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem(KEY) ?? '[]') } catch { return [] }
+let _notifs: AppNotification[] = []
+const _readIds = new Set<string>()
+
+export async function hydrateNotifications(supabase: SupabaseClient, firmId: string): Promise<void> {
+  const { data: rows } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('firm_id', firmId)
+    .order('created_at', { ascending: false })
+    .limit(50)
+  _notifs = (rows ?? []).map((r) => {
+    const p = (r as { payload: unknown }).payload as AppNotification
+    return { ...p, id: String((r as { id: string }).id) }
+  })
+  const { data: readRows } = await supabase.from(READ_TABLE).select('notification_id').eq('firm_id', firmId)
+  _readIds.clear()
+  for (const row of readRows ?? []) {
+    _readIds.add(String((row as { notification_id: string }).notification_id))
+  }
 }
 
-function loadRead(): Set<string> {
-  if (typeof window === 'undefined') return new Set()
-  try { return new Set(JSON.parse(localStorage.getItem(READ_KEY) ?? '[]') as string[]) } catch { return new Set() }
+async function persistNotifs(): Promise<void> {
+  const ctx = await getSupabaseAndFirm()
+  if (!ctx) return
+  await ctx.supabase.from('notifications').delete().eq('firm_id', ctx.firmId)
+  for (const n of _notifs.slice(0, 50)) {
+    await ctx.supabase.from('notifications').upsert({
+      id: n.id,
+      firm_id: ctx.firmId,
+      payload: n as unknown as Record<string, unknown>,
+      created_at: n.createdAt,
+    })
+  }
 }
 
-function saveRead(ids: Set<string>) {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(READ_KEY, JSON.stringify(Array.from(ids)))
+async function persistRead(): Promise<void> {
+  const ctx = await getSupabaseAndFirm()
+  if (!ctx) return
+  await ctx.supabase.from(READ_TABLE).delete().eq('firm_id', ctx.firmId)
+  const rows = Array.from(_readIds).map((notification_id) => ({ firm_id: ctx.firmId, notification_id }))
+  if (rows.length) await ctx.supabase.from(READ_TABLE).insert(rows)
 }
 
 export function getNotifications(): AppNotification[] {
-  return load()
+  return _notifs
 }
 
 export function getUnreadCount(): number {
-  const notifs = load()
-  const read = loadRead()
-  return notifs.filter(n => !read.has(n.id)).length
+  return _notifs.filter((n) => !_readIds.has(n.id)).length
 }
 
-export function markAllRead() {
-  const notifs = load()
-  const ids = new Set(notifs.map(n => n.id))
-  saveRead(ids)
+export function markAllRead(): void {
+  _notifs.forEach((n) => _readIds.add(n.id))
+  void persistRead()
 }
 
-export function markRead(id: string) {
-  const read = loadRead()
-  read.add(id)
-  saveRead(read)
+export function markRead(id: string): void {
+  _readIds.add(id)
+  void persistRead()
 }
 
 export function isRead(id: string): boolean {
-  return loadRead().has(id)
+  return _readIds.has(id)
 }
 
-export function addNotification(notif: Omit<AppNotification, 'id' | 'createdAt'>) {
+export function addNotification(notif: Omit<AppNotification, 'id' | 'createdAt'>): void {
   const bytes = new Uint8Array(4)
   crypto.getRandomValues(bytes)
-  const id = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
-  const notifications = load()
-  // Avoid duplicates by type+clientName
-  const isDupe = notifications.some(n =>
-    n.type === notif.type && n.clientName === notif.clientName &&
-    Date.now() - new Date(n.createdAt).getTime() < 86400000 // within 24h
+  const id = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+  const isDupe = _notifs.some(
+    (n) =>
+      n.type === notif.type &&
+      n.clientName === notif.clientName &&
+      Date.now() - new Date(n.createdAt).getTime() < 86400000
   )
   if (isDupe) return
-  notifications.unshift({ id, createdAt: new Date().toISOString(), ...notif })
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(KEY, JSON.stringify(notifications.slice(0, 50)))
-  }
+  const full: AppNotification = { id, createdAt: new Date().toISOString(), ...notif }
+  _notifs.unshift(full)
+  if (_notifs.length > 50) _notifs = _notifs.slice(0, 50)
+  void persistNotifs()
 }
 
-export function clearNotification(id: string) {
-  const notifications = load().filter(n => n.id !== id)
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(KEY, JSON.stringify(notifications))
-  }
+export function clearAllNotifications(): void {
+  _notifs = []
+  _readIds.clear()
+  void (async () => {
+    const ctx = await getSupabaseAndFirm()
+    if (!ctx) return
+    await ctx.supabase.from('notifications').delete().eq('firm_id', ctx.firmId)
+    await ctx.supabase.from(READ_TABLE).delete().eq('firm_id', ctx.firmId)
+  })()
 }
 
-/** Generate smart notifications from current jobs/deadlines */
-export function generateSmartNotifications() {
-  if (typeof window === 'undefined') return
+export function clearNotification(id: string): void {
+  _notifs = _notifs.filter((n) => n.id !== id)
+  _readIds.delete(id)
+  void (async () => {
+    const ctx = await getSupabaseAndFirm()
+    if (ctx) await ctx.supabase.from('notifications').delete().eq('firm_id', ctx.firmId).eq('id', id)
+  })()
+}
 
-  // Load jobs
-  let jobs: Array<{ id: string; client_name: string; created_at: string; transactions: Array<{ status: string; amount: number; type: string }> }> = []
-  try { jobs = JSON.parse(localStorage.getItem('closebooks_jobs') ?? '[]') } catch { /* ignore */ }
-
-  // Load deadlines
-  let deadlines: Array<{ id: string; client: string; dueDate: string; type: string }> = []
-  try { deadlines = JSON.parse(localStorage.getItem('cb_deadlines') ?? '[]') } catch { /* ignore */ }
-
+export function generateSmartNotifications(): void {
+  const jobs = getJobs()
+  const deadlines = loadDeadlines().map((d) => ({
+    id: d.id,
+    client: d.clientName,
+    dueDate: d.dueDate,
+    type: d.type,
+  }))
   const now = Date.now()
 
-  // Check deadlines
   for (const dl of deadlines) {
     if (!dl.dueDate) continue
     const dueMs = new Date(dl.dueDate).getTime()
     const diffDays = Math.ceil((dueMs - now) / 86400000)
-
     if (diffDays === 7) {
       addNotification({
         type: 'deadline_7d',
@@ -144,7 +173,6 @@ export function generateSmartNotifications() {
     }
   }
 
-  // Check for clients with no close in 30+ days
   const byClient = new Map<string, string>()
   for (const job of jobs) {
     const existing = byClient.get(job.client_name)
@@ -152,7 +180,6 @@ export function generateSmartNotifications() {
       byClient.set(job.client_name, job.created_at)
     }
   }
-
   for (const [clientName, lastClose] of Array.from(byClient.entries())) {
     const daysSince = Math.floor((now - new Date(lastClose).getTime()) / 86400000)
     if (daysSince >= 35) {
@@ -166,11 +193,9 @@ export function generateSmartNotifications() {
     }
   }
 
-  // Check for high-value flagged transactions
   for (const job of jobs) {
-    if (!Array.isArray(job.transactions)) continue
     const highValueFlagged = job.transactions.filter(
-      t => t.status === 'flagged' && Math.abs(t.amount) > 5000
+      (t) => t.status === 'flagged' && Math.abs(t.amount) > 5000
     )
     for (const tx of highValueFlagged.slice(0, 2)) {
       addNotification({

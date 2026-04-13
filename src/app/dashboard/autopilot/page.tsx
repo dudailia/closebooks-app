@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { SkeletonBlock, StatsSkeleton, ClientCardsSkeleton } from '@/components/Skeleton'
+import { getJobs } from '@/lib/storage'
+import { getAutopilotPref, setAutopilotPref } from '@/lib/autopilotStore'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -16,47 +18,32 @@ interface Job {
   }>
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// localStorage helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
 const LS_ENABLED        = 'cb_autopilot_enabled'
 const LS_THRESHOLD      = 'cb_autopilot_threshold'
 const LS_FLAG_LOW       = 'cb_autopilot_flag_low'
 const LS_EMAIL_DIGEST   = 'cb_autopilot_email_digest'
 const LS_DEFAULT_CLIENT = 'cb_autopilot_default_client'
-const LS_JOBS           = 'closebooks_jobs'
 
 function readBool(key: string, fallback: boolean): boolean {
-  if (typeof window === 'undefined') return fallback
-  const v = localStorage.getItem(key)
-  if (v === null) return fallback
+  const v = getAutopilotPref(key, '')
+  if (v === '') return fallback
   return v === 'true'
 }
 
 function readInt(key: string, fallback: number): number {
-  if (typeof window === 'undefined') return fallback
-  const v = localStorage.getItem(key)
-  if (v === null) return fallback
+  const v = getAutopilotPref(key, '')
+  if (v === '') return fallback
   const n = parseInt(v, 10)
   return isNaN(n) ? fallback : n
 }
 
 function readStr(key: string, fallback: string): string {
-  if (typeof window === 'undefined') return fallback
-  return localStorage.getItem(key) ?? fallback
+  const v = getAutopilotPref(key, '')
+  return v === '' ? fallback : v
 }
 
 function readJobs(): Job[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(LS_JOBS)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
+  return getJobs() as unknown as Job[]
 }
 
 function deriveStats(jobs: Job[]) {
@@ -182,27 +169,27 @@ export default function AutopilotPage() {
 
   function setAndSaveEnabled(v: boolean) {
     setEnabled(v)
-    localStorage.setItem(LS_ENABLED, String(v))
+    setAutopilotPref(LS_ENABLED, String(v))
   }
 
   function setAndSaveThreshold(v: number) {
     setThreshold(v)
-    localStorage.setItem(LS_THRESHOLD, String(v))
+    setAutopilotPref(LS_THRESHOLD, String(v))
   }
 
   function setAndSaveFlagLow(v: boolean) {
     setFlagLow(v)
-    localStorage.setItem(LS_FLAG_LOW, String(v))
+    setAutopilotPref(LS_FLAG_LOW, String(v))
   }
 
   function setAndSaveEmailDigest(v: boolean) {
     setEmailDigest(v)
-    localStorage.setItem(LS_EMAIL_DIGEST, String(v))
+    setAutopilotPref(LS_EMAIL_DIGEST, String(v))
   }
 
   function setAndSaveDefaultClient(v: string) {
     setDefaultClient(v)
-    localStorage.setItem(LS_DEFAULT_CLIENT, v)
+    setAutopilotPref(LS_DEFAULT_CLIENT, v)
   }
 
   const settingsDisabled = !enabled

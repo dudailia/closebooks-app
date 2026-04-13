@@ -1,4 +1,6 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { CategorizationJob, ClientIndustry } from '@/types'
+import { getSupabaseAndFirm } from '@/lib/syncSupabase'
 import { NETWORK_BENCHMARKS } from './benchmarkNetworkData'
 
 export type { SpendRatio } from './benchmarkNetworkData'
@@ -187,17 +189,36 @@ export function getClientBenchmarks(
 
 // ─── submitBenchmarkContribution ─────────────────────────────────────────────
 
-const CONTRIBUTION_KEY = 'cb_network_contribution'
+let _contributions: unknown[] = []
+let _optIn = false
+
+export async function hydrateNetworkPrefs(supabase: SupabaseClient, firmId: string): Promise<void> {
+  const { data: np } = await supabase.from('network_preferences').select('benchmark_opt_in').eq('firm_id', firmId).maybeSingle()
+  _optIn = np?.benchmark_opt_in ?? false
+  const { data: rows } = await supabase.from('benchmark_contributions').select('payload').eq('firm_id', firmId)
+  _contributions = (rows ?? []).map((r) => (r as { payload: unknown }).payload)
+}
+
+export function getBenchmarkOptIn(): boolean {
+  return _optIn
+}
+
+export async function setBenchmarkOptIn(checked: boolean): Promise<void> {
+  _optIn = checked
+  const ctx = await getSupabaseAndFirm()
+  if (!ctx) return
+  await ctx.supabase.from('network_preferences').upsert(
+    { firm_id: ctx.firmId, benchmark_opt_in: checked },
+    { onConflict: 'firm_id' }
+  )
+}
 
 export function submitBenchmarkContribution(
   job: CategorizationJob,
   industry: ClientIndustry,
 ): void {
-  if (typeof window === 'undefined') return
   try {
-    const existing: unknown[] = JSON.parse(localStorage.getItem(CONTRIBUTION_KEY) ?? '[]')
     const ratios: { category: string; pct: number }[] = []
-
     const totalExpense = job.transactions
       .filter((t) => t.type === 'debit' && (t.status === 'approved' || t.status === 'edited'))
       .reduce((s, t) => s + t.amount, 0)
@@ -216,13 +237,21 @@ export function submitBenchmarkContribution(
       })
     }
 
-    existing.push({
+    const entry = {
       jobId: job.id,
       industry,
       ratios,
       contributedAt: new Date().toISOString(),
-    })
-    localStorage.setItem(CONTRIBUTION_KEY, JSON.stringify(existing))
+    }
+    _contributions.push(entry)
+    void (async () => {
+      const ctx = await getSupabaseAndFirm()
+      if (!ctx) return
+      await ctx.supabase.from('benchmark_contributions').insert({
+        firm_id: ctx.firmId,
+        payload: entry,
+      })
+    })()
   } catch {
     // Ignore storage errors
   }
@@ -235,24 +264,10 @@ export function getNetworkStats(): {
   transactionCount: number
   industriesCount: number
 } {
-  if (typeof window === 'undefined') {
-    return { firmCount: 1247, transactionCount: 2300000, industriesCount: 13 }
-  }
-
-  try {
-    const contributions: unknown[] = JSON.parse(
-      localStorage.getItem(CONTRIBUTION_KEY) ?? '[]',
-    )
-    // Simulated base numbers + local contributions add a small realistic delta
-    const localFirms = new Set(
-      (contributions as Array<{ jobId?: string }>).map((c) => c.jobId ?? ''),
-    ).size
-    return {
-      firmCount: 1247 + localFirms,
-      transactionCount: 2_300_000 + localFirms * 847,
-      industriesCount: 13,
-    }
-  } catch {
-    return { firmCount: 1247, transactionCount: 2300000, industriesCount: 13 }
+  const localFirms = new Set((_contributions as Array<{ jobId?: string }>).map((c) => c.jobId ?? '')).size
+  return {
+    firmCount: 1247 + localFirms,
+    transactionCount: 2_300_000 + localFirms * 847,
+    industriesCount: 13,
   }
 }

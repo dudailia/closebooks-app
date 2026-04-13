@@ -22,27 +22,10 @@ import {
 } from '@/lib/billingStorage'
 import { generateInvoiceFromJob } from '@/lib/invoiceGenerator'
 import { loadFirmSettings } from '@/lib/firmSettings'
+import { getJobs, getClients } from '@/lib/storage'
 import type { Invoice, EngagementLetter, RateCard } from '@/types/billing'
 import type { CategorizationJob, Client } from '@/types'
 import { useRouter } from 'next/navigation'
-
-function getJobsFromStorage(): CategorizationJob[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem('closebooks_jobs') ?? '[]') as CategorizationJob[]
-  } catch {
-    return []
-  }
-}
-
-function getClientsFromStorage(): Client[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem('closebooks_clients') ?? '[]') as Client[]
-  } catch {
-    return []
-  }
-}
 
 function fmtMoney(n: number) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
@@ -174,8 +157,8 @@ export default function BillingPage() {
       seedDemoInvoices(settings.firmName || 'CloseBooks Accounting')
     }
 
-    setJobs(getJobsFromStorage())
-    setClients(getClientsFromStorage())
+    setJobs(getJobs())
+    setClients(getClients())
     setRateCard(loadRateCard())
     reload()
     setMounted(true)

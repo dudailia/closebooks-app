@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { CategorizationJob } from '@/types'
+import { getJobs } from '@/lib/storage'
 import RadarClientCard from '@/components/RadarClientCard'
 import { SkeletonBlock, StatsSkeleton, ClientCardsSkeleton } from '@/components/Skeleton'
 import {
@@ -59,9 +60,8 @@ export default function RadarPage() {
 
       if (typeof window !== 'undefined') {
         try {
-          const raw = localStorage.getItem('closebooks_jobs')
-          if (raw) {
-            const jobs = JSON.parse(raw) as CategorizationJob[]
+          const jobs = getJobs()
+          if (jobs.length > 0) {
             const seen = new Set<string>()
 
             for (const job of jobs) {

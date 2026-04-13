@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { getJobs } from '@/lib/storage'
+import { getTaxReturnDrafts } from '@/lib/taxDraftsStore'
 import type { CategorizationJob } from '@/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -19,17 +20,8 @@ interface TaxReturn {
   createdAt: string
 }
 
-// ─── Storage helpers ──────────────────────────────────────────────────────────
-
-const TAX_RETURNS_KEY = 'cb_tax_returns'
-
-function loadSavedReturns(): TaxReturn[] {
-  if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem(TAX_RETURNS_KEY) ?? '[]') } catch { return [] }
-}
-
 function buildReturnsFromJobs(jobs: CategorizationJob[]): TaxReturn[] {
-  const saved = loadSavedReturns()
+  const saved = getTaxReturnDrafts() as TaxReturn[]
   const savedIds = new Set(saved.map(r => r.id))
 
   // Build a return card for each job that doesn't already have one

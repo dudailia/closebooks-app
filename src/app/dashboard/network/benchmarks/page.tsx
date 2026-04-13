@@ -8,10 +8,9 @@ import {
   METRIC_LABELS,
 } from '@/lib/network/benchmarkData'
 import type { CategorizationJob } from '@/types'
+import { getJobs } from '@/lib/storage'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const JOBS_KEY = 'closebooks_jobs'
 
 const METRIC_KEYS = Object.keys(METRIC_LABELS)
 
@@ -96,10 +95,9 @@ export default function BenchmarksPage() {
     DEMO_CLIENT_VALUES['Technology'],
   )
 
-  // Load clients from localStorage
   useEffect(() => {
     try {
-      const jobs: CategorizationJob[] = JSON.parse(localStorage.getItem(JOBS_KEY) ?? '[]')
+      const jobs: CategorizationJob[] = getJobs()
       const completed = jobs.filter((j) => j.status === 'completed')
       const unique = Array.from(
         new Map(completed.map((j) => [j.client_name, { id: j.id, name: j.client_name }])).values(),

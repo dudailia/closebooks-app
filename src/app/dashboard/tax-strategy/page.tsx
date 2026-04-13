@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { getJobs } from '@/lib/storage'
 
 const DEMO_STRATEGIES = [
   {
@@ -104,12 +105,8 @@ export default function TaxStrategyPage() {
   const [showProjectionModal, setShowProjectionModal] = useState(false)
 
   useEffect(() => {
-    try {
-      const jobs = JSON.parse(localStorage.getItem('closebooks_jobs') || '[]')
-      if (jobs.length === 0) setClients(DEMO_STRATEGIES)
-    } catch {
-      setClients(DEMO_STRATEGIES)
-    }
+    const jobs = getJobs()
+    if (jobs.length === 0) setClients(DEMO_STRATEGIES)
   }, [])
 
   const totalSavings = clients.reduce((s, c) => s + c.savings, 0)

@@ -6,7 +6,10 @@ import { SkeletonBlock, SkeletonCard, SkeletonTable } from '@/components/Skeleto
 import {
   getNetworkStats,
   getClientBenchmarks,
+  getBenchmarkOptIn,
+  setBenchmarkOptIn,
 } from '@/lib/benchmarkNetwork'
+import { getJobs } from '@/lib/storage'
 import { NETWORK_BENCHMARKS } from '@/lib/benchmarkNetworkData'
 import type { ClientIndustry, CategorizationJob } from '@/types'
 
@@ -17,9 +20,6 @@ const ALL_INDUSTRIES: ClientIndustry[] = [
   'E-commerce', 'Technology', 'Manufacturing', 'Real Estate', 'Nonprofit',
   'Legal Services', 'Transportation', 'Other',
 ]
-
-const OPT_IN_KEY = 'cb_network_opt_in'
-const JOBS_KEY   = 'closebooks_jobs'
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -103,16 +103,10 @@ export default function NetworkPage() {
   useEffect(() => {
     setMounted(true)
 
-    // Load opt-in state
-    try {
-      setOptedIn(localStorage.getItem(OPT_IN_KEY) === 'true')
-    } catch { /* ignore */ }
+    setOptedIn(getBenchmarkOptIn())
 
-    // Compute local contribution stats
     try {
-      const jobs: CategorizationJob[] = JSON.parse(
-        localStorage.getItem(JOBS_KEY) ?? '[]',
-      )
+      const jobs: CategorizationJob[] = getJobs()
       const completed = jobs.filter((j) => j.status === 'completed')
       setContribution({
         jobCount: completed.length,
@@ -123,9 +117,7 @@ export default function NetworkPage() {
 
   function handleOptIn(checked: boolean) {
     setOptedIn(checked)
-    try {
-      localStorage.setItem(OPT_IN_KEY, String(checked))
-    } catch { /* ignore */ }
+    void setBenchmarkOptIn(checked)
   }
 
   // Build benchmark results for the selected industry using a dummy empty job

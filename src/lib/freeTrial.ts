@@ -1,10 +1,10 @@
 /**
- * Free trial system.
- * Every new user gets 5 free closes. After that, they see an upgrade prompt.
- * All state lives in localStorage — no auth required.
+ * Free trial / plan — stored in firm_usage (Postgres) when authenticated.
  */
 
-const TRIAL_KEY = 'cb_free_trial'
+import { getSupabaseAndFirm } from '@/lib/syncSupabase'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
 const FREE_CLOSES = 5
 
 interface TrialState {
@@ -14,66 +14,82 @@ interface TrialState {
   trialActivatedAt?: string
 }
 
-function loadTrial(): TrialState {
-  if (typeof window === 'undefined') return { closesUsed: 0, startedAt: new Date().toISOString(), plan: 'free' }
-  try {
-    const raw = localStorage.getItem(TRIAL_KEY)
-    if (!raw) {
-      const initial: TrialState = { closesUsed: 0, startedAt: new Date().toISOString(), plan: 'free' }
-      localStorage.setItem(TRIAL_KEY, JSON.stringify(initial))
-      return initial
+let _cache: TrialState = {
+  closesUsed: 0,
+  startedAt: new Date().toISOString(),
+  plan: 'free',
+}
+
+export async function hydrateFirmUsage(supabase: SupabaseClient, firmId: string): Promise<void> {
+  const { data } = await supabase.from('firm_usage').select('*').eq('firm_id', firmId).maybeSingle()
+  if (data) {
+    _cache = {
+      closesUsed: Number(data.closes_used ?? 0),
+      startedAt: data.trial_started_at ?? new Date().toISOString(),
+      plan: (data.plan_status as TrialState['plan']) ?? 'free',
+      trialActivatedAt: data.trial_activated_at ?? undefined,
     }
-    return JSON.parse(raw) as TrialState
-  } catch {
-    return { closesUsed: 0, startedAt: new Date().toISOString(), plan: 'free' }
+  } else {
+    _cache = { closesUsed: 0, startedAt: new Date().toISOString(), plan: 'free' }
   }
 }
 
-function saveTrial(state: TrialState): void {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(TRIAL_KEY, JSON.stringify(state))
+async function persist(): Promise<void> {
+  const ctx = await getSupabaseAndFirm()
+  if (!ctx) return
+  await ctx.supabase.from('firm_usage').upsert(
+    {
+      firm_id: ctx.firmId,
+      closes_used: _cache.closesUsed,
+      trial_started_at: _cache.startedAt,
+      plan_status: _cache.plan,
+      trial_activated_at: _cache.trialActivatedAt ?? null,
+    },
+    { onConflict: 'firm_id' }
+  )
 }
 
-/** Call this when a close is started (upload step 3). */
+const TRIAL_EVENT = 'closebooks_trial_updated'
+
+function emitTrialUpdate(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(TRIAL_EVENT))
+  }
+}
+
 export function recordCloseUsed(): void {
-  const state = loadTrial()
-  state.closesUsed++
-  saveTrial(state)
+  _cache.closesUsed++
+  void persist()
+  emitTrialUpdate()
 }
 
-/** Returns how many closes have been used. */
 export function getClosesUsed(): number {
-  return loadTrial().closesUsed
+  return _cache.closesUsed
 }
 
-/** Returns how many free closes remain. */
 export function getFreeClosesRemaining(): number {
-  const state = loadTrial()
-  if (state.plan !== 'free') return Infinity
-  return Math.max(0, FREE_CLOSES - state.closesUsed)
+  if (_cache.plan !== 'free') return Infinity
+  return Math.max(0, FREE_CLOSES - _cache.closesUsed)
 }
 
-/** Returns true if the user can start another close. */
 export function canStartClose(): boolean {
-  const state = loadTrial()
-  if (state.plan !== 'free') return true
-  return state.closesUsed < FREE_CLOSES
+  if (_cache.plan !== 'free') return true
+  return _cache.closesUsed < FREE_CLOSES
 }
 
-/** Returns the current plan. */
 export function getCurrentPlan(): TrialState['plan'] {
-  return loadTrial().plan
+  return _cache.plan
 }
 
-/** Activate a paid plan (called after Stripe webhook / for demo). */
 export function activatePlan(plan: TrialState['plan']): void {
-  const state = loadTrial()
-  state.plan = plan
-  state.trialActivatedAt = new Date().toISOString()
-  saveTrial(state)
+  _cache.plan = plan
+  _cache.trialActivatedAt = new Date().toISOString()
+  void persist()
+  emitTrialUpdate()
 }
 
-/** Returns trial status summary for display. */
+export { TRIAL_EVENT }
+
 export function getTrialStatus(): {
   plan: TrialState['plan']
   closesUsed: number
@@ -82,18 +98,16 @@ export function getTrialStatus(): {
   hasExhaustedTrial: boolean
   percentUsed: number
 } {
-  const state = loadTrial()
-  const isOnFreeTier = state.plan === 'free'
-  const closesRemaining = isOnFreeTier ? Math.max(0, FREE_CLOSES - state.closesUsed) : Infinity
-  const hasExhaustedTrial = isOnFreeTier && state.closesUsed >= FREE_CLOSES
-
+  const isOnFreeTier = _cache.plan === 'free'
+  const closesRemaining = isOnFreeTier ? Math.max(0, FREE_CLOSES - _cache.closesUsed) : Infinity
+  const hasExhaustedTrial = isOnFreeTier && _cache.closesUsed >= FREE_CLOSES
   return {
-    plan: state.plan,
-    closesUsed: state.closesUsed,
+    plan: _cache.plan,
+    closesUsed: _cache.closesUsed,
     closesRemaining,
     isOnFreeTier,
     hasExhaustedTrial,
-    percentUsed: isOnFreeTier ? Math.min(100, Math.round((state.closesUsed / FREE_CLOSES) * 100)) : 0,
+    percentUsed: isOnFreeTier ? Math.min(100, Math.round((_cache.closesUsed / FREE_CLOSES) * 100)) : 0,
   }
 }
 

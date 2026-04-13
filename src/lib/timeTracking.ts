@@ -1,10 +1,10 @@
 /**
- * Automatic time tracking for each close.
- * Records when a close starts and ends, computes duration.
- * Used for billing and productivity analytics.
+ * Time sessions — `time_sessions` JSON rows.
  */
 
-const KEY = 'cb_time_sessions'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { getSupabaseAndFirm } from '@/lib/syncSupabase'
+import { loadPayloadRows, upsertPayloadRow } from '@/lib/supabaseJsonTable'
 
 export interface TimeSession {
   id: string
@@ -16,56 +16,54 @@ export interface TimeSession {
   page: 'upload' | 'review' | 'export'
 }
 
-function load(): TimeSession[] {
-  if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem(KEY) ?? '[]') } catch { return [] }
+let _sessions: TimeSession[] = []
+
+export async function hydrateTimeSessions(supabase: SupabaseClient, firmId: string): Promise<void> {
+  _sessions = await loadPayloadRows<TimeSession>(supabase, 'time_sessions', firmId)
 }
 
-function save(sessions: TimeSession[]) {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(KEY, JSON.stringify(sessions.slice(0, 200)))
+async function persist(): Promise<void> {
+  const ctx = await getSupabaseAndFirm()
+  if (!ctx) return
+  for (const s of _sessions) {
+    await upsertPayloadRow(ctx.supabase, 'time_sessions', ctx.firmId, s.id, s as unknown as Record<string, unknown>)
+  }
 }
 
-/** Start tracking time on a page for a job */
 export function startSession(jobId: string, clientName: string, page: TimeSession['page']): string {
   const bytes = new Uint8Array(4)
   crypto.getRandomValues(bytes)
-  const id = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
-  const sessions = load()
-  sessions.unshift({ id, jobId, clientName, startedAt: new Date().toISOString(), page })
-  save(sessions)
+  const id = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+  _sessions.unshift({ id, jobId, clientName, startedAt: new Date().toISOString(), page })
+  _sessions = _sessions.slice(0, 200)
+  void persist()
   return id
 }
 
-/** End a tracking session */
 export function endSession(id: string): TimeSession | null {
-  const sessions = load()
-  const idx = sessions.findIndex(s => s.id === id)
+  const idx = _sessions.findIndex((s) => s.id === id)
   if (idx === -1) return null
   const endedAt = new Date().toISOString()
   const durationMinutes = Math.round(
-    (new Date(endedAt).getTime() - new Date(sessions[idx].startedAt).getTime()) / 60000
+    (new Date(endedAt).getTime() - new Date(_sessions[idx].startedAt).getTime()) / 60000
   )
-  sessions[idx] = { ...sessions[idx], endedAt, durationMinutes }
-  save(sessions)
-  return sessions[idx]
+  _sessions[idx] = { ..._sessions[idx], endedAt, durationMinutes }
+  void persist()
+  return _sessions[idx]
 }
 
-/** Get total minutes spent on a job */
 export function getJobTime(jobId: string): number {
-  return load()
-    .filter(s => s.jobId === jobId && s.durationMinutes != null)
+  return _sessions
+    .filter((s) => s.jobId === jobId && s.durationMinutes != null)
     .reduce((sum, s) => sum + (s.durationMinutes ?? 0), 0)
 }
 
-/** Get all sessions for analytics */
 export function getAllSessions(): TimeSession[] {
-  return load()
+  return _sessions
 }
 
-/** Summary per client for billing */
 export function getClientTimeSummary(): { clientName: string; totalMinutes: number; sessions: number }[] {
-  const sessions = load().filter(s => s.durationMinutes != null && s.durationMinutes > 0)
+  const sessions = _sessions.filter((s) => s.durationMinutes != null && s.durationMinutes > 0)
   const byClient = new Map<string, { totalMinutes: number; sessions: number }>()
   for (const s of sessions) {
     const existing = byClient.get(s.clientName) ?? { totalMinutes: 0, sessions: 0 }

@@ -4,21 +4,12 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import AuditRiskBadge from '@/components/AuditRiskBadge'
 import { getJobs } from '@/lib/storage'
+import { loadActiveAudits, type ActiveAuditRecord } from '@/lib/auditDefenseStore'
 import type { CategorizationJob } from '@/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface ActiveAudit {
-  id: string
-  client: string
-  auditType: string
-  auditTypeCode: string
-  taxYear: number
-  responseDueDays: number
-  status: 'in-progress' | 'pending' | 'closed'
-  description: string
-  amountInQuestion: number
-}
+type ActiveAudit = ActiveAuditRecord
 
 interface ClientReadiness {
   id: string
@@ -28,13 +19,6 @@ interface ClientReadiness {
   lastClose: string
   risk: 'low' | 'medium' | 'high' | 'critical'
   industry: string
-}
-
-const AUDITS_KEY = 'cb_active_audits'
-
-function loadActiveAudits(): ActiveAudit[] {
-  if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem(AUDITS_KEY) ?? '[]') } catch { return [] }
 }
 
 function computeReadiness(jobs: CategorizationJob[]): ClientReadiness[] {

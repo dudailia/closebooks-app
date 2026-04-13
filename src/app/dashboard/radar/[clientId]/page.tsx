@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Transaction, CategorizationJob } from '@/types'
+import { getJobs } from '@/lib/storage'
 import RadarMetricTile from '@/components/RadarMetricTile'
 import CashFlowForecast from '@/components/CashFlowForecast'
 import RadarEmailDraft from '@/components/RadarEmailDraft'
@@ -113,32 +114,27 @@ export default function RadarClientPage() {
       setIsLoading(true)
       setError('')
 
-      // Try to find client in localStorage jobs
       let foundName = decodeURIComponent(clientId)
       let txns: Transaction[] = []
 
       if (typeof window !== 'undefined') {
         try {
-          const raw = localStorage.getItem('closebooks_jobs')
-          if (raw) {
-            const jobs = JSON.parse(raw) as CategorizationJob[]
-            // clientId may be a job id or a client name slug
-            const job =
-              jobs.find((j) => j.id === clientId) ??
-              jobs.find(
-                (j) =>
-                  j.client_name.toLowerCase().replace(/\s+/g, '-') ===
-                  clientId.toLowerCase()
-              ) ??
-              jobs.find((j) => j.client_name === foundName)
+          const jobs = getJobs()
+          const job =
+            jobs.find((j) => j.id === clientId) ??
+            jobs.find(
+              (j) =>
+                j.client_name.toLowerCase().replace(/\s+/g, '-') ===
+                clientId.toLowerCase()
+            ) ??
+            jobs.find((j) => j.client_name === foundName)
 
-            if (job) {
-              foundName = job.client_name
-              txns = job.transactions
-            }
+          if (job) {
+            foundName = job.client_name
+            txns = job.transactions
           }
         } catch {
-          // ignore parse errors
+          // ignore
         }
       }
 

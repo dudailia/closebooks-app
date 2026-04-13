@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getJobs } from '@/lib/storage'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -34,9 +35,8 @@ const MONTHS = [
 function getClientData(clientId: string): { clientName: string; transactions: Job['transactions'] } {
   if (typeof window === 'undefined') return { clientName: clientId, transactions: [] }
   try {
-    const raw = localStorage.getItem('closebooks_jobs') ?? localStorage.getItem('cb_jobs') ?? '[]'
-    const jobs: Job[] = JSON.parse(raw)
-    const job = jobs.find(j => {
+    const jobs = getJobs() as unknown as Job[]
+    const job = jobs.find((j) => {
       const name = j.clientName ?? j.client ?? ''
       return (
         name === clientId ||

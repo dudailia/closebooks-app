@@ -1,12 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { getJobs } from '@/lib/storage'
 import { useParams, useRouter } from 'next/navigation'
 import CloseTerminal from '@/components/autopilot/CloseTerminal'
 import CloseReport from '@/components/autopilot/CloseReport'
 import type { CloseResult } from '@/components/autopilot/CloseTerminal'
-
-// ─── localStorage helpers ──────────────────────────────────────────────────────
 
 interface Job {
   id?: string
@@ -17,8 +16,7 @@ interface Job {
 function getClientName(clientId: string): string {
   if (typeof window === 'undefined') return clientId
   try {
-    const raw = localStorage.getItem('closebooks_jobs') ?? localStorage.getItem('cb_jobs') ?? '[]'
-    const jobs: Job[] = JSON.parse(raw)
+    const jobs = getJobs() as unknown as Job[]
     const job = jobs.find(j => {
       const name = j.clientName ?? j.client ?? ''
       return (
