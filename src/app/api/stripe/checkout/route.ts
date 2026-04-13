@@ -1,24 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { getUserFromRequest } from '@/lib/supabase/routeAuth'
 
 interface RequestBody {
   priceId: string
   customerEmail?: string
-  /** Matches CloseBooks plan for webhook + in-app unlock (starter | growth). */
-  planSlug?: 'starter' | 'growth'
+  /** starter | professional | enterprise */
+  planSlug?: string
+  /** month | year */
+  billingInterval?: 'month' | 'year'
+}
+
+function getSupabaseService() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return null
+  return createClient(url, key)
 }
 
 function isValidBody(body: unknown): body is RequestBody {
   if (!body || typeof body !== 'object') return false
   const b = body as Record<string, unknown>
-  const planOk =
-    b.planSlug === undefined ||
-    b.planSlug === 'starter' ||
-    b.planSlug === 'growth'
   return (
     typeof b.priceId === 'string' &&
     b.priceId.trim().length > 0 &&
     (b.customerEmail === undefined || typeof b.customerEmail === 'string') &&
-    planOk
+    (b.planSlug === undefined || typeof b.planSlug === 'string') &&
+    (b.billingInterval === undefined || b.billingInterval === 'month' || b.billingInterval === 'year')
   )
 }
 
@@ -39,31 +47,45 @@ export async function POST(request: NextRequest) {
   }
 
   if (!isValidBody(body)) {
-    return NextResponse.json(
-      { error: 'Request must include priceId (string).' },
-      { status: 422 }
-    )
+    return NextResponse.json({ error: 'Request must include priceId (string).' }, { status: 422 })
   }
 
-  const { priceId, customerEmail, planSlug } = body
+  const { priceId, customerEmail: bodyEmail, planSlug, billingInterval } = body
+  const user = await getUserFromRequest(request)
+  const email = (user?.email ?? bodyEmail ?? '').trim().toLowerCase()
+  if (!email) {
+    return NextResponse.json({ error: 'Sign in or provide an email for checkout.' }, { status: 400 })
+  }
+
+  let firmId: string | null = null
+  const supabase = getSupabaseService()
+  if (supabase && user?.id) {
+    const { data: firm } = await supabase.from('firms').select('id').eq('owner_id', user.id).maybeSingle()
+    firmId = firm?.id ?? null
+  }
+
   const origin = request.headers.get('origin') ?? 'http://localhost:3000'
-  const meta = { plan_slug: planSlug ?? 'unknown', product: 'closebooks' }
+  const meta = {
+    plan_slug: planSlug ?? 'unknown',
+    product: 'closebooks',
+    firm_id: firmId ?? '',
+    billing_interval: billingInterval ?? 'month',
+  }
 
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      ...(customerEmail ? { customer_email: customerEmail } : {}),
+      customer_email: email,
       allow_promotion_codes: true,
       billing_address_collection: 'auto',
       metadata: meta,
       subscription_data: {
         metadata: meta,
-        // Billing trial is optional; app also offers first 5 closes free in-product.
         trial_period_days: 14,
       },
-      success_url: `${origin}/dashboard/subscription?payment=success`,
-      cancel_url: `${origin}/pricing?payment=cancelled`,
+      success_url: `${origin}/dashboard?checkout=success`,
+      cancel_url: `${origin}/pricing?checkout=cancelled`,
     })
 
     if (!session.url) {

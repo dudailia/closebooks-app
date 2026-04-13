@@ -4,6 +4,9 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 import TrialBanner from '@/components/TrialBanner'
 import SubscriptionSync from '@/components/SubscriptionSync'
 import FirmDataProvider from '@/components/FirmDataProvider'
+import { SubscriptionProvider } from '@/contexts/SubscriptionContext'
+import SubscriptionBanners from '@/components/SubscriptionBanners'
+import UpgradeModal from '@/components/UpgradeModal'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -27,16 +30,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           overflowX: 'hidden',
         }}
       >
-        <TopBar />
-        <SubscriptionSync />
-        <TrialBanner />
-        <FirmDataProvider>
-          <main style={{ flex: 1 }} className="page-content">
-            <ErrorBoundary>
-              {children}
-            </ErrorBoundary>
-          </main>
-        </FirmDataProvider>
+        <SubscriptionProvider>
+          <TopBar />
+          <SubscriptionSync />
+          <SubscriptionBanners />
+          <TrialBanner />
+          <FirmDataProvider>
+            <main style={{ flex: 1 }} className="page-content">
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
+            </main>
+          </FirmDataProvider>
+          <UpgradeModal />
+        </SubscriptionProvider>
       </div>
     </div>
   )

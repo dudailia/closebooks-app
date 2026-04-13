@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { SkeletonBlock, SkeletonTable } from '@/components/Skeleton'
 import { getJobs } from '@/lib/storage'
 import { getTeamMembers, saveTeamMembers } from '@/lib/teamStore'
+import { useSubscription } from '@/contexts/SubscriptionContext'
+import Link from 'next/link'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -550,6 +552,7 @@ function RolePermissionsBox() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function TeamPage() {
+  const { subscription, loading: subLoading } = useSubscription()
   const [members,     setMembers]     = useState<TeamMember[]>([])
   const [clients,     setClients]     = useState<string[]>([])
   const [showModal,   setShowModal]   = useState(false)
@@ -562,6 +565,11 @@ export default function TeamPage() {
   }, [])
 
   function handleAdd(member: TeamMember) {
+    const maxU = subscription.maxUsers
+    if (!subLoading && maxU > 0 && maxU < 999999 && members.length >= maxU) {
+      alert(`Your plan allows ${maxU} team member(s). Upgrade for more seats.`)
+      return
+    }
     const updated = [...members, member]
     setMembers(updated)
     saveTeamMembers(updated)
@@ -605,16 +613,26 @@ export default function TeamPage() {
             </p>
           </div>
 
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors shrink-0"
-            style={{ backgroundColor: '#2d5a27' }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
-          >
-            <PlusIcon />
-            Invite Member
-          </button>
+          {!subLoading && subscription.maxUsers > 0 && members.length >= subscription.maxUsers && subscription.maxUsers < 999999 ? (
+            <Link
+              href="/pricing"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white shrink-0"
+              style={{ backgroundColor: '#b8734a' }}
+            >
+              Upgrade for more seats
+            </Link>
+          ) : (
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors shrink-0"
+              style={{ backgroundColor: '#2d5a27' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+            >
+              <PlusIcon />
+              Invite Member
+            </button>
+          )}
         </div>
 
         {/* Stats strip */}

@@ -1,18 +1,16 @@
 import { activatePlan } from '@/lib/freeTrial'
 
-/** Pull Stripe subscription (via Supabase) and unlock in-app plan after login. */
+/** Align in-app plan with Stripe-backed subscription after login. */
 export async function syncSubscriptionFromServer(): Promise<boolean> {
   try {
-    const res = await fetch('/api/sync/subscription')
+    const res = await fetch('/api/subscription', { cache: 'no-store' })
     if (!res.ok) return false
-    const data = (await res.json()) as {
-      hasSubscription?: boolean
-      planSlug?: string
-    }
-    if (!data.hasSubscription) return false
-    const slug = (data.planSlug ?? '').toLowerCase()
-    if (slug === 'starter') activatePlan('starter')
-    else activatePlan('growth')
+    const data = (await res.json()) as { subscription?: { tier?: string | null; hasAccess?: boolean } }
+    const tier = data.subscription?.tier
+    if (!tier) return false
+    if (tier === 'starter') activatePlan('starter')
+    else if (tier === 'professional') activatePlan('growth')
+    else if (tier === 'enterprise') activatePlan('scale')
     return true
   } catch {
     return false

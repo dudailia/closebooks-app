@@ -2,45 +2,46 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import { useSubscription } from '@/contexts/SubscriptionContext'
+import { getClients } from '@/lib/storage'
+import { getTeamMembers } from '@/lib/teamStore'
 
-interface BillingRow {
-  hasSubscription: boolean
-  status?: string
-  stripeCustomerId?: string
-  amountTotal?: number | null
-  currency?: string | null
-  updatedAt?: string
+interface InvoiceRow {
+  id: string
+  number: string | null
+  status: string | null
+  amountPaid: number
+  currency: string
+  created: number
+  hostedInvoiceUrl: string | null
 }
 
 export default function SubscriptionPage() {
-  const [data, setData] = useState<BillingRow | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { subscription, refresh } = useSubscription()
+  const [invoices, setInvoices] = useState<InvoiceRow[]>([])
   const [portalLoading, setPortalLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+  const clients = getClients()
+  const clientCount = clients.length
+  const teamCount = getTeamMembers().length
+  const maxC = subscription.maxClients
+  const maxU = subscription.maxUsers
+
+  const loadInvoices = useCallback(async () => {
     try {
-      const res = await fetch('/api/billing/status')
-      if (res.status === 401) {
-        setData({ hasSubscription: false })
-        return
-      }
-      const j = (await res.json()) as BillingRow & { error?: string }
-      if (!res.ok) throw new Error(j.error ?? 'Failed to load')
-      setData(j)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error')
-      setData({ hasSubscription: false })
-    } finally {
-      setLoading(false)
+      const res = await fetch('/api/stripe/invoices')
+      const j = (await res.json()) as { invoices?: InvoiceRow[] }
+      setInvoices(j.invoices ?? [])
+    } catch {
+      setInvoices([])
     }
   }, [])
 
   useEffect(() => {
-    void load()
-  }, [load])
+    void loadInvoices()
+    void refresh()
+  }, [loadInvoices, refresh])
 
   async function openPortal() {
     setPortalLoading(true)
@@ -57,9 +58,13 @@ export default function SubscriptionPage() {
     }
   }
 
+  const tierLabel = subscription.tier
+    ? subscription.tier.charAt(0).toUpperCase() + subscription.tier.slice(1)
+    : 'Free / trial'
+
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
-      <main className="flex-1 max-w-2xl mx-auto w-full px-5 py-10 space-y-8 page-enter">
+      <main className="flex-1 max-w-3xl mx-auto w-full px-5 py-10 space-y-8 page-enter">
         <div>
           <Link href="/dashboard" className="text-xs transition-colors" style={{ color: '#b8734a' }}>
             ← Dashboard
@@ -75,93 +80,111 @@ export default function SubscriptionPage() {
             Subscription &amp; billing
           </h1>
           <p className="text-sm mt-1.5" style={{ color: '#6b6560' }}>
-            Manage your CloseBooks plan through Stripe. The first five closes are free; paid plans unlock unlimited closes and priority support.
+            Your plan, usage, and Stripe invoices. Manage payment methods in the Stripe customer portal.
           </p>
         </div>
 
-        {loading ? (
-          <div className="rounded-2xl border p-8 animate-pulse" style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}>
-            <div className="h-4 w-1/3 rounded" style={{ backgroundColor: '#f0ece4' }} />
+        <div
+          className="rounded-2xl border p-6 space-y-4"
+          style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#a09a94' }}>
+                Current plan
+              </p>
+              <p className="text-xl font-semibold mt-1" style={{ color: '#1a1714' }}>
+                {tierLabel}
+              </p>
+              <p className="text-sm" style={{ color: '#6b6560' }}>
+                Status: <span className="font-mono">{subscription.status}</span>
+                {subscription.billingInterval && ` · ${subscription.billingInterval}ly`}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void openPortal()}
+              disabled={portalLoading}
+              className="py-2.5 px-5 rounded-xl text-sm font-semibold text-white"
+              style={{ backgroundColor: '#635BFF' }}
+            >
+              {portalLoading ? 'Opening…' : 'Manage subscription'}
+            </button>
           </div>
-        ) : (
-          <div
-            className="rounded-2xl border p-6 space-y-4"
-            style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
-          >
-            {data?.hasSubscription ? (
-              <>
-                <div className="flex items-center gap-2">
-                  <span
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full"
-                    style={{ backgroundColor: '#dcfce7', color: '#166534' }}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#22c55e' }} />
-                    Active subscription
-                  </span>
-                  {data.status && (
-                    <span className="text-xs font-mono" style={{ color: '#6b6560' }}>
-                      {data.status}
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm" style={{ color: '#6b6560' }}>
-                  {data.amountTotal != null && data.currency
-                    ? `Last checkout: ${(data.amountTotal / 100).toLocaleString('en-US', { style: 'currency', currency: data.currency.toUpperCase() })}`
-                    : 'Your subscription is linked to this account.'}
-                </p>
-                {data.updatedAt && (
-                  <p className="text-xs" style={{ color: '#a09a94' }}>
-                    Updated {new Date(data.updatedAt).toLocaleString()}
-                  </p>
-                )}
-                <button
-                  type="button"
-                  onClick={() => void openPortal()}
-                  disabled={portalLoading}
-                  className="w-full sm:w-auto py-2.5 px-5 rounded-xl text-sm font-semibold text-white"
-                  style={{ backgroundColor: '#635BFF' }}
-                >
-                  {portalLoading ? 'Opening Stripe…' : 'Manage subscription in Stripe'}
-                </button>
-                <p className="text-xs" style={{ color: '#a09a94' }}>
-                  Update payment method, download invoices, or cancel — hosted securely by Stripe.
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm font-medium" style={{ color: '#1a1714' }}>No active subscription on this account</p>
-                <p className="text-sm" style={{ color: '#6b6560' }}>
-                  Subscribe from Pricing to unlock unlimited closes after your first five free closes, or continue in demo mode.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Link
-                    href="/pricing"
-                    className="inline-flex py-2.5 px-5 rounded-xl text-sm font-semibold text-white"
-                    style={{ backgroundColor: '#2d5a27' }}
-                  >
-                    View plans
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => void openPortal()}
-                    disabled={portalLoading}
-                    className="inline-flex py-2.5 px-5 rounded-xl text-sm font-semibold border"
-                    style={{ borderColor: '#e0dbd4', color: '#6b6560' }}
-                  >
-                    {portalLoading ? '…' : 'I already subscribed — open billing portal'}
-                  </button>
-                </div>
-              </>
-            )}
-            {error && (
-              <p className="text-sm" style={{ color: '#b91c1c' }}>{error}</p>
-            )}
-          </div>
-        )}
 
-        <div className="rounded-xl border px-4 py-3 text-xs" style={{ borderColor: '#e8e0d4', backgroundColor: '#fffbeb', color: '#92400e' }}>
-          Configure <code className="font-mono">STRIPE_SECRET_KEY</code>, webhook, and Supabase{' '}
-          <code className="font-mono">subscriptions</code> table so status syncs automatically after checkout.
+          <div className="grid grid-cols-2 gap-3 pt-2 border-t" style={{ borderColor: '#f0ece4' }}>
+            <div>
+              <p className="text-xs" style={{ color: '#a09a94' }}>Clients</p>
+              <p className="text-lg font-semibold" style={{ color: '#1a1714' }}>
+                {clientCount} / {maxC >= 999999 ? '∞' : maxC}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs" style={{ color: '#a09a94' }}>Team seats</p>
+              <p className="text-lg font-semibold" style={{ color: '#1a1714' }}>
+                {teamCount} / {maxU >= 999999 ? '∞' : maxU}
+              </p>
+            </div>
+          </div>
+
+          {subscription.tier && (
+            <div className="text-xs space-y-1" style={{ color: '#6b6560' }}>
+              <p>Full AI: {subscription.fullAi ? 'Yes' : 'Upgrade on Professional+'}</p>
+              <p>API: {subscription.apiAccess ? 'Yes' : 'Enterprise'}</p>
+              <p>White-label: {subscription.whiteLabel ? 'Yes' : 'Enterprise'}</p>
+            </div>
+          )}
+
+          {error && <p className="text-sm" style={{ color: '#b91c1c' }}>{error}</p>}
+        </div>
+
+        <div>
+          <h2 className="text-sm font-semibold mb-3" style={{ color: '#1a1714' }}>
+            Billing history
+          </h2>
+          {invoices.length === 0 ? (
+            <p className="text-sm" style={{ color: '#6b6560' }}>
+              No invoices yet. After your first charge, invoices appear here.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {invoices.map((inv) => (
+                <li
+                  key={inv.id}
+                  className="flex items-center justify-between rounded-xl border px-4 py-3 text-sm"
+                  style={{ borderColor: '#e8e0d4', backgroundColor: '#fff' }}
+                >
+                  <div>
+                    <span className="font-mono text-xs" style={{ color: '#6b6560' }}>
+                      {inv.number ?? inv.id.slice(0, 14)}
+                    </span>
+                    <span className="ml-2" style={{ color: '#1a1714' }}>
+                      {(inv.amountPaid / 100).toLocaleString('en-US', {
+                        style: 'currency',
+                        currency: inv.currency.toUpperCase(),
+                      })}
+                    </span>
+                  </div>
+                  {inv.hostedInvoiceUrl && (
+                    <a
+                      href={inv.hostedInvoiceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-medium underline"
+                      style={{ color: '#635BFF' }}
+                    >
+                      View
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="rounded-xl border px-4 py-3 text-xs" style={{ borderColor: '#e8e0d4', backgroundColor: '#f6faf5', color: '#2d5a27' }}>
+          Configure Stripe webhooks for <code className="font-mono">checkout.session.completed</code>,{' '}
+          <code className="font-mono">customer.subscription.*</code>, and <code className="font-mono">invoice.*</code>.
         </div>
       </main>
     </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getClients, saveClient, deleteClient, getJobsForClient } from '@/lib/storage'
+import { useSubscription } from '@/contexts/SubscriptionContext'
 import { logActivity } from '@/lib/activity'
 import type { Client, ClientIndustry, AccountingSoftware } from '@/types'
 import { SkeletonBlock, SkeletonTable, StatsSkeleton } from '@/components/Skeleton'
@@ -309,6 +310,7 @@ function ClientCard({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function ClientsPage() {
+  const { subscription, loading: subLoading } = useSubscription()
   const [clients,   setClients]   = useState<Client[]>([])
   const [mounted,   setMounted]   = useState(false)
   const [search,    setSearch]    = useState('')
@@ -323,6 +325,11 @@ export default function ClientsPage() {
 
   function handleSave(client: Client) {
     const isNew = !clients.some((c) => c.id === client.id)
+    const maxC = subscription.maxClients
+    if (isNew && !subLoading && maxC > 0 && maxC < 999999 && clients.length >= maxC) {
+      alert(`You've reached your plan limit of ${maxC} clients. Upgrade to add more.`)
+      return
+    }
     saveClient(client)
     setClients(getClients())
     setShowModal(false)
@@ -396,16 +403,26 @@ export default function ClientsPage() {
               Clients
             </h1>
           </div>
-          <button
-            onClick={() => { setEditing(undefined); setShowModal(true) }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors"
-            style={{ backgroundColor: '#2d5a27' }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
-          >
-            <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
-            Add Client
-          </button>
+          {!subLoading && subscription.maxClients > 0 && clients.length >= subscription.maxClients && subscription.maxClients < 999999 ? (
+            <Link
+              href="/pricing"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+              style={{ backgroundColor: '#b8734a' }}
+            >
+              Upgrade to add more clients
+            </Link>
+          ) : (
+            <button
+              onClick={() => { setEditing(undefined); setShowModal(true) }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors"
+              style={{ backgroundColor: '#2d5a27' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+            >
+              <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
+              Add Client
+            </button>
+          )}
         </div>
 
         {/* Filters */}

@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   try {
     const portal = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${origin}/dashboard/subscription`,
+      return_url: `${origin}/dashboard/subscription?portal=return`,
     })
     if (!portal.url) {
       return NextResponse.json({ error: 'Could not create portal session.' }, { status: 500 })

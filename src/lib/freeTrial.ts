@@ -10,7 +10,7 @@ const FREE_CLOSES = 5
 interface TrialState {
   closesUsed: number
   startedAt: string
-  plan: 'free' | 'starter' | 'growth' | 'scale'
+  plan: 'free' | 'starter' | 'growth' | 'scale' | 'enterprise'
   trialActivatedAt?: string
 }
 
