@@ -98,6 +98,8 @@ function buildSections(pendingCount: number): NavSection[] {
         { href: '/dashboard/connect',       label: 'Connect API',   icon: ApiIcon },
         { href: '/dashboard/certification', label: 'Certification', icon: CertIcon },
         { href: '/dashboard/referrals',     label: 'Refer & Earn',  icon: GiftIcon },
+        { href: '/dashboard/growth',       label: 'Growth',        icon: TrendingIcon },
+        { href: '/dashboard/pipeline',     label: 'Pipeline',      icon: PipelineIcon },
       ],
     },
     {
@@ -105,6 +107,7 @@ function buildSections(pendingCount: number): NavSection[] {
       label: 'ADMIN',
       items: [
         { href: '/dashboard/billing',      label: 'Billing',       icon: CreditCardIcon },
+        { href: '/dashboard/subscription', label: 'Subscription',  icon: SubscriptionIcon },
         { href: '/dashboard/time',         label: 'Time Tracking', icon: ClockIcon },
         { href: '/dashboard/team',         label: 'Team',          icon: TeamIcon },
         { href: '/dashboard/settings',     label: 'Settings',      icon: GearIcon },
@@ -608,6 +611,9 @@ function GearIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fil
 function PlugIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M6 9l-3.5 3.5M5 2v4M11 2v4M4 6h8a0 0 0 010 4H4a0 0 0 010-4z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none"/></svg> }
 function CodeIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M5 5l-3 3 3 3M11 5l3 3-3 3M9 3l-2 10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> }
 function GiftIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="6" width="13" height="8" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M1.5 6h13M8 6v8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M8 6c0-2 1.5-3 2-2.5S8.5 5.5 8 6M8 6c0-2-1.5-3-2-2.5S7.5 5.5 8 6" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/></svg> }
+function TrendingIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 12l3-4 2.5 2 3-6 3.5 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" fill="none"/><path d="M12 3v3M12 3h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> }
+function PipelineIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="3" cy="8" r="2" stroke="currentColor" strokeWidth="1.2" fill="none"/><circle cx="8" cy="5" r="2" stroke="currentColor" strokeWidth="1.2" fill="none"/><circle cx="13" cy="9" r="2" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M4.8 7l2.4-1.5M9.8 5.8l2.4 2" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg> }
+function SubscriptionIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 4.5h10a1.5 1.5 0 011.5 1.5v4A1.5 1.5 0 0113 11.5H3A1.5 1.5 0 011.5 10V6A1.5 1.5 0 013 4.5z" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M4.5 8h7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><circle cx="5" cy="8" r="1" fill="currentColor"/></svg> }
 function UpgradeIcon() { return <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 2l3.5 4H8v6H6V6H3.5L7 2z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" fill="none"/></svg> }
 function ChevronLeftIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg> }
 function ChevronRightIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg> }

@@ -5,6 +5,8 @@ export interface FirmSettings {
   firmTagline: string
   accentColor: string  // hex, e.g. '#2d5a27'
   preparedBy: string
+  /** Short slug for document inbox email: books+{slug}@inbox.closebooks.app */
+  inboxSlug: string
 }
 
 const DEFAULTS: FirmSettings = {
@@ -12,6 +14,7 @@ const DEFAULTS: FirmSettings = {
   firmTagline: 'Certified Public Accountants',
   accentColor: '#2d5a27',
   preparedBy:  '',
+  inboxSlug:   '',
 }
 
 export function loadFirmSettings(): FirmSettings {

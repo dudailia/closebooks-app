@@ -68,11 +68,19 @@ const PLANS = [
 // Checkout
 // ---------------------------------------------------------------------------
 
-async function startCheckout(priceId: string, email: string): Promise<string> {
+async function startCheckout(
+  priceId: string,
+  email: string,
+  planSlug: 'starter' | 'growth'
+): Promise<string> {
   const res = await fetch('/api/stripe/checkout', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ priceId, customerEmail: email || undefined }),
+    body:    JSON.stringify({
+      priceId,
+      customerEmail: email || undefined,
+      planSlug,
+    }),
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error ?? 'Checkout failed.')
@@ -103,7 +111,9 @@ function PricingCard({ plan }: { plan: typeof PLANS[number] }) {
     setLoading(true)
     setError(null)
     try {
-      const url = await startCheckout(resolvedPriceId!, email)
+      const planSlug =
+        plan.priceEnvKey === 'NEXT_PUBLIC_STRIPE_PRICE_STARTER' ? 'starter' : 'growth'
+      const url = await startCheckout(resolvedPriceId!, email, planSlug)
       window.location.href = url
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')

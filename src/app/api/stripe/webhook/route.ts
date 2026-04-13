@@ -67,6 +67,9 @@ export async function POST(request: NextRequest) {
         currency:       session.currency,
       })
 
+      const planSlug =
+        typeof session.metadata?.plan_slug === 'string' ? session.metadata.plan_slug : null
+
       if (supabase) {
         const { error } = await supabase.from('subscriptions').upsert({
           stripe_customer_id:    customerId,
@@ -76,6 +79,7 @@ export async function POST(request: NextRequest) {
           amount_total:          session.amount_total,
           currency:              session.currency,
           checkout_session_id:   session.id,
+          plan_slug:             planSlug,
           created_at:            new Date().toISOString(),
           updated_at:            new Date().toISOString(),
         }, { onConflict: 'stripe_subscription_id' })
@@ -94,11 +98,15 @@ export async function POST(request: NextRequest) {
         customerId:     sub.customer,
       })
 
+      const planSlug =
+        typeof sub.metadata?.plan_slug === 'string' ? sub.metadata.plan_slug : undefined
+
       if (supabase) {
         const { error } = await supabase.from('subscriptions').upsert({
           stripe_subscription_id: sub.id,
           stripe_customer_id:    typeof sub.customer === 'string' ? sub.customer : sub.customer.id,
           status:                sub.status,
+          ...(planSlug ? { plan_slug: planSlug } : {}),
           updated_at:            new Date().toISOString(),
         }, { onConflict: 'stripe_subscription_id' })
 

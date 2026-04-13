@@ -532,7 +532,7 @@ function RecurringPanel({ patterns }: { patterns: RecurringPattern[] }) {
 // Push to QuickBooks modal
 // ---------------------------------------------------------------------------
 
-type PushStep = 'confirm' | 'connecting' | 'uploading' | 'success'
+type PushStep = 'confirm' | 'connecting' | 'uploading' | 'success' | 'error'
 
 interface PushModalProps {
   count: number
@@ -540,12 +540,13 @@ interface PushModalProps {
   onConfirm: () => void
   onCancel: () => void
   step: PushStep
+  errorMessage?: string
 }
 
-function PushModal({ count, connection, onConfirm, onCancel, step }: PushModalProps) {
+function PushModal({ count, connection, onConfirm, onCancel, step, errorMessage }: PushModalProps) {
   useEffect(() => {
     function handler(e: KeyboardEvent) {
-      if (e.key === 'Escape' && step === 'confirm') onCancel()
+      if (e.key === 'Escape' && (step === 'confirm' || step === 'error')) onCancel()
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
@@ -555,7 +556,7 @@ function PushModal({ count, connection, onConfirm, onCancel, step }: PushModalPr
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
-      onClick={() => step === 'confirm' && onCancel()}
+      onClick={() => (step === 'confirm' || step === 'error') && onCancel()}
     >
       <div
         className="w-full max-w-sm rounded-2xl border shadow-2xl overflow-hidden"
@@ -576,6 +577,35 @@ function PushModal({ count, connection, onConfirm, onCancel, step }: PushModalPr
         </div>
 
         <div className="px-6 py-6">
+          {step === 'error' && (
+            <>
+              <p className="text-base font-semibold" style={{ color: '#991b1b' }}>
+                Could not post to QuickBooks
+              </p>
+              <p className="text-sm mt-2" style={{ color: '#6b6560' }}>
+                {errorMessage ?? 'Check your connection under Integrations and try again.'}
+              </p>
+              <div className="flex gap-2 mt-5">
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="flex-1 py-2.5 rounded-xl text-sm border transition-colors"
+                  style={{ borderColor: '#e0dbd4', color: '#6b6560' }}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={onConfirm}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+                  style={{ backgroundColor: '#2CA01C' }}
+                >
+                  Try again
+                </button>
+              </div>
+            </>
+          )}
+
           {step === 'confirm' && (
             <>
               <p className="text-base font-semibold" style={{ color: '#1a1714' }}>
@@ -584,7 +614,7 @@ function PushModal({ count, connection, onConfirm, onCancel, step }: PushModalPr
               <p className="text-sm mt-2" style={{ color: '#6b6560' }}>
                 <span className="font-semibold" style={{ color: '#2CA01C' }}>{count}</span> approved transaction{count !== 1 ? 's' : ''} will be synced to{' '}
                 <span className="font-medium" style={{ color: '#1a1714' }}>{connection.companyName}</span>.
-                Transactions will be posted with their categorized account codes.
+                Live connections post journal entries (Bank ↔ Expense) for each approved line. Demo mode simulates sync without calling Intuit.
               </p>
               <div
                 className="mt-4 rounded-xl px-3.5 py-3 text-xs"
@@ -655,10 +685,10 @@ function PushModal({ count, connection, onConfirm, onCancel, step }: PushModalPr
               </div>
               <div className="text-center">
                 <p className="text-base font-semibold" style={{ color: '#14532d' }}>
-                  {count} transaction{count !== 1 ? 's' : ''} synced to QuickBooks ✓
+                  Sync complete ✓
                 </p>
                 <p className="text-xs mt-1.5" style={{ color: '#6b6560' }}>
-                  Transactions are now visible in {connection.companyName}
+                  Check journal entries in {connection.companyName}
                 </p>
               </div>
             </div>
@@ -836,10 +866,12 @@ export default function ReviewPage() {
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([])
   const toastId = useRef(0)
 
-  // QBO
+  // QBO — demo: localStorage; production: OAuth via /api/integrations/quickbooks/*
   const [qboConn,    setQboConn]    = useState<QBOConnection | null>(null)
+  const [qboLive,    setQboLive]    = useState(false)
   const [showPush,   setShowPush]   = useState(false)
   const [pushStep,   setPushStep]   = useState<PushStep>('confirm')
+  const [pushError,  setPushError]  = useState('')
 
   // Time tracking
   const sessionIdRef = useRef<string | null>(null)
@@ -862,6 +894,22 @@ export default function ReviewPage() {
         sessionIdRef.current = startSession(jobId, found.client_name, 'review')
       }
       setQboConn(getQBOConnection())
+      setQboLive(false)
+      fetch('/api/integrations/quickbooks/status')
+        .then((r) => r.json())
+        .then((data: { connected?: boolean; companyName?: string; realmId?: string; lastSyncAt?: string | null; totalSynced?: number }) => {
+          if (data.connected && data.companyName && data.realmId) {
+            setQboLive(true)
+            setQboConn({
+              companyId:   data.realmId,
+              companyName: data.companyName,
+              connectedAt: new Date().toISOString(),
+              lastSyncAt:  data.lastSyncAt ?? null,
+              totalSynced: data.totalSynced ?? 0,
+            })
+          }
+        })
+        .catch(() => { /* keep local demo connection */ })
       // Load client industry from localStorage (fast, always available)
       const client = getClients().find((c) => c.business_name === found.client_name)
       if (client) setClientIndustry(client.industry)
@@ -883,6 +931,22 @@ export default function ReviewPage() {
       if (!found) { setNotFound(true); return }
       setJob(found)
       setQboConn(getQBOConnection())
+      setQboLive(false)
+      fetch('/api/integrations/quickbooks/status')
+        .then((r) => r.json())
+        .then((data: { connected?: boolean; companyName?: string; realmId?: string; lastSyncAt?: string | null; totalSynced?: number }) => {
+          if (data.connected && data.companyName && data.realmId) {
+            setQboLive(true)
+            setQboConn({
+              companyId:   data.realmId,
+              companyName: data.companyName,
+              connectedAt: new Date().toISOString(),
+              lastSyncAt:  data.lastSyncAt ?? null,
+              totalSynced: data.totalSynced ?? 0,
+            })
+          }
+        })
+        .catch(() => {})
       const client = getClients().find((c) => c.business_name === found.client_name)
       if (client) setClientIndustry(client.industry)
       const existing = getAuditTrail(jobId)
@@ -1086,13 +1150,61 @@ export default function ReviewPage() {
 
   function handlePushToQBO() {
     setPushStep('confirm')
+    setPushError('')
     setShowPush(true)
   }
 
   function executePush() {
     if (!job || !qboConn) return
-    const count = job.transactions.filter((t) => t.status === 'approved' || t.status === 'edited').length
+    const approved = job.transactions.filter((t) => t.status === 'approved' || t.status === 'edited')
+    const count = approved.length
     setPushStep('connecting')
+    setPushError('')
+
+    if (qboLive) {
+      void (async () => {
+        try {
+          setPushStep('uploading')
+          const res = await fetch('/api/integrations/quickbooks/push', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ transactions: approved }),
+          })
+          const data = (await res.json()) as { error?: string; pushed?: number; message?: string }
+          if (!res.ok) {
+            setPushError(data.error ?? 'QuickBooks push failed.')
+            setPushStep('error')
+            return
+          }
+          const pushed = typeof data.pushed === 'number' ? data.pushed : count
+          setPushStep('success')
+          setQboConn((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  lastSyncAt: new Date().toISOString(),
+                  totalSynced: prev.totalSynced + pushed,
+                }
+              : prev
+          )
+          logActivity({
+            type: 'csv_exported',
+            description: `${pushed} journal entries posted to QuickBooks Online for ${job.client_name}`,
+            clientName: job.client_name,
+            jobId: job.id,
+          })
+          setTimeout(() => {
+            setShowPush(false)
+            addToast(data.message ?? `${pushed} entries posted to QuickBooks ✓`, 'success')
+          }, 2000)
+        } catch {
+          setPushError('Network error while contacting QuickBooks.')
+          setPushStep('error')
+        }
+      })()
+      return
+    }
+
     setTimeout(() => {
       setPushStep('uploading')
       setTimeout(() => {
@@ -1160,6 +1272,7 @@ export default function ReviewPage() {
           count={approvedCount}
           connection={qboConn}
           step={pushStep}
+          errorMessage={pushError}
           onConfirm={executePush}
           onCancel={() => setShowPush(false)}
         />

@@ -3,15 +3,22 @@ import { NextRequest, NextResponse } from 'next/server'
 interface RequestBody {
   priceId: string
   customerEmail?: string
+  /** Matches CloseBooks plan for webhook + in-app unlock (starter | growth). */
+  planSlug?: 'starter' | 'growth'
 }
 
 function isValidBody(body: unknown): body is RequestBody {
   if (!body || typeof body !== 'object') return false
   const b = body as Record<string, unknown>
+  const planOk =
+    b.planSlug === undefined ||
+    b.planSlug === 'starter' ||
+    b.planSlug === 'growth'
   return (
     typeof b.priceId === 'string' &&
     b.priceId.trim().length > 0 &&
-    (b.customerEmail === undefined || typeof b.customerEmail === 'string')
+    (b.customerEmail === undefined || typeof b.customerEmail === 'string') &&
+    planOk
   )
 }
 
@@ -38,8 +45,9 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { priceId, customerEmail } = body
+  const { priceId, customerEmail, planSlug } = body
   const origin = request.headers.get('origin') ?? 'http://localhost:3000'
+  const meta = { plan_slug: planSlug ?? 'unknown', product: 'closebooks' }
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -48,9 +56,14 @@ export async function POST(request: NextRequest) {
       ...(customerEmail ? { customer_email: customerEmail } : {}),
       allow_promotion_codes: true,
       billing_address_collection: 'auto',
-      subscription_data: { trial_period_days: 14 },
-      success_url: `${origin}/dashboard?payment=success`,
-      cancel_url:  `${origin}/pricing?payment=cancelled`,
+      metadata: meta,
+      subscription_data: {
+        metadata: meta,
+        // Billing trial is optional; app also offers first 5 closes free in-product.
+        trial_period_days: 14,
+      },
+      success_url: `${origin}/dashboard/subscription?payment=success`,
+      cancel_url: `${origin}/pricing?payment=cancelled`,
     })
 
     if (!session.url) {
