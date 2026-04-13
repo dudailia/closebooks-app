@@ -6,12 +6,13 @@ import InboxDocumentCard, { type InboxDocumentCardProps } from '@/components/Inb
 import InboxSetupBanner from '@/components/InboxSetupBanner'
 import ReceiptAnimation from '@/components/ReceiptAnimation'
 import { getDocuments } from '@/lib/vaultStorage'
+import { loadFirmSettings } from '@/lib/firmSettings'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
-const INBOX_EMAIL = 'books@yourfirm.closebooks.io'
+const INBOX_DOMAIN = 'inbox.closebooks.app'
 
 type FilterTab = 'all' | 'receipt' | 'invoice' | 'statement' | 'unmatched'
 
@@ -273,28 +274,45 @@ export default function InboxPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<FilterTab>('all')
   const [docs, setDocs] = useState<DocItem[]>(DEMO_DOCS)
+  const [inboxAddress, setInboxAddress] = useState(`books@yourfirm.${INBOX_DOMAIN}`)
+
+  useEffect(() => {
+    const s = loadFirmSettings()
+    const slug = (s.inboxSlug || '').trim()
+    if (slug) {
+      setInboxAddress(`books+${slug}@${INBOX_DOMAIN}`)
+    } else {
+      setInboxAddress(`books@yourfirm.${INBOX_DOMAIN}`)
+    }
+  }, [])
 
   useEffect(() => {
     // Merge real vault documents into inbox view
     try {
       const vaultDocs = getDocuments()
-      const vaultAsInbox: DocItem[] = vaultDocs.map(d => ({
-        id: d.id,
-        source: 'email' as const,
-        documentType: (d.type as DocItem['documentType']) ?? 'receipt',
-        title: d.name,
-        merchantName: d.clientName ?? 'Unknown',
-        amount: undefined,
-        date: d.uploadedAt.slice(0, 10),
-        clientName: d.clientName,
-        status: 'matched' as const,
-        matchConfidence: 0.9,
-        processingDuration: 1000,
-        category: d.category ?? 'Document',
-      }))
+      const vaultAsInbox: DocItem[] = vaultDocs.map((d) => {
+        const docType: DocItem['documentType'] =
+          d.fileType === 'receipt' ? 'receipt'
+          : d.fileType === 'bank-statement' ? 'statement'
+          : 'invoice'
+        return {
+          id: d.id,
+          source: 'email' as const,
+          documentType: docType,
+          title: d.fileName,
+          merchantName: d.clientName,
+          amount: undefined,
+          date: d.uploadedAt.slice(0, 10),
+          clientName: d.clientName,
+          status: 'matched' as const,
+          matchConfidence: 0.9,
+          processingDuration: 1000,
+          category: d.tags[0] ?? d.fileType,
+        }
+      })
       // Merge: vault docs first, then demo docs (only keep demo if no real vault docs)
       if (vaultDocs.length > 0) {
-        setDocs([...vaultAsInbox, ...DEMO_DOCS])
+        setDocs(vaultAsInbox)
       }
     } catch { /* ignore */ }
   }, [])
@@ -303,8 +321,7 @@ export default function InboxPage() {
   const [animTrigger, setAnimTrigger] = useState(false)
   const [animDoc, setAnimDoc] = useState<DocItem | null>(null)
 
-  // Inbox not configured for demo = false (show banner = true)
-  const [inboxConfigured] = useState(false)
+  const inboxConfigured = inboxAddress.includes('+')
 
   // Stats
   const todayDocs  = docs.filter(d => d.date === '2026-04-05').length
@@ -364,14 +381,14 @@ export default function InboxPage() {
               <polyline points="22,6 12,13 2,6"/>
             </svg>
             <code style={{ fontSize: 13, color: '#1a1714', fontFamily: 'monospace', fontWeight: 600 }}>
-              {INBOX_EMAIL}
+              {inboxAddress}
             </code>
-            <CopyButton text={INBOX_EMAIL} />
+            <CopyButton text={inboxAddress} />
           </div>
         </div>
 
         {/* ── Setup banner (when not configured) ─────────────────────────── */}
-        {!inboxConfigured && <InboxSetupBanner inboxEmail={INBOX_EMAIL} />}
+        {!inboxConfigured && <InboxSetupBanner inboxEmail={inboxAddress} />}
 
         {/* ── Stats bar ──────────────────────────────────────────────────── */}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 28 }}>

@@ -111,6 +111,13 @@ export default function CompliancePage() {
               <p className="mt-1 text-sm" style={{ color: '#6b6560' }}>
                 Stay ahead of IRS, DOL, and state regulations. Draft client advisory letters in one click.
               </p>
+              <a
+                href="/dashboard/compliance/tasks"
+                className="inline-block mt-2 text-xs font-semibold"
+                style={{ color: '#2d5a27' }}
+              >
+                Compliance task checklist →
+              </a>
             </div>
             <div className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg" style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
               <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />

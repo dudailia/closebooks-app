@@ -302,10 +302,35 @@ export default function IntegrationsPage() {
   const [qboConn,    setQboConn]    = useState<QBOConnection | null>(null)
   const [showModal,  setShowModal]  = useState(false)
   const [showDisconnect, setShowDisconnect] = useState(false)
+  const [oauthConfigured, setOauthConfigured] = useState(false)
 
   useEffect(() => {
     setQboConn(getQBOConnection())
     setMounted(true)
+    fetch('/api/integrations/quickbooks/env')
+      .then((r) => r.json())
+      .then((d: { oauthConfigured?: boolean }) => setOauthConfigured(!!d.oauthConfigured))
+      .catch(() => setOauthConfigured(false))
+    fetch('/api/integrations/quickbooks/status')
+      .then((r) => r.json())
+      .then((data: { connected?: boolean; companyName?: string; realmId?: string; lastSyncAt?: string | null; totalSynced?: number }) => {
+        if (data.connected && data.companyName && data.realmId) {
+          setQboConn({
+            companyId:   data.realmId,
+            companyName: data.companyName,
+            connectedAt: new Date().toISOString(),
+            lastSyncAt:  data.lastSyncAt ?? null,
+            totalSynced: data.totalSynced ?? 0,
+          })
+        }
+      })
+      .catch(() => { /* demo localStorage */ })
+
+    const params = new URLSearchParams(window.location.search)
+    const qbo = params.get('qbo')
+    if (qbo === 'connected') {
+      window.history.replaceState({}, '', '/dashboard/integrations')
+    }
   }, [])
 
   function handleConnected(conn: QBOConnection) {
@@ -314,9 +339,24 @@ export default function IntegrationsPage() {
   }
 
   function handleDisconnect() {
-    disconnectQBO()
-    setQboConn(null)
-    setShowDisconnect(false)
+    void (async () => {
+      try {
+        const res = await fetch('/api/integrations/quickbooks/disconnect', { method: 'POST' })
+        if (res.ok) {
+          disconnectQBO()
+          setQboConn(null)
+          setShowDisconnect(false)
+          return
+        }
+      } catch { /* fall through */ }
+      disconnectQBO()
+      setQboConn(null)
+      setShowDisconnect(false)
+    })()
+  }
+
+  function startIntuitOAuth() {
+    window.location.href = '/api/integrations/quickbooks/authorize'
   }
 
   return (
@@ -502,8 +542,24 @@ export default function IntegrationsPage() {
                           ✓ Ready to push
                         </button>
                       </div>
+                    ) : oauthConfigured ? (
+                      <button
+                        type="button"
+                        onClick={startIntuitOAuth}
+                        className="w-full py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-opacity"
+                        style={{ backgroundColor: '#2CA01C' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path d="M7 1v6M4 4l3-3 3 3" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M1 9v2.5A1.5 1.5 0 002.5 13h9A1.5 1.5 0 0013 11.5V9" stroke="white" strokeWidth="1.3" strokeLinecap="round" />
+                        </svg>
+                        Connect with Intuit (OAuth)
+                      </button>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => setShowModal(true)}
                         className="w-full py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-opacity"
                         style={{ backgroundColor: '#2CA01C' }}
@@ -514,7 +570,7 @@ export default function IntegrationsPage() {
                           <path d="M7 1v6M4 4l3-3 3 3" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                           <path d="M1 9v2.5A1.5 1.5 0 002.5 13h9A1.5 1.5 0 0013 11.5V9" stroke="white" strokeWidth="1.3" strokeLinecap="round" />
                         </svg>
-                        Connect to QuickBooks Online
+                        Demo connect (local only)
                       </button>
                     )
                   ) : (
@@ -542,8 +598,8 @@ export default function IntegrationsPage() {
             <path d="M8 7v4M8 5.5v.5" stroke="#a09a94" strokeWidth="1.3" strokeLinecap="round" />
           </svg>
           <p className="text-xs" style={{ color: '#a09a94', lineHeight: 1.6 }}>
-            <span className="font-semibold" style={{ color: '#6b6560' }}>Demo note:</span>{' '}
-            The QuickBooks connection above is simulated for demonstration purposes. In production, this would use the official Intuit OAuth 2.0 flow requiring a verified developer account. All other integrations are on the roadmap.
+            <span className="font-semibold" style={{ color: '#6b6560' }}>Production:</span>{' '}
+            Set <code className="font-mono">INTUIT_CLIENT_ID</code>, <code className="font-mono">INTUIT_CLIENT_SECRET</code>, and add the redirect URL in the Intuit Developer portal. Create the Supabase table <code className="font-mono">qbo_connections</code> (see <code className="font-mono">.env.example</code>). Without OAuth env vars, the app uses a local demo connection only.
           </p>
         </div>
 

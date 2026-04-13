@@ -21,6 +21,7 @@ export default function SettingsPage() {
     firmTagline: 'Certified Public Accountants',
     accentColor: '#2d5a27',
     preparedBy:  '',
+    inboxSlug:   '',
   })
 
   useEffect(() => {
@@ -34,7 +35,15 @@ export default function SettingsPage() {
   }
 
   function handleSave() {
-    saveFirmSettings(settings)
+    const slug = settings.inboxSlug
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40)
+    const next = { ...settings, inboxSlug: slug }
+    setSettings(next)
+    saveFirmSettings(next)
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
@@ -118,6 +127,28 @@ export default function SettingsPage() {
                 onBlur={(e)  => { e.currentTarget.style.borderColor = '#e8e0d4' }}
               />
               <p className="text-xs" style={{ color: '#a09a94' }}>Shown in the footer of client summaries.</p>
+            </div>
+
+            {/* Document inbox address */}
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium" style={{ color: '#1a1714' }}>
+                Document inbox slug
+              </label>
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <span style={{ color: '#6b6560' }}>books+</span>
+                <input
+                  type="text"
+                  value={settings.inboxSlug}
+                  onChange={(e) => handleChange('inboxSlug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                  placeholder="yourfirm"
+                  className="flex-1 min-w-[120px] max-w-[200px] rounded-xl border px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 transition-colors"
+                  style={{ borderColor: '#e8e0d4', backgroundColor: '#faf8f4', color: '#1a1714' }}
+                />
+                <span style={{ color: '#6b6560' }}>@inbox.closebooks.app</span>
+              </div>
+              <p className="text-xs" style={{ color: '#a09a94' }}>
+                Used on the Inbox page as your firm&apos;s forwarding address. Wire your email provider to deliver into CloseBooks when you enable inbound processing.
+              </p>
             </div>
 
             {/* Accent color */}

@@ -39,8 +39,10 @@ const LABELS: Record<string, string> = {
   benchmarks:   'Benchmarks',
   insights:     'Insights',
   pulse:        'Pulse',
-  requests:     'Requests',
   setup:        'Setup',
+  growth:       'Growth',
+  pipeline:     'Pipeline',
+  subscription: 'Subscription',
 }
 
 function isUUID(s: string) {
