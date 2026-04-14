@@ -34,6 +34,13 @@ function LoginForm() {
     }
   }, [router])
 
+  // Idle timeout redirect — clear session so user must re-authenticate
+  useEffect(() => {
+    if (searchParams.get('reason') !== 'idle') return
+    const supabase = createClient()
+    void supabase?.auth.signOut()
+  }, [searchParams])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!email.trim() || !password.trim()) {
