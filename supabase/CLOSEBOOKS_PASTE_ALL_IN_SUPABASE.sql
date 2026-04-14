@@ -1,6 +1,9 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- CLOSEBOOKS: PASTE ENTIRE FILE INTO SUPABASE SQL EDITOR → RUN ONCE
 -- Order: core tables → subscriptions → business RLS → stripe cols → members+audit
+--
+-- VERIFY: Line 6 below MUST say "-- ─── A) Core: firms" — if you see "Helper: firm scope"
+-- or "cb_firm_id" near the top, you pasted an OLD file. Use Raw GitHub link again.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- ─── A) Core: firms, clients, jobs, transactions (must run first) ────────
