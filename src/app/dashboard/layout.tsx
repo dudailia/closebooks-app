@@ -7,6 +7,7 @@ import FirmDataProvider from '@/components/FirmDataProvider'
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext'
 import SubscriptionBanners from '@/components/SubscriptionBanners'
 import UpgradeModal from '@/components/UpgradeModal'
+import SessionPulse from '@/components/SessionPulse'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -31,6 +32,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }}
       >
         <SubscriptionProvider>
+          <SessionPulse />
           <TopBar />
           <SubscriptionSync />
           <SubscriptionBanners />

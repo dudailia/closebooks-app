@@ -1,27 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { categorizeTransactions } from '@/lib/categorize'
-import type { CorrectionHint } from '@/lib/categorize'
+import { z } from 'zod'
+import { categorizeTransactions, type CorrectionHint } from '@/lib/categorize'
 import type { Transaction, ChartOfAccounts } from '@/types'
-
-interface RequestBody {
-  transactions: Transaction[]
-  chartOfAccounts: ChartOfAccounts[]
-  clientName: string
-  corrections?: CorrectionHint[]
-}
-
-function isValidBody(body: unknown): body is RequestBody {
-  if (!body || typeof body !== 'object') return false
-  const b = body as Record<string, unknown>
-  return (
-    Array.isArray(b.transactions) &&
-    Array.isArray(b.chartOfAccounts) &&
-    typeof b.clientName === 'string' &&
-    b.clientName.trim().length > 0
-  )
-}
+import { rateLimit } from '@/lib/rateLimit'
+import { sanitizeForPrompt } from '@/lib/promptSanitize'
+import { getUserFromRequest } from '@/lib/supabase/routeAuth'
+const bodySchema = z.object({
+  transactions: z.array(z.record(z.string(), z.unknown())),
+  chartOfAccounts: z.array(z.record(z.string(), z.unknown())),
+  clientName: z.string().min(1).max(500),
+  corrections: z.array(z.record(z.string(), z.unknown())).optional(),
+})
 
 export async function POST(request: NextRequest) {
+  const user = await getUserFromRequest(request)
+  const uid = user?.id ?? request.headers.get('x-forwarded-for') ?? 'anon'
+  const rl = rateLimit(`categorize:${uid}`, 10, 1000)
+  if (!rl.ok) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } })
+  }
+
   console.log('=== API route /api/categorize HIT ===')
   console.log('ANTHROPIC_API_KEY exists:', !!process.env.ANTHROPIC_API_KEY)
 
@@ -40,19 +38,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON in request body.' }, { status: 400 })
   }
 
-  if (!isValidBody(body)) {
-    console.error('Invalid request body shape:', JSON.stringify(body).slice(0, 200))
-    return NextResponse.json(
-      { error: 'Request body must include transactions (array), chartOfAccounts (array), and clientName (string).' },
-      { status: 422 }
-    )
+  const parsed = bodySchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Validation failed', issues: parsed.error.flatten() }, { status: 422 })
   }
 
-  const { transactions, chartOfAccounts, clientName, corrections = [] } = body
+  const { transactions, chartOfAccounts, clientName, corrections = [] } = parsed.data
+  const safeClient = sanitizeForPrompt(clientName, 500)
 
   console.log(
     `Received: ${transactions.length} transactions, ${chartOfAccounts.length} accounts, ` +
-    `client="${clientName}", ${corrections.length} correction hints`
+    `client="${safeClient}", ${corrections.length} correction hints`
   )
 
   if (transactions.length === 0) {
@@ -65,7 +61,11 @@ export async function POST(request: NextRequest) {
 
   // --- Categorize -----------------------------------------------------------
   try {
-    const categorized = await categorizeTransactions(transactions, chartOfAccounts, corrections)
+    const categorized = await categorizeTransactions(
+      transactions as unknown as Transaction[],
+      chartOfAccounts as unknown as ChartOfAccounts[],
+      corrections as unknown as CorrectionHint[]
+    )
 
     const summary = {
       total: categorized.length,
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     console.log('Categorization complete:', summary)
 
-    return NextResponse.json({ clientName, transactions: categorized, summary }, { status: 200 })
+    return NextResponse.json({ clientName: safeClient, transactions: categorized, summary }, { status: 200 })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('Categorization threw:', message, err)

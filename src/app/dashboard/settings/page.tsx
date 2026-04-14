@@ -240,6 +240,26 @@ export default function SettingsPage() {
           </div>
         )}
 
+        <div
+          className="rounded-2xl border p-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap"
+          style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+        >
+          <a
+            href="/dashboard/settings/audit-log"
+            className="text-sm font-medium underline"
+            style={{ color: '#2d5a27' }}
+          >
+            Audit log (admins)
+          </a>
+          <a
+            href="/dashboard/settings/sessions"
+            className="text-sm font-medium underline"
+            style={{ color: '#2d5a27' }}
+          >
+            Active sessions
+          </a>
+        </div>
+
       </main>
     </div>
   )

@@ -5,6 +5,7 @@
 import { createServerClient } from '@supabase/ssr'
 import type { NextRequest } from 'next/server'
 import type { User } from '@supabase/supabase-js'
+import { supabaseCookieOptions } from '@/lib/supabase/cookieOptions'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -23,6 +24,7 @@ export function createRouteHandlerClient(request: NextRequest) {
   if (!isSupabaseEnvConfigured()) return null
 
   return createServerClient(SUPABASE_URL, SUPABASE_ANON, {
+    cookieOptions: supabaseCookieOptions,
     cookies: {
       getAll() {
         return request.cookies.getAll()
