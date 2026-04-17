@@ -1,12 +1,10 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- CLOSEBOOKS: PASTE ENTIRE FILE INTO SUPABASE SQL EDITOR → RUN ONCE
--- Order: core tables → subscriptions → business RLS → stripe cols → members+audit
---
--- VERIFY: Line 6 below MUST say "-- ─── A) Core: firms" — if you see "Helper: firm scope"
--- or "cb_firm_id" near the top, you pasted an OLD file. Use Raw GitHub link again.
+-- Order: core → subscriptions → business RLS → stripe cols → members+audit (FIXED)
+-- VERIFY line 6: "-- ─── A) Core: firms"
 -- ═══════════════════════════════════════════════════════════════════════════
 
--- ─── A) Core: firms, clients, jobs, transactions (must run first) ────────
+-- ─── A) Core: firms, clients, jobs, transactions ───────────────────────────
 
 -- Core tables required before business_data_rls and cb_firm_id().
 -- Run first on empty Supabase projects.
@@ -712,7 +710,7 @@ begin
   end if;
 end $$;
 
--- ─── D) Stripe columns on subscriptions (20260415000001) ─────────────────
+-- ─── D) Stripe columns (20260415000001) ─────────────────────────────────
 
 -- Production subscription columns for Stripe + access control
 
@@ -740,12 +738,35 @@ create policy "subscriptions_select_own_email" on public.subscriptions
     and lower(trim(customer_email)) = lower(trim((auth.jwt() ->> 'email')::text))
   );
 
--- ─── E) Firm members + audit RLS (20260416000000) ─────────────────────────
+-- ─── E) Firm members FIRST then functions (20260416000000 FIXED) ─────────
 
 -- Firm membership, role-based RLS, audit_log, user_sessions
 -- Requires: public.firms, business tables from prior migrations.
+-- NOTE: firm_members TABLE must exist BEFORE functions that reference it.
 
--- ─── Helper: membership check without RLS recursion ───────────────────────────
+-- ─── firm_members table FIRST (functions below reference this table) ─────────
+
+create table if not exists public.firm_members (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  firm_id uuid not null references public.firms(id) on delete cascade,
+  role text not null check (role in ('owner', 'admin', 'senior_accountant', 'staff', 'readonly')),
+  created_at timestamptz not null default now(),
+  primary key (user_id, firm_id)
+);
+
+create index if not exists idx_firm_members_firm on public.firm_members (firm_id);
+create index if not exists idx_firm_members_user on public.firm_members (user_id);
+
+insert into public.firm_members (user_id, firm_id, role)
+select f.owner_id, f.id, 'owner'::text
+from public.firms f
+where not exists (
+  select 1 from public.firm_members fm
+  where fm.user_id = f.owner_id and fm.firm_id = f.id
+)
+on conflict do nothing;
+
+-- ─── Helpers (SECURITY DEFINER — safe after firm_members exists) ─────────────
 
 create or replace function public.cb_is_member_of_firm(check_firm uuid, check_user uuid)
 returns boolean
@@ -837,7 +858,6 @@ as $$
   select coalesce(public.cb_role_rank(public.cb_role_for_firm(fid)), 0) >= public.cb_role_rank('senior_accountant')
 $$;
 
--- Compat: first firm for session
 create or replace function public.cb_firm_id()
 returns uuid
 language sql
@@ -848,37 +868,18 @@ as $$
   select firm_id from public.firm_members where user_id = auth.uid() limit 1
 $$;
 
--- ─── firm_members table ─────────────────────────────────────────────────────
-
-create table if not exists public.firm_members (
-  user_id uuid not null references auth.users(id) on delete cascade,
-  firm_id uuid not null references public.firms(id) on delete cascade,
-  role text not null check (role in ('owner', 'admin', 'senior_accountant', 'staff', 'readonly')),
-  created_at timestamptz not null default now(),
-  primary key (user_id, firm_id)
-);
-
-create index if not exists idx_firm_members_firm on public.firm_members (firm_id);
-create index if not exists idx_firm_members_user on public.firm_members (user_id);
-
-insert into public.firm_members (user_id, firm_id, role)
-select f.owner_id, f.id, 'owner'::text
-from public.firms f
-where not exists (
-  select 1 from public.firm_members fm
-  where fm.user_id = f.owner_id and fm.firm_id = f.id
-)
-on conflict do nothing;
-
 alter table public.firm_members enable row level security;
 
 drop policy if exists "firm_members_select_self" on public.firm_members;
 drop policy if exists "firm_members_sel" on public.firm_members;
+drop policy if exists "firm_members_select" on public.firm_members;
+drop policy if exists "firm_members_insert" on public.firm_members;
+drop policy if exists "firm_members_update" on public.firm_members;
+drop policy if exists "firm_members_delete" on public.firm_members;
 
 create policy "firm_members_select" on public.firm_members
   for select using (public.cb_is_member_of_firm(firm_id, auth.uid()));
 
--- Owner can insert self before any membership row exists; admins invite others
 create policy "firm_members_insert" on public.firm_members
   for insert with check (
     (
@@ -894,7 +895,7 @@ create policy "firm_members_update" on public.firm_members
 create policy "firm_members_delete" on public.firm_members
   for delete using (public.cb_can_manage_billing(firm_id));
 
--- ─── Drop old cb_firm_id() policies (owner-only) + recreate via helper ──────
+-- ─── Drop old cb_firm_id() policies + recreate via helper ───────────────────
 
 do $drop$
 declare
@@ -1199,8 +1200,7 @@ create policy "subscriptions_select" on public.subscriptions for select using (
   )
 );
 
--- ─── audit_log (append-only) ─────────────────────────────────────────────────
-
+-- audit_log (append-only)
 create table if not exists public.audit_log (
   id uuid primary key default gen_random_uuid(),
   firm_id uuid references public.firms(id) on delete cascade,
@@ -1231,8 +1231,7 @@ create policy "audit_log_insert" on public.audit_log for insert
     and user_id = auth.uid()
   );
 
--- ─── user_sessions ───────────────────────────────────────────────────────────
-
+-- user_sessions
 create table if not exists public.user_sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
