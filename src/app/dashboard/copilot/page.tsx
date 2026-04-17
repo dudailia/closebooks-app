@@ -53,7 +53,10 @@ export default function CopilotPage() {
             Close Copilot
           </h1>
           <p className="text-sm mt-1" style={{ color: '#6b6560' }}>
-            Configure how Copilot auto-approves transactions so you only review what truly needs your attention.
+            Configure how Copilot auto-approves transactions so you only review what truly needs your attention.{' '}
+            <a href="/dashboard/categorization-accuracy" className="underline" style={{ color: '#b8734a' }}>
+              View AI categorization accuracy →
+            </a>
           </p>
         </div>
 
@@ -144,6 +147,47 @@ export default function CopilotPage() {
                 />
                 <p className="text-xs" style={{ color: '#6b6560' }}>
                   Transactions with confidence below this are flagged for your attention.
+                </p>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t" style={{ borderColor: '#f0ece4' }}>
+                <p className="text-xs font-semibold" style={{ color: '#1a1714' }}>AI categorization (upload step)</p>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium" style={{ color: '#1a1714' }}>Auto-approve (≥)</label>
+                  <span className="text-sm font-bold tabular-nums" style={{ color: '#2d5a27' }}>
+                    {Math.round((config.categorizationAutoApprove ?? 0.9) * 100)}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={80}
+                  max={98}
+                  step={1}
+                  value={Math.round((config.categorizationAutoApprove ?? 0.9) * 100)}
+                  onChange={(e) =>
+                    setConfig((c) => ({ ...c, categorizationAutoApprove: Number(e.target.value) / 100 }))
+                  }
+                  className="w-full accent-green-700"
+                />
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium" style={{ color: '#1a1714' }}>Review floor (&lt;)</label>
+                  <span className="text-sm font-bold tabular-nums" style={{ color: '#b8734a' }}>
+                    {Math.round((config.categorizationReviewFloor ?? 0.7) * 100)}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={50}
+                  max={85}
+                  step={1}
+                  value={Math.round((config.categorizationReviewFloor ?? 0.7) * 100)}
+                  onChange={(e) =>
+                    setConfig((c) => ({ ...c, categorizationReviewFloor: Number(e.target.value) / 100 }))
+                  }
+                  className="w-full accent-orange-600"
+                />
+                <p className="text-xs" style={{ color: '#6b6560' }}>
+                  Below the review floor, transactions are flagged. Between floor and auto-approve they stay pending for one-click approve.
                 </p>
               </div>
 

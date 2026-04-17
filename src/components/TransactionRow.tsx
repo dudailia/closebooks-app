@@ -94,6 +94,8 @@ interface Props {
   enterTrigger?: number
   onAudit?: AuditCallback
   txAuditEvents?: AuditEvent[]
+  clientName?: string
+  jobId?: string
 }
 
 // ─── TransactionRow ───────────────────────────────────────────────────────────
@@ -110,6 +112,8 @@ export default function TransactionRow({
   enterTrigger  = 0,
   onAudit,
   txAuditEvents = [],
+  clientName,
+  jobId,
 }: Props) {
   const [expanded, setExpanded]       = useState(false)
   const [editCode, setEditCode]       = useState(transaction.final_account_code ?? transaction.suggested_account_code ?? '')
@@ -145,6 +149,21 @@ export default function TransactionRow({
       onAudit?.({ action: 'tx_category_changed', txId: transaction.id, txDescription: transaction.description, details: { from: fromName, to: toName } })
       if (code !== transaction.suggested_account_code && transaction.suggested_category) {
         saveCorrection(transaction.description, transaction.suggested_category, toName)
+        if (clientName) {
+          void fetch('/api/categorization/learning', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              clientName,
+              description: transaction.description,
+              fromAccountCode: transaction.suggested_account_code,
+              toAccountCode: code,
+              toAccountName: toName,
+              transactionId: transaction.id,
+              jobId: jobId ?? undefined,
+            }),
+          }).catch(() => {})
+        }
       }
     }
     onChange({ ...transaction, status: 'edited', final_account_code: code, final_category: account?.name ?? code })

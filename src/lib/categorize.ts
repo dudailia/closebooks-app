@@ -1,287 +1,346 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { Transaction, ChartOfAccounts } from '@/types'
+import { buildSystemPrompt, buildUserPrompt, type LearnedRuleLine } from '@/lib/categorization/prompts'
+import type { ClientContext } from '@/lib/categorization/prompts'
+import type { CorrectionHint } from '@/lib/categorization/types'
+import { normalizeThresholds, type CategorizationThresholds } from '@/lib/categorization/thresholds'
+import { applyLearnedRules } from '@/lib/categorization/vendorCache'
 
-const MODEL = 'claude-sonnet-4-6'
-const BATCH_SIZE = 20
-const MAX_RETRIES = 3
-const RETRY_DELAY_MS = 1000
-const AUTO_APPROVE_THRESHOLD = 0.85
+export type { CorrectionHint } from '@/lib/categorization/types'
+export type { LearnedRuleLine }
 
-// Plain object shape — mirrors Correction from corrections.ts but without the
-// savedAt field and without a client-side localStorage dependency.
-export interface CorrectionHint {
-  description: string
-  fromCategory: string
-  toCategory: string
+const BATCH_SIZE = 50
+const MAX_RETRIES = 4
+const BASE_DELAY_MS = 800
+
+const MODEL_HAIKU = process.env.ANTHROPIC_MODEL_HAIKU ?? 'claude-3-5-haiku-20241022'
+const MODEL_SONNET = process.env.ANTHROPIC_MODEL_SONNET ?? 'claude-sonnet-4-6'
+
+/** Approximate $ per 1M tokens (input+output blended — tune from pricing page). */
+const USD_PER_M_HAIKU = 1.2
+const USD_PER_M_SONNET = 4.0
+
+export interface CategorizeOptions {
+  client?: ClientContext
+  corrections?: CorrectionHint[]
+  learnedRules?: LearnedRuleLine[]
+  thresholds?: Partial<CategorizationThresholds>
 }
 
-// ---------------------------------------------------------------------------
-// System prompt
-// ---------------------------------------------------------------------------
-
-const SYSTEM_PROMPT = `You are an expert bookkeeper with 20 years of experience. Given a list of bank transactions and a Chart of Accounts, categorize each transaction to the most appropriate account.
-
-CRITICAL RULE — NEVER USE "MISCELLANEOUS":
-Using "Miscellaneous" or any catch-all category means you failed to categorize the transaction. It is ALWAYS better to pick a slightly wrong specific account than to use Miscellaneous. Only use a catch-all if the description is 100% unrecognizable gibberish with no letters resembling any known vendor, service, or transaction type. If you're tempted to use Miscellaneous, try harder — you will almost always find a match.
-
-KEYWORD RULES — apply these with high confidence whenever a description matches:
-- "PAYROLL", "GUSTO", "ADP", "PAYCHEX" → Payroll & Wages, confidence 0.99
-- "PAYROLL TAX", "FICA", "FUTA", "941", "940" → Payroll Tax Expense, confidence 0.97
-- "TAX PAYMENT", "IRS", "STATE TAX", "FRANCHISE TAX" → Taxes Payable or Tax Expense, confidence 0.95
-- "DEPOSIT", "PAYMENT FROM", "CLIENT PAYMENT", "WIRE IN", "INCOMING WIRE", "ACH CREDIT", "INVOICE PMT" → nearest Revenue account (Service Revenue, Sales Revenue, Consulting Revenue), confidence 0.92+
-- "RENT", "LEASE" → Rent & Occupancy, confidence 0.95+
-- "ELECTRIC", "GAS COMPANY", "WATER DEPT", "INTERNET", "COMCAST", "VERIZON", "AT&T", "SPECTRUM", "XFINITY", "COX" → Utilities or Internet & Phone, confidence 0.95
-- "TRANSFER", "XFER" between own accounts → Transfer Between Accounts or Savings Account, confidence 0.85
-- "CREDIT CARD PAYMENT", "AMEX PAYMENT", "VISA PAYMENT", "CC PAYMENT" → Credit Card Payable, confidence 0.97
-- "INTEREST EARNED", "INTEREST INCOME", "DIVIDEND" → Interest Income, confidence 0.98
-- "BANK SERVICE CHARGE", "BANK FEE", "MONTHLY FEE", "MAINTENANCE FEE", "OVERDRAFT FEE", "WIRE FEE" → Bank Fees & Charges, confidence 0.97
-- "LINKEDIN", "ADOBE", "MICROSOFT", "GOOGLE", "DROPBOX", "NOTION", "SLACK", "ZOOM", "GITHUB", "AWS", "FIGMA", "CANVA", "HUBSPOT", "SALESFORCE", "QUICKBOOKS", "XERO" → Subscriptions & Software or Software & SaaS, confidence 0.96
-- "FEDEX", "UPS", "USPS", "DHL", "STAMPS.COM", "SHIPPING", "POSTAGE" → Postage & Shipping, confidence 0.96
-- "DELTA", "UNITED", "AMERICAN AIRLINES", "SOUTHWEST", "JETBLUE", "MARRIOTT", "HILTON", "HYATT", "AIRBNB", "HOTEL", "UBER", "LYFT", "HERTZ", "ENTERPRISE" → Travel & Entertainment or Travel & Transportation, confidence 0.95
-- "OFFICE DEPOT", "STAPLES", "AMAZON" (office supplies context) → Office Supplies, confidence 0.88
-- "ATTORNEY", "LEGAL", "LAW FIRM", "PARALEGAL" → Legal & Professional Fees, confidence 0.95
-- "ACCOUNTANT", "BOOKKEEPING", "CPA", "AUDIT" → Accounting & Bookkeeping, confidence 0.95
-- "INSURANCE", "PROGRESSIVE", "ALLSTATE", "GEICO", "HISCOX", "STATE FARM", "HARTFORD" → Insurance Expense, confidence 0.96
-- "STRIPE FEE", "SQUARE FEE", "PAYPAL FEE", "MERCHANT FEE", "PROCESSING FEE" → Bank & Merchant Fees, confidence 0.96
-- Any debit with "CLIENT" or "PAYMENT" in description → probably an expense to a vendor — use best-match expense account
-- Any credit with "CLIENT", "PAYMENT FROM", or "INVOICE" → Service Revenue or Sales Revenue, confidence 0.92
-
-AMOUNT GUIDANCE:
-- Large round-dollar amounts ($1,000–$10,000 debit) are likely rent, payroll, or large vendor payments — look for keyword clues.
-- Recurring identical amounts are likely subscriptions.
-- Credits/deposits are almost always revenue; debits are almost always expenses.
-- Very small amounts under $20 may be bank fees, postage, or minor supplies.
-
-CONFIDENCE CALIBRATION:
-- 0.95–0.99: clear keyword or vendor match
-- 0.80–0.94: likely correct, minor ambiguity
-- 0.65–0.79: plausible, needs human review
-- Below 0.65: uncertain — but still pick the BEST specific account, never Miscellaneous
-
-For each transaction, return:
-- index: the transaction's index number (as given)
-- suggested_category: the account name from the Chart of Accounts (NEVER "Miscellaneous" unless chart has no better option)
-- suggested_account_code: the account code
-- confidence: a number from 0 to 1
-- reasoning: one sentence explaining why you chose this category
-
-Return ONLY a JSON array. No markdown fences, no preamble, no explanation — just the raw JSON array.`
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function formatChartOfAccounts(coa: ChartOfAccounts[]): string {
-  return coa.map((a) => `[${a.code}] ${a.name} (${a.type})`).join('\n')
+export interface CategorizeMetrics {
+  haikuBatches: number
+  sonnetBatches: number
+  learnedApplied: number
+  estimatedCostUsd: number
 }
 
-function formatCorrections(corrections: CorrectionHint[]): string {
-  if (corrections.length === 0) return ''
-  const lines = corrections
-    .map((c) => `- "${c.description}" was recategorized from "${c.fromCategory}" to "${c.toCategory}"`)
-    .join('\n')
-  return `\nLearning from this firm's past corrections (apply these patterns to similar transactions):\n${lines}\n`
-}
-
-// Use sequential indices instead of raw IDs — Claude reliably echoes small integers,
-// whereas it often reformats or truncates long ID strings.
-function buildUserPrompt(
-  batch: Transaction[],
-  coa: ChartOfAccounts[],
-  corrections: CorrectionHint[]
-): string {
-  const txLines = batch
-    .map((t, i) =>
-      `${i}: date=${t.date} | description="${t.description}" | amount=${t.amount.toFixed(2)} | type=${t.type}`
-    )
-    .join('\n')
-
-  const correctionBlock = formatCorrections(corrections)
-
-  return `Chart of Accounts:\n${formatChartOfAccounts(coa)}\n${correctionBlock}\nTransactions (use the number at the start as "index"):\n${txLines}\n\nReturn a JSON array, one object per transaction, each with fields: index, suggested_category, suggested_account_code, confidence, reasoning.`
-}
-
-// ---------------------------------------------------------------------------
-// Confidence calibration — applied after Claude responds
-// ---------------------------------------------------------------------------
-
-function calibrateConfidence(description: string, amount: number, rawConf: number): number {
-  let conf = rawConf
-
-  // Small amounts are often ambiguous
-  if (amount < 20) {
-    conf -= 0.08
+interface ClaudeRow {
+  index: number
+  suggested_account_code: string
+  suggested_account_name: string
+  confidence: number
+  reasoning?: string
+  flags?: string[] | null
+  tax_relevant?: boolean
+  suggested_1099_vendor?: boolean
+  secondary_suggestion?: {
+    suggested_account_code: string
+    suggested_account_name: string
+    reasoning?: string
   }
+}
 
-  // Generic descriptions: single word, all digits, or suspiciously short
+function parseDateMs(d: string): number {
+  const t = Date.parse(d)
+  return Number.isNaN(t) ? 0 : t
+}
+
+function duplicateIdsInBatch(transactions: Transaction[]): Set<string> {
+  const dup = new Set<string>()
+  const byAmount = new Map<string, Transaction[]>()
+  for (const t of transactions) {
+    const k = Math.abs(t.amount).toFixed(2)
+    const list = byAmount.get(k) ?? []
+    list.push(t)
+    byAmount.set(k, list)
+  }
+  for (const group of byAmount.values()) {
+    if (group.length < 2) continue
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        const a = parseDateMs(group[i].date)
+        const b = parseDateMs(group[j].date)
+        if (a && b && Math.abs(a - b) <= 2 * 86400000) {
+          dup.add(group[i].id)
+          dup.add(group[j].id)
+        }
+      }
+    }
+  }
+  return dup
+}
+
+function extractJSONArray(text: string): ClaudeRow[] {
+  const stripped = text.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim()
+  const match = stripped.match(/\[[\s\S]*\]/)
+  if (!match) throw new Error('No JSON array found in Claude response')
+  return JSON.parse(match[0]) as ClaudeRow[]
+}
+
+function confidenceTo01(c: number): number {
+  const n = Number(c)
+  if (Number.isNaN(n)) return 0.5
+  if (n > 1 && n <= 100) return Math.min(1, n / 100)
+  return Math.min(1, Math.max(0, n))
+}
+
+function calibrateConfidence(description: string, amount: number, raw01: number): number {
+  let conf = raw01
+  if (Math.abs(amount) < 20) conf -= 0.06
   const desc = description.trim()
   const wordCount = desc.split(/\s+/).filter(Boolean).length
   const allDigits = /^\d+$/.test(desc)
-  if (wordCount <= 1 || allDigits || desc.length <= 4) {
-    conf = Math.min(conf, 0.60)
-  }
-
+  if (wordCount <= 1 || allDigits || desc.length <= 4) conf = Math.min(conf, 0.62)
   return Math.min(1, Math.max(0, conf))
 }
 
-// ---------------------------------------------------------------------------
-// JSON parsing
-// ---------------------------------------------------------------------------
-
-interface ClaudeItem {
-  index: number
-  suggested_category: string
-  suggested_account_code: string
-  confidence: number
-  reasoning: string
-}
-
-function extractJSON(text: string): ClaudeItem[] {
-  const stripped = text.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim()
-  const match = stripped.match(/\[[\s\S]*\]/)
-  if (!match) {
-    console.error('[categorize] Could not find JSON array in response. Full text:', text)
-    throw new Error('No JSON array found in Claude response')
-  }
-  try {
-    return JSON.parse(match[0]) as ClaudeItem[]
-  } catch (e) {
-    console.error('[categorize] JSON.parse failed. Attempted to parse:', match[0].slice(0, 300))
-    throw new Error(`Failed to parse Claude JSON: ${(e as Error).message}`)
-  }
+function estimateUsd(model: string, system: string, user: string, output: string): number {
+  const inTok = (system.length + user.length) / 4
+  const outTok = output.length / 4
+  const rate = model.includes('haiku') ? USD_PER_M_HAIKU : USD_PER_M_SONNET
+  return ((inTok + outTok) / 1_000_000) * rate
 }
 
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-// ---------------------------------------------------------------------------
-// Batch call with retry
-// ---------------------------------------------------------------------------
+const client = new Anthropic()
 
-async function categorizeBatch(
-  batch: Transaction[],
-  coa: ChartOfAccounts[],
-  corrections: CorrectionHint[]
-): Promise<ClaudeItem[]> {
-  let lastError: Error | null = null
-
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const prompt = buildUserPrompt(batch, coa, corrections)
-      console.log(`[categorize] Attempt ${attempt}/${MAX_RETRIES} — calling ${MODEL} with ${batch.length} transactions`)
-      console.log('[categorize] User prompt (first 600 chars):\n', prompt.slice(0, 600))
-
-      const message = await client.messages.create({
-        model: MODEL,
-        max_tokens: 4096,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: prompt }],
-      })
-
-      const content = message.content[0]
-      if (content.type !== 'text') {
-        throw new Error(`Unexpected Claude content type: ${content.type}`)
-      }
-
-      console.log('[categorize] Raw Claude response:\n', content.text)
-
-      const items = extractJSON(content.text)
-      console.log(`[categorize] Parsed ${items.length} items from Claude`)
-      if (items[0]) console.log('[categorize] First item:', JSON.stringify(items[0]))
-
-      return items
-    } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err))
-      console.error(`[categorize] Attempt ${attempt} failed:`, lastError.message)
-
-      const isFatal =
-        lastError.message.includes('No JSON array') ||
-        lastError.message.includes('Failed to parse')
-
-      if (isFatal || attempt === MAX_RETRIES) break
-      await sleep(RETRY_DELAY_MS * 2 ** (attempt - 1))
-    }
-  }
-
-  throw lastError ?? new Error('All retries exhausted')
+async function callModel(model: string, system: string, user: string): Promise<string> {
+  const message = await client.messages.create({
+    model,
+    max_tokens: 8192,
+    system,
+    messages: [{ role: 'user', content: user }],
+  })
+  const content = message.content[0]
+  if (content.type !== 'text') throw new Error(`Unexpected content: ${content.type}`)
+  return content.text
 }
 
-// ---------------------------------------------------------------------------
-// Main export
-// ---------------------------------------------------------------------------
+async function runBatchWithRetry(model: string, system: string, user: string): Promise<{ text: string; usd: number }> {
+  let lastErr: Error | null = null
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const text = await callModel(model, system, user)
+      return { text, usd: estimateUsd(model, system, user, text) }
+    } catch (e) {
+      lastErr = e instanceof Error ? e : new Error(String(e))
+      if (attempt === MAX_RETRIES) break
+      await sleep(BASE_DELAY_MS * 2 ** (attempt - 1))
+    }
+  }
+  throw lastErr ?? new Error('Claude failed')
+}
 
-// Initialise the client once. The SDK reads ANTHROPIC_API_KEY from process.env automatically.
-const client = new Anthropic()
+function pickModelForBatch(batch: Transaction[]): string {
+  const complex = batch.some((t) => Math.abs(t.amount) >= 50000 || t.description.length > 200)
+  return complex ? MODEL_SONNET : MODEL_HAIKU
+}
 
 export async function categorizeTransactions(
   transactions: Transaction[],
   chartOfAccounts: ChartOfAccounts[],
-  corrections: CorrectionHint[] = []
-): Promise<Transaction[]> {
-  console.log(
-    `[categorize] categorizeTransactions called: ${transactions.length} tx, ` +
-    `${chartOfAccounts.length} accounts, ${corrections.length} correction hints`
-  )
+  options: CategorizeOptions = {}
+): Promise<{ transactions: Transaction[]; metrics: CategorizeMetrics }> {
+  const thresholds = normalizeThresholds(options.thresholds)
+  const clientCtx: ClientContext = options.client ?? {
+    clientName: 'Client',
+    industry: 'General',
+    accrualOrCash: 'accrual',
+    fiscalYearEnd: '12-31',
+  }
+  const corrections = options.corrections ?? []
+  const learnedRules = options.learnedRules ?? []
 
-  if (!transactions.length) return []
+  if (!transactions.length) {
+    return { transactions: [], metrics: { haikuBatches: 0, sonnetBatches: 0, learnedApplied: 0, estimatedCostUsd: 0 } }
+  }
   if (!chartOfAccounts.length) throw new Error('Chart of accounts is empty.')
+
+  const validCodes = new Set(chartOfAccounts.map((a) => a.code))
+
+  let haikuBatches = 0
+  let sonnetBatches = 0
+  let learnedApplied = 0
+  let totalUsd = 0
 
   const results: Transaction[] = []
 
-  for (let i = 0; i < transactions.length; i += BATCH_SIZE) {
-    const batch = transactions.slice(i, i + BATCH_SIZE)
-    const batchNum = Math.floor(i / BATCH_SIZE) + 1
-    const totalBatches = Math.ceil(transactions.length / BATCH_SIZE)
+  for (let offset = 0; offset < transactions.length; offset += BATCH_SIZE) {
+    const batch = transactions.slice(offset, offset + BATCH_SIZE)
+    const dupIds = duplicateIdsInBatch(batch)
 
-    console.log(`[categorize] Processing batch ${batchNum}/${totalBatches} (${batch.length} transactions)`)
+    const learnedOut: Map<string, Transaction> = new Map()
+    const needAi: Transaction[] = []
 
-    let items: ClaudeItem[]
-    try {
-      items = await categorizeBatch(batch, chartOfAccounts, corrections)
-    } catch (err) {
-      console.error(`[categorize] Batch ${batchNum} failed entirely:`, err)
-      for (const tx of batch) results.push({ ...tx, status: 'flagged' })
-      continue
+    for (const tx of batch) {
+      const learned = applyLearnedRules(tx, learnedRules, chartOfAccounts)
+      if (learned) {
+        learnedApplied++
+        const conf = 0.94
+        let status: Transaction['status'] = 'pending'
+        if (conf >= thresholds.autoApprove) status = 'approved'
+        else if (conf < thresholds.reviewFloor) status = 'flagged'
+        else status = 'pending'
+        learnedOut.set(tx.id, {
+          ...tx,
+          suggested_category: learned.name,
+          suggested_account_code: learned.code,
+          confidence: conf,
+          status,
+          reasoning: 'Applied learned rule (vendor/pattern match).',
+        })
+      } else {
+        needAi.push(tx)
+      }
     }
 
-    const byIndex = new Map(items.map((item) => [item.index, item]))
-    console.log(`[categorize] Index keys returned by Claude:`, Array.from(byIndex.keys()))
+    const system = buildSystemPrompt({
+      client: clientCtx,
+      chartOfAccounts,
+      historicalRules: learnedRules,
+      correctionHints: corrections,
+    })
 
-    for (let j = 0; j < batch.length; j++) {
-      const tx = batch[j]
-      const suggestion = byIndex.get(j)
+    let byId = new Map<string, ClaudeRow>()
 
-      if (!suggestion) {
-        console.warn(`[categorize] No result for index ${j} ("${tx.description}") — flagging`)
+    if (needAi.length > 0) {
+      const primaryModel = pickModelForBatch(needAi)
+      if (primaryModel.includes('haiku')) haikuBatches++
+      else sonnetBatches++
+
+      const userPrompt = buildUserPrompt(
+        needAi
+          .map(
+            (t, idx) =>
+              `${idx}: id=${t.id} | date=${t.date} | description="${t.description}" | amount=${t.amount.toFixed(2)} | type=${t.type}`
+          )
+          .join('\n')
+      )
+
+      let rows: ClaudeRow[]
+      try {
+        const { text, usd } = await runBatchWithRetry(primaryModel, system, userPrompt)
+        totalUsd += usd
+        rows = extractJSONArray(text)
+      } catch {
+        for (const tx of batch) {
+          if (learnedOut.has(tx.id)) results.push(learnedOut.get(tx.id)!)
+          else results.push({ ...tx, status: 'flagged' })
+        }
+        continue
+      }
+
+      for (const r of rows) {
+        const tx = needAi[r.index]
+        if (tx) byId.set(tx.id, r)
+      }
+
+      const needSonnet = needAi.filter((t) => {
+        const r = byId.get(t.id)
+        if (!r) return true
+        const c = confidenceTo01(r.confidence)
+        const codeOk = validCodes.has(String(r.suggested_account_code).trim())
+        return !codeOk || c < 0.5
+      })
+
+      if (needSonnet.length > 0 && primaryModel === MODEL_HAIKU) {
+        sonnetBatches++
+        const user2 = buildUserPrompt(
+          needSonnet
+            .map(
+              (t, idx) =>
+                `${idx}: id=${t.id} | date=${t.date} | description="${t.description}" | amount=${t.amount.toFixed(2)} | type=${t.type}`
+            )
+            .join('\n')
+        )
+        try {
+          const { text, usd } = await runBatchWithRetry(MODEL_SONNET, system, user2)
+          totalUsd += usd
+          const rows2 = extractJSONArray(text)
+          for (const r of rows2) {
+            const tx = needSonnet[r.index]
+            if (tx) byId.set(tx.id, r)
+          }
+        } catch {
+          /* keep primary */
+        }
+      }
+    }
+
+    for (const tx of batch) {
+      if (learnedOut.has(tx.id)) {
+        results.push(learnedOut.get(tx.id)!)
+        continue
+      }
+      const row = byId.get(tx.id)
+      if (!row) {
         results.push({ ...tx, status: 'flagged' })
         continue
       }
 
-      const rawConf  = Math.min(1, Math.max(0, Number(suggestion.confidence) || 0))
-      const confidence = calibrateConfidence(tx.description, tx.amount, rawConf)
-      const status   = confidence >= AUTO_APPROVE_THRESHOLD ? 'approved' : 'pending'
+      let code = String(row.suggested_account_code).trim()
+      if (!validCodes.has(code)) {
+        const acc = chartOfAccounts.find((a) => a.name === row.suggested_account_name?.trim())
+        if (acc && validCodes.has(acc.code)) code = acc.code
+        else {
+          results.push({ ...tx, status: 'flagged', notes: tx.notes ?? 'Invalid GL code from model' })
+          continue
+        }
+      }
 
-      console.log(
-        `[categorize] [${j}] "${tx.description}" → [${suggestion.suggested_account_code}] ` +
-        `"${suggestion.suggested_category}" rawConf=${Math.round(rawConf * 100)}% ` +
-        `calibrated=${Math.round(confidence * 100)}% status=${status}`
-      )
+      const acc = chartOfAccounts.find((a) => a.code === code)
+      const catName = acc?.name ?? row.suggested_account_name
+
+      let c01 = calibrateConfidence(tx.description, tx.amount, confidenceTo01(row.confidence))
+      const flags = new Set((row.flags ?? []).map(String))
+      if (c01 < thresholds.reviewFloor) flags.add('needs_review')
+      if (dupIds.has(tx.id)) flags.add('potential_duplicate')
+
+      let status: Transaction['status'] = 'pending'
+      if (c01 >= thresholds.autoApprove) status = 'approved'
+      else if (c01 < thresholds.reviewFloor || flags.has('needs_review')) status = 'flagged'
+      else status = 'pending'
+
+      const extra: string[] = []
+      if (row.secondary_suggestion?.suggested_account_code) {
+        extra.push(`Alt: ${row.secondary_suggestion.suggested_account_code}`)
+      }
 
       results.push({
         ...tx,
-        suggested_category:    suggestion.suggested_category,
-        suggested_account_code: suggestion.suggested_account_code,
-        confidence,
+        suggested_category: catName,
+        suggested_account_code: code,
+        confidence: c01,
         status,
-        // Carry reasoning through for display in the review UI
-        ...({ reasoning: suggestion.reasoning } as object),
+        reasoning: row.reasoning,
+        tax_relevant: row.tax_relevant,
+        suggested_1099_vendor: row.suggested_1099_vendor,
+        categorization_flags: Array.from(flags),
+        notes: [tx.notes, extra.join(' ')].filter(Boolean).join(' | ') || undefined,
       })
     }
-
-    console.log(`[categorize] Batch ${batchNum} done. Running total: ${results.length} results`)
   }
 
-  console.log(`[categorize] All batches complete. Total results: ${results.length}`)
-  return results
+  return {
+    transactions: results,
+    metrics: {
+      haikuBatches,
+      sonnetBatches,
+      learnedApplied,
+      estimatedCostUsd: Math.round(totalUsd * 1e6) / 1e6,
+    },
+  }
 }

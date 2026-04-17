@@ -15,6 +15,9 @@ interface Props {
   onAudit?: AuditCallback
   auditEvents?: AuditEvent[]
   highlightIds?: Set<string>
+  /** For server-side learning rules */
+  clientName?: string
+  jobId?: string
 }
 
 // ─── Mobile card ─────────────────────────────────────────────────────────────
@@ -159,6 +162,7 @@ function ShortcutsPopover() {
 export default function TransactionTable({
   initialTransactions, chartOfAccounts, onTransactionsChange,
   recurringIds, onAudit, auditEvents = [], highlightIds,
+  clientName, jobId,
 }: Props) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions)
   const [activeTab, setActiveTab]       = useState<FilterTab>('all')
@@ -431,6 +435,8 @@ export default function TransactionTable({
                   enterTrigger={focusedId === tx.id ? enterTrigger : 0}
                   onAudit={onAudit}
                   txAuditEvents={auditEvents.filter(e => e.txId === tx.id)}
+                  clientName={clientName}
+                  jobId={jobId}
                 />
               ))}
             </tbody>

@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import FileUpload from '@/components/FileUpload'
 import ChartOfAccountsUpload from '@/components/ChartOfAccountsUpload'
-import { saveJob } from '@/lib/storage'
+import { saveJob, getClients } from '@/lib/storage'
 import { dbSaveJob } from '@/lib/db'
 import { getRecentCorrections } from '@/lib/corrections'
+import type { ClientIndustry } from '@/types'
 import { notify } from '@/lib/notify'
 import { logActivity } from '@/lib/activity'
 import { canStartClose, recordCloseUsed, getTrialStatus } from '@/lib/freeTrial'
@@ -82,6 +83,8 @@ function StepCard({ title, children }: { title: string; children: React.ReactNod
 
 type CategorizeState = 'idle' | 'loading' | 'error'
 
+const CHUNK = 50
+
 function CategorizeStep({
   clientName,
   transactions,
@@ -96,33 +99,14 @@ function CategorizeStep({
   const router = useRouter()
   const [state, setState]             = useState<CategorizeState>('idle')
   const [error, setError]             = useState<string | null>(null)
-  const [batchCurrent, setBatchCurrent] = useState(0)
-  const [batchTotal, setBatchTotal]   = useState(0)
+  const [processedCount, setProcessedCount] = useState(0)
   const [phase, setPhase]             = useState<'sending' | 'categorizing' | 'saving'>('sending')
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const totalTx = transactions.length
+  const chunkCount = Math.ceil(totalTx / CHUNK) || 1
 
-  const numBatches = Math.ceil(transactions.length / 20)
-
-  // Advance simulated batch counter while loading
-  useEffect(() => {
-    if (state !== 'loading') {
-      if (timerRef.current) clearInterval(timerRef.current)
-      return
-    }
-    // Advance one batch tick every ~2.5s so it roughly tracks real time
-    const msPerBatch = Math.max(1800, 2500)
-    let cur = 0
-    timerRef.current = setInterval(() => {
-      cur++
-      if (cur < numBatches) {
-        setBatchCurrent(cur)
-        setPhase('categorizing')
-      } else {
-        if (timerRef.current) clearInterval(timerRef.current)
-      }
-    }, msPerBatch)
-    return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [state, numBatches])
+  const industry: ClientIndustry | undefined = getClients().find(
+    (c) => c.business_name.trim().toLowerCase() === clientName.trim().toLowerCase()
+  )?.industry
 
   async function handleCategorize() {
     // Check free trial limit before starting
@@ -134,8 +118,7 @@ function CategorizeStep({
 
     setState('loading')
     setError(null)
-    setBatchCurrent(0)
-    setBatchTotal(numBatches)
+    setProcessedCount(0)
     // Record usage immediately so the banner updates
     recordCloseUsed()
     // Start time tracking
@@ -144,22 +127,32 @@ function CategorizeStep({
 
     try {
       const corrections = getRecentCorrections(10)
-      const res = await fetch('/api/categorize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactions, chartOfAccounts, clientName, corrections }),
-      })
+      const jobId = crypto.randomUUID()
+      const categorized: Transaction[] = []
+      for (let i = 0; i < transactions.length; i += CHUNK) {
+        setPhase('categorizing')
+        const chunk = transactions.slice(i, i + CHUNK)
+        const res = await fetch('/api/categorize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transactions: chunk,
+            chartOfAccounts,
+            clientName,
+            corrections,
+            industry,
+            jobId,
+          }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error ?? `Server error ${res.status}`)
+        categorized.push(...(data.transactions as Transaction[]))
+        setProcessedCount(categorized.length)
+      }
 
-      if (timerRef.current) clearInterval(timerRef.current)
       setPhase('saving')
-      setBatchCurrent(numBatches)
-
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? `Server error ${res.status}`)
-
-      const categorized: Transaction[] = data.transactions
       const job: CategorizationJob = {
-        id: crypto.randomUUID(),
+        id: jobId,
         client_name: clientName,
         created_at: new Date().toISOString(),
         status: 'review',
@@ -193,19 +186,18 @@ function CategorizeStep({
       endSession(sessionId)
       router.push(`/dashboard/review/${job.id}`)
     } catch (err) {
-      if (timerRef.current) clearInterval(timerRef.current)
       setError(err instanceof Error ? err.message : 'Categorization failed.')
       setState('error')
     }
   }
 
-  const progressPct = batchTotal > 0
-    ? Math.round(((phase === 'saving' ? batchTotal : batchCurrent) / batchTotal) * 100)
+  const progressPct = totalTx > 0
+    ? Math.round((processedCount / totalTx) * 100)
     : 0
 
   const phaseLabel =
     phase === 'sending'      ? 'Sending transactions to AI…' :
-    phase === 'categorizing' ? `Categorizing batch ${batchCurrent} of ${batchTotal}…` :
+    phase === 'categorizing' ? `Categorizing… ${processedCount}/${totalTx} transactions` :
                                'Saving results…'
 
   return (
@@ -229,8 +221,8 @@ function CategorizeStep({
             <span className="font-mono font-medium" style={{ color: '#1a1714' }}>{chartOfAccounts.length} accounts</span>
           </div>
           <div className="flex justify-between">
-            <span style={{ color: '#6b6560' }}>AI batches</span>
-            <span className="font-mono font-medium" style={{ color: '#1a1714' }}>{numBatches}</span>
+            <span style={{ color: '#6b6560' }}>API chunks (50 tx)</span>
+            <span className="font-mono font-medium" style={{ color: '#1a1714' }}>{chunkCount}</span>
           </div>
         </div>
 

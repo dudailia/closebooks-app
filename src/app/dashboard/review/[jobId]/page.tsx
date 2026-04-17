@@ -1525,6 +1525,8 @@ export default function ReviewPage() {
                   onAudit={logAudit}
                   auditEvents={auditEvents}
                   highlightIds={chatHighlightIds}
+                  clientName={job.client_name}
+                  jobId={jobId}
                 />
                 <JobInsightsPanel job={job} autoGenerate />
               </>
