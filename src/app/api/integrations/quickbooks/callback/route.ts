@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getIntuitTokenUrl, getQboRedirectUri, isQBOOAuthConfigured } from '@/lib/qboConfig'
 import { getUserFromRequest } from '@/lib/supabase/routeAuth'
+import { getFirmIdForUserServer } from '@/lib/supabase/qboFirm'
 
 const STATE_COOKIE = 'cb_qbo_oauth_state'
 
@@ -132,13 +133,9 @@ export async function GET(request: NextRequest) {
     return res
   }
 
-  const { data: firm } = await supabase
-    .from('firms')
-    .select('id')
-    .eq('owner_id', user.id)
-    .maybeSingle()
+  const firmId = await getFirmIdForUserServer(supabase, user.id)
 
-  if (!firm?.id) {
+  if (!firmId) {
     baseRedirect.searchParams.set('qbo', 'error')
     baseRedirect.searchParams.set('msg', 'no_firm')
     const res = NextResponse.redirect(baseRedirect)
@@ -148,17 +145,22 @@ export async function GET(request: NextRequest) {
 
   const companyName = await fetchCompanyName(realmId, tokens.access_token)
   const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString()
+  const nowIso = new Date().toISOString()
 
   const { error: upsertErr } = await supabase.from('qbo_connections').upsert(
     {
-      firm_id: firm.id,
+      firm_id: firmId,
       user_id: user.id,
       realm_id: realmId,
       company_name: companyName,
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
       expires_at: expiresAt,
-      updated_at: new Date().toISOString(),
+      connected_at: nowIso,
+      last_error_code: null,
+      last_error_message: null,
+      last_error_at: null,
+      updated_at: nowIso,
     },
     { onConflict: 'firm_id' }
   )

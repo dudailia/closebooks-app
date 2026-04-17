@@ -12,6 +12,14 @@ export interface QBOConnection {
 let _demo: QBOConnection | null = null
 
 export async function hydrateIntegrations(supabase: SupabaseClient, firmId: string): Promise<void> {
+  const { data: real } = await supabase.from('qbo_connections').select('realm_id').eq('firm_id', firmId).maybeSingle()
+  if (real?.realm_id) {
+    _demo = null
+    await supabase
+      .from('integration_connections')
+      .upsert({ firm_id: firmId, qbo_demo: null, updated_at: new Date().toISOString() }, { onConflict: 'firm_id' })
+    return
+  }
   const { data } = await supabase.from('integration_connections').select('qbo_demo').eq('firm_id', firmId).maybeSingle()
   _demo = data?.qbo_demo ? (data.qbo_demo as QBOConnection) : null
 }
@@ -27,6 +35,11 @@ async function persist(): Promise<void> {
 
 export function getQBOConnection(): QBOConnection | null {
   return _demo
+}
+
+/** Clear in-memory demo QBO state when a real OAuth connection is active (call after /status). */
+export function clearQboDemoMemory(): void {
+  _demo = null
 }
 
 export function saveQBOConnection(conn: QBOConnection): void {
