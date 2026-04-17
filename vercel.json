@@ -31,8 +31,20 @@
     },
     "src/app/api/parse-pdf/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/integrations/quickbooks/sync/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/cron/qbo-sync/route.ts": {
+      "maxDuration": 300
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/qbo-sync",
+      "schedule": "0 */4 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",

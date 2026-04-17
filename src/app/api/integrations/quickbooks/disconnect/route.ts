@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/routeAuth'
+import { getFirmIdForUserServer } from '@/lib/supabase/qboFirm'
+import { revokeIntuitRefreshToken } from '@/lib/qboClient'
 
 function getSupabaseService() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -20,21 +22,32 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Server not configured' }, { status: 503 })
   }
 
-  const { data: firm } = await supabase
-    .from('firms')
-    .select('id')
-    .eq('owner_id', user.id)
-    .maybeSingle()
+  const firmId = await getFirmIdForUserServer(supabase, user.id)
 
-  if (!firm?.id) {
+  if (!firmId) {
     return NextResponse.json({ ok: true })
   }
 
-  const { error } = await supabase.from('qbo_connections').delete().eq('firm_id', firm.id)
+  const { data: conn } = await supabase
+    .from('qbo_connections')
+    .select('refresh_token')
+    .eq('firm_id', firmId)
+    .maybeSingle()
+
+  if (conn?.refresh_token) {
+    await revokeIntuitRefreshToken(conn.refresh_token as string)
+  }
+
+  const { error } = await supabase.from('qbo_connections').delete().eq('firm_id', firmId)
   if (error) {
     console.error('[QBO disconnect]', error.message)
     return NextResponse.json({ error: 'Failed to disconnect' }, { status: 500 })
   }
+
+  await supabase
+    .from('integration_connections')
+    .upsert({ firm_id: firmId, qbo_demo: null, updated_at: new Date().toISOString() }, { onConflict: 'firm_id' })
+    .catch(() => {})
 
   return NextResponse.json({ ok: true })
 }

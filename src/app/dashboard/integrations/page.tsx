@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getQBOConnection, saveQBOConnection, disconnectQBO } from '@/lib/integrations'
+import { clearQboDemoMemory, getQBOConnection, saveQBOConnection, disconnectQBO } from '@/lib/integrations'
 import type { QBOConnection } from '@/lib/integrations'
 
 // ---------------------------------------------------------------------------
@@ -307,14 +307,27 @@ export default function IntegrationsPage() {
   useEffect(() => {
     setQboConn(getQBOConnection())
     setMounted(true)
-    fetch('/api/integrations/quickbooks/env')
-      .then((r) => r.json())
-      .then((d: { oauthConfigured?: boolean }) => setOauthConfigured(!!d.oauthConfigured))
-      .catch(() => setOauthConfigured(false))
-    fetch('/api/integrations/quickbooks/status')
-      .then((r) => r.json())
-      .then((data: { connected?: boolean; companyName?: string; realmId?: string; lastSyncAt?: string | null; totalSynced?: number }) => {
+    void (async () => {
+      let oauth = false
+      try {
+        const er = await fetch('/api/integrations/quickbooks/env')
+        const ed = (await er.json()) as { oauthConfigured?: boolean }
+        oauth = !!ed.oauthConfigured
+        setOauthConfigured(oauth)
+      } catch {
+        setOauthConfigured(false)
+      }
+      try {
+        const sr = await fetch('/api/integrations/quickbooks/status')
+        const data = (await sr.json()) as {
+          connected?: boolean
+          companyName?: string
+          realmId?: string
+          lastSyncAt?: string | null
+          totalSynced?: number
+        }
         if (data.connected && data.companyName && data.realmId) {
+          clearQboDemoMemory()
           setQboConn({
             companyId:   data.realmId,
             companyName: data.companyName,
@@ -322,9 +335,14 @@ export default function IntegrationsPage() {
             lastSyncAt:  data.lastSyncAt ?? null,
             totalSynced: data.totalSynced ?? 0,
           })
+        } else if (oauth) {
+          clearQboDemoMemory()
+          setQboConn(null)
         }
-      })
-      .catch(() => { /* demo localStorage */ })
+      } catch {
+        /* keep demo */
+      }
+    })()
 
     const params = new URLSearchParams(window.location.search)
     const qbo = params.get('qbo')
@@ -356,7 +374,7 @@ export default function IntegrationsPage() {
   }
 
   function startIntuitOAuth() {
-    window.location.href = '/api/integrations/quickbooks/authorize'
+    window.location.href = '/api/integrations/quickbooks/connect'
   }
 
   return (
@@ -523,24 +541,28 @@ export default function IntegrationsPage() {
                 <div className="mt-auto pt-1">
                   {isQBO && !dimmed ? (
                     isConnected ? (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setShowDisconnect(true)}
-                          className="flex-1 py-2.5 rounded-xl text-sm border transition-colors"
-                          style={{ borderColor: '#e0dbd4', color: '#6b6560', backgroundColor: '#faf8f4' }}
-                          onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#dc2626'; e.currentTarget.style.color = '#dc2626' }}
-                          onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e0dbd4'; e.currentTarget.style.color = '#6b6560' }}
-                        >
-                          Disconnect
-                        </button>
-                        <button
-                          disabled
-                          className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white opacity-60 cursor-default"
-                          style={{ backgroundColor: '#2CA01C' }}
-                          title="Push transactions from the review page"
-                        >
-                          ✓ Ready to push
-                        </button>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setShowDisconnect(true)}
+                            className="flex-1 py-2.5 rounded-xl text-sm border transition-colors"
+                            style={{ borderColor: '#e0dbd4', color: '#6b6560', backgroundColor: '#faf8f4' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#dc2626'; e.currentTarget.style.color = '#dc2626' }}
+                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e0dbd4'; e.currentTarget.style.color = '#6b6560' }}
+                          >
+                            Disconnect
+                          </button>
+                          <Link
+                            href="/dashboard/integrations/quickbooks"
+                            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white text-center transition-opacity"
+                            style={{ backgroundColor: '#2CA01C' }}
+                          >
+                            Sync &amp; status
+                          </Link>
+                        </div>
+                        <p className="text-xs text-center" style={{ color: '#a09a94' }}>
+                          Push journal entries from each close&apos;s review page after mapping accounts.
+                        </p>
                       </div>
                     ) : oauthConfigured ? (
                       <button

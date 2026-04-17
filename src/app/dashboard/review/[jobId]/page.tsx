@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import TransactionTable from '@/components/TransactionTable'
 import { getJob, saveJob, getJobs } from '@/lib/storage'
 import { dbGetJob, dbSaveJob } from '@/lib/db'
 import { detectRecurring } from '@/lib/recurringDetection'
 import { logActivity } from '@/lib/activity'
-import { getQBOConnection, recordQBOSync } from '@/lib/integrations'
+import { clearQboDemoMemory, getQBOConnection, recordQBOSync } from '@/lib/integrations'
 import { JobInsightsPanel } from '@/components/InsightsPanel'
 import { getAuditTrail, logAuditEvent, auditGroup, formatAuditEvent, fmtAuditTs } from '@/lib/auditTrail'
 import { calcROI, fmtHours } from '@/lib/roiCalc'
@@ -869,6 +870,7 @@ export default function ReviewPage() {
   // QBO — demo: localStorage; production: OAuth via /api/integrations/quickbooks/*
   const [qboConn,    setQboConn]    = useState<QBOConnection | null>(null)
   const [qboLive,    setQboLive]    = useState(false)
+  const [oauthConfigured, setOauthConfigured] = useState(false)
   const [showPush,   setShowPush]   = useState(false)
   const [pushStep,   setPushStep]   = useState<PushStep>('confirm')
   const [pushError,  setPushError]  = useState('')
@@ -895,10 +897,27 @@ export default function ReviewPage() {
       }
       setQboConn(getQBOConnection())
       setQboLive(false)
-      fetch('/api/integrations/quickbooks/status')
-        .then((r) => r.json())
-        .then((data: { connected?: boolean; companyName?: string; realmId?: string; lastSyncAt?: string | null; totalSynced?: number }) => {
+      void (async () => {
+        let oauth = false
+        try {
+          const er = await fetch('/api/integrations/quickbooks/env')
+          const ed = (await er.json()) as { oauthConfigured?: boolean }
+          oauth = !!ed.oauthConfigured
+          setOauthConfigured(oauth)
+        } catch {
+          setOauthConfigured(false)
+        }
+        try {
+          const sr = await fetch('/api/integrations/quickbooks/status')
+          const data = (await sr.json()) as {
+            connected?: boolean
+            companyName?: string
+            realmId?: string
+            lastSyncAt?: string | null
+            totalSynced?: number
+          }
           if (data.connected && data.companyName && data.realmId) {
+            clearQboDemoMemory()
             setQboLive(true)
             setQboConn({
               companyId:   data.realmId,
@@ -907,9 +926,15 @@ export default function ReviewPage() {
               lastSyncAt:  data.lastSyncAt ?? null,
               totalSynced: data.totalSynced ?? 0,
             })
+          } else if (oauth) {
+            clearQboDemoMemory()
+            setQboConn(null)
+            setQboLive(false)
           }
-        })
-        .catch(() => { /* keep local demo connection */ })
+        } catch {
+          /* keep local demo when OAuth not configured */
+        }
+      })()
       // Load client industry from localStorage (fast, always available)
       const client = getClients().find((c) => c.business_name === found.client_name)
       if (client) setClientIndustry(client.industry)
@@ -932,10 +957,27 @@ export default function ReviewPage() {
       setJob(found)
       setQboConn(getQBOConnection())
       setQboLive(false)
-      fetch('/api/integrations/quickbooks/status')
-        .then((r) => r.json())
-        .then((data: { connected?: boolean; companyName?: string; realmId?: string; lastSyncAt?: string | null; totalSynced?: number }) => {
+      void (async () => {
+        let oauth = false
+        try {
+          const er = await fetch('/api/integrations/quickbooks/env')
+          const ed = (await er.json()) as { oauthConfigured?: boolean }
+          oauth = !!ed.oauthConfigured
+          setOauthConfigured(oauth)
+        } catch {
+          setOauthConfigured(false)
+        }
+        try {
+          const sr = await fetch('/api/integrations/quickbooks/status')
+          const data = (await sr.json()) as {
+            connected?: boolean
+            companyName?: string
+            realmId?: string
+            lastSyncAt?: string | null
+            totalSynced?: number
+          }
           if (data.connected && data.companyName && data.realmId) {
+            clearQboDemoMemory()
             setQboLive(true)
             setQboConn({
               companyId:   data.realmId,
@@ -944,9 +986,15 @@ export default function ReviewPage() {
               lastSyncAt:  data.lastSyncAt ?? null,
               totalSynced: data.totalSynced ?? 0,
             })
+          } else if (oauth) {
+            clearQboDemoMemory()
+            setQboConn(null)
+            setQboLive(false)
           }
-        })
-        .catch(() => {})
+        } catch {
+          /* ignore */
+        }
+      })()
       const client = getClients().find((c) => c.business_name === found.client_name)
       if (client) setClientIndustry(client.industry)
       const existing = getAuditTrail(jobId)
@@ -1161,6 +1209,12 @@ export default function ReviewPage() {
     setPushStep('connecting')
     setPushError('')
 
+    if (oauthConfigured && !qboLive) {
+      setPushError('Connect QuickBooks in Integrations (OAuth) before pushing.')
+      setPushStep('error')
+      return
+    }
+
     if (qboLive) {
       void (async () => {
         try {
@@ -1168,11 +1222,25 @@ export default function ReviewPage() {
           const res = await fetch('/api/integrations/quickbooks/push', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ transactions: approved }),
+            body:    JSON.stringify({
+              transactions: approved,
+              chartOfAccounts: job.chart_of_accounts,
+              clientName: job.client_name,
+            }),
           })
-          const data = (await res.json()) as { error?: string; pushed?: number; message?: string }
+          const data = (await res.json()) as {
+            error?: string
+            pushed?: number
+            message?: string
+            missingCodes?: string[]
+            hint?: string
+          }
           if (!res.ok) {
-            setPushError(data.error ?? 'QuickBooks push failed.')
+            const extra =
+              data.missingCodes && data.missingCodes.length
+                ? ` Map accounts: /dashboard/integrations/quickbooks/mapping?client=${encodeURIComponent(job.client_name)}`
+                : ''
+            setPushError((data.error ?? 'QuickBooks push failed.') + extra)
             setPushStep('error')
             return
           }
@@ -1371,7 +1439,7 @@ export default function ReviewPage() {
               Email Client
             </button>
 
-            {/* Push to QuickBooks — only shown when connected */}
+            {/* Push to QuickBooks — connected (real or demo when OAuth not configured) */}
             {qboConn && approvedCount > 0 && (
               <button
                 onClick={handlePushToQBO}
@@ -1385,6 +1453,15 @@ export default function ReviewPage() {
                 <QBOIcon />
                 Push to QuickBooks
               </button>
+            )}
+            {qboLive && oauthConfigured && approvedCount > 0 && (
+              <Link
+                href={`/dashboard/integrations/quickbooks/mapping?client=${encodeURIComponent(job.client_name)}`}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors"
+                style={{ borderColor: '#e8e0d4', color: '#166534', backgroundColor: '#ffffff' }}
+              >
+                QBO account map
+              </Link>
             )}
 
             {job.status !== 'completed' && (
