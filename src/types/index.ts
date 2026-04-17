@@ -12,6 +12,10 @@ export type Transaction = {
   final_category?: string
   final_account_code?: string
   notes?: string
+  reasoning?: string
+  tax_relevant?: boolean
+  suggested_1099_vendor?: boolean
+  categorization_flags?: string[]
 }
 
 export type ChartOfAccounts = {
@@ -87,6 +91,10 @@ export interface CopilotConfig {
   confidenceThreshold: number   // 0.75–0.95, default 0.85
   maxAutoAmount: number         // never auto-approve above this, default 5000
   autoFlagThreshold: number     // flag anything below this, default 0.60
+  /** AI categorization: auto-approve when confidence ≥ (default 0.90) */
+  categorizationAutoApprove?: number
+  /** AI categorization: flag when confidence < this (default 0.70) */
+  categorizationReviewFloor?: number
 }
 
 // ─── Chat ────────────────────────────────────────────────────────────────────

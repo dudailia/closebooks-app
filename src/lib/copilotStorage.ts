@@ -9,6 +9,8 @@ export const DEFAULT_CONFIG: CopilotConfig = {
   confidenceThreshold: 0.85,
   maxAutoAmount: 5000,
   autoFlagThreshold: 0.6,
+  categorizationAutoApprove: 0.9,
+  categorizationReviewFloor: 0.7,
 }
 
 let _config: CopilotConfig = { ...DEFAULT_CONFIG }
