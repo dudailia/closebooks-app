@@ -1,3 +1,7 @@
+-- Run this ONCE if you got: relation "firm_members" does not exist (LINE ~758)
+-- when running the combined migration. Do NOT re-run the full combined file from scratch
+-- if parts A–D already succeeded — only run this file.
+-- Source: same as 20260416000000_firm_members_rls_audit.sql (table BEFORE functions)
 -- Firm membership, role-based RLS, audit_log, user_sessions
 -- Requires: public.firms, business tables from prior migrations.
 -- NOTE: firm_members TABLE must exist BEFORE functions that reference it.
