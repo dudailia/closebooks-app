@@ -85,14 +85,60 @@ function ToastStack({ toasts, onDismiss }: { toasts: ToastState[]; onDismiss: (i
   )
 }
 
+function Spinner() {
+  return (
+    <svg className="animate-spin" width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <circle cx="7" cy="7" r="5.5" stroke="#e0dbd4" strokeWidth="2" />
+      <path d="M7 1.5A5.5 5.5 0 0112.5 7" stroke="#b8734a" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function ReportIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <rect x="2" y="1" width="8" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none" />
+      <path d="M4 4.5h4M4 7h4M4 9.5h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M9 8.5l1.5 1.5L13 7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function DownloadIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M7 1v8M4 6l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M2 11h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="12" height="12" viewBox="0 0 12 12" fill="none"
+      style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
+    >
+      <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Export dropdown — click-controlled, not CSS hover
 // ---------------------------------------------------------------------------
 
-type ExportFormat = 'quickbooks' | 'standard'
+type CsvExportFormatKey =
+  | 'quickbooks'
+  | 'standard'
+  | 'qbo_journal_csv'
+  | 'xero'
+  | 'trial_balance'
+  | 'transaction_detail'
+  | 'iif'
 
 interface ExportDropdownProps {
-  onExport: (format: ExportFormat) => void
+  onExport: (format: CsvExportFormatKey) => void
   loading: boolean
   approvedCount: number
 }
@@ -110,21 +156,46 @@ function ExportDropdown({ onExport, loading, approvedCount }: ExportDropdownProp
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  function pick(format: ExportFormat) {
+  function pick(format: CsvExportFormatKey) {
     setOpen(false)
     onExport(format)
   }
 
-  const formats: { key: ExportFormat; label: string; sub: string }[] = [
+  const formats: { key: CsvExportFormatKey; label: string; sub: string }[] = [
     {
-      key:   'quickbooks',
-      label: 'QuickBooks CSV',
-      sub:   'Date, Account, Description, Amount, Category, Class',
+      key: 'quickbooks',
+      label: 'QuickBooks CSV (legacy)',
+      sub: 'Date, Account, Description, Amount, Category, Class',
     },
     {
-      key:   'standard',
+      key: 'standard',
       label: 'Standard CSV',
-      sub:   'Date, Description, Category, Debit, Credit, Status',
+      sub: 'Date, Description, Category, Debit, Credit, Status',
+    },
+    {
+      key: 'qbo_journal_csv',
+      label: 'QBO journal CSV',
+      sub: 'Debit/credit lines for journal-style import prep',
+    },
+    {
+      key: 'xero',
+      label: 'Xero CSV',
+      sub: 'Narration, date, account, debit/credit',
+    },
+    {
+      key: 'trial_balance',
+      label: 'Trial balance CSV',
+      sub: 'Per account code from chart + totals',
+    },
+    {
+      key: 'transaction_detail',
+      label: 'Transaction detail CSV',
+      sub: 'All fields (columns configurable via API)',
+    },
+    {
+      key: 'iif',
+      label: 'QuickBooks Desktop IIF',
+      sub: 'General journal IIF (verify in your QBD version)',
     },
   ]
 
@@ -150,7 +221,7 @@ function ExportDropdown({ onExport, loading, approvedCount }: ExportDropdownProp
         ) : (
           <>
             <DownloadIcon />
-            Export
+            Export CSV
             <ChevronIcon open={open} />
           </>
         )}
@@ -158,7 +229,7 @@ function ExportDropdown({ onExport, loading, approvedCount }: ExportDropdownProp
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1.5 w-64 rounded-xl border shadow-lg py-1.5 z-30"
+          className="absolute right-0 top-full mt-1.5 w-72 max-h-[min(70vh,420px)] overflow-y-auto rounded-xl border shadow-lg py-1.5 z-30"
           style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
         >
           {approvedCount === 0 ? (
@@ -191,6 +262,85 @@ function ExportDropdown({ onExport, loading, approvedCount }: ExportDropdownProp
               ))}
             </>
           )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+type PdfExportType = 'close_summary' | 'trial_balance' | 'transaction_detail' | 'bank_reconciliation' | 'package'
+
+interface PdfExportDropdownProps {
+  onExport: (type: PdfExportType) => void
+  loading: boolean
+  disabled: boolean
+}
+
+function PdfExportDropdown({ onExport, loading, disabled }: PdfExportDropdownProps) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    if (open) document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  const items: { key: PdfExportType; label: string; sub: string }[] = [
+    { key: 'close_summary', label: 'Close summary', sub: 'One-page executive summary' },
+    { key: 'trial_balance', label: 'Trial balance', sub: 'By account type + prior comparison' },
+    { key: 'transaction_detail', label: 'Transaction detail', sub: 'Grouped by GL account' },
+    { key: 'bank_reconciliation', label: 'Bank reconciliation', sub: 'Placeholders for statement items' },
+    { key: 'package', label: 'Client package', sub: 'Cover + TOC + summary + TB sample' },
+  ]
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        disabled={disabled || loading}
+        className="flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50"
+        style={{
+          borderColor: open ? '#2d5a27' : '#e8e0d4',
+          color: '#1a1714',
+          backgroundColor: open ? '#f0f5ef' : '#ffffff',
+        }}
+      >
+        {loading ? (
+          <>
+            <Spinner />
+            PDF…
+          </>
+        ) : (
+          <>
+            <ReportIcon />
+            PDF
+            <ChevronIcon open={open} />
+          </>
+        )}
+      </button>
+      {open && !disabled && (
+        <div
+          className="absolute right-0 top-full mt-1.5 w-72 rounded-xl border shadow-lg py-1.5 z-30"
+          style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+        >
+          {items.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => { setOpen(false); onExport(f.key) }}
+              className="w-full text-left px-3 py-2.5 transition-colors"
+              style={{ color: '#1a1714' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f0f5ef' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+            >
+              <p className="text-sm font-medium">{f.label}</p>
+              <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>{f.sub}</p>
+            </button>
+          ))}
         </div>
       )}
     </div>
@@ -853,6 +1003,11 @@ export default function ReviewPage() {
   const [job, setJob]           = useState<CategorizationJob | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [exporting, setExporting]         = useState(false)
+  const [pdfExporting, setPdfExporting]   = useState(false)
+  const [sendEmailOpen, setSendEmailOpen] = useState(false)
+  const [sendEmailTo, setSendEmailTo]     = useState('')
+  const [sendEmailPdfType, setSendEmailPdfType] = useState<PdfExportType>('close_summary')
+  const [sendEmailLoading, setSendEmailLoading] = useState(false)
   const [reporting, setReporting]         = useState(false)
   const [clientSummary, setClientSummary] = useState(false)
   const [completing, setCompleting]       = useState(false)
@@ -989,14 +1144,20 @@ export default function ReviewPage() {
     return getJobs().filter((j) => j.client_name === job.client_name)
   }, [job])
 
+  const previousJob = useMemo(() => {
+    if (!job) return null
+    return (
+      allClientJobs
+        .filter((j) => j.id !== job.id && j.created_at < job.created_at)
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))[0] ?? null
+    )
+  }, [job, allClientJobs])
+
   // Anomaly detection — compare current job to previous job for same client
   const anomalies = useMemo(() => {
     if (!job) return []
-    const prevJob = allClientJobs
-      .filter((j) => j.id !== job.id && j.created_at < job.created_at)
-      .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
-    return detectAnomalies(job.transactions, prevJob?.transactions ?? null)
-  }, [job, allClientJobs])
+    return detectAnomalies(job.transactions, previousJob?.transactions ?? null)
+  }, [job, previousJob])
 
   function handleTransactionsChange(updated: Transaction[]) {
     if (!job) return
@@ -1007,7 +1168,17 @@ export default function ReviewPage() {
     dbSaveJob(next).catch(() => { /* localStorage fallback already written inside dbSaveJob */ })
   }
 
-  async function handleExport(format: ExportFormat) {
+  const csvFormatLabels: Record<CsvExportFormatKey, string> = {
+    quickbooks: 'QuickBooks CSV',
+    standard: 'Standard CSV',
+    qbo_journal_csv: 'QBO journal CSV',
+    xero: 'Xero CSV',
+    trial_balance: 'Trial balance CSV',
+    transaction_detail: 'Transaction detail CSV',
+    iif: 'QuickBooks IIF',
+  }
+
+  async function handleExport(format: CsvExportFormatKey) {
     if (!job) return
 
     // Only export approved or edited transactions
@@ -1028,6 +1199,7 @@ export default function ReviewPage() {
         body: JSON.stringify({
           transactions: exportable,
           clientName: job.client_name,
+          chartOfAccounts: job.chart_of_accounts ?? [],
           format,
         }),
       })
@@ -1053,7 +1225,7 @@ export default function ReviewPage() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
 
-      const label = format === 'quickbooks' ? 'QuickBooks CSV' : 'Standard CSV'
+      const label = csvFormatLabels[format]
       addToast(`Exported ${exportable.length} transaction${exportable.length !== 1 ? 's' : ''} as ${label}`, 'success')
       logAuditEvent(jobId, {
         action: 'job_exported',
@@ -1071,6 +1243,77 @@ export default function ReviewPage() {
       addToast(err instanceof Error ? err.message : 'Export failed.', 'error')
     } finally {
       setExporting(false)
+    }
+  }
+
+  async function handlePdfExport(type: PdfExportType) {
+    if (!job) return
+    setPdfExporting(true)
+    try {
+      const firmSettings = loadFirmSettings()
+      const res = await fetch('/api/export/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job, firmSettings, previousJob, type }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error ?? `PDF export failed (${res.status})`)
+      }
+      const disposition = res.headers.get('content-disposition') ?? ''
+      const filenameMatch = disposition.match(/filename="([^"]+)"/)
+      const filename = filenameMatch?.[1] ?? `${job.client_name}_report.pdf`
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      addToast('PDF downloaded.', 'success')
+      logActivity({
+        type: 'report_generated',
+        description: `PDF ${type} for ${job.client_name}`,
+        clientName: job.client_name,
+        jobId: job.id,
+      })
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'PDF export failed.', 'error')
+    } finally {
+      setPdfExporting(false)
+    }
+  }
+
+  async function handleSendReportEmail() {
+    if (!job || !sendEmailTo.trim()) {
+      addToast('Enter a valid email address.', 'warning')
+      return
+    }
+    setSendEmailLoading(true)
+    try {
+      const firmSettings = loadFirmSettings()
+      const res = await fetch('/api/export/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: sendEmailTo.trim(),
+          job,
+          firmSettings,
+          previousJob,
+          pdfType: sendEmailPdfType,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error ?? 'Send failed')
+      addToast(data.messageId ? 'Email sent.' : 'Email queued.', 'success')
+      setSendEmailOpen(false)
+      setSendEmailTo('')
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Could not send email.', 'error')
+    } finally {
+      setSendEmailLoading(false)
     }
   }
 
@@ -1327,6 +1570,23 @@ export default function ReviewPage() {
               approvedCount={approvedCount}
             />
 
+            <PdfExportDropdown
+              onExport={handlePdfExport}
+              loading={pdfExporting}
+              disabled={!job}
+            />
+
+            <button
+              type="button"
+              onClick={() => setSendEmailOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors"
+              style={{ borderColor: '#e8e0d4', color: '#1a1714', backgroundColor: '#ffffff' }}
+              title="Email a PDF report (requires RESEND_API_KEY on server)"
+            >
+              <EmailIcon />
+              Send PDF
+            </button>
+
             <button
               onClick={handleReport}
               disabled={reporting || exporting}
@@ -1569,9 +1829,67 @@ export default function ReviewPage() {
       {showEmailDraft && (
         <ClientEmailDraft
           job={job}
-          previousJob={allClientJobs.find((j) => j.id !== job.id && j.created_at < job.created_at) ?? null}
+          previousJob={previousJob}
           onClose={() => setShowEmailDraft(false)}
         />
+      )}
+
+      {sendEmailOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(26,23,20,0.45)', backdropFilter: 'blur(2px)' }}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border shadow-xl p-6"
+            style={{ backgroundColor: '#ffffff', borderColor: '#e8e0d4' }}
+          >
+            <h2 className="text-lg font-semibold mb-1" style={{ color: '#1a1714' }}>Send PDF to client</h2>
+            <p className="text-xs mb-4" style={{ color: '#a09a94' }}>
+              Uses firm branding from Settings. Server must have RESEND_API_KEY configured.
+            </p>
+            <label className="block text-xs font-medium mb-1" style={{ color: '#6b6560' }}>Recipient email</label>
+            <input
+              type="email"
+              value={sendEmailTo}
+              onChange={(e) => setSendEmailTo(e.target.value)}
+              className="w-full rounded-lg border px-3 py-2 text-sm mb-4"
+              style={{ borderColor: '#e8e0d4' }}
+              placeholder="client@example.com"
+            />
+            <label className="block text-xs font-medium mb-1" style={{ color: '#6b6560' }}>Report</label>
+            <select
+              value={sendEmailPdfType}
+              onChange={(e) => setSendEmailPdfType(e.target.value as PdfExportType)}
+              className="w-full rounded-lg border px-3 py-2 text-sm mb-4"
+              style={{ borderColor: '#e8e0d4' }}
+            >
+              <option value="close_summary">Close summary</option>
+              <option value="trial_balance">Trial balance</option>
+              <option value="transaction_detail">Transaction detail</option>
+              <option value="bank_reconciliation">Bank reconciliation</option>
+              <option value="package">Client package</option>
+            </select>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setSendEmailOpen(false); setSendEmailTo('') }}
+                className="px-4 py-2 rounded-xl border text-sm"
+                style={{ borderColor: '#e8e0d4' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSendReportEmail()}
+                disabled={sendEmailLoading}
+                className="px-4 py-2 rounded-xl text-sm text-white font-medium disabled:opacity-50"
+                style={{ backgroundColor: '#2d5a27' }}
+              >
+                {sendEmailLoading ? 'Sending…' : 'Send'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Share modal */}
@@ -1730,45 +2048,6 @@ function ShareModal({ job, onClose }: { job: CategorizationJob; onClose: () => v
 // ---------------------------------------------------------------------------
 // Icons
 // ---------------------------------------------------------------------------
-
-function Spinner() {
-  return (
-    <svg className="animate-spin" width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <circle cx="7" cy="7" r="5.5" stroke="#e0dbd4" strokeWidth="2" />
-      <path d="M7 1.5A5.5 5.5 0 0112.5 7" stroke="#b8734a" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function ReportIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <rect x="2" y="1" width="8" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none" />
-      <path d="M4 4.5h4M4 7h4M4 9.5h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-      <path d="M9 8.5l1.5 1.5L13 7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function DownloadIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <path d="M7 1v8M4 6l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M2 11h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function ChevronIcon({ open }: { open: boolean }) {
-  return (
-    <svg
-      width="12" height="12" viewBox="0 0 12 12" fill="none"
-      style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
-    >
-      <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
 
 function QBOIcon() {
   return (
