@@ -47,10 +47,11 @@ function buildSections(pendingCount: number): NavSection[] {
       id: 'clients',
       label: 'CLIENTS',
       items: [
-        { href: '/dashboard/clients',  label: 'Clients',   icon: UsersIcon },
-        { href: '/dashboard/calendar', label: 'Calendar',  icon: CalendarIcon },
+        { href: '/dashboard/clients',  label: 'Clients',      icon: UsersIcon },
+        { href: '/dashboard/calendar', label: 'Calendar',     icon: CalendarIcon },
         { href: '/dashboard/requests', label: 'Doc Requests', icon: ClipboardIcon },
-        { href: '/dashboard/messages', label: 'Messages',  icon: MessageSquareIcon },
+        { href: '/dashboard/messages', label: 'Messages',     icon: MessageSquareIcon },
+        { href: '/dashboard/clients',  label: 'Bank Rec',     icon: BankRecIcon },
       ],
     },
     {
@@ -630,7 +631,11 @@ function AuditIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fi
 function ProfileIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5.5" r="2.5" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M3 13c0-2.5 2.2-4 5-4s5 1.5 5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none"/><path d="M11.5 2.5l1 1M13 4l-1-1" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity=".5"/></svg> }
 function ApiIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 4h12v8H2z" stroke="currentColor" strokeWidth="1.2" fill="none" rx="1.5"/><path d="M4.5 8l1.5-1.5L7.5 8 6 9.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/><path d="M9 6.5h3M9 9.5h2" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg> }
 function CertIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="7" r="4" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M5.5 7l1.5 1.5 3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M5.5 11l-1 3L8 13l3.5 1-1-3" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round" fill="none"/></svg> }
+<<<<<<< HEAD
 function ClipboardIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="3" y="2" width="10" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M6 2.5h4M5 6h6M5 8.5h6M5 11h4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg> }
 function MessageSquareIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2" width="13" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M4 14l2.5-3h5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M4.5 6h7M4.5 8.5h5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg> }
 function ClockIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M8 4.5V8l2.5 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> }
 function BulkIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="13" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M12 12l1 1 1.5-1.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/></svg> }
+=======
+function BankRecIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M1.5 6.5h13" stroke="currentColor" strokeWidth="1.2"/><path d="M4 9.5h3M10 9.5h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M4 11.5h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M8 9.5v2" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity=".4"/></svg> }
+>>>>>>> e64e38e (feat: add complete bank reconciliation module)
