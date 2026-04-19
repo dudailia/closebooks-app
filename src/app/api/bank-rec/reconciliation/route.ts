@@ -10,6 +10,8 @@ import {
 } from '@/lib/bank-rec/storage'
 import type { Reconciliation, ReconciliationItem } from '@/lib/bank-rec/types'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   const sb = createClient()
   if (!sb) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })

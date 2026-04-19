@@ -9,6 +9,8 @@ import {
 } from '@/lib/portal/storage'
 import { notifyClientActionItem, notifyFirmActionCompleted } from '@/lib/portal/notify'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl
   const token = searchParams.get('token')

@@ -4,6 +4,8 @@ import { runAutoMatch } from '@/lib/bank-rec/matching'
 import { updateLineMatch, getStatement } from '@/lib/bank-rec/storage'
 import type { BookTransaction } from '@/lib/bank-rec/types'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   const sb = createClient()
   if (!sb) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })

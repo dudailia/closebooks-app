@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 import { getIntuitTokenUrl, getQboRedirectUri, isQBOOAuthConfigured } from '@/lib/qboConfig'
 import { getUserFromRequest } from '@/lib/supabase/routeAuth'
 
+export const dynamic = 'force-dynamic'
+
 const STATE_COOKIE = 'cb_qbo_oauth_state'
 
 function getSupabaseService() {

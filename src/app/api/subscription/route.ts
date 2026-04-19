@@ -10,6 +10,8 @@ import {
   type SubscriptionRow,
 } from '@/lib/subscriptionAccess'
 
+export const dynamic = 'force-dynamic'
+
 export const GRACE_DAYS = 7
 const APP_TRIAL_DAYS = 14
 

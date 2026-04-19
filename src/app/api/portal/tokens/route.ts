@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/routeAuth'
 import { createPortalToken, getTokensForFirm, getTokenForClient, revokeToken } from '@/lib/portal/storage'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   const user = await getUserFromRequest(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
