@@ -15,6 +15,23 @@ const supabaseConfigured =
   !!SUPABASE_ANON &&
   !SUPABASE_ANON.startsWith('your_')
 
+// Portal rate limiting
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+const RATE_WINDOW = 60_000
+const RATE_MAX = 60
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now()
+  const rec = rateLimitMap.get(ip)
+  if (!rec || rec.resetAt < now) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW })
+    return true
+  }
+  if (rec.count >= RATE_MAX) return false
+  rec.count++
+  return true
+}
+
 function securityHeaders(): Record<string, string> {
   return {
     'X-Content-Type-Options': 'nosniff',
@@ -32,6 +49,22 @@ function applySecurityHeaders(res: NextResponse): void {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // Rate limit portal routes
+  if (pathname.startsWith('/portal/')) {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      ?? request.headers.get('x-real-ip')
+      ?? 'unknown'
+    if (!checkRateLimit(ip)) {
+      return new NextResponse('Too many requests', {
+        status: 429,
+        headers: { 'Retry-After': '60', 'Content-Type': 'text/plain' },
+      })
+    }
+    const res = NextResponse.next()
+    applySecurityHeaders(res)
+    return res
+  }
 
   if (!supabaseConfigured) {
     const res = NextResponse.next()
@@ -125,5 +158,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/signup'],
+  matcher: ['/dashboard/:path*', '/login', '/signup', '/portal/:path*'],
 }
