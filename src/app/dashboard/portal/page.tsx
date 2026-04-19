@@ -2,240 +2,179 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getJobs, getClients } from '@/lib/storage'
-import { loadFirmSettings } from '@/lib/firmSettings'
-import { getPortalTokens, ensurePortalToken } from '@/lib/portalTokensStore'
+import type { PortalToken } from '@/lib/portal/types'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface PortalClient {
-  id: string
-  name: string
-  status: 'active' | 'not_setup'
-  token: string
-  lastLogin: string
-  visits: number
-  portalUrl: string
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  if (days < 7) return `${days}d ago`
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function buildPortalClients(): PortalClient[] {
-  const jobs = getJobs()
-  const clients = getClients()
-  const tokens = getPortalTokens()
-  const firmSettings = loadFirmSettings()
-  const firmSlug = (firmSettings.firmName || 'my-firm').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://closebooks-app.vercel.app'
-
-  // Dedupe clients by name (most recent job per client)
-  const byClient = new Map<string, string>() // name → jobId
-  for (const job of jobs) {
-    const existing = byClient.get(job.client_name)
-    if (!existing) byClient.set(job.client_name, job.id)
-  }
-
-  // Also include stored clients without jobs
-  for (const client of clients) {
-    if (!byClient.has(client.business_name)) {
-      byClient.set(client.business_name, `client-${client.id}`)
-    }
-  }
-
-  const result: PortalClient[] = []
-  for (const [name] of Array.from(byClient.entries())) {
-    const key = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-    const token = tokens[key]?.token ?? ''
-    const hasToken = !!token
-
-    result.push({
-      id: key,
-      name,
-      status: hasToken ? 'active' : 'not_setup',
-      token,
-      lastLogin: tokens[key]?.lastLogin ?? 'Never',
-      visits: tokens[key]?.visits ?? 0,
-      portalUrl: hasToken
-        ? `${origin}/portal/${firmSlug}/${token}`
-        : '',
-    })
-  }
-
-  return result.sort((a, b) => b.visits - a.visits || a.name.localeCompare(b.name))
+function daysUntil(iso: string): string {
+  const diff = new Date(iso).getTime() - Date.now()
+  const days = Math.ceil(diff / 86400000)
+  if (days < 0) return 'Expired'
+  if (days === 0) return 'Expires today'
+  if (days === 1) return '1 day left'
+  return `${days} days left`
 }
-
-// ─── Toast ────────────────────────────────────────────────────────────────────
-
-function Toast({ message }: { message: string }) {
-  return (
-    <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#1a1714', color: 'white', borderRadius: 10, padding: '12px 20px', fontSize: 14, zIndex: 1000, boxShadow: '0 4px 20px rgba(0,0,0,0.15)', animation: 'fadeIn 0.2s ease', maxWidth: 320 }}>
-      {message}
-    </div>
-  )
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PortalManagementPage() {
-  const [clients, setClients] = useState<PortalClient[]>([])
+  const [tokens, setTokens] = useState<PortalToken[]>([])
+  const [loading, setLoading] = useState(true)
+  const [revoking, setRevoking] = useState<string | null>(null)
+  const [copied, setCopied] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
-  const [mounted, setMounted] = useState(false)
+
+  const appUrl = typeof window !== 'undefined' ? window.location.origin : ''
 
   useEffect(() => {
-    setClients(buildPortalClients())
-    setMounted(true)
+    fetch('/api/portal/tokens')
+      .then(r => r.json())
+      .then(d => setTokens(d.tokens ?? []))
+      .finally(() => setLoading(false))
   }, [])
 
-  function showToast(msg: string) {
+  const showToast = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
   }
 
-  function handleActivate(clientName: string) {
-    const key = clientName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-    ensurePortalToken(key)
-    setClients(buildPortalClients())
-    showToast(`Portal activated for ${clientName}!`)
+  const copyLink = (token: string) => {
+    navigator.clipboard.writeText(`${appUrl}/portal/${token}`).then(() => {
+      setCopied(token)
+      setTimeout(() => setCopied(null), 2000)
+    })
   }
 
-  function handleCopy(portalUrl: string, clientName: string) {
-    if (!portalUrl) return
-    navigator.clipboard.writeText(portalUrl).catch(() => {})
-    showToast(`Portal link for ${clientName} copied!`)
+  const revokeToken = async (id: string, clientName: string) => {
+    if (!confirm(`Revoke portal access for ${clientName}? Their link will stop working immediately.`)) return
+    setRevoking(id)
+    await fetch(`/api/portal/tokens?id=${id}`, { method: 'DELETE' })
+    setTokens(prev => prev.filter(t => t.id !== id))
+    setRevoking(null)
+    showToast(`Access revoked for ${clientName}`)
   }
 
-  const activeCount = clients.filter(c => c.status === 'active').length
-  const totalVisits = clients.reduce((s, c) => s + c.visits, 0)
-
-  if (!mounted) {
-    return <div style={{ padding: '32px 24px', maxWidth: 1100, margin: '0 auto' }}>
-      <div style={{ height: 120, borderRadius: 12, backgroundColor: '#f0ebe3' }} className="cb-skeleton" />
-    </div>
-  }
+  const activeTokens = tokens.filter(t => new Date(t.expiresAt) > new Date())
+  const expiredTokens = tokens.filter(t => new Date(t.expiresAt) <= new Date())
 
   return (
-    <div style={{ padding: '24px 16px', maxWidth: 1100, margin: '0 auto' }}>
-      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
-
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, gap: 16, flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', fontSize: 28, color: '#1a1714', margin: 0, marginBottom: 4 }}>Client Portal</h1>
-          <p style={{ fontSize: 14, color: '#9ca3af', margin: 0 }}>Give clients a live view of their financials — one link, no login needed.</p>
+    <div style={{ padding: '32px 40px', maxWidth: 900 }}>
+      {toast && (
+        <div style={{ position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)', background: '#1a1714', color: 'white', padding: '10px 20px', borderRadius: 8, fontSize: 14, zIndex: 100 }}>
+          {toast}
         </div>
-        <Link href="/dashboard/portal/setup" style={{ display: 'inline-block', background: '#b8734a', color: 'white', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
-          Customize Portal
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
+        <div>
+          <h1 style={{ fontFamily: 'var(--font-dm-serif)', fontSize: 28, color: '#1a1714', margin: '0 0 4px' }}>
+            Client Portals
+          </h1>
+          <p style={{ fontSize: 14, color: '#9ca3af', margin: 0 }}>
+            Manage access links for your clients
+          </p>
+        </div>
+        <Link href="/dashboard/clients" style={{
+          background: '#1a1714', color: 'white', textDecoration: 'none',
+          borderRadius: 8, padding: '10px 18px', fontSize: 14, fontWeight: 600,
+        }}>
+          + New Portal
         </Link>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
-        {[
-          { label: 'Portals Active', value: String(activeCount), color: '#2d5a27' },
-          { label: 'Total Clients', value: String(clients.length), color: '#1a1714' },
-          { label: 'Total Visits', value: String(totalVisits), color: '#1a1714' },
-        ].map(s => (
-          <div key={s.label} style={{ background: 'white', border: '1px solid #e8e0d4', borderRadius: 12, padding: '18px 24px' }}>
-            <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 6 }}>{s.label}</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: s.color }}>{s.value}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Client table */}
-      <div style={{ background: 'white', border: '1px solid #e8e0d4', borderRadius: 12, overflow: 'hidden' }}>
-        {clients.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 24px' }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🔗</div>
-            <h3 style={{ fontSize: 18, fontWeight: 600, color: '#1a1714', marginBottom: 8 }}>No clients yet</h3>
-            <p style={{ fontSize: 14, color: '#6b6560', maxWidth: 360, margin: '0 auto 24px' }}>
-              Upload a close to add clients. Once you have clients, you can generate their portal links here.
-            </p>
-            <Link href="/dashboard/upload" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', borderRadius: 10, backgroundColor: '#2d5a27', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
-              + New Close
-            </Link>
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #e8e0d4', backgroundColor: '#faf8f4' }}>
-                  {['Client', 'Status', 'Portal Link', 'Visits', 'Last Login', 'Actions'].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#6b6560', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {clients.map((client, i) => (
-                  <tr key={client.id} style={{ borderTop: i > 0 ? '1px solid #f3f0eb' : 'none' }}>
-                    <td style={{ padding: '14px 16px' }}>
-                      <span style={{ fontWeight: 600, fontSize: 14, color: '#1a1714' }}>{client.name}</span>
-                    </td>
-                    <td style={{ padding: '14px 12px' }}>
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500,
-                        backgroundColor: client.status === 'active' ? '#dcfce7' : '#f3f4f6',
-                        color: client.status === 'active' ? '#166534' : '#6b7280',
-                      }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: client.status === 'active' ? '#16a34a' : '#9ca3af', display: 'inline-block' }} />
-                        {client.status === 'active' ? 'Active' : 'Not set up'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '14px 12px' }}>
-                      {client.status === 'active' ? (
-                        <code style={{ fontSize: 11, color: '#6b6560', backgroundColor: '#f5f0ea', padding: '3px 6px', borderRadius: 4, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>
-                          {client.portalUrl.replace(/^https?:\/\/[^/]+/, '')}
-                        </code>
-                      ) : (
-                        <span style={{ fontSize: 12, color: '#a09a94' }}>—</span>
-                      )}
-                    </td>
-                    <td style={{ padding: '14px 12px' }}>
-                      <span style={{ fontSize: 13, color: '#1a1714', fontVariantNumeric: 'tabular-nums' }}>{client.visits}</span>
-                    </td>
-                    <td style={{ padding: '14px 12px' }}>
-                      <span style={{ fontSize: 12, color: '#6b6560' }}>{client.lastLogin}</span>
-                    </td>
-                    <td style={{ padding: '14px 16px' }}>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        {client.status === 'active' ? (
-                          <>
-                            <button
-                              onClick={() => handleCopy(client.portalUrl, client.name)}
-                              style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #e8e0d4', backgroundColor: '#fff', color: '#1a1714', fontSize: 12, cursor: 'pointer', fontWeight: 500 }}
-                            >
-                              Copy Link
-                            </button>
-                            <a
-                              href={client.portalUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #2d5a27', backgroundColor: '#f0f7ee', color: '#2d5a27', fontSize: 12, cursor: 'pointer', fontWeight: 500, textDecoration: 'none' }}
-                            >
-                              Preview
-                            </a>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => handleActivate(client.name)}
-                            style={{ padding: '5px 12px', borderRadius: 6, border: 'none', backgroundColor: '#b8734a', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}
-                          >
-                            Activate Portal
-                          </button>
-                        )}
+      {loading ? (
+        <div style={{ padding: '60px 0', textAlign: 'center', color: '#9ca3af', fontSize: 14 }}>Loading portals…</div>
+      ) : tokens.length === 0 ? (
+        <div style={{ background: 'white', border: '1px solid #e8e0d4', borderRadius: 16, padding: '60px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🔗</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#1a1714', marginBottom: 8 }}>No portals yet</div>
+          <div style={{ fontSize: 14, color: '#9ca3af', marginBottom: 20 }}>Generate a portal link for a client to get started.</div>
+          <Link href="/dashboard/clients" style={{ background: '#b8734a', color: 'white', textDecoration: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600 }}>
+            Set Up First Portal
+          </Link>
+        </div>
+      ) : (
+        <>
+          {activeTokens.length > 0 && (
+            <div style={{ marginBottom: 32 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+                Active ({activeTokens.length})
+              </div>
+              <div style={{ background: 'white', border: '1px solid #e8e0d4', borderRadius: 12, overflow: 'hidden' }}>
+                {activeTokens.map((t, i) => (
+                  <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', borderBottom: i < activeTokens.length - 1 ? '1px solid #f5f3ef' : 'none' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: '#f5f3ef', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+                      👤
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1714', marginBottom: 2 }}>{t.clientName}</div>
+                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 12, color: '#9ca3af' }}>
+                          {t.lastAccessedAt ? `Last visited ${timeAgo(t.lastAccessedAt)}` : 'Never visited'}
+                        </span>
+                        <span style={{ fontSize: 12, color: new Date(t.expiresAt).getTime() - Date.now() < 7 * 86400000 ? '#f59e0b' : '#9ca3af' }}>
+                          {daysUntil(t.expiresAt)}
+                        </span>
+                        {t.clientEmail && <span style={{ fontSize: 12, color: '#9ca3af' }}>{t.clientEmail}</span>}
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                      <button
+                        onClick={() => copyLink(t.token)}
+                        style={{ background: copied === t.token ? '#dcfce7' : '#f5f3ef', color: copied === t.token ? '#166534' : '#1a1714', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        {copied === t.token ? '✓ Copied' : 'Copy Link'}
+                      </button>
+                      <Link
+                        href={`/dashboard/portal/${t.clientId}/setup`}
+                        style={{ background: '#f5f3ef', color: '#1a1714', textDecoration: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 12, fontWeight: 600 }}
+                      >
+                        Manage
+                      </Link>
+                      <button
+                        onClick={() => revokeToken(t.id, t.clientName)}
+                        disabled={revoking === t.id}
+                        style={{ background: 'none', color: '#ef4444', border: '1px solid #fecaca', borderRadius: 7, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        Revoke
+                      </button>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              </div>
+            </div>
+          )}
 
-      <p style={{ fontSize: 12, color: '#a09a94', textAlign: 'center', marginTop: 12 }}>
-        Portal links are permanent and unique per client. Share them via email or your firm&apos;s website.
-      </p>
-
-      {toast && <Toast message={toast} />}
+          {expiredTokens.length > 0 && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+                Expired ({expiredTokens.length})
+              </div>
+              <div style={{ background: 'white', border: '1px solid #e8e0d4', borderRadius: 12, overflow: 'hidden', opacity: 0.7 }}>
+                {expiredTokens.map((t, i) => (
+                  <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 20px', borderBottom: i < expiredTokens.length - 1 ? '1px solid #f5f3ef' : 'none' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, color: '#6b6560' }}>{t.clientName}</div>
+                      <div style={{ fontSize: 12, color: '#ef4444' }}>Expired {timeAgo(t.expiresAt)}</div>
+                    </div>
+                    <Link href={`/dashboard/portal/${t.clientId}/setup`} style={{ background: '#f5f3ef', color: '#1a1714', textDecoration: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 12, fontWeight: 600 }}>
+                      Renew
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
