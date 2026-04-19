@@ -5,7 +5,11 @@ function getKey(): Buffer {
   if (hex.length !== 64) {
     throw new Error('PLAID_ENCRYPTION_KEY must be 64 hex characters (32 bytes). Generate with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"')
   }
-  return Buffer.from(hex, 'hex')
+  const key = Buffer.from(hex, 'hex')
+  if (key.length !== 32) {
+    throw new Error('PLAID_ENCRYPTION_KEY contains non-hex characters; expected 32 decoded bytes.')
+  }
+  return key
 }
 
 export function encrypt(plaintext: string): string {
@@ -21,7 +25,7 @@ export function encrypt(plaintext: string): string {
 export function decrypt(ciphertext: string): string {
   const key = getKey()
   const buf = Buffer.from(ciphertext, 'base64')
-  if (buf.length < 29) throw new Error('Invalid ciphertext')
+  if (buf.length < 28) throw new Error('Invalid ciphertext')
   const iv = buf.subarray(0, 12)
   const tag = buf.subarray(12, 28)
   const data = buf.subarray(28)
