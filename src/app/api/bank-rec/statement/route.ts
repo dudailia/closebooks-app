@@ -5,6 +5,8 @@ import { parseOFX } from '@/lib/bank-rec/parse-ofx'
 import { parsePDFText } from '@/lib/bank-rec/parse-pdf'
 import { createStatement, getStatements, getStatement } from '@/lib/bank-rec/storage'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   const sb = createClient()
   if (!sb) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })

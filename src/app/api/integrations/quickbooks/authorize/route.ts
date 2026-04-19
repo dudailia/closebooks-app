@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getIntuitAuthBase, getQboRedirectUri, isQBOOAuthConfigured } from '@/lib/qboConfig'
 import { getUserFromRequest } from '@/lib/supabase/routeAuth'
 
+export const dynamic = 'force-dynamic'
+
 const STATE_COOKIE = 'cb_qbo_oauth_state'
 const STATE_MAX_AGE = 600
 

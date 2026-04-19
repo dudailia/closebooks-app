@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { parsePlanSlug } from '@/lib/plans'
 
+export const dynamic = 'force-dynamic'
+
 const GRACE_MS = 7 * 86400000
 
 function getSupabase() {

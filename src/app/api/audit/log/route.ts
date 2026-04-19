@@ -4,6 +4,8 @@ import { z } from 'zod'
 import { getUserFromRequest } from '@/lib/supabase/routeAuth'
 import { sanitizeOptional } from '@/lib/promptSanitize'
 
+export const dynamic = 'force-dynamic'
+
 function getServiceSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY

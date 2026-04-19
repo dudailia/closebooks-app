@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import Anthropic from '@anthropic-ai/sdk'
 import type { BankStatementLine, BookTransaction, MatchedPair } from '@/lib/bank-rec/types'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   const sb = createClient()
   if (!sb) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })

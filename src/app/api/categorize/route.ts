@@ -5,6 +5,8 @@ import type { Transaction, ChartOfAccounts } from '@/types'
 import { rateLimit } from '@/lib/rateLimit'
 import { sanitizeForPrompt } from '@/lib/promptSanitize'
 import { getUserFromRequest } from '@/lib/supabase/routeAuth'
+
+export const dynamic = 'force-dynamic'
 const bodySchema = z.object({
   transactions: z.array(z.record(z.string(), z.unknown())),
   chartOfAccounts: z.array(z.record(z.string(), z.unknown())),
