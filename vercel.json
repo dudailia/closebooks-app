@@ -37,6 +37,9 @@
     },
     "src/app/api/integrations/plaid/sync/cron/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/copilot/chat/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [
