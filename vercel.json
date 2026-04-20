@@ -31,8 +31,20 @@
     },
     "src/app/api/parse-pdf/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/integrations/plaid/sync/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/integrations/plaid/sync/cron/route.ts": {
+      "maxDuration": 60
     }
   },
+  "crons": [
+    {
+      "path": "/api/integrations/plaid/sync/cron",
+      "schedule": "0 */6 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
