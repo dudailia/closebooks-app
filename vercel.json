@@ -31,6 +31,9 @@
     },
     "src/app/api/parse-pdf/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/copilot/chat/route.ts": {
+      "maxDuration": 60
     }
   },
   "headers": [

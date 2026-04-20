@@ -8,10 +8,12 @@ import { SubscriptionProvider } from '@/contexts/SubscriptionContext'
 import SubscriptionBanners from '@/components/SubscriptionBanners'
 import UpgradeModal from '@/components/UpgradeModal'
 import SessionPulse from '@/components/SessionPulse'
+import CopilotShortcut from '@/components/CopilotShortcut'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ backgroundColor: '#faf8f4', minHeight: '100vh' }}>
+      <CopilotShortcut />
       <ErrorBoundary>
         <Sidebar />
       </ErrorBoundary>
