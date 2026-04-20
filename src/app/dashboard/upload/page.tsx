@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import FileUpload from '@/components/FileUpload'
+import Link from 'next/link'
 import ChartOfAccountsUpload from '@/components/ChartOfAccountsUpload'
 import { saveJob } from '@/lib/storage'
 import { dbSaveJob } from '@/lib/db'
@@ -335,6 +336,7 @@ export default function UploadPage() {
   const [clientNameError, setClientNameError] = useState<string | null>(null)
   const [chartOfAccounts, setChartOfAccounts] = useState<ChartOfAccounts[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [plaidMode, setPlaidMode] = useState(false)
   const [trialStatus, setTrialStatus] = useState<ReturnType<typeof getTrialStatus> | null>(null)
 
   useEffect(() => {
@@ -461,25 +463,71 @@ export default function UploadPage() {
         {/* Step 2 — Bank statement */}
         {step === 2 && (
           <StepCard title="Bank Statement">
-            <p className="text-sm mb-4" style={{ color: '#6b6560' }}>
-              Upload a CSV or PDF export from your client&apos;s bank or accounting software.
-            </p>
-            <div
-              className="flex items-start gap-2 rounded-lg px-3 py-2.5 mb-5 text-xs"
-              style={{ backgroundColor: '#f0f4ff', color: '#3b5bdb' }}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0 mt-0.5">
-                <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.3" />
-                <path d="M7 6v4M7 4.5v.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-              </svg>
-              <span>PDF bank statements are supported — AI will extract transactions automatically. This may take 10–20 seconds.</span>
+            {/* Source toggle */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+              <button
+                onClick={() => setPlaidMode(false)}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', border: '1.5px solid',
+                  background: !plaidMode ? '#1a1714' : 'white',
+                  color: !plaidMode ? 'white' : '#6b6560',
+                  borderColor: !plaidMode ? '#1a1714' : '#e8e0d4',
+                }}
+              >
+                Upload CSV / PDF
+              </button>
+              <button
+                onClick={() => setPlaidMode(true)}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', border: '1.5px solid',
+                  background: plaidMode ? '#2d5a27' : 'white',
+                  color: plaidMode ? 'white' : '#6b6560',
+                  borderColor: plaidMode ? '#2d5a27' : '#e8e0d4',
+                }}
+              >
+                🏦 Pull from Bank
+              </button>
             </div>
-            <FileUpload
-              onContinue={(parsed) => {
-                setTransactions(parsed)
-                setStep(3)
-              }}
-            />
+
+            {plaidMode ? (
+              <div style={{ padding: 24, background: '#f8fdf6', border: '1px solid #d1fae5', borderRadius: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🏦</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1714', marginBottom: 4 }}>Connect Bank Account</div>
+                <p style={{ fontSize: 13, color: '#6b6560', marginBottom: 16 }}>
+                  Bank connections are managed per client. Go to the client&apos;s page to connect their bank, then transactions sync automatically every 6 hours.
+                </p>
+                <Link
+                  href="/dashboard/clients"
+                  style={{ display: 'inline-block', background: '#2d5a27', color: 'white', textDecoration: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600 }}
+                >
+                  Go to Clients →
+                </Link>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm mb-4" style={{ color: '#6b6560' }}>
+                  Upload a CSV or PDF export from your client&apos;s bank or accounting software.
+                </p>
+                <div
+                  className="flex items-start gap-2 rounded-lg px-3 py-2.5 mb-5 text-xs"
+                  style={{ backgroundColor: '#f0f4ff', color: '#3b5bdb' }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0 mt-0.5">
+                    <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.3" />
+                    <path d="M7 6v4M7 4.5v.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                  </svg>
+                  <span>PDF bank statements are supported — AI will extract transactions automatically. This may take 10–20 seconds.</span>
+                </div>
+                <FileUpload
+                  onContinue={(parsed) => {
+                    setTransactions(parsed)
+                    setStep(3)
+                  }}
+                />
+              </>
+            )}
             <button
               onClick={() => setStep(1)}
               className="mt-3 text-sm"

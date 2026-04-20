@@ -8,6 +8,7 @@ import { setUploadPrefillClient } from '@/lib/uploadPrefill'
 import ActivityFeed from '@/components/ActivityFeed'
 import { ClientInsightsPanel } from '@/components/InsightsPanel'
 import type { Client, ClientIndustry, AccountingSoftware, CategorizationJob } from '@/types'
+import ConnectedAccounts from '@/components/plaid/ConnectedAccounts'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -496,6 +497,16 @@ export default function ClientDetailPage() {
 
         {/* Health Score */}
         <HealthScoreCard jobs={jobs} clientName={client.business_name} />
+
+        {/* Connected Bank Account */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#a09a94' }}>
+              Bank Account
+            </h2>
+          </div>
+          <ConnectedAccounts clientId={clientId} />
+        </div>
 
         {/* Close history */}
         <div>
