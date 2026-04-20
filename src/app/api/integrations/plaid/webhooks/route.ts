@@ -9,23 +9,24 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: NextRequest) {
   const body = await request.text()
 
-  let webhook: Record<string, unknown>
-  try {
-    webhook = JSON.parse(body)
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
-  }
-
-  // Optional: verify Plaid webhook JWT signature
+  // Verify Plaid webhook JWT signature before processing anything
   const plaidToken = request.headers.get('plaid-verification')
   const plaid = getPlaidClient()
-  if (plaid && plaidToken) {
+  if (!plaid) return NextResponse.json({ error: 'Plaid not configured' }, { status: 503 })
+  if (plaidToken) {
     try {
       const keyId = extractKeyId(plaidToken)
       if (keyId) await plaid.webhookVerificationKeyGet({ key_id: keyId })
     } catch {
       return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 })
     }
+  }
+
+  let webhook: Record<string, unknown>
+  try {
+    webhook = JSON.parse(body)
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
   const type = String(webhook.webhook_type ?? '')

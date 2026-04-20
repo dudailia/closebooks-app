@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/routeAuth'
 import { getConnection, getDecryptedAccessToken } from '@/lib/plaid/storage'
 import { syncTransactions } from '@/lib/plaid/sync'
+import { rateLimit } from '@/lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +12,9 @@ export async function POST(request: NextRequest) {
 
   const { clientId } = await request.json() as { clientId?: string }
   if (!clientId) return NextResponse.json({ error: 'clientId required' }, { status: 400 })
+
+  const rl = rateLimit(`plaid-sync:${user.id}:${clientId}`, 5, 60_000)
+  if (!rl.ok) return NextResponse.json({ error: 'Rate limited' }, { status: 429 })
 
   const conn = await getConnection(user.id, clientId)
   if (!conn) return NextResponse.json({ error: 'No Plaid connection for this client' }, { status: 404 })

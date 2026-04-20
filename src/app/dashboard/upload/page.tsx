@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import FileUpload from '@/components/FileUpload'
-import PlaidLinkButton from '@/components/plaid/PlaidLinkButton'
+import Link from 'next/link'
 import ChartOfAccountsUpload from '@/components/ChartOfAccountsUpload'
 import { saveJob } from '@/lib/storage'
 import { dbSaveJob } from '@/lib/db'
@@ -337,7 +337,6 @@ export default function UploadPage() {
   const [chartOfAccounts, setChartOfAccounts] = useState<ChartOfAccounts[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [plaidMode, setPlaidMode] = useState(false)
-  const [plaidConnected, setPlaidConnected] = useState(false)
   const [trialStatus, setTrialStatus] = useState<ReturnType<typeof getTrialStatus> | null>(null)
 
   useEffect(() => {
@@ -494,33 +493,17 @@ export default function UploadPage() {
 
             {plaidMode ? (
               <div style={{ padding: 24, background: '#f8fdf6', border: '1px solid #d1fae5', borderRadius: 12, textAlign: 'center' }}>
-                {plaidConnected ? (
-                  <div>
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1714', marginBottom: 4 }}>Bank Connected</div>
-                    <p style={{ fontSize: 13, color: '#6b6560', marginBottom: 16 }}>
-                      Transactions will be pulled automatically when you start the close.
-                    </p>
-                    <button
-                      onClick={() => setStep(3)}
-                      style={{ background: '#2d5a27', color: 'white', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-                    >
-                      Continue to Categorize →
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>🏦</div>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1714', marginBottom: 4 }}>Connect Bank Account</div>
-                    <p style={{ fontSize: 13, color: '#6b6560', marginBottom: 16 }}>
-                      Connect once and transactions sync automatically every 6 hours.
-                    </p>
-                    <PlaidLinkButton
-                      clientId={clientName.replace(/\s+/g, '-').toLowerCase()}
-                      onConnected={() => setPlaidConnected(true)}
-                    />
-                  </div>
-                )}
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🏦</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1714', marginBottom: 4 }}>Connect Bank Account</div>
+                <p style={{ fontSize: 13, color: '#6b6560', marginBottom: 16 }}>
+                  Bank connections are managed per client. Go to the client&apos;s page to connect their bank, then transactions sync automatically every 6 hours.
+                </p>
+                <Link
+                  href="/dashboard/clients"
+                  style={{ display: 'inline-block', background: '#2d5a27', color: 'white', textDecoration: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600 }}
+                >
+                  Go to Clients →
+                </Link>
               </div>
             ) : (
               <>

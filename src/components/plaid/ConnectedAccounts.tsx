@@ -71,11 +71,16 @@ export default function ConnectedAccounts({ clientId }: Props) {
     if (!confirm('Disconnect this bank account? Existing transactions will remain.')) return
     setDisconnecting(true)
     try {
-      await fetch('/api/integrations/plaid/disconnect', {
+      const res = await fetch('/api/integrations/plaid/disconnect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId }),
       })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string }
+        showToast(data.error ?? 'Disconnect failed — please try again')
+        return
+      }
       setConn({ connected: false })
       showToast('Bank account disconnected')
     } finally {
