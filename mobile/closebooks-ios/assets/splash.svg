@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1242 2688">
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="0%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#f7f4ee"/>
+      <stop offset="100%" stop-color="#efe6da"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#2d5a27"/>
+      <stop offset="100%" stop-color="#183216"/>
+    </linearGradient>
+  </defs>
+  <rect width="1242" height="2688" fill="url(#bg)"/>
+  <circle cx="1080" cy="340" r="220" fill="#ead6c1"/>
+  <circle cx="160" cy="2450" r="260" fill="#e4efe0"/>
+  <rect x="281" y="862" width="680" height="680" rx="160" fill="url(#card)"/>
+  <rect x="422" y="986" width="254" height="328" rx="36" stroke="#ffffff" stroke-width="22" fill="none"/>
+  <path d="M496 1080h108M496 1144h108M496 1208h72" stroke="#ffffff" stroke-width="20" stroke-linecap="round"/>
+  <rect x="650" y="1040" width="112" height="224" rx="26" fill="#ffffff" fill-opacity="0.18"/>
+  <path d="M680 1096h52M680 1150h52M680 1204h34" stroke="#ffffff" stroke-width="16" stroke-linecap="round" opacity="0.92"/>
+  <text x="621" y="1732" font-family="Georgia, 'Times New Roman', serif" font-size="98" text-anchor="middle" fill="#1a1714">CloseBooks</text>
+  <text x="621" y="1818" font-family="Helvetica, Arial, sans-serif" font-size="38" text-anchor="middle" fill="#6b625a" letter-spacing="2">AI CLOSE AND ADVISORY PLATFORM</text>
+</svg>

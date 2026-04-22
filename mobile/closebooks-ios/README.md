@@ -13,6 +13,7 @@ What is already built:
 - quick-launch shortcuts for Dashboard, Clients, Advisory, and Upload
 - biometric lock with Face ID / Touch ID support
 - offline banner and connection-aware recovery
+- branded app icon and splash assets
 - EAS config for development, preview, and production builds
 
 Why this approach:
@@ -40,6 +41,6 @@ npx eas build --platform ios --profile production
 
 ## What to do next
 
-- add branded app icons and splash assets
 - add push notifications for client alerts and close status
+- add universal links and route-specific native entry points
 - move the highest-frequency workflows native over time
