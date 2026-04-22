@@ -63,6 +63,7 @@ function Nav() {
     { href: '#features',     label: 'Features'     },
     { href: '#how-it-works', label: 'How It Works' },
     { href: '#pricing',      label: 'Pricing'      },
+    { href: '/install',      label: 'Install'      },
     { href: '/portal/demo',  label: 'Portal'       },
   ]
 
@@ -259,6 +260,15 @@ function Hero() {
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.transform = 'translateY(0)' }}
           >
             <span>▶</span> Try Live Demo — Free
+          </Link>
+          <Link
+            href="/install"
+            className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold border transition-all"
+            style={{ borderColor: '#d8d0c5', color: '#1a1714', backgroundColor: '#f7f3ed' }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#efe9df'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f7f3ed'; e.currentTarget.style.transform = 'translateY(0)' }}
+          >
+            Install on iPhone
           </Link>
         </div>
 

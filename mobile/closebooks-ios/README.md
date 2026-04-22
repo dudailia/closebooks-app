@@ -31,10 +31,15 @@ Why this approach:
 ```bash
 cd mobile/closebooks-ios
 npm install
-npx expo start
+npm run start:tunnel
 ```
 
-Then press `i` in Expo or open the iOS simulator.
+Then either:
+
+- scan the QR code from Expo Go
+- or paste the `exp://...` tunnel URL directly into Expo Go
+
+Safari will not open `exp://` links directly unless Expo Go is already taking over the scheme, so for phone testing use Expo Go itself.
 
 ## Build for TestFlight
 
