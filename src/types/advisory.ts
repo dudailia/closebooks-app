@@ -14,6 +14,7 @@ export interface AdvisoryMemo {
   generatedAt: string
   status: 'draft' | 'sent' | 'archived'
   tone: 'executive' | 'detailed' | 'conversational'
+  template?: 'quarterly_review' | 'cash_flow_advisory' | 'tax_planning' | 'annual_planning'
   headline: string
   sections: AdvisorySection[]
   sentAt?: string

@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "CloseBooks",
+    "slug": "closebooks-ios",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "closebooks",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.closebooks.app"
+    },
+    "extra": {
+      "closebooksUrl": "https://closebooks-app.vercel.app"
+    }
+  }
+}
