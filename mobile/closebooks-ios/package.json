@@ -7,7 +7,11 @@
     "start": "expo start",
     "ios": "expo run:ios",
     "android": "expo run:android",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "doctor": "npx expo-doctor",
+    "build:ios": "npx eas build --platform ios --profile production",
+    "build:ios-preview": "npx eas build --platform ios --profile preview",
+    "submit:ios": "npx eas submit --platform ios --profile production"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.1.2",
@@ -18,12 +22,12 @@
     "expo-local-authentication": "~16.0.5",
     "expo-status-bar": "~2.2.3",
     "react": "19.0.0",
-    "react-native": "0.79.4",
+    "react-native": "0.79.6",
     "react-native-webview": "13.13.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~19.0.10",
-    "typescript": "^5.8.3"
+    "typescript": "~5.8.3"
   }
 }

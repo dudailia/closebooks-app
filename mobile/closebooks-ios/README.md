@@ -15,6 +15,7 @@ What is already built:
 - offline banner and connection-aware recovery
 - branded app icon and splash assets
 - EAS config for development, preview, and production builds
+- universal-link groundwork on the CloseBooks web app
 
 Why this approach:
 
@@ -36,11 +37,11 @@ Then press `i` in Expo or open the iOS simulator.
 
 ```bash
 cd mobile/closebooks-ios
-npx eas build --platform ios --profile production
+npm run build:ios
 ```
 
 ## What to do next
 
 - add push notifications for client alerts and close status
-- add universal links and route-specific native entry points
+- finish Apple signing and TestFlight submission
 - move the highest-frequency workflows native over time
