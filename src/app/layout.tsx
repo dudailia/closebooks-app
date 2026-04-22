@@ -28,6 +28,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   themeColor: '#2d5a27',
+  viewportFit: 'cover',
   // Prevent iOS text size adjustment on rotate
   userScalable: true,
 }
@@ -51,9 +52,17 @@ export const metadata: Metadata = {
     site: '@closebooks',
     title: 'CloseBooks — AI Accounting for CPA Firms',
   },
+  manifest: '/manifest.webmanifest',
+  applicationName: 'CloseBooks',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'CloseBooks',
+  },
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
+    apple: '/apple-touch-icon.png',
   },
   robots: {
     index: true,
