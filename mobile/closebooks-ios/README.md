@@ -6,6 +6,15 @@ It loads the live CloseBooks app from:
 
 - `https://closebooks-app.vercel.app`
 
+What is already built:
+
+- secure webview shell tied to your live Vercel deployment
+- remembered session URL, so users reopen exactly where they left off
+- quick-launch shortcuts for Dashboard, Clients, Advisory, and Upload
+- biometric lock with Face ID / Touch ID support
+- offline banner and connection-aware recovery
+- EAS config for development, preview, and production builds
+
 Why this approach:
 
 - it reuses your existing Vercel app, auth, and backend immediately
@@ -22,10 +31,15 @@ npx expo start
 
 Then press `i` in Expo or open the iOS simulator.
 
+## Build for TestFlight
+
+```bash
+cd mobile/closebooks-ios
+npx eas build --platform ios --profile production
+```
+
 ## What to do next
 
 - add branded app icons and splash assets
-- add universal links for `closebooks-app.vercel.app`
 - add push notifications for client alerts and close status
-- add biometric session lock for finance-grade trust
 - move the highest-frequency workflows native over time
