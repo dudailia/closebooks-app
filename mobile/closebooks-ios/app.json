@@ -3,12 +3,24 @@
     "name": "CloseBooks",
     "slug": "closebooks-ios",
     "version": "1.0.0",
+    "description": "Native iOS shell for the CloseBooks advisory and close automation platform.",
     "orientation": "portrait",
     "scheme": "closebooks",
     "userInterfaceStyle": "light",
+    "plugins": [
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Use Face ID to unlock CloseBooks and protect client financial data."
+        }
+      ]
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.closebooks.app"
+      "bundleIdentifier": "com.closebooks.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "extra": {
       "closebooksUrl": "https://closebooks-app.vercel.app"
