@@ -8,9 +8,13 @@ import {
   AppState,
   type AppStateStatus,
   ActivityIndicator,
+  Alert,
+  Modal,
   Pressable,
   SafeAreaView,
+  Share,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from 'react-native'
@@ -25,6 +29,8 @@ import type {
 const FALLBACK_URL = 'https://closebooks-app.vercel.app'
 const APP_URL = String(Constants.expoConfig?.extra?.closebooksUrl ?? FALLBACK_URL)
 const STORAGE_KEY = 'closebooks:last-url'
+const BIOMETRICS_KEY = 'closebooks:biometrics-enabled'
+const BACKGROUND_LOCK_DELAY_MS = 15_000
 
 const QUICK_ACTIONS = [
   { label: 'Dashboard', path: '/dashboard' },
@@ -53,9 +59,11 @@ function mapDeepLinkToUrl(rawUrl: string | null): string | null {
 export default function App() {
   const webViewRef = useRef<WebView>(null)
   const appStateRef = useRef<AppStateStatus>(AppState.currentState)
+  const backgroundedAtRef = useRef<number | null>(null)
   const netInfo = useNetInfo()
 
   const [currentUrl, setCurrentUrl] = useState(APP_URL)
+  const [pageTitle, setPageTitle] = useState('CloseBooks')
   const [canGoBack, setCanGoBack] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadProgress, setLoadProgress] = useState(0)
@@ -64,16 +72,52 @@ export default function App() {
   const [isLocked, setIsLocked] = useState(false)
   const [isAuthenticating, setIsAuthenticating] = useState(false)
   const [biometricsEnabled, setBiometricsEnabled] = useState(false)
+  const [biometricsAvailable, setBiometricsAvailable] = useState(false)
+  const [showCommandCenter, setShowCommandCenter] = useState(false)
   const [lockMessage, setLockMessage] = useState('Unlock with Face ID or Touch ID to continue.')
 
   const source = useMemo(() => ({ uri: currentUrl }), [currentUrl])
+
+  const injectedBridge = useMemo(
+    () => `
+      (function() {
+        function sendRoute() {
+          if (!window.ReactNativeWebView) return;
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'route',
+            title: document.title || 'CloseBooks',
+            url: window.location.href
+          }));
+        }
+        var pushState = history.pushState;
+        var replaceState = history.replaceState;
+        history.pushState = function() {
+          var result = pushState.apply(this, arguments);
+          setTimeout(sendRoute, 0);
+          return result;
+        };
+        history.replaceState = function() {
+          var result = replaceState.apply(this, arguments);
+          setTimeout(sendRoute, 0);
+          return result;
+        };
+        window.addEventListener('popstate', sendRoute);
+        document.addEventListener('readystatechange', sendRoute);
+        window.addEventListener('load', sendRoute);
+        sendRoute();
+        true;
+      })();
+    `,
+    [],
+  )
 
   useEffect(() => {
     let mounted = true
 
     async function bootstrap() {
-      const [savedUrl, initialUrl, hasHardware, isEnrolled] = await Promise.all([
+      const [savedUrl, savedBiometricsPreference, initialUrl, hasHardware, isEnrolled] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEY),
+        AsyncStorage.getItem(BIOMETRICS_KEY),
         Linking.getInitialURL(),
         LocalAuthentication.hasHardwareAsync(),
         LocalAuthentication.isEnrolledAsync(),
@@ -84,9 +128,13 @@ export default function App() {
       const restored = mapDeepLinkToUrl(initialUrl) ?? (savedUrl && isInternalUrl(savedUrl) ? savedUrl : APP_URL)
       setCurrentUrl(restored)
 
-      const biometricsAvailable = hasHardware && isEnrolled
-      setBiometricsEnabled(biometricsAvailable)
-      if (biometricsAvailable) {
+      const biometricsReady = hasHardware && isEnrolled
+      setBiometricsAvailable(biometricsReady)
+
+      const biometricsPreferred = savedBiometricsPreference == null ? biometricsReady : savedBiometricsPreference === 'true'
+      setBiometricsEnabled(biometricsReady && biometricsPreferred)
+
+      if (biometricsReady && biometricsPreferred) {
         setIsLocked(true)
         void unlockApp()
       }
@@ -101,9 +149,18 @@ export default function App() {
 
       const appStateSub = AppState.addEventListener('change', (nextState) => {
         const wasInactive = appStateRef.current === 'background' || appStateRef.current === 'inactive'
+        if (nextState === 'inactive' || nextState === 'background') {
+          backgroundedAtRef.current = Date.now()
+        }
         appStateRef.current = nextState
 
-        if (biometricsAvailable && nextState === 'active' && wasInactive) {
+        if (
+          biometricsReady &&
+          biometricsPreferred &&
+          nextState === 'active' &&
+          wasInactive &&
+          (backgroundedAtRef.current == null || Date.now() - backgroundedAtRef.current > BACKGROUND_LOCK_DELAY_MS)
+        ) {
           setIsLocked(true)
           void unlockApp()
         }
@@ -132,6 +189,10 @@ export default function App() {
     if (!isInternalUrl(currentUrl)) return
     void AsyncStorage.setItem(STORAGE_KEY, currentUrl)
   }, [currentUrl])
+
+  useEffect(() => {
+    void AsyncStorage.setItem(BIOMETRICS_KEY, String(biometricsEnabled))
+  }, [biometricsEnabled])
 
   async function unlockApp() {
     if (!biometricsEnabled || isAuthenticating) {
@@ -163,6 +224,25 @@ export default function App() {
     setHasError(false)
   }
 
+  function handleMessage(event: { nativeEvent: { data: string } }) {
+    try {
+      const payload = JSON.parse(event.nativeEvent.data) as {
+        type?: string
+        title?: string
+        url?: string
+      }
+      if (payload.type !== 'route') return
+      if (payload.url && isInternalUrl(payload.url)) {
+        setCurrentUrl(payload.url)
+      }
+      if (payload.title) {
+        setPageTitle(payload.title)
+      }
+    } catch {
+      // Ignore malformed webview bridge events.
+    }
+  }
+
   function handleShouldStartLoad(request: ShouldStartLoadRequest) {
     if (isInternalUrl(request.url)) return true
     void Linking.openURL(request.url)
@@ -180,7 +260,42 @@ export default function App() {
 
   function jumpTo(path: string) {
     const nextUrl = resolveAppUrl(path)
+    setShowCommandCenter(false)
     setCurrentUrl(nextUrl)
+  }
+
+  async function openInBrowser() {
+    setShowCommandCenter(false)
+    await Linking.openURL(currentUrl)
+  }
+
+  async function shareCurrentView() {
+    setShowCommandCenter(false)
+    await Share.share({
+      message: currentUrl,
+      url: currentUrl,
+      title: pageTitle,
+    })
+  }
+
+  function resetSession() {
+    setShowCommandCenter(false)
+    Alert.alert(
+      'Reset CloseBooks session',
+      'This will send the app back to the main dashboard and clear the saved page history on this device.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => {
+            void AsyncStorage.removeItem(STORAGE_KEY)
+            setCurrentUrl(APP_URL)
+            webViewRef.current?.reload()
+          },
+        },
+      ],
+    )
   }
 
   const progressVisible = loading && loadProgress > 0 && loadProgress < 1
@@ -193,10 +308,8 @@ export default function App() {
       <View style={styles.header}>
         <View style={styles.headerCopy}>
           <Text style={styles.eyebrow}>CloseBooks iOS</Text>
-          <Text style={styles.title}>A native command center for your live CloseBooks stack</Text>
-          <Text style={styles.subtitle}>
-            Dashboard, advisory, and close workflows are powered by your existing Vercel app.
-          </Text>
+          <Text style={styles.title}>{pageTitle}</Text>
+          <Text style={styles.subtitle}>Live on production at {currentUrl.replace(APP_URL, '') || '/'}</Text>
         </View>
         <View style={styles.actions}>
           <Pressable
@@ -208,6 +321,9 @@ export default function App() {
           </Pressable>
           <Pressable onPress={handleReload} style={styles.actionButton}>
             <Text style={styles.actionLabel}>Reload</Text>
+          </Pressable>
+          <Pressable onPress={() => setShowCommandCenter(true)} style={styles.actionButton}>
+            <Text style={styles.actionLabel}>More</Text>
           </Pressable>
         </View>
       </View>
@@ -265,11 +381,14 @@ export default function App() {
               allowsBackForwardNavigationGestures
               startInLoadingState
               pullToRefreshEnabled
+              originWhitelist={['https://*']}
+              injectedJavaScript={injectedBridge}
               onLoadStart={() => setLoading(true)}
               onLoadEnd={() => {
                 setLoading(false)
                 setLoadProgress(1)
               }}
+              onMessage={handleMessage}
               onLoadProgress={handleProgress}
               onError={() => {
                 setLoading(false)
@@ -301,6 +420,66 @@ export default function App() {
           </>
         )}
       </View>
+
+      <Modal
+        animationType="slide"
+        presentationStyle="pageSheet"
+        transparent
+        visible={showCommandCenter}
+        onRequestClose={() => setShowCommandCenter(false)}
+      >
+        <View style={styles.sheetBackdrop}>
+          <View style={styles.sheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Command Center</Text>
+            <Text style={styles.sheetSubtitle}>
+              Fast controls for the live CloseBooks workspace on this device.
+            </Text>
+
+            <View style={styles.sheetSection}>
+              <Text style={styles.sectionLabel}>Jump to</Text>
+              <View style={styles.sheetGrid}>
+                {QUICK_ACTIONS.map((action) => (
+                  <Pressable key={action.path} onPress={() => jumpTo(action.path)} style={styles.sheetButton}>
+                    <Text style={styles.sheetButtonLabel}>{action.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.preferenceRow}>
+              <View style={styles.preferenceCopy}>
+                <Text style={styles.preferenceTitle}>Use Face ID / Touch ID</Text>
+                <Text style={styles.preferenceBody}>
+                  Keep client financial data protected whenever the app returns from the background.
+                </Text>
+              </View>
+              <Switch
+                disabled={!biometricsAvailable}
+                onValueChange={setBiometricsEnabled}
+                value={biometricsEnabled}
+                trackColor={{ false: '#d4cec5', true: '#8fb38a' }}
+                thumbColor={biometricsEnabled ? '#2d5a27' : '#f9f8f6'}
+              />
+            </View>
+
+            <View style={styles.sheetActions}>
+              <Pressable onPress={() => void openInBrowser()} style={styles.secondarySheetButton}>
+                <Text style={styles.secondarySheetButtonLabel}>Open in Safari</Text>
+              </Pressable>
+              <Pressable onPress={() => void shareCurrentView()} style={styles.secondarySheetButton}>
+                <Text style={styles.secondarySheetButtonLabel}>Share Current Page</Text>
+              </Pressable>
+              <Pressable onPress={resetSession} style={styles.secondarySheetButton}>
+                <Text style={styles.secondarySheetButtonLabel}>Reset Session</Text>
+              </Pressable>
+              <Pressable onPress={() => setShowCommandCenter(false)} style={styles.primaryButton}>
+                <Text style={styles.primaryButtonLabel}>Done</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -346,7 +525,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#d8d0c5',
     borderRadius: 999,
-    paddingHorizontal: 12,
+    paddingHorizontal: 11,
     paddingVertical: 8,
     backgroundColor: '#ffffff',
   },
@@ -391,6 +570,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e6ddd2',
   },
   shortcutChip: {
+    flexShrink: 1,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: '#ddd4c9',
@@ -498,5 +678,107 @@ const styles = StyleSheet.create({
     color: '#675f57',
     fontSize: 14,
     lineHeight: 20,
+  },
+  sheetBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 12, 10, 0.3)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: '#fffdf9',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 28,
+    gap: 18,
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 52,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: '#d6cec4',
+    marginBottom: 4,
+  },
+  sheetTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1a1714',
+  },
+  sheetSubtitle: {
+    color: '#6c645d',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  sheetSection: {
+    gap: 12,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    color: '#8d867d',
+  },
+  sheetGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  sheetButton: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#ddd4c9',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: '#faf6f0',
+  },
+  sheetButtonLabel: {
+    color: '#312a25',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  preferenceRow: {
+    borderWidth: 1,
+    borderColor: '#e3dbcf',
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#faf6f0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  preferenceCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  preferenceTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1d1916',
+  },
+  preferenceBody: {
+    color: '#6c645d',
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  sheetActions: {
+    gap: 10,
+  },
+  secondarySheetButton: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#ddd4c9',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+  },
+  secondarySheetButtonLabel: {
+    color: '#473f38',
+    fontSize: 14,
+    fontWeight: '700',
   },
 })

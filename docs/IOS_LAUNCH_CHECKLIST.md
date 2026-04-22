@@ -16,10 +16,15 @@
 3. Set Vercel env vars:
    - `APPLE_TEAM_ID`
    - `IOS_BUNDLE_ID`
+   - optional if you want to support multiple bundle IDs:
+     - `APPLE_APP_IDS` as a comma-separated list of full `TEAMID.bundleid` values
    - optional Android vars later:
      - `ANDROID_PACKAGE_NAME`
      - `ANDROID_SHA256_CERT_FINGERPRINTS`
-4. Run:
+4. Optional but recommended for password autofill and universal-link validation:
+   - make sure the final bundle identifier in Apple Developer matches
+     `com.closebooks.app` or update `app.json` + `IOS_BUNDLE_ID` together
+5. Run:
 
 ```bash
 cd /Users/iliaduda/Desktop/closebooks-app/mobile/closebooks-ios
@@ -27,7 +32,7 @@ npm install
 npm run build:ios
 ```
 
-5. Submit to TestFlight:
+6. Submit to TestFlight:
 
 ```bash
 npm run submit:ios
