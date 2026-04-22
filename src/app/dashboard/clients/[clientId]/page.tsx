@@ -443,6 +443,16 @@ export default function ClientDetailPage() {
               <EnvelopeIcon />
               Send Doc Request
             </Link>
+            <Link
+              href={`/dashboard/${client.id}/predict`}
+              className="px-3 py-2 rounded-xl text-sm border transition-colors"
+              style={{ borderColor: '#2d5a27', color: '#2d5a27', backgroundColor: '#ffffff' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f0f7ee' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
+              title="Open AI advisory analytics for this client"
+            >
+              AI Advisory
+            </Link>
             <button
               onClick={handleNewClose}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors"
