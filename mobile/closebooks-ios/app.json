@@ -4,9 +4,18 @@
     "slug": "closebooks-ios",
     "version": "1.0.0",
     "description": "Native iOS shell for the CloseBooks advisory and close automation platform.",
+    "icon": "./assets/icon.png",
     "orientation": "portrait",
     "scheme": "closebooks",
     "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f7f4ee"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "plugins": [
       [
         "expo-local-authentication",
