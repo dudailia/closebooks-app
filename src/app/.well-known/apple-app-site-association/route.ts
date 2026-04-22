@@ -5,28 +5,33 @@ export const dynamic = 'force-static'
 export async function GET() {
   const teamId = process.env.APPLE_TEAM_ID
   const bundleId = process.env.IOS_BUNDLE_ID || 'com.closebooks.app'
-  const appId = teamId ? `${teamId}.${bundleId}` : bundleId
+  const configuredAppIds = process.env.APPLE_APP_IDS
+    ?.split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+
+  const appIds = configuredAppIds?.length
+    ? configuredAppIds
+    : [teamId ? `${teamId}.${bundleId}` : bundleId]
 
   return NextResponse.json(
     {
       applinks: {
         apps: [],
-        details: [
-          {
-            appID: appId,
-            paths: [
-              '/',
-              '/dashboard/*',
-              '/login',
-              '/signup',
-              '/pricing',
-              '/get-started',
-            ],
-          },
-        ],
+        details: appIds.map((appId) => ({
+          appID: appId,
+          paths: [
+            '/',
+            '/dashboard/*',
+            '/login',
+            '/signup',
+            '/pricing',
+            '/get-started',
+          ],
+        })),
       },
       webcredentials: {
-        apps: [appId],
+        apps: appIds,
       },
     },
     {

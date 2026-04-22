@@ -12,7 +12,10 @@ What is already built:
 - remembered session URL, so users reopen exactly where they left off
 - quick-launch shortcuts for Dashboard, Clients, Advisory, and Upload
 - biometric lock with Face ID / Touch ID support
+- saved biometric preference per device
 - offline banner and connection-aware recovery
+- command center with open-in-browser, share, and session reset actions
+- page-title sync from the live CloseBooks app into the native shell
 - branded app icon and splash assets
 - EAS config for development, preview, and production builds
 - universal-link groundwork on the CloseBooks web app
@@ -39,6 +42,9 @@ Then press `i` in Expo or open the iOS simulator.
 cd mobile/closebooks-ios
 npm run build:ios
 ```
+
+This step requires an Expo account login or an `EXPO_TOKEN`, plus your Apple
+Developer signing credentials.
 
 ## What to do next
 
