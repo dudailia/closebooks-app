@@ -27,6 +27,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.closebooks.app",
+      "associatedDomains": [
+        "applinks:closebooks-app.vercel.app",
+        "webcredentials:closebooks-app.vercel.app"
+      ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
