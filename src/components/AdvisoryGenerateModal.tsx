@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import type { CategorizationJob } from '@/types'
 import type { AdvisoryMemo } from '@/types/advisory'
+import type { AdvisoryTemplate } from '@/lib/advisoryEngine'
 import AdvisoryMemoViewer from './AdvisoryMemoViewer'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -50,6 +51,29 @@ const LOADING_STEPS = [
   'Finalizing memo...',
 ]
 
+const TEMPLATE_OPTIONS: { id: AdvisoryTemplate; label: string; desc: string }[] = [
+  {
+    id: 'quarterly_review',
+    label: 'Quarterly review',
+    desc: 'Best for owner meetings, trend commentary, and performance summaries.',
+  },
+  {
+    id: 'cash_flow_advisory',
+    label: 'Cash flow advisory',
+    desc: 'Best for runway, working capital, and near-term planning conversations.',
+  },
+  {
+    id: 'tax_planning',
+    label: 'Tax planning',
+    desc: 'Best for estimated taxes, deductions, and profit-trajectory planning.',
+  },
+  {
+    id: 'annual_planning',
+    label: 'Annual planning',
+    desc: 'Best for budgeting, hiring decisions, and next-year targets.',
+  },
+]
+
 // ─── AdvisoryGenerateModal ────────────────────────────────────────────────────
 
 interface AdvisoryGenerateModalProps {
@@ -67,6 +91,7 @@ export default function AdvisoryGenerateModal({
 }: AdvisoryGenerateModalProps) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [tone, setTone] = useState<Tone>('executive')
+  const [template, setTemplate] = useState<AdvisoryTemplate>('quarterly_review')
   const [focusAreas, setFocusAreas] = useState<string[]>([...FOCUS_AREAS])
   const [loadingStep, setLoadingStep] = useState(0)
   const [memo, setMemo] = useState<AdvisoryMemo | null>(null)
@@ -102,6 +127,7 @@ export default function AdvisoryGenerateModal({
             job,
             previousJobs: previousJob ? [previousJob] : [],
             tone,
+            template,
             focusAreas,
           }),
         })
@@ -145,7 +171,7 @@ export default function AdvisoryGenerateModal({
       const res = await fetch('/api/advisory/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ job, tone, focusAreas }),
+        body: JSON.stringify({ job, tone, template, focusAreas }),
       })
       const data = (await res.json()) as { memo: AdvisoryMemo }
       setMemo(data.memo)
@@ -238,6 +264,31 @@ export default function AdvisoryGenerateModal({
           {/* Step 1: Tone */}
           {step === 1 && (
             <div className="space-y-3">
+              <div>
+                <p className="text-sm font-medium mb-3" style={{ color: '#1a1714' }}>
+                  Choose the memo template:
+                </p>
+                <div className="grid gap-2">
+                  {TEMPLATE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => setTemplate(opt.id)}
+                      className="w-full text-left rounded-xl border p-3 transition-all"
+                      style={{
+                        borderColor: template === opt.id ? '#b8734a' : '#e8e0d4',
+                        backgroundColor: template === opt.id ? '#fff5ed' : '#ffffff',
+                      }}
+                    >
+                      <p className="text-sm font-semibold" style={{ color: '#1a1714' }}>
+                        {opt.label}
+                      </p>
+                      <p className="text-xs mt-1" style={{ color: '#6b6560' }}>
+                        {opt.desc}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <p className="text-sm font-medium mb-4" style={{ color: '#1a1714' }}>
                 Choose the writing style for this memo:
               </p>

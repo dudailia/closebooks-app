@@ -443,6 +443,15 @@ export default function ClientDetailPage() {
               <EnvelopeIcon />
               Send Doc Request
             </Link>
+            <Link
+              href={`/dashboard/clients/${client.id}/predict`}
+              className="px-3 py-2 rounded-xl text-sm border transition-colors"
+              style={{ borderColor: '#e0dbd4', color: '#6b6560', backgroundColor: '#ffffff' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#1a1714'; e.currentTarget.style.color = '#1a1714' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e0dbd4'; e.currentTarget.style.color = '#6b6560' }}
+            >
+              Predict & Advise
+            </Link>
             <button
               onClick={handleNewClose}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors"

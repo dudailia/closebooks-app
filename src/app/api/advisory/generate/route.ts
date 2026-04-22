@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import type { CategorizationJob, Transaction } from '@/types'
+import type { CategorizationJob, Client } from '@/types'
 import type { AdvisoryMemo, AdvisorySection } from '@/types/advisory'
+import {
+  advisoryTemplateLabel,
+  buildAdvisoryPromptContext,
+  buildClientAdvisoryReport,
+  type AdvisoryTemplate,
+} from '@/lib/advisoryEngine'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -13,65 +19,26 @@ function uuid(): string {
 
 function buildContext(
   job: CategorizationJob,
+  client: Client | null,
   previousJobs?: CategorizationJob[],
 ): string {
-  const debits = job.transactions.filter((t) => t.type === 'debit')
-  const credits = job.transactions.filter((t) => t.type === 'credit')
-
-  const totalDebits = debits.reduce((s, t) => s + t.amount, 0)
-  const totalCredits = credits.reduce((s, t) => s + t.amount, 0)
-
-  // Top 5 expense categories by amount
-  const categoryMap: Record<string, number> = {}
-  for (const t of debits) {
-    const cat = t.final_category ?? t.suggested_category ?? 'Uncategorized'
-    categoryMap[cat] = (categoryMap[cat] ?? 0) + t.amount
+  const fallbackClient: Client = client ?? {
+    id: job.id,
+    business_name: job.client_name,
+    industry: 'Other',
+    contact_email: '',
+    accounting_software: 'Other',
+    created_at: job.created_at,
   }
-  const topCategories = Object.entries(categoryMap)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([name, amt]) => `${name}: $${amt.toFixed(2)}`)
-
-  const flaggedCount = job.transactions.filter((t) => t.status === 'flagged').length
-
-  // MoM comparison
-  let momNote = ''
-  if (previousJobs && previousJobs.length > 0) {
-    const prev = previousJobs[previousJobs.length - 1]
-    const prevDebits = prev.transactions
-      .filter((t) => t.type === 'debit')
-      .reduce((s, t) => s + t.amount, 0)
-    if (prevDebits > 0) {
-      const pct = ((totalDebits - prevDebits) / prevDebits) * 100
-      momNote = `Month-over-month expense change: ${pct >= 0 ? '+' : ''}${pct.toFixed(1)}% (prev: $${prevDebits.toFixed(2)}, current: $${totalDebits.toFixed(2)})`
-    }
-  }
-
-  // Cash trend
-  const cashBalance = totalCredits - totalDebits
-  const cashTrend =
-    cashBalance > 0 ? 'improving (net positive)' : cashBalance < 0 ? 'declining (net negative)' : 'stable'
-
-  return [
-    `Client: ${job.client_name}`,
-    `Period: ${job.created_at.slice(0, 10)}`,
-    `Total transactions: ${job.total_transactions}`,
-    `Total debits (expenses): $${totalDebits.toFixed(2)}`,
-    `Total credits (income): $${totalCredits.toFixed(2)}`,
-    `Net cash position: $${cashBalance.toFixed(2)}`,
-    `Cash trend: ${cashTrend}`,
-    `Flagged transactions: ${flaggedCount}`,
-    `Top expense categories:\n${topCategories.map((c) => `  - ${c}`).join('\n')}`,
-    momNote ? momNote : '',
-  ]
-    .filter(Boolean)
-    .join('\n')
+  const report = buildClientAdvisoryReport(fallbackClient, [job, ...(previousJobs ?? [])])
+  return buildAdvisoryPromptContext(report)
 }
 
 function buildPrompt(
   context: string,
   tone: string,
   focusAreas: string[],
+  template: AdvisoryTemplate,
 ): string {
   const toneGuide =
     tone === 'executive'
@@ -85,11 +52,19 @@ function buildPrompt(
       ? `Focus especially on: ${focusAreas.join(', ')}.`
       : ''
 
+  const templateGuide: Record<AdvisoryTemplate, string> = {
+    quarterly_review: 'Write for a quarterly business review meeting. Emphasize performance trends, benchmark comparisons, and owner actions for the next quarter.',
+    cash_flow_advisory: 'Write for a cash-flow advisory conversation. Emphasize runway, working capital, recurring collections, and near-term cash protections.',
+    tax_planning: 'Write for proactive tax planning. Emphasize profit trajectory, owner compensation, deduction timing, entity-level considerations, and estimated tax preparation.',
+    annual_planning: 'Write for an annual planning session. Emphasize next-year targets, margin planning, hiring or spend capacity, and risks to the plan.',
+  }
+
   return `You are an expert CPA advisory assistant. Analyze the following financial data and write a client advisory memo.
 
 ${context}
 
 Tone guidance: ${toneGuide}
+Template guidance: ${templateGuide[template]}
 ${focusNote}
 
 Return ONLY a valid JSON object (no markdown, no explanation) with this exact structure:
@@ -111,7 +86,7 @@ Generate 3-5 sections. Always include:
 2. One recommendation section with actionable advice
 3. One forecast or forward-looking section
 
-Use only the data provided. Be specific with numbers.`
+Use only the data provided. Be specific with numbers. Mention assumptions when giving forward-looking advice.`
 }
 
 // ─── Fallback memo (no AI) ────────────────────────────────────────────────────
@@ -119,66 +94,65 @@ Use only the data provided. Be specific with numbers.`
 function buildFallbackMemo(
   job: CategorizationJob,
   tone: AdvisoryMemo['tone'],
+  template: AdvisoryTemplate,
+  client: Client | null,
+  previousJobs: CategorizationJob[],
 ): AdvisoryMemo {
-  const debits = job.transactions.filter((t) => t.type === 'debit')
-  const credits = job.transactions.filter((t) => t.type === 'credit')
-  const totalDebits = debits.reduce((s, t) => s + t.amount, 0)
-  const totalCredits = credits.reduce((s, t) => s + t.amount, 0)
-  const net = totalCredits - totalDebits
-  const flagged = job.transactions.filter((t) => t.status === 'flagged').length
-
-  const categoryMap: Record<string, number> = {}
-  for (const t of debits) {
-    const cat = t.final_category ?? t.suggested_category ?? 'Uncategorized'
-    categoryMap[cat] = (categoryMap[cat] ?? 0) + t.amount
+  const fallbackClient: Client = client ?? {
+    id: job.id,
+    business_name: job.client_name,
+    industry: 'Other',
+    contact_email: '',
+    accounting_software: 'Other',
+    created_at: job.created_at,
   }
-  const topCat = Object.entries(categoryMap).sort((a, b) => b[1] - a[1])[0]
+  const report = buildClientAdvisoryReport(fallbackClient, [job, ...previousJobs])
+  const net = report.latestMonth?.netCashFlow ?? 0
+  const topBenchmark = report.benchmarkResults[0]
 
   const sections: AdvisorySection[] = [
     {
       type: 'cashflow',
       title: 'Cash Flow Overview',
-      body: `Total income of $${totalCredits.toFixed(2)} against expenses of $${totalDebits.toFixed(2)} resulted in a net ${net >= 0 ? 'surplus' : 'deficit'} of $${Math.abs(net).toFixed(2)}. ${net < 0 ? 'Expenses exceeded income this period.' : 'Income exceeded expenses this period.'}`,
+      body: `Expected cash for the next 90 days is $${report.forecast90.toLocaleString()} versus a current cash estimate of $${report.currentCash.toLocaleString()}. The latest close produced a ${net >= 0 ? 'surplus' : 'deficit'} of $${Math.abs(net).toLocaleString()}.`,
       urgency: net < 0 ? 'high' : 'low',
       dataPoints: [
-        `Income: $${totalCredits.toFixed(2)}`,
-        `Expenses: $${totalDebits.toFixed(2)}`,
-        `Net: $${net.toFixed(2)}`,
+        `Current cash: $${report.currentCash.toLocaleString()}`,
+        `30-day forecast: $${report.forecast30.toLocaleString()}`,
+        `90-day forecast: $${report.forecast90.toLocaleString()}`,
       ],
     },
     {
-      type: 'expense',
-      title: 'Top Expense Category',
-      body: topCat
-        ? `The largest expense category is ${topCat[0]} at $${topCat[1].toFixed(2)}. Review these transactions for any unusual or one-time items.`
-        : 'No expense data available for this period.',
+      type: 'benchmark',
+      title: 'Performance Benchmark',
+      body: topBenchmark
+        ? `${topBenchmark.label} is running at ${topBenchmark.clientPct}% for this client versus a ${topBenchmark.median}% industry median. ${topBenchmark.insight}`
+        : 'Benchmark comparisons will populate once enough categorized history is available.',
       urgency: 'medium',
-      dataPoints: topCat ? [`${topCat[0]}: $${topCat[1].toFixed(2)}`] : [],
+      dataPoints: topBenchmark ? [`Median: ${topBenchmark.median}%`, `Client: ${topBenchmark.clientPct}%`] : [],
     },
-    ...(flagged > 0
-      ? [
-          {
-            type: 'anomaly' as const,
-            title: 'Flagged Transactions',
-            body: `${flagged} transaction${flagged !== 1 ? 's' : ''} were flagged for review. Please inspect these items before finalizing the close.`,
-            urgency: 'high' as const,
-            dataPoints: [`${flagged} flagged items`],
-          },
-        ]
+    ...(report.alerts.length > 0
+      ? [{
+          type: 'anomaly' as const,
+          title: report.alerts[0].title,
+          body: report.alerts[0].description,
+          urgency: report.alerts[0].severity === 'critical' ? 'high' as const : report.alerts[0].severity === 'warning' ? 'medium' as const : 'low' as const,
+          dataPoints: report.health.drivers.slice(0, 2),
+        }]
       : []),
     {
       type: 'recommendation',
       title: 'Recommended Actions',
-      body: `Review all flagged transactions and confirm categorizations. ${net < 0 ? 'Focus on reducing discretionary expenses to improve cash position.' : 'Consider allocating surplus to business savings or debt reduction.'}`,
-      urgency: net < 0 ? 'high' : 'medium',
-      dataPoints: [],
+      body: report.alerts[0]?.recommendation ?? `Use this ${advisoryTemplateLabel(template).toLowerCase()} to align the client on cash, margin, and the next owner decision.`,
+      urgency: net < 0 || report.health.churnRisk === 'high' ? 'high' : 'medium',
+      dataPoints: report.health.drivers,
     },
     {
       type: 'forecast',
       title: 'Looking Ahead',
-      body: `Based on this period, ensure upcoming obligations are accounted for. ${net < 0 ? 'Cash flow pressure may continue if the expense trend holds.' : 'Maintain current income levels to sustain the positive trend.'}`,
+      body: `The forecast assumes monthly revenue near $${Math.round(report.forecastModel.baseRevenue).toLocaleString()} and monthly expenses near $${Math.round(report.forecastModel.baseExpenses).toLocaleString()}. Minimum target cash is $${report.minimumBalance.toLocaleString()}, with current runway ${report.kpis.runwayMonths !== null ? `${report.kpis.runwayMonths} month(s)` : 'not constrained by burn'}.`,
       urgency: 'low',
-      dataPoints: [],
+      dataPoints: report.assumptions.slice(0, 2),
     },
   ]
 
@@ -186,10 +160,12 @@ function buildFallbackMemo(
     id: uuid(),
     jobId: job.id,
     clientName: job.client_name,
+    clientIndustry: fallbackClient.industry,
     generatedAt: new Date().toISOString(),
     status: 'draft',
     tone,
-    headline: `${job.client_name} closed ${net >= 0 ? 'with a net surplus' : 'with a net deficit'} of $${Math.abs(net).toFixed(2)} — ${flagged} item${flagged !== 1 ? 's' : ''} flagged for review.`,
+    template,
+    headline: `${job.client_name} ${net >= 0 ? 'is building cash' : 'needs cash attention'} with a projected 90-day balance of $${report.forecast90.toLocaleString()} and a health score of ${report.health.score}/100.`,
     sections,
   }
 }
@@ -200,9 +176,11 @@ export async function POST(request: NextRequest) {
   let body: {
     job: CategorizationJob
     previousJobs?: CategorizationJob[]
+    client?: Client | null
     firmSettings?: unknown
     tone?: AdvisoryMemo['tone']
     focusAreas?: string[]
+    template?: AdvisoryTemplate
   }
 
   try {
@@ -211,7 +189,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const { job, previousJobs, tone = 'executive', focusAreas = [] } = body
+  const {
+    job,
+    previousJobs = [],
+    client = null,
+    tone = 'executive',
+    focusAreas = [],
+    template = 'quarterly_review',
+  } = body
 
   if (!job || !job.id) {
     return NextResponse.json({ error: 'job is required' }, { status: 400 })
@@ -219,14 +204,14 @@ export async function POST(request: NextRequest) {
 
   // If no API key, return fallback immediately
   if (!process.env.ANTHROPIC_API_KEY) {
-    const memo = buildFallbackMemo(job, tone)
+    const memo = buildFallbackMemo(job, tone, template, client, previousJobs)
     return NextResponse.json({ memo })
   }
 
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const context = buildContext(job, previousJobs)
-    const prompt = buildPrompt(context, tone, focusAreas)
+    const context = buildContext(job, body.client ?? null, previousJobs)
+    const prompt = buildPrompt(context, tone, focusAreas, template)
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
@@ -253,9 +238,11 @@ export async function POST(request: NextRequest) {
       id: uuid(),
       jobId: job.id,
       clientName: job.client_name,
+      clientIndustry: body.client?.industry,
       generatedAt: new Date().toISOString(),
       status: 'draft',
       tone,
+      template,
       headline: parsed.headline ?? 'Advisory memo generated.',
       sections: Array.isArray(parsed.sections) ? parsed.sections : [],
     }
@@ -263,7 +250,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ memo })
   } catch (err) {
     console.error('[advisory/generate] AI error, using fallback:', err)
-    const memo = buildFallbackMemo(job, tone)
+    const memo = buildFallbackMemo(job, tone, template, body.client ?? null, previousJobs)
     return NextResponse.json({ memo })
   }
 }

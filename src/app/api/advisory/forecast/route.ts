@@ -1,27 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { CategorizationJob } from '@/types'
-
-// ─── Linear regression (y = a + b*x) ─────────────────────────────────────────
-
-function linearRegression(values: number[]): { slope: number; intercept: number } {
-  const n = values.length
-  if (n === 0) return { slope: 0, intercept: 0 }
-  const xs = values.map((_, i) => i)
-  const sumX = xs.reduce((a, b) => a + b, 0)
-  const sumY = values.reduce((a, b) => a + b, 0)
-  const sumXY = xs.reduce((s, x, i) => s + x * values[i], 0)
-  const sumX2 = xs.reduce((s, x) => s + x * x, 0)
-  const denom = n * sumX2 - sumX * sumX
-  if (denom === 0) return { slope: 0, intercept: sumY / n }
-  const slope = (n * sumXY - sumX * sumY) / denom
-  const intercept = (sumY - slope * sumX) / n
-  return { slope, intercept }
-}
+import type { CategorizationJob, Client } from '@/types'
+import { buildClientAdvisoryReport } from '@/lib/advisoryEngine'
 
 // ─── Route ────────────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  let body: { jobs: CategorizationJob[]; clientName: string }
+  let body: { jobs: CategorizationJob[]; client?: Client | null; clientName?: string }
 
   try {
     body = await request.json()
@@ -33,97 +17,50 @@ export async function POST(request: NextRequest) {
 
   if (!Array.isArray(jobs) || jobs.length === 0) {
     return NextResponse.json({
-      nextMonthForecast: { totalExpenses: 0, topCategories: [] },
+      forecast: [],
+      nextMonthForecast: { totalExpenses: 0, totalRevenue: 0 },
       cashTrend: 'stable',
       runwayNote: null,
+      assumptions: [],
     })
   }
 
-  // Sort by created_at ascending, take last 3
-  const sorted = [...jobs]
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-    .slice(-3)
-
-  // Monthly expense totals
-  const expenseTotals = sorted.map((j) =>
-    j.transactions.filter((t) => t.type === 'debit').reduce((s, t) => s + t.amount, 0),
-  )
-
-  const creditTotals = sorted.map((j) =>
-    j.transactions.filter((t) => t.type === 'credit').reduce((s, t) => s + t.amount, 0),
-  )
-
-  // Linear regression to forecast next month's expenses
-  const { slope, intercept } = linearRegression(expenseTotals)
-  const nextMonthExpenses = Math.max(0, intercept + slope * sorted.length)
-
-  // Top categories for the most recent job (as forecast proxy)
-  const latestJob = sorted[sorted.length - 1]
-  const categoryMap: Record<string, number> = {}
-  for (const t of latestJob.transactions.filter((tx) => tx.type === 'debit')) {
-    const cat = t.final_category ?? t.suggested_category ?? 'Uncategorized'
-    categoryMap[cat] = (categoryMap[cat] ?? 0) + t.amount
+  const latestJob = [...jobs].sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+  const fallbackClient: Client = body.client ?? {
+    id: latestJob.id,
+    business_name: latestJob.client_name || body.clientName || 'Client',
+    industry: 'Other',
+    contact_email: '',
+    accounting_software: 'Other',
+    created_at: latestJob.created_at,
   }
-  const topCategories = Object.entries(categoryMap)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([name, amount]) => ({ name, amount }))
+  const report = buildClientAdvisoryReport(fallbackClient, jobs)
+  const latestMonth = report.latestMonth
+  const previousMonth = report.timeline[report.timeline.length - 2] ?? null
+  const nextMonth = report.forecast[0]
 
-  // Cash trend detection
   let cashTrend: 'improving' | 'stable' | 'declining' = 'stable'
-
-  if (expenseTotals.length >= 2) {
-    const last = expenseTotals.length
-    const pct1 =
-      expenseTotals[last - 2] > 0
-        ? (expenseTotals[last - 1] - expenseTotals[last - 2]) / expenseTotals[last - 2]
-        : 0
-
-    if (expenseTotals.length >= 3) {
-      const pct0 =
-        expenseTotals[last - 3] > 0
-          ? (expenseTotals[last - 2] - expenseTotals[last - 3]) / expenseTotals[last - 3]
-          : 0
-
-      // Both months increasing >10%: declining
-      if (pct0 > 0.1 && pct1 > 0.1) {
-        cashTrend = 'declining'
-      } else if (pct0 < 0 && pct1 < 0) {
-        cashTrend = 'improving'
-      }
-    } else {
-      if (pct1 > 0.1) cashTrend = 'declining'
-      else if (pct1 < 0) cashTrend = 'improving'
-    }
+  if (latestMonth && previousMonth) {
+    if (latestMonth.netCashFlow > previousMonth.netCashFlow) cashTrend = 'improving'
+    if (latestMonth.netCashFlow < previousMonth.netCashFlow) cashTrend = 'declining'
   }
 
-  // Runway note: count trailing consecutive deficit months (expenses > income)
-  let runwayNote: string | null = null
-  let consecutiveDeficits = 0
-  for (let i = sorted.length - 1; i >= 0; i--) {
-    if (creditTotals[i] < expenseTotals[i]) {
-      consecutiveDeficits++
-    } else {
-      break
-    }
-  }
-
-  if (consecutiveDeficits >= 2) {
-    const deficitSlice = sorted.slice(sorted.length - consecutiveDeficits)
-    const avgDeficit =
-      deficitSlice.reduce((s, _, i) => {
-        const idx = sorted.length - consecutiveDeficits + i
-        return s + (expenseTotals[idx] - creditTotals[idx])
-      }, 0) / consecutiveDeficits
-    runwayNote = `Expenses have exceeded income for ${consecutiveDeficits} consecutive month${consecutiveDeficits !== 1 ? 's' : ''}. Average monthly shortfall: $${avgDeficit.toFixed(2)}. Review cash reserves and consider reducing discretionary spending.`
-  }
+  const runwayNote =
+    report.alerts.find((alert) => alert.type === 'runway')?.description ??
+    (report.kpis.runwayMonths !== null
+      ? `Estimated runway is ${report.kpis.runwayMonths} month(s) at the current burn rate.`
+      : null)
 
   return NextResponse.json({
+    forecast: report.forecast,
     nextMonthForecast: {
-      totalExpenses: Math.round(nextMonthExpenses * 100) / 100,
-      topCategories,
+      totalExpenses: report.forecastModel.baseExpenses,
+      totalRevenue: nextMonth ? report.forecastModel.baseRevenue : 0,
     },
     cashTrend,
     runwayNote,
+    assumptions: report.assumptions,
+    minimumBalance: report.minimumBalance,
+    healthScore: report.health.score,
   })
 }
