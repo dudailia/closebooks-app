@@ -4,6 +4,10 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import TransactionRow from './TransactionRow'
 import type { Transaction, ChartOfAccounts } from '@/types'
 import type { AuditCallback, AuditEvent } from '@/lib/auditTrail'
+import { useShortcut } from '@/lib/review/KeyboardShortcutProvider'
+import InlineCategoryPicker from '@/components/review/InlineCategoryPicker'
+import CommandPalette from '@/components/review/CommandPalette'
+import ShortcutLegend from '@/components/review/ShortcutLegend'
 
 type FilterTab = 'all' | 'pending' | 'approved' | 'flagged'
 
@@ -117,43 +121,6 @@ function ConfirmModal({ count, remaining, onConfirm, onCancel }: { count: number
   )
 }
 
-// ─── Shortcuts popover ────────────────────────────────────────────────────────
-
-const SHORTCUTS = [
-  { key: 'a', desc: 'Approve selected' }, { key: 'f', desc: 'Flag selected' },
-  { key: 'j', desc: 'Move down' }, { key: 'k', desc: 'Move up' },
-  { key: '↵', desc: 'Expand / collapse' }, { key: '⎵', desc: 'Toggle checkbox' },
-]
-
-function ShortcutsPopover() {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    function h(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
-    if (open) document.addEventListener('mousedown', h)
-    return () => document.removeEventListener('mousedown', h)
-  }, [open])
-  return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      <button onClick={() => setOpen(v => !v)} title="Keyboard shortcuts"
-        style={{ width: 26, height: 26, borderRadius: '50%', border: `1px solid ${open ? '#2d5a27' : '#e0dbd4'}`, backgroundColor: open ? '#e8f0e6' : 'transparent', color: open ? '#2d5a27' : '#6b6560', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        ?
-      </button>
-      {open && (
-        <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 6, zIndex: 30, backgroundColor: '#fff', border: '1px solid #e0dbd4', borderRadius: 12, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', padding: 12, width: 200 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: '#6b6560', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Keyboard shortcuts</p>
-          {SHORTCUTS.map(({ key, desc }) => (
-            <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: '#6b6560' }}>{desc}</span>
-              <kbd style={{ padding: '1px 6px', borderRadius: 4, fontSize: 11, fontFamily: 'monospace', backgroundColor: '#f5f0ea', color: '#1a1714', border: '1px solid #e0dbd4' }}>{key}</kbd>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ─── TransactionTable ─────────────────────────────────────────────────────────
 
 export default function TransactionTable({
@@ -168,6 +135,12 @@ export default function TransactionTable({
   const [approveResult, setApproveResult] = useState<{ approved: number; remaining: number } | null>(null)
   const [focusedId, setFocusedId]       = useState<string | null>(null)
   const [enterTrigger, setEnterTrigger] = useState(0)
+  const [pickerAnchor, setPickerAnchor] = useState<{ top: number; left: number; txId: string } | null>(null)
+  const [paletteOpen, setPaletteOpen]   = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // Sync incoming prop changes (e.g. after rule auto-apply on hydrate)
+  useEffect(() => { setTransactions(initialTransactions) }, [initialTransactions])
 
   const visible = useMemo(() => {
     let list = transactions
@@ -201,7 +174,7 @@ export default function TransactionTable({
   }, [onTransactionsChange])
 
   function toggleSelect(id: string) {
-    setSelected(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next })
+    setSelected(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next })
   }
   function toggleSelectAll() {
     setSelected(selected.size === visible.length && visible.length > 0 ? new Set() : new Set(visible.map(t => t.id)))
@@ -248,49 +221,141 @@ export default function TransactionTable({
     setTimeout(() => setApproveResult(null), 6000)
   }
 
-  // Keyboard navigation
+  // ── Refs for stable handler access ────────────────────────────────────────
   const bulkApproveRef  = useRef(bulkApprove)
   const bulkFlagRef     = useRef(bulkFlag)
   const selectedRef     = useRef(selected)
   const visibleRef      = useRef(visible)
   const focusedIdxRef   = useRef(focusedIndex)
-  bulkApproveRef.current = bulkApprove
-  bulkFlagRef.current    = bulkFlag
-  selectedRef.current    = selected
-  visibleRef.current     = visible
-  focusedIdxRef.current  = focusedIndex
+  const transactionsRef = useRef(transactions)
+  bulkApproveRef.current  = bulkApprove
+  bulkFlagRef.current     = bulkFlag
+  selectedRef.current     = selected
+  visibleRef.current      = visible
+  focusedIdxRef.current   = focusedIndex
+  transactionsRef.current = transactions
 
-  useEffect(() => {
-    function h(e: KeyboardEvent) {
-      const tag = (e.target as HTMLElement).tagName.toLowerCase()
-      if (tag === 'input' || tag === 'select' || tag === 'textarea') return
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      const vis = visibleRef.current
-      const fi  = focusedIdxRef.current
-      if (e.key === 'j') { e.preventDefault(); const n = fi < vis.length - 1 ? fi + 1 : 0; setFocusedId(vis[n]?.id ?? null); setTimeout(() => { document.querySelector(`[data-row-id="${vis[n]?.id}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }, 0); return }
-      if (e.key === 'k') { e.preventDefault(); const p = fi > 0 ? fi - 1 : vis.length - 1; setFocusedId(vis[p]?.id ?? null); setTimeout(() => { document.querySelector(`[data-row-id="${vis[p]?.id}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }, 0); return }
-      if (e.key === 'Enter' && focusedIdxRef.current >= 0) { e.preventDefault(); setEnterTrigger(n => n + 1); return }
-      if (e.key === 'a' && selectedRef.current.size > 0) { e.preventDefault(); bulkApproveRef.current() }
-      if (e.key === 'f' && selectedRef.current.size > 0) { e.preventDefault(); bulkFlagRef.current() }
-    }
-    document.addEventListener('keydown', h)
-    return () => document.removeEventListener('keydown', h)
-  }, [])
+  // ── Focused-row helpers ───────────────────────────────────────────────────
+  function focusedApprove() {
+    const vis = visibleRef.current, fi = focusedIdxRef.current
+    if (fi < 0) return
+    const t = vis[fi]
+    onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '' } })
+    handleChange({ ...t, status: 'approved', final_category: t.final_category ?? t.suggested_category, final_account_code: t.final_account_code ?? t.suggested_account_code })
+  }
+  function focusedFlag() {
+    const vis = visibleRef.current, fi = focusedIdxRef.current
+    if (fi < 0) return
+    const t = vis[fi]
+    onAudit?.({ action: 'tx_flagged', txId: t.id, txDescription: t.description, details: { reason: '' } })
+    handleChange({ ...t, status: 'flagged' })
+  }
+  function markDuplicate() {
+    const vis = visibleRef.current, fi = focusedIdxRef.current, sel = selectedRef.current
+    const ids = sel.size > 0 ? Array.from(sel) : (fi >= 0 ? [vis[fi].id] : [])
+    if (ids.length === 0) return
+    setTransactions(prev => {
+      const next = prev.map(t => ids.includes(t.id)
+        ? { ...t, status: 'flagged' as const, notes: t.notes ? `${t.notes} · duplicate` : 'duplicate' }
+        : t)
+      onTransactionsChange?.(next)
+      return next
+    })
+    ids.forEach(id => {
+      const t = transactionsRef.current.find(x => x.id === id)
+      if (t) onAudit?.({ action: 'tx_flagged', txId: id, txDescription: t.description, details: { reason: 'duplicate' } })
+    })
+    if (sel.size > 0) setSelected(new Set())
+  }
+
+  // ── Keyboard shortcuts via provider ───────────────────────────────────────
+  useShortcut({ id: 'tt-next', key: 'j', label: 'Next transaction', group: 'Navigation',
+    handler: () => {
+      const vis = visibleRef.current, fi = focusedIdxRef.current
+      if (!vis.length) return
+      const n = fi < vis.length - 1 ? fi + 1 : 0
+      setFocusedId(vis[n]?.id ?? null)
+      setTimeout(() => document.querySelector(`[data-row-id="${vis[n]?.id}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 0)
+    }})
+  useShortcut({ id: 'tt-prev', key: 'k', label: 'Previous transaction', group: 'Navigation',
+    handler: () => {
+      const vis = visibleRef.current, fi = focusedIdxRef.current
+      if (!vis.length) return
+      const p = fi > 0 ? fi - 1 : vis.length - 1
+      setFocusedId(vis[p]?.id ?? null)
+      setTimeout(() => document.querySelector(`[data-row-id="${vis[p]?.id}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 0)
+    }})
+  useShortcut({ id: 'tt-expand', key: 'enter', label: 'Expand / collapse focused', group: 'Navigation',
+    handler: () => { if (focusedIdxRef.current >= 0) setEnterTrigger(n => n + 1) }})
+  useShortcut({ id: 'tt-approve', key: 'a', label: 'Approve focused or selected', group: 'Actions',
+    handler: () => { if (selectedRef.current.size > 0) bulkApproveRef.current(); else focusedApprove() }})
+  useShortcut({ id: 'tt-flag', key: 'r', label: 'Flag focused or selected', group: 'Actions',
+    handler: () => { if (selectedRef.current.size > 0) bulkFlagRef.current(); else focusedFlag() }})
+
+  // Extend selection
+  useShortcut({ id: 'tt-sel-down', key: 'j', shift: true, label: 'Extend selection down', group: 'Selection',
+    handler: () => {
+      const vis = visibleRef.current, fi = focusedIdxRef.current
+      if (fi < 0 || fi >= vis.length - 1) return
+      const cur = vis[fi], nxt = vis[fi + 1]
+      setSelected(prev => { const s = new Set(prev); s.add(cur.id); s.add(nxt.id); return s })
+      setFocusedId(nxt.id)
+    }})
+  useShortcut({ id: 'tt-sel-up', key: 'k', shift: true, label: 'Extend selection up', group: 'Selection',
+    handler: () => {
+      const vis = visibleRef.current, fi = focusedIdxRef.current
+      if (fi <= 0) return
+      const cur = vis[fi], prv = vis[fi - 1]
+      setSelected(p => { const s = new Set(p); s.add(cur.id); s.add(prv.id); return s })
+      setFocusedId(prv.id)
+    }})
+
+  // Toggle select
+  useShortcut({ id: 'tt-toggle-x', key: 'x', label: 'Toggle select on focused row', group: 'Selection',
+    handler: () => { const vis = visibleRef.current, fi = focusedIdxRef.current; if (fi >= 0) toggleSelect(vis[fi].id) }})
+  useShortcut({ id: 'tt-toggle-space', key: ' ', label: 'Toggle select (Space)', group: 'Selection',
+    handler: () => { const vis = visibleRef.current, fi = focusedIdxRef.current; if (fi >= 0) toggleSelect(vis[fi].id) }})
+
+  // ⌘Enter high-confidence bulk approve
+  useShortcut({ id: 'tt-cmd-enter', key: 'enter', meta: true, label: 'Approve all high-confidence', group: 'Actions',
+    handler: () => { if (highConfPending > 0) setShowConfirm(true) }})
+
+  // ⌘D mark duplicate
+  useShortcut({ id: 'tt-cmd-d', key: 'd', meta: true, label: 'Mark as duplicate', group: 'Actions',
+    handler: () => markDuplicate() })
+
+  // / focus search
+  useShortcut({ id: 'tt-search', key: '/', label: 'Focus search', group: 'Navigation',
+    handler: () => { searchInputRef.current?.focus() }})
+
+  // E — inline category picker
+  useShortcut({ id: 'tt-edit-cat', key: 'e', label: 'Edit category on focused row', group: 'Actions',
+    handler: () => {
+      const vis = visibleRef.current, fi = focusedIdxRef.current
+      if (fi < 0) return
+      const el = document.querySelector(`[data-row-id="${vis[fi].id}"]`)
+      const r = el?.getBoundingClientRect()
+      if (!r) return
+      setPickerAnchor({ top: r.bottom + 4, left: r.left + 40, txId: vis[fi].id })
+    }})
+
+  // ⌘K — command palette
+  useShortcut({ id: 'tt-cmd-k', key: 'k', meta: true, label: 'Open command palette', group: 'Help',
+    handler: () => setPaletteOpen(true) })
 
   const allSelected = visible.length > 0 && selected.size === visible.length
   const someSelected = selected.size > 0
 
   // ─── Table column definitions ─────────────────────────────────────────────
-  // Widths must add up to 100%.
   const COLS = [
-    { pct: '4%'  },   // checkbox
-    { pct: '9%'  },   // date
-    { pct: '32%' },   // description
-    { pct: '13%' },   // category
-    { pct: '8%'  },   // confidence
-    { pct: '13%' },   // amount
-    { pct: '9%'  },   // status
-    { pct: '12%' },   // actions
+    { pct: '4%'  },
+    { pct: '9%'  },
+    { pct: '32%' },
+    { pct: '13%' },
+    { pct: '8%'  },
+    { pct: '13%' },
+    { pct: '9%'  },
+    { pct: '12%' },
   ]
 
   const TH: React.CSSProperties = {
@@ -312,7 +377,6 @@ export default function TransactionTable({
   return (
     <div>
 
-      {/* Approve result banner */}
       {approveResult && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', marginBottom: 10, borderRadius: 10, border: '1px solid #059669', backgroundColor: '#ecfdf5', color: '#065f46', fontSize: 13 }}>
           <span><strong>✓ {approveResult.approved} approved.</strong>{approveResult.remaining > 0 ? ` ${approveResult.remaining} transaction${approveResult.remaining !== 1 ? 's' : ''} remaining.` : ' All transactions approved.'}</span>
@@ -320,9 +384,7 @@ export default function TransactionTable({
         </div>
       )}
 
-      {/* Controls: tabs + search + bulk */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid #e0dbd4', flexWrap: 'wrap', paddingBottom: 0 }}>
-        {/* Filter tabs */}
         <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
           {(['all', 'pending', 'approved', 'flagged'] as FilterTab[]).map(tab => {
             const labels: Record<FilterTab, string> = { all: 'All', pending: 'Pending', approved: 'Approved', flagged: 'Flagged' }
@@ -342,7 +404,6 @@ export default function TransactionTable({
 
         <div style={{ flex: 1 }} />
 
-        {/* Approve high-confidence */}
         {highConfPending > 0 && (
           <button onClick={() => setShowConfirm(true)}
             style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, border: 'none', backgroundColor: '#2d5a27', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}
@@ -353,7 +414,6 @@ export default function TransactionTable({
           </button>
         )}
 
-        {/* Bulk actions */}
         {someSelected && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 10px', borderRadius: 8, border: '1px solid #e0dbd4', backgroundColor: '#f5f0ea', fontSize: 12, flexShrink: 0 }}>
             <span style={{ color: '#6b6560' }}>{selected.size} selected</span>
@@ -364,21 +424,17 @@ export default function TransactionTable({
           </div>
         )}
 
-        {/* Search */}
         <div style={{ position: 'relative', flexShrink: 0, paddingBottom: 2 }}>
           <svg style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="13" height="13" viewBox="0 0 14 14" fill="none">
             <circle cx="6" cy="6" r="4" stroke="#a09a94" strokeWidth="1.4"/>
             <path d="M9.5 9.5L12 12" stroke="#a09a94" strokeWidth="1.4" strokeLinecap="round"/>
           </svg>
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search…"
-            style={{ paddingLeft: 26, paddingRight: 10, paddingTop: 6, paddingBottom: 6, width: 180, borderRadius: 8, border: '1px solid #e0dbd4', backgroundColor: '#faf8f4', fontSize: 13, color: '#1a1714', outline: 'none' }}
+          <input ref={searchInputRef} type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search… (press /)"
+            style={{ paddingLeft: 26, paddingRight: 10, paddingTop: 6, paddingBottom: 6, width: 200, borderRadius: 8, border: '1px solid #e0dbd4', backgroundColor: '#faf8f4', fontSize: 13, color: '#1a1714', outline: 'none' }}
             onFocus={e => { e.currentTarget.style.borderColor = '#2d5a27' }}
             onBlur={e => { e.currentTarget.style.borderColor = '#e0dbd4' }}
           />
         </div>
-
-        {/* Shortcuts */}
-        <div style={{ paddingBottom: 2, flexShrink: 0 }}><ShortcutsPopover /></div>
       </div>
 
       {/* Mobile cards */}
@@ -438,19 +494,8 @@ export default function TransactionTable({
         )}
       </div>
 
-      {/* Footer */}
       {visible.length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-          <p style={{ fontSize: 11, color: '#c4bdb8' }}>
-            <kbd style={{ padding: '1px 5px', borderRadius: 4, fontSize: 11, fontFamily: 'monospace', backgroundColor: '#f0ece4', color: '#6b6560', border: '1px solid #e0dbd4' }}>j</kbd>
-            {' / '}
-            <kbd style={{ padding: '1px 5px', borderRadius: 4, fontSize: 11, fontFamily: 'monospace', backgroundColor: '#f0ece4', color: '#6b6560', border: '1px solid #e0dbd4' }}>k</kbd>
-            {' navigate · '}
-            <kbd style={{ padding: '1px 5px', borderRadius: 4, fontSize: 11, fontFamily: 'monospace', backgroundColor: '#f0ece4', color: '#6b6560', border: '1px solid #e0dbd4' }}>A</kbd>
-            {' approve · '}
-            <kbd style={{ padding: '1px 5px', borderRadius: 4, fontSize: 11, fontFamily: 'monospace', backgroundColor: '#f0ece4', color: '#6b6560', border: '1px solid #e0dbd4' }}>F</kbd>
-            {' flag'}
-          </p>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: 8 }}>
           <p style={{ fontSize: 12, color: '#a09a94' }}>Showing {visible.length} of {transactions.length}</p>
         </div>
       )}
@@ -458,6 +503,30 @@ export default function TransactionTable({
       {showConfirm && (
         <ConfirmModal count={highConfPending} remaining={lowConfPending} onConfirm={doApproveHighConfidence} onCancel={() => setShowConfirm(false)} />
       )}
+
+      {/* Inline category picker (E) */}
+      {pickerAnchor && (
+        <InlineCategoryPicker
+          anchor={pickerAnchor}
+          chartOfAccounts={chartOfAccounts}
+          onClose={() => setPickerAnchor(null)}
+          onSelect={(code, name) => {
+            const tx = transactionsRef.current.find(t => t.id === pickerAnchor.txId)
+            if (tx) {
+              const fromName = tx.final_category ?? tx.suggested_category ?? '—'
+              onAudit?.({ action: 'tx_category_changed', txId: tx.id, txDescription: tx.description, details: { from: fromName, to: name } })
+              handleChange({ ...tx, status: 'edited', final_account_code: code, final_category: name })
+            }
+            setPickerAnchor(null)
+          }}
+        />
+      )}
+
+      {/* ⌘K command palette */}
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+
+      {/* Shortcut legend with ephemeral first-visit hint */}
+      <ShortcutLegend />
     </div>
   )
 }
