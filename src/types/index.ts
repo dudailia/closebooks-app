@@ -1,3 +1,11 @@
+export interface TransactionSplit {
+  id: string
+  amount: number
+  account_code: string
+  category: string
+  notes?: string
+}
+
 export type Transaction = {
   id: string
   date: string
@@ -12,6 +20,7 @@ export type Transaction = {
   final_category?: string
   final_account_code?: string
   notes?: string
+  splits?: TransactionSplit[]
 }
 
 export type ChartOfAccounts = {

@@ -4,6 +4,8 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import TransactionTable from '@/components/TransactionTable'
 import { KeyboardShortcutProvider } from '@/lib/review/KeyboardShortcutProvider'
+import { hydrateRules, applyRulesToJob } from '@/lib/review/rules'
+import { getSupabaseAndFirm } from '@/lib/syncSupabase'
 import { getJob, saveJob, getJobs } from '@/lib/storage'
 import { dbGetJob, dbSaveJob } from '@/lib/db'
 import { detectRecurring } from '@/lib/recurringDetection'
@@ -886,9 +888,21 @@ export default function ReviewPage() {
   }, [jobId])
 
   useEffect(() => {
+    let cancelled = false
+    // Hydrate category rules in parallel (fails soft if Supabase unavailable)
+    getSupabaseAndFirm().then((ctx) => {
+      if (!ctx || cancelled) return
+      return hydrateRules(ctx.supabase, ctx.firmId)
+    }).catch(() => { /* ignore — rules will just be empty */ })
     // Try Supabase first, fall back to localStorage
     dbGetJob(jobId).then((found) => {
+      if (cancelled) return
       if (!found) { setNotFound(true); return }
+      // Apply rules that have been learned for this firm
+      const { txs: seeded, applied } = applyRulesToJob(found.transactions)
+      if (applied.length > 0) {
+        found = { ...found, transactions: seeded }
+      }
       setJob(found)
       // Start time tracking for this review session
       if (!sessionIdRef.current) {
@@ -928,8 +942,10 @@ export default function ReviewPage() {
       }
     }).catch(() => {
       // Supabase failed, fall back to localStorage
-      const found = getJob(jobId)
+      let found = getJob(jobId)
       if (!found) { setNotFound(true); return }
+      const { txs: seeded, applied } = applyRulesToJob(found.transactions)
+      if (applied.length > 0) found = { ...found, transactions: seeded }
       setJob(found)
       setQboConn(getQBOConnection())
       setQboLive(false)
@@ -958,6 +974,7 @@ export default function ReviewPage() {
         setAuditEvents(existing)
       }
     })
+    return () => { cancelled = true }
   }, [jobId])
 
   const logAudit: AuditCallback = useCallback((event) => {
