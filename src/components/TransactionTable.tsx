@@ -11,6 +11,10 @@ import ShortcutLegend from '@/components/review/ShortcutLegend'
 import SaveRuleToast from '@/components/review/SaveRuleToast'
 import BulkActionBar from '@/components/review/BulkActionBar'
 import SplitModal from '@/components/review/SplitModal'
+import HistoryDrawer from '@/components/review/HistoryDrawer'
+import ActionToastStack, { type ToastMsg } from '@/components/review/ActionToast'
+import { useUndoStack } from '@/lib/review/undoStack'
+import { deleteRule } from '@/lib/review/rules'
 import type { TransactionSplit } from '@/types'
 import { saveRule, bumpRuleUsage, findRuleForDescription } from '@/lib/review/rules'
 import { normalizeVendor, vendorPatternMatches } from '@/lib/review/vendor'
@@ -152,6 +156,32 @@ export default function TransactionTable({
     () => transactions.find(t => t.id === splitTxId) ?? null,
     [transactions, splitTxId]
   )
+  const undoStack = useUndoStack()
+  const [toasts, setToasts] = useState<ToastMsg[]>([])
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  function pushToast(t: Omit<ToastMsg, 'id'>) {
+    const id = `t-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+    setToasts(prev => [...prev, { ...t, id }])
+  }
+  function dismissToast(id: string) {
+    setToasts(prev => prev.filter(t => t.id !== id))
+  }
+
+  function restoreTxs(priors: Transaction[]) {
+    setTransactions(prev => {
+      const next = prev.map(t => priors.find(p => p.id === t.id) ?? t)
+      onTransactionsChange?.(next)
+      return next
+    })
+  }
+  function applyTxs(nexts: Transaction[]) {
+    setTransactions(prev => {
+      const next = prev.map(t => nexts.find(n => n.id === t.id) ?? t)
+      onTransactionsChange?.(next)
+      return next
+    })
+  }
 
   // Sync incoming prop changes (e.g. after rule auto-apply on hydrate)
   useEffect(() => { setTransactions(initialTransactions) }, [initialTransactions])
@@ -201,12 +231,21 @@ export default function TransactionTable({
   }
 
   const handleChange = useCallback((updated: Transaction) => {
+    const prior = transactionsRef.current.find(t => t.id === updated.id)
     setTransactions(prev => {
       const next = prev.map(t => t.id === updated.id ? updated : t)
       onTransactionsChange?.(next)
       return next
     })
     if (updated.status === 'approved' || updated.status === 'edited') trackApproval(updated)
+    if (prior) {
+      undoStack.push({
+        label: `Updated ${prior.description.slice(0, 40)}`,
+        inverse: () => restoreTxs([prior]),
+        redo: () => applyTxs([updated]),
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onTransactionsChange])
 
   function handleCategoryRuleCandidate(tx: Transaction, accountCode: string, categoryName: string) {
@@ -233,20 +272,42 @@ export default function TransactionTable({
         categoryName: cand.categoryName,
         createdBy: 'CPA',
       })
-      let touchedCount = 0
+      const priorMatches = transactionsRef.current.filter(
+        t => t.status === 'pending' && vendorPatternMatches(t.description, rule.vendorPattern)
+      ).map(t => ({ ...t }))
+      const updatedTxs: Transaction[] = []
       setTransactions(prev => {
         const next = prev.map(t => {
           if (t.status !== 'pending') return t
           if (!vendorPatternMatches(t.description, rule.vendorPattern)) return t
-          touchedCount += 1
           onAudit?.({ action: 'tx_category_changed', txId: t.id, txDescription: t.description, details: { from: t.suggested_category ?? '—', to: cand.categoryName, rule: '1' } })
-          return { ...t, status: 'edited' as const, final_account_code: cand.accountCode, final_category: cand.categoryName, confidence: Math.max(t.confidence, 0.99) }
+          const up = { ...t, status: 'edited' as const, final_account_code: cand.accountCode, final_category: cand.categoryName, confidence: Math.max(t.confidence, 0.99) }
+          updatedTxs.push(up)
+          return up
         })
         onTransactionsChange?.(next)
         return next
       })
-      if (touchedCount > 0) void bumpRuleUsage(rule.id, touchedCount)
+      if (priorMatches.length > 0) void bumpRuleUsage(rule.id, priorMatches.length)
       proactiveDismissed.current.add(`${cand.vendor}::${cand.accountCode}`)
+      undoStack.push({
+        label: `Saved rule · applied to ${priorMatches.length}`,
+        inverse: () => {
+          void deleteRule(rule.id)
+          restoreTxs(priorMatches)
+        },
+        redo: () => {
+          void saveRule({ description: cand.vendor, accountCode: cand.accountCode, categoryName: cand.categoryName, createdBy: 'CPA' })
+          applyTxs(updatedTxs)
+        },
+      })
+      pushToast({
+        message: priorMatches.length > 0
+          ? `Rule saved · applied to ${priorMatches.length} transaction${priorMatches.length !== 1 ? 's' : ''}`
+          : 'Rule saved for future transactions',
+        tone: 'success',
+        onUndo: () => undoStack.undo(),
+      })
     } catch (err) {
       console.error('saveRule failed', err)
     }
@@ -269,12 +330,15 @@ export default function TransactionTable({
   function bulkDuplicate() {
     const ids = Array.from(selectedRef.current)
     if (ids.length === 0) return
+    const priors = transactionsRef.current.filter(t => ids.includes(t.id)).map(t => ({ ...t }))
+    const updatedTxs: Transaction[] = []
     setTransactions(prev => {
-      const next = prev.map(t =>
-        ids.includes(t.id)
-          ? { ...t, status: 'flagged' as const, notes: t.notes ? `${t.notes} · duplicate` : 'duplicate' }
-          : t
-      )
+      const next = prev.map(t => {
+        if (!ids.includes(t.id)) return t
+        const up = { ...t, status: 'flagged' as const, notes: t.notes ? `${t.notes} · duplicate` : 'duplicate' }
+        updatedTxs.push(up)
+        return up
+      })
       onTransactionsChange?.(next)
       return next
     })
@@ -282,6 +346,12 @@ export default function TransactionTable({
       const t = transactionsRef.current.find(x => x.id === id)
       if (t) onAudit?.({ action: 'tx_flagged', txId: id, txDescription: t.description, details: { reason: 'duplicate', bulk: 'true' } })
     })
+    undoStack.push({
+      label: `Marked ${priors.length} as duplicate`,
+      inverse: () => restoreTxs(priors),
+      redo: () => applyTxs(updatedTxs),
+    })
+    pushToast({ message: `Marked ${priors.length} as duplicate`, tone: 'warning', onUndo: () => undoStack.undo() })
     setSelected(new Set())
   }
 
@@ -289,13 +359,24 @@ export default function TransactionTable({
     const note = typeof window !== 'undefined' ? window.prompt('Note to add to all selected transactions:') : null
     if (!note) return
     const ids = Array.from(selectedRef.current)
+    const priors = transactionsRef.current.filter(t => ids.includes(t.id)).map(t => ({ ...t }))
+    const updatedTxs: Transaction[] = []
     setTransactions(prev => {
-      const next = prev.map(t =>
-        ids.includes(t.id) ? { ...t, notes: t.notes ? `${t.notes} · ${note}` : note } : t
-      )
+      const next = prev.map(t => {
+        if (!ids.includes(t.id)) return t
+        const up = { ...t, notes: t.notes ? `${t.notes} · ${note}` : note }
+        updatedTxs.push(up)
+        return up
+      })
       onTransactionsChange?.(next)
       return next
     })
+    undoStack.push({
+      label: `Added note to ${priors.length}`,
+      inverse: () => restoreTxs(priors),
+      redo: () => applyTxs(updatedTxs),
+    })
+    pushToast({ message: `Added note to ${priors.length} transaction${priors.length !== 1 ? 's' : ''}`, onUndo: () => undoStack.undo() })
   }
 
   function openSplit(id: string) {
@@ -310,21 +391,30 @@ export default function TransactionTable({
     if (!splitTxId) return
     const targetId = splitTxId
     const target = transactionsRef.current.find(t => t.id === targetId)
+    if (!target) { setSplitTxId(null); return }
+    const prior = { ...target }
+    const updated: Transaction = { ...target, status: 'edited', splits }
     setTransactions(prev => {
-      const next = prev.map(t =>
-        t.id === targetId ? { ...t, status: 'edited' as const, splits } : t
-      )
+      const next = prev.map(t => (t.id === targetId ? updated : t))
       onTransactionsChange?.(next)
       return next
     })
-    if (target) {
-      onAudit?.({
-        action: 'tx_category_changed',
-        txId: targetId,
-        txDescription: target.description,
-        details: { from: target.final_category ?? target.suggested_category ?? '—', to: `Split into ${splits.length}` },
-      })
-    }
+    onAudit?.({
+      action: 'tx_category_changed',
+      txId: targetId,
+      txDescription: target.description,
+      details: { from: target.final_category ?? target.suggested_category ?? '—', to: `Split into ${splits.length}` },
+    })
+    undoStack.push({
+      label: `Split ${target.description.slice(0, 30)} into ${splits.length}`,
+      inverse: () => restoreTxs([prior]),
+      redo: () => applyTxs([updated]),
+    })
+    pushToast({
+      message: `Split into ${splits.length} line${splits.length !== 1 ? 's' : ''}`,
+      tone: 'success',
+      onUndo: () => undoStack.undo(),
+    })
     setSplitTxId(null)
   }
 
@@ -365,10 +455,13 @@ export default function TransactionTable({
   }
 
   const bulkApprove = useCallback(() => {
+    const selectedIds = Array.from(selected)
+    if (selectedIds.length === 0) return
+    const priors = transactionsRef.current.filter(t => selectedIds.includes(t.id))
     const approvedTxs: Transaction[] = []
     setTransactions(prev => {
       const next = prev.map(t => {
-        if (!selected.has(t.id)) return t
+        if (!selectedIds.includes(t.id)) return t
         onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '', bulk: 'true' } })
         const updated = { ...t, status: 'approved' as const, final_category: t.final_category ?? t.suggested_category, final_account_code: t.final_account_code ?? t.suggested_account_code }
         approvedTxs.push(updated)
@@ -378,24 +471,56 @@ export default function TransactionTable({
       return next
     })
     approvedTxs.forEach(trackApproval)
+    const id = undoStack.push({
+      label: `Approved ${priors.length} transaction${priors.length !== 1 ? 's' : ''}`,
+      inverse: () => restoreTxs(priors),
+      redo: () => applyTxs(approvedTxs),
+    })
+    pushToast({
+      message: `Approved ${priors.length} transaction${priors.length !== 1 ? 's' : ''}`,
+      tone: 'success',
+      onUndo: () => undoStack.undo(),
+    })
+    void id
     setSelected(new Set())
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, onTransactionsChange, onAudit])
 
   const bulkFlag = useCallback(() => {
+    const selectedIds = Array.from(selected)
+    if (selectedIds.length === 0) return
+    const priors = transactionsRef.current.filter(t => selectedIds.includes(t.id))
+    const flaggedTxs: Transaction[] = []
     setTransactions(prev => {
       const next = prev.map(t => {
-        if (!selected.has(t.id)) return t
+        if (!selectedIds.includes(t.id)) return t
         onAudit?.({ action: 'tx_flagged', txId: t.id, txDescription: t.description, details: { reason: '', bulk: 'true' } })
-        return { ...t, status: 'flagged' as const }
+        const updated = { ...t, status: 'flagged' as const }
+        flaggedTxs.push(updated)
+        return updated
       })
       onTransactionsChange?.(next)
       return next
     })
+    undoStack.push({
+      label: `Flagged ${priors.length} transaction${priors.length !== 1 ? 's' : ''}`,
+      inverse: () => restoreTxs(priors),
+      redo: () => applyTxs(flaggedTxs),
+    })
+    pushToast({
+      message: `Flagged ${priors.length} transaction${priors.length !== 1 ? 's' : ''}`,
+      tone: 'warning',
+      onUndo: () => undoStack.undo(),
+    })
     setSelected(new Set())
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, onTransactionsChange, onAudit])
 
   function doApproveHighConfidence() {
     setShowConfirm(false)
+    const eligible = transactionsRef.current.filter(t => t.confidence >= 0.85 && t.status === 'pending')
+    if (eligible.length === 0) return
+    const priors = eligible.map(t => ({ ...t }))
     const approvedTxs: Transaction[] = []
     setTransactions(prev => {
       const next = prev.map(t => {
@@ -409,6 +534,16 @@ export default function TransactionTable({
       return next
     })
     approvedTxs.forEach(trackApproval)
+    undoStack.push({
+      label: `Approved ${priors.length} high-confidence`,
+      inverse: () => restoreTxs(priors),
+      redo: () => applyTxs(approvedTxs),
+    })
+    pushToast({
+      message: `Approved ${priors.length} high-confidence transaction${priors.length !== 1 ? 's' : ''}`,
+      tone: 'success',
+      onUndo: () => undoStack.undo(),
+    })
     setApproveResult({ approved: highConfPending, remaining: lowConfPending })
     setTimeout(() => setApproveResult(null), 6000)
   }
@@ -446,10 +581,15 @@ export default function TransactionTable({
     const vis = visibleRef.current, fi = focusedIdxRef.current, sel = selectedRef.current
     const ids = sel.size > 0 ? Array.from(sel) : (fi >= 0 ? [vis[fi].id] : [])
     if (ids.length === 0) return
+    const priors = transactionsRef.current.filter(t => ids.includes(t.id)).map(t => ({ ...t }))
+    const updatedTxs: Transaction[] = []
     setTransactions(prev => {
-      const next = prev.map(t => ids.includes(t.id)
-        ? { ...t, status: 'flagged' as const, notes: t.notes ? `${t.notes} · duplicate` : 'duplicate' }
-        : t)
+      const next = prev.map(t => {
+        if (!ids.includes(t.id)) return t
+        const up = { ...t, status: 'flagged' as const, notes: t.notes ? `${t.notes} · duplicate` : 'duplicate' }
+        updatedTxs.push(up)
+        return up
+      })
       onTransactionsChange?.(next)
       return next
     })
@@ -457,6 +597,14 @@ export default function TransactionTable({
       const t = transactionsRef.current.find(x => x.id === id)
       if (t) onAudit?.({ action: 'tx_flagged', txId: id, txDescription: t.description, details: { reason: 'duplicate' } })
     })
+    undoStack.push({
+      label: `Marked ${priors.length} as duplicate`,
+      inverse: () => restoreTxs(priors),
+      redo: () => applyTxs(updatedTxs),
+    })
+    if (priors.length > 1) {
+      pushToast({ message: `Marked ${priors.length} as duplicate`, tone: 'warning', onUndo: () => undoStack.undo() })
+    }
     if (sel.size > 0) setSelected(new Set())
   }
 
@@ -541,6 +689,38 @@ export default function TransactionTable({
       const vis = visibleRef.current, fi = focusedIdxRef.current
       if (fi >= 0) openSplit(vis[fi].id)
     }})
+
+  // ⌘Z undo
+  useShortcut({ id: 'tt-undo', key: 'z', meta: true, label: 'Undo last action', group: 'Undo',
+    handler: () => {
+      const e = undoStack.undo()
+      if (e) pushToast({ message: `Undid: ${e.label}` })
+    }})
+
+  // ⌘⇧Z redo
+  useShortcut({ id: 'tt-redo', key: 'z', meta: true, shift: true, label: 'Redo', group: 'Undo',
+    handler: () => {
+      const e = undoStack.redo()
+      if (e) pushToast({ message: `Redid: ${e.label}` })
+    }})
+
+  // ⌘⇧H — history drawer
+  useShortcut({ id: 'tt-history', key: 'h', meta: true, shift: true, label: 'Open history drawer', group: 'Help',
+    handler: () => setDrawerOpen(true) })
+
+  function undoUpTo(entryId: string) {
+    // Pop entries one at a time until we've undone the target
+    let safety = 50
+    while (safety-- > 0) {
+      const list = undoStack.entries
+      const top = list[list.length - 1]
+      if (!top) break
+      const wasTarget = top.id === entryId
+      undoStack.undo()
+      if (wasTarget) break
+    }
+    setDrawerOpen(false)
+  }
 
   const allSelected = visible.length > 0 && selected.size === visible.length
   const selectedTotalAbs = useMemo(
@@ -774,6 +954,17 @@ export default function TransactionTable({
         chartOfAccounts={chartOfAccounts}
         onSave={handleSplitSave}
         onClose={() => setSplitTxId(null)}
+      />
+
+      {/* Undo toasts */}
+      <ActionToastStack toasts={toasts} onDismiss={dismissToast} />
+
+      {/* History drawer */}
+      <HistoryDrawer
+        open={drawerOpen}
+        entries={undoStack.entries}
+        onClose={() => setDrawerOpen(false)}
+        onUndoUpTo={undoUpTo}
       />
     </div>
   )
