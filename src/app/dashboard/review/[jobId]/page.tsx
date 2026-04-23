@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import TransactionTable from '@/components/TransactionTable'
+import { KeyboardShortcutProvider } from '@/lib/review/KeyboardShortcutProvider'
 import { getJob, saveJob, getJobs } from '@/lib/storage'
 import { dbGetJob, dbSaveJob } from '@/lib/db'
 import { detectRecurring } from '@/lib/recurringDetection'
@@ -1266,6 +1267,7 @@ export default function ReviewPage() {
     job.transactions.every((t) => t.status !== 'pending')
 
   return (
+    <KeyboardShortcutProvider>
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
       {showPush && qboConn && (
         <PushModal
@@ -1582,6 +1584,7 @@ export default function ReviewPage() {
       {/* Toast stack */}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </div>
+    </KeyboardShortcutProvider>
   )
 }
 
