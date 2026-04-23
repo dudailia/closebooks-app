@@ -9,6 +9,7 @@ import InlineCategoryPicker from '@/components/review/InlineCategoryPicker'
 import CommandPalette from '@/components/review/CommandPalette'
 import ShortcutLegend from '@/components/review/ShortcutLegend'
 import SaveRuleToast from '@/components/review/SaveRuleToast'
+import BulkActionBar from '@/components/review/BulkActionBar'
 import { saveRule, bumpRuleUsage, findRuleForDescription } from '@/lib/review/rules'
 import { normalizeVendor, vendorPatternMatches } from '@/lib/review/vendor'
 
@@ -250,6 +251,75 @@ export default function TransactionTable({
     setRuleCandidate(null)
   }
 
+  function bulkChangeCategory() {
+    const el = typeof document !== 'undefined' ? document.querySelector('[data-bulk-bar]') : null
+    const r = (el as HTMLElement | null)?.getBoundingClientRect()
+    const top = r ? Math.max(80, r.top - 260) : 160
+    const left = r ? r.left : 80
+    setPickerAnchor({ top, left, txId: '__bulk__' })
+  }
+
+  function bulkDuplicate() {
+    const ids = Array.from(selectedRef.current)
+    if (ids.length === 0) return
+    setTransactions(prev => {
+      const next = prev.map(t =>
+        ids.includes(t.id)
+          ? { ...t, status: 'flagged' as const, notes: t.notes ? `${t.notes} · duplicate` : 'duplicate' }
+          : t
+      )
+      onTransactionsChange?.(next)
+      return next
+    })
+    ids.forEach(id => {
+      const t = transactionsRef.current.find(x => x.id === id)
+      if (t) onAudit?.({ action: 'tx_flagged', txId: id, txDescription: t.description, details: { reason: 'duplicate', bulk: 'true' } })
+    })
+    setSelected(new Set())
+  }
+
+  function bulkAddNote() {
+    const note = typeof window !== 'undefined' ? window.prompt('Note to add to all selected transactions:') : null
+    if (!note) return
+    const ids = Array.from(selectedRef.current)
+    setTransactions(prev => {
+      const next = prev.map(t =>
+        ids.includes(t.id) ? { ...t, notes: t.notes ? `${t.notes} · ${note}` : note } : t
+      )
+      onTransactionsChange?.(next)
+      return next
+    })
+  }
+
+  function bulkExport() {
+    const rows = transactionsRef.current.filter(t => selectedRef.current.has(t.id))
+    if (rows.length === 0) return
+    const esc = (s: string) => `"${s.replace(/"/g, '""')}"`
+    const csv =
+      'Date,Description,Category,Account,Amount,Status\n' +
+      rows
+        .map(t =>
+          [
+            t.date,
+            esc(t.description),
+            esc(t.final_category ?? t.suggested_category ?? ''),
+            esc(t.final_account_code ?? t.suggested_account_code ?? ''),
+            (t.type === 'credit' ? '+' : '-') + t.amount.toFixed(2),
+            t.status,
+          ].join(',')
+        )
+        .join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `transactions-${Date.now()}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   function toggleSelect(id: string) {
     setSelected(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next })
   }
@@ -429,7 +499,10 @@ export default function TransactionTable({
     handler: () => setPaletteOpen(true) })
 
   const allSelected = visible.length > 0 && selected.size === visible.length
-  const someSelected = selected.size > 0
+  const selectedTotalAbs = useMemo(
+    () => Math.abs(transactions.filter(t => selected.has(t.id)).reduce((s, t) => s + (t.type === 'credit' ? t.amount : -t.amount), 0)),
+    [transactions, selected]
+  )
 
   // ─── Table column definitions ─────────────────────────────────────────────
   const COLS = [
@@ -497,16 +570,6 @@ export default function TransactionTable({
             <svg width="10" height="10" viewBox="0 0 13 13" fill="none"><path d="M2 6.5l3 3 6-6" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
             Approve {highConfPending} high-confidence
           </button>
-        )}
-
-        {someSelected && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 10px', borderRadius: 8, border: '1px solid #e0dbd4', backgroundColor: '#f5f0ea', fontSize: 12, flexShrink: 0 }}>
-            <span style={{ color: '#6b6560' }}>{selected.size} selected</span>
-            <span style={{ color: '#e0dbd4' }}>|</span>
-            <button onClick={bulkApprove} style={{ fontWeight: 600, color: '#166534', border: 'none', background: 'none', cursor: 'pointer', fontSize: 12 }}>Approve</button>
-            <button onClick={bulkFlag}    style={{ fontWeight: 600, color: '#991b1b', border: 'none', background: 'none', cursor: 'pointer', fontSize: 12 }}>Flag</button>
-            <button onClick={() => setSelected(new Set())} style={{ color: '#a09a94', border: 'none', background: 'none', cursor: 'pointer', fontSize: 12 }}>✕</button>
-          </div>
         )}
 
         <div style={{ position: 'relative', flexShrink: 0, paddingBottom: 2 }}>
@@ -597,17 +660,51 @@ export default function TransactionTable({
           chartOfAccounts={chartOfAccounts}
           onClose={() => setPickerAnchor(null)}
           onSelect={(code, name) => {
-            const tx = transactionsRef.current.find(t => t.id === pickerAnchor.txId)
-            if (tx) {
-              const fromName = tx.final_category ?? tx.suggested_category ?? '—'
-              onAudit?.({ action: 'tx_category_changed', txId: tx.id, txDescription: tx.description, details: { from: fromName, to: name } })
-              handleChange({ ...tx, status: 'edited', final_account_code: code, final_category: name })
-              handleCategoryRuleCandidate(tx, code, name)
+            if (pickerAnchor.txId === '__bulk__') {
+              const ids = Array.from(selectedRef.current)
+              setTransactions(prev => {
+                const next = prev.map(t =>
+                  ids.includes(t.id)
+                    ? { ...t, status: 'edited' as const, final_account_code: code, final_category: name }
+                    : t
+                )
+                onTransactionsChange?.(next)
+                return next
+              })
+              ids.forEach(id => {
+                const t = transactionsRef.current.find(x => x.id === id)
+                if (t) onAudit?.({ action: 'tx_category_changed', txId: id, txDescription: t.description, details: { from: t.final_category ?? t.suggested_category ?? '—', to: name, bulk: 'true' } })
+              })
+              setSelected(new Set())
+            } else {
+              const tx = transactionsRef.current.find(t => t.id === pickerAnchor.txId)
+              if (tx) {
+                const fromName = tx.final_category ?? tx.suggested_category ?? '—'
+                onAudit?.({ action: 'tx_category_changed', txId: tx.id, txDescription: tx.description, details: { from: fromName, to: name } })
+                handleChange({ ...tx, status: 'edited', final_account_code: code, final_category: name })
+                handleCategoryRuleCandidate(tx, code, name)
+              }
             }
             setPickerAnchor(null)
           }}
         />
       )}
+
+      {/* Sliding bulk action bar */}
+      <BulkActionBar
+        count={selected.size}
+        totalAmount={selectedTotalAbs}
+        onClear={() => setSelected(new Set())}
+        actions={[
+          { id: 'approve', label: 'Approve', tone: 'success', onClick: bulkApprove },
+          { id: 'cat',     label: 'Change Category', onClick: bulkChangeCategory },
+          { id: 'flag',    label: 'Flag', tone: 'danger', onClick: bulkFlag },
+          { id: 'dup',     label: 'Duplicate', onClick: bulkDuplicate },
+          { id: 'note',    label: 'Add note', onClick: bulkAddNote },
+          { id: 'split',   label: 'Split…', disabled: selected.size !== 1, onClick: () => { /* wired in Phase E */ } },
+          { id: 'export',  label: 'Export CSV', onClick: bulkExport },
+        ]}
+      />
 
       {/* ⌘K command palette */}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
