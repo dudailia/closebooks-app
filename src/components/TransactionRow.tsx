@@ -94,6 +94,8 @@ interface Props {
   enterTrigger?: number
   onAudit?: AuditCallback
   txAuditEvents?: AuditEvent[]
+  onCategoryRuleCandidate?: (tx: Transaction, accountCode: string, categoryName: string) => void
+  onSplit?: (id: string) => void
 }
 
 // ─── TransactionRow ───────────────────────────────────────────────────────────
@@ -110,6 +112,8 @@ export default function TransactionRow({
   enterTrigger  = 0,
   onAudit,
   txAuditEvents = [],
+  onCategoryRuleCandidate,
+  onSplit,
 }: Props) {
   const [expanded, setExpanded]       = useState(false)
   const [editCode, setEditCode]       = useState(transaction.final_account_code ?? transaction.suggested_account_code ?? '')
@@ -146,6 +150,7 @@ export default function TransactionRow({
       if (code !== transaction.suggested_account_code && transaction.suggested_category) {
         saveCorrection(transaction.description, transaction.suggested_category, toName)
       }
+      onCategoryRuleCandidate?.(transaction, code, toName)
     }
     onChange({ ...transaction, status: 'edited', final_account_code: code, final_category: account?.name ?? code })
   }
@@ -230,6 +235,12 @@ export default function TransactionRow({
             }}>
               {transaction.description}
             </span>
+            {transaction.splits && transaction.splits.length > 0 && (
+              <span title={`Split into ${transaction.splits.length} lines`}
+                style={{ flexShrink: 0, marginLeft: 4, fontSize: 10, fontWeight: 600, color: '#1a1714', backgroundColor: '#e8f0e6', border: '1px solid #c4dec0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em' }}>
+                Split {transaction.splits.length}
+              </span>
+            )}
           </div>
         </td>
 
@@ -438,6 +449,20 @@ export default function TransactionRow({
                   </svg>
                   Flag for review
                 </button>
+                {onSplit && (
+                  <button
+                    onClick={() => onSplit(transaction.id)}
+                    style={{ padding: '8px 14px', borderRadius: 10, border: '1px solid #e0dbd4', backgroundColor: '#fff', color: '#1a1714', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#faf8f4' }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fff' }}
+                    title="Split into multiple categories (S)"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                      <path d="M6 1v4m0 0L3 8m3-3l3 3M2 11h8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Split
+                  </button>
+                )}
               </div>
 
               {/* Audit timeline */}

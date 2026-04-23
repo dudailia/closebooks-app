@@ -8,6 +8,9 @@ import { useShortcut } from '@/lib/review/KeyboardShortcutProvider'
 import InlineCategoryPicker from '@/components/review/InlineCategoryPicker'
 import CommandPalette from '@/components/review/CommandPalette'
 import ShortcutLegend from '@/components/review/ShortcutLegend'
+import SaveRuleToast from '@/components/review/SaveRuleToast'
+import { saveRule, bumpRuleUsage, findRuleForDescription } from '@/lib/review/rules'
+import { normalizeVendor, vendorPatternMatches } from '@/lib/review/vendor'
 
 type FilterTab = 'all' | 'pending' | 'approved' | 'flagged'
 
@@ -138,6 +141,9 @@ export default function TransactionTable({
   const [pickerAnchor, setPickerAnchor] = useState<{ top: number; left: number; txId: string } | null>(null)
   const [paletteOpen, setPaletteOpen]   = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const [ruleCandidate, setRuleCandidate] = useState<{ vendor: string; accountCode: string; categoryName: string; matchingCount: number; ruleSuggestionOnly?: boolean } | null>(null)
+  const approvalTracker = useRef<Map<string, { count: number; accountCode: string; categoryName: string; suggested: boolean }>>(new Map())
+  const proactiveDismissed = useRef<Set<string>>(new Set())
 
   // Sync incoming prop changes (e.g. after rule auto-apply on hydrate)
   useEffect(() => { setTransactions(initialTransactions) }, [initialTransactions])
@@ -165,13 +171,84 @@ export default function TransactionTable({
   const highConfPending = transactions.filter(t => t.confidence >= 0.85 && t.status === 'pending').length
   const lowConfPending  = transactions.filter(t => t.status === 'pending' && t.confidence < 0.85).length
 
+  function trackApproval(tx: Transaction) {
+    const pattern = normalizeVendor(tx.description)
+    const category = tx.final_category ?? tx.suggested_category ?? ''
+    const accountCode = tx.final_account_code ?? tx.suggested_account_code ?? ''
+    if (!pattern || !category || !accountCode) return
+    if (findRuleForDescription(tx.description)) return
+    const key = `${pattern}::${accountCode}`
+    if (proactiveDismissed.current.has(key)) return
+    const existing = approvalTracker.current.get(key)
+    if (existing) {
+      existing.count += 1
+      if (existing.count >= 3 && !existing.suggested) {
+        existing.suggested = true
+        const pending = transactionsRef.current.filter(t => t.status === 'pending' && vendorPatternMatches(t.description, pattern))
+        setRuleCandidate({ vendor: pattern, accountCode, categoryName: category, matchingCount: pending.length, ruleSuggestionOnly: true })
+      }
+    } else {
+      approvalTracker.current.set(key, { count: 1, accountCode, categoryName: category, suggested: false })
+    }
+  }
+
   const handleChange = useCallback((updated: Transaction) => {
     setTransactions(prev => {
       const next = prev.map(t => t.id === updated.id ? updated : t)
       onTransactionsChange?.(next)
       return next
     })
+    if (updated.status === 'approved' || updated.status === 'edited') trackApproval(updated)
   }, [onTransactionsChange])
+
+  function handleCategoryRuleCandidate(tx: Transaction, accountCode: string, categoryName: string) {
+    const pattern = normalizeVendor(tx.description)
+    if (!pattern) return
+    // If there's already an active rule for this vendor + category, skip the prompt
+    const existing = findRuleForDescription(tx.description)
+    if (existing && existing.accountCode === accountCode) return
+    const matching = transactionsRef.current.filter(t =>
+      t.id !== tx.id &&
+      t.status === 'pending' &&
+      vendorPatternMatches(t.description, pattern)
+    )
+    setRuleCandidate({ vendor: pattern, accountCode, categoryName, matchingCount: matching.length })
+  }
+
+  async function handleSaveRule() {
+    if (!ruleCandidate) return
+    const cand = ruleCandidate
+    try {
+      const rule = await saveRule({
+        description: cand.vendor,
+        accountCode: cand.accountCode,
+        categoryName: cand.categoryName,
+        createdBy: 'CPA',
+      })
+      let touchedCount = 0
+      setTransactions(prev => {
+        const next = prev.map(t => {
+          if (t.status !== 'pending') return t
+          if (!vendorPatternMatches(t.description, rule.vendorPattern)) return t
+          touchedCount += 1
+          onAudit?.({ action: 'tx_category_changed', txId: t.id, txDescription: t.description, details: { from: t.suggested_category ?? '—', to: cand.categoryName, rule: '1' } })
+          return { ...t, status: 'edited' as const, final_account_code: cand.accountCode, final_category: cand.categoryName, confidence: Math.max(t.confidence, 0.99) }
+        })
+        onTransactionsChange?.(next)
+        return next
+      })
+      if (touchedCount > 0) void bumpRuleUsage(rule.id, touchedCount)
+      proactiveDismissed.current.add(`${cand.vendor}::${cand.accountCode}`)
+    } catch (err) {
+      console.error('saveRule failed', err)
+    }
+    setRuleCandidate(null)
+  }
+
+  function dismissRuleCandidate() {
+    if (ruleCandidate) proactiveDismissed.current.add(`${ruleCandidate.vendor}::${ruleCandidate.accountCode}`)
+    setRuleCandidate(null)
+  }
 
   function toggleSelect(id: string) {
     setSelected(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next })
@@ -181,15 +258,19 @@ export default function TransactionTable({
   }
 
   const bulkApprove = useCallback(() => {
+    const approvedTxs: Transaction[] = []
     setTransactions(prev => {
       const next = prev.map(t => {
         if (!selected.has(t.id)) return t
         onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '', bulk: 'true' } })
-        return { ...t, status: 'approved' as const, final_category: t.final_category ?? t.suggested_category, final_account_code: t.final_account_code ?? t.suggested_account_code }
+        const updated = { ...t, status: 'approved' as const, final_category: t.final_category ?? t.suggested_category, final_account_code: t.final_account_code ?? t.suggested_account_code }
+        approvedTxs.push(updated)
+        return updated
       })
       onTransactionsChange?.(next)
       return next
     })
+    approvedTxs.forEach(trackApproval)
     setSelected(new Set())
   }, [selected, onTransactionsChange, onAudit])
 
@@ -208,15 +289,19 @@ export default function TransactionTable({
 
   function doApproveHighConfidence() {
     setShowConfirm(false)
+    const approvedTxs: Transaction[] = []
     setTransactions(prev => {
       const next = prev.map(t => {
         if (!(t.confidence >= 0.85 && t.status === 'pending')) return t
         onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.suggested_category ?? '', bulk: 'true' } })
-        return { ...t, status: 'approved' as const, final_category: t.suggested_category, final_account_code: t.suggested_account_code }
+        const updated = { ...t, status: 'approved' as const, final_category: t.suggested_category, final_account_code: t.suggested_account_code }
+        approvedTxs.push(updated)
+        return updated
       })
       onTransactionsChange?.(next)
       return next
     })
+    approvedTxs.forEach(trackApproval)
     setApproveResult({ approved: highConfPending, remaining: lowConfPending })
     setTimeout(() => setApproveResult(null), 6000)
   }
@@ -487,6 +572,7 @@ export default function TransactionTable({
                   enterTrigger={focusedId === tx.id ? enterTrigger : 0}
                   onAudit={onAudit}
                   txAuditEvents={auditEvents.filter(e => e.txId === tx.id)}
+                  onCategoryRuleCandidate={handleCategoryRuleCandidate}
                 />
               ))}
             </tbody>
@@ -516,6 +602,7 @@ export default function TransactionTable({
               const fromName = tx.final_category ?? tx.suggested_category ?? '—'
               onAudit?.({ action: 'tx_category_changed', txId: tx.id, txDescription: tx.description, details: { from: fromName, to: name } })
               handleChange({ ...tx, status: 'edited', final_account_code: code, final_category: name })
+              handleCategoryRuleCandidate(tx, code, name)
             }
             setPickerAnchor(null)
           }}
@@ -527,6 +614,17 @@ export default function TransactionTable({
 
       {/* Shortcut legend with ephemeral first-visit hint */}
       <ShortcutLegend />
+
+      {/* Save-rule toast */}
+      {ruleCandidate && (
+        <SaveRuleToast
+          vendor={ruleCandidate.vendor}
+          categoryName={ruleCandidate.categoryName}
+          matchingCount={ruleCandidate.matchingCount}
+          onSave={handleSaveRule}
+          onDismiss={dismissRuleCandidate}
+        />
+      )}
     </div>
   )
 }
