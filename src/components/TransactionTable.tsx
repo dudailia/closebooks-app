@@ -10,6 +10,8 @@ import CommandPalette from '@/components/review/CommandPalette'
 import ShortcutLegend from '@/components/review/ShortcutLegend'
 import SaveRuleToast from '@/components/review/SaveRuleToast'
 import BulkActionBar from '@/components/review/BulkActionBar'
+import SplitModal from '@/components/review/SplitModal'
+import type { TransactionSplit } from '@/types'
 import { saveRule, bumpRuleUsage, findRuleForDescription } from '@/lib/review/rules'
 import { normalizeVendor, vendorPatternMatches } from '@/lib/review/vendor'
 
@@ -145,6 +147,11 @@ export default function TransactionTable({
   const [ruleCandidate, setRuleCandidate] = useState<{ vendor: string; accountCode: string; categoryName: string; matchingCount: number; ruleSuggestionOnly?: boolean } | null>(null)
   const approvalTracker = useRef<Map<string, { count: number; accountCode: string; categoryName: string; suggested: boolean }>>(new Map())
   const proactiveDismissed = useRef<Set<string>>(new Set())
+  const [splitTxId, setSplitTxId] = useState<string | null>(null)
+  const splitTx = useMemo(
+    () => transactions.find(t => t.id === splitTxId) ?? null,
+    [transactions, splitTxId]
+  )
 
   // Sync incoming prop changes (e.g. after rule auto-apply on hydrate)
   useEffect(() => { setTransactions(initialTransactions) }, [initialTransactions])
@@ -289,6 +296,36 @@ export default function TransactionTable({
       onTransactionsChange?.(next)
       return next
     })
+  }
+
+  function openSplit(id: string) {
+    setSplitTxId(id)
+  }
+  function openSplitForSelected() {
+    if (selectedRef.current.size !== 1) return
+    const [only] = Array.from(selectedRef.current)
+    setSplitTxId(only)
+  }
+  function handleSplitSave(splits: TransactionSplit[]) {
+    if (!splitTxId) return
+    const targetId = splitTxId
+    const target = transactionsRef.current.find(t => t.id === targetId)
+    setTransactions(prev => {
+      const next = prev.map(t =>
+        t.id === targetId ? { ...t, status: 'edited' as const, splits } : t
+      )
+      onTransactionsChange?.(next)
+      return next
+    })
+    if (target) {
+      onAudit?.({
+        action: 'tx_category_changed',
+        txId: targetId,
+        txDescription: target.description,
+        details: { from: target.final_category ?? target.suggested_category ?? '—', to: `Split into ${splits.length}` },
+      })
+    }
+    setSplitTxId(null)
   }
 
   function bulkExport() {
@@ -498,6 +535,13 @@ export default function TransactionTable({
   useShortcut({ id: 'tt-cmd-k', key: 'k', meta: true, label: 'Open command palette', group: 'Help',
     handler: () => setPaletteOpen(true) })
 
+  // S — split focused transaction
+  useShortcut({ id: 'tt-split', key: 's', label: 'Split focused transaction', group: 'Actions',
+    handler: () => {
+      const vis = visibleRef.current, fi = focusedIdxRef.current
+      if (fi >= 0) openSplit(vis[fi].id)
+    }})
+
   const allSelected = visible.length > 0 && selected.size === visible.length
   const selectedTotalAbs = useMemo(
     () => Math.abs(transactions.filter(t => selected.has(t.id)).reduce((s, t) => s + (t.type === 'credit' ? t.amount : -t.amount), 0)),
@@ -636,6 +680,7 @@ export default function TransactionTable({
                   onAudit={onAudit}
                   txAuditEvents={auditEvents.filter(e => e.txId === tx.id)}
                   onCategoryRuleCandidate={handleCategoryRuleCandidate}
+                  onSplit={openSplit}
                 />
               ))}
             </tbody>
@@ -701,7 +746,7 @@ export default function TransactionTable({
           { id: 'flag',    label: 'Flag', tone: 'danger', onClick: bulkFlag },
           { id: 'dup',     label: 'Duplicate', onClick: bulkDuplicate },
           { id: 'note',    label: 'Add note', onClick: bulkAddNote },
-          { id: 'split',   label: 'Split…', disabled: selected.size !== 1, onClick: () => { /* wired in Phase E */ } },
+          { id: 'split',   label: 'Split…', disabled: selected.size !== 1, onClick: openSplitForSelected },
           { id: 'export',  label: 'Export CSV', onClick: bulkExport },
         ]}
       />
@@ -722,6 +767,14 @@ export default function TransactionTable({
           onDismiss={dismissRuleCandidate}
         />
       )}
+
+      {/* Split modal */}
+      <SplitModal
+        transaction={splitTx}
+        chartOfAccounts={chartOfAccounts}
+        onSave={handleSplitSave}
+        onClose={() => setSplitTxId(null)}
+      />
     </div>
   )
 }

@@ -31,12 +31,32 @@ function isCogs(tx: Transaction): boolean {
   return COGS_KEYWORDS.some(k => cat.includes(k) || desc.includes(k))
 }
 
+export function expandSplits(transactions: Transaction[]): Transaction[] {
+  const out: Transaction[] = []
+  for (const tx of transactions) {
+    if (tx.splits && tx.splits.length > 0) {
+      for (const s of tx.splits) {
+        out.push({
+          ...tx,
+          id: `${tx.id}:${s.id}`,
+          amount: s.amount,
+          final_category: s.category,
+          final_account_code: s.account_code,
+        })
+      }
+    } else {
+      out.push(tx)
+    }
+  }
+  return out
+}
+
 export function calculatePnL(transactions: Transaction[], period: string): PnLReport {
   let revenue = 0
   let cogs = 0
   let operatingExpenses = 0
 
-  for (const tx of transactions) {
+  for (const tx of expandSplits(transactions)) {
     const amount = Math.abs(tx.amount)
     if (isRevenue(tx)) {
       revenue += amount

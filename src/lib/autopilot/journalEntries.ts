@@ -87,5 +87,22 @@ export function generateJournalEntry(transaction: Transaction): JournalEntry {
 }
 
 export function generateJournalEntries(transactions: Transaction[]): JournalEntry[] {
-  return transactions.map(generateJournalEntry)
+  const out: JournalEntry[] = []
+  for (const tx of transactions) {
+    if (tx.splits && tx.splits.length > 0) {
+      for (const s of tx.splits) {
+        const virtual: Transaction = {
+          ...tx,
+          id: `${tx.id}:${s.id}`,
+          amount: s.amount,
+          final_category: s.category,
+          final_account_code: s.account_code,
+        }
+        out.push(generateJournalEntry(virtual))
+      }
+    } else {
+      out.push(generateJournalEntry(tx))
+    }
+  }
+  return out
 }
