@@ -6,6 +6,8 @@ import TransactionTable from '@/components/TransactionTable'
 import { KeyboardShortcutProvider } from '@/lib/review/KeyboardShortcutProvider'
 import { hydrateRules, applyRulesToJob } from '@/lib/review/rules'
 import { getSupabaseAndFirm } from '@/lib/syncSupabase'
+import NarrativeInsight from '@/components/ai/NarrativeInsight'
+import AutoCloseModal from '@/components/ai/AutoCloseModal'
 import { getJob, saveJob, getJobs } from '@/lib/storage'
 import { dbGetJob, dbSaveJob } from '@/lib/db'
 import { detectRecurring } from '@/lib/recurringDetection'
@@ -868,6 +870,7 @@ export default function ReviewPage() {
   const [toasts, setToasts]     = useState<ToastState[]>([])
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([])
   const toastId = useRef(0)
+  const [autoCloseOpen, setAutoCloseOpen] = useState(false)
 
   // QBO — demo: localStorage; production: OAuth via /api/integrations/quickbooks/*
   const [qboConn,    setQboConn]    = useState<QBOConnection | null>(null)
@@ -1437,6 +1440,17 @@ export default function ReviewPage() {
               </button>
             )}
 
+            <button
+              onClick={() => setAutoCloseOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white"
+              style={{ backgroundColor: '#1a1714' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#0d0b09' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#1a1714' }}
+              title="Run the autonomous close agent"
+            >
+              ✦ Run Auto-Close
+            </button>
+
             {job.status !== 'completed' && (
               <button
                 onClick={handleComplete}
@@ -1505,6 +1519,19 @@ export default function ReviewPage() {
             {pct}% reviewed
           </span>
         </div>
+
+        {/* AI narrative summary */}
+        {job.transactions.length > 0 && (
+          <NarrativeInsight
+            clientName={job.client_name}
+            clientIndustry={clientIndustry ?? undefined}
+            period={new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            transactions={job.transactions}
+            priorTransactions={allClientJobs.find((j) => j.id !== job.id && j.created_at < job.created_at)?.transactions ?? null}
+            onHighlight={(ids) => setChatHighlightIds(ids)}
+            onEmailClient={() => setShowEmailDraft(true)}
+          />
+        )}
 
         {/* Review complete summary */}
         {allReviewed && (
@@ -1631,6 +1658,14 @@ export default function ReviewPage() {
 
       {/* Toast stack */}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
+
+      {/* Autonomous Close Agent modal */}
+      <AutoCloseModal
+        open={autoCloseOpen}
+        job={job}
+        onClose={() => setAutoCloseOpen(false)}
+        onApply={(finalTxs) => handleTransactionsChange(finalTxs)}
+      />
     </div>
     </KeyboardShortcutProvider>
   )
