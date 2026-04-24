@@ -4,6 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import PublicShell from '@/components/landing/PublicShell'
+import {
+  DarkCard,
+  DarkInput,
+  DarkLabel,
+  DarkButton,
+  DarkError,
+} from '@/components/landing/DarkFormPrimitives'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -13,14 +21,12 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
 
-  // Supabase sends the reset token in the URL hash — the client SDK reads it automatically
   useEffect(() => {
     const supabase = createClient()
     if (!supabase) return
-    // Listen for PASSWORD_RECOVERY event which fires when the hash token is valid
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
-        // User is authenticated with a temporary session — they can now update password
+        // Session is established from the hash token
       }
     })
     return () => subscription.unsubscribe()
@@ -28,100 +34,124 @@ export default function ResetPasswordPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (password !== confirm) { setError('Passwords do not match.'); return }
-    if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
+    if (password !== confirm) {
+      setError('Passwords do not match.')
+      return
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
 
     setLoading(true)
     setError(null)
 
     const supabase = createClient()
-    if (!supabase) { setError('Auth not configured.'); setLoading(false); return }
+    if (!supabase) {
+      setError('Auth not configured.')
+      setLoading(false)
+      return
+    }
 
-    const { error } = await supabase.auth.updateUser({ password })
+    const { error: authError } = await supabase.auth.updateUser({ password })
     setLoading(false)
 
-    if (error) { setError(error.message); return }
+    if (authError) {
+      setError(authError.message)
+      return
+    }
     setDone(true)
     setTimeout(() => router.push('/dashboard'), 2000)
   }
 
   if (done) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#faf8f4' }}>
-        <div className="w-full max-w-md rounded-2xl border p-8 text-center space-y-4" style={{ backgroundColor: '#fff', borderColor: '#e0dbd4' }}>
-          <div className="text-4xl">✓</div>
-          <h1 className="text-xl font-semibold" style={{ color: '#1a1714' }}>Password updated</h1>
-          <p className="text-sm" style={{ color: '#6b6560' }}>Redirecting to your dashboard…</p>
-        </div>
-      </div>
+      <PublicShell>
+        <main style={{ padding: '120px 24px 60px', maxWidth: 460, margin: '0 auto', textAlign: 'center' }}>
+          <DarkCard>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
+            <h1 style={{ fontSize: 22, fontWeight: 600, color: '#F0F0F5', margin: 0, marginBottom: 10 }}>
+              Password updated
+            </h1>
+            <p style={{ fontSize: 14, color: '#A8A8BC', margin: 0 }}>
+              Redirecting to your dashboard…
+            </p>
+          </DarkCard>
+        </main>
+      </PublicShell>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ backgroundColor: '#faf8f4' }}>
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
-          <Link href="/">
-            <div className="flex items-center gap-2.5">
-              <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
-                <rect x="2" y="1" width="13" height="17" rx="2" stroke="#b8734a" strokeWidth="1.5" fill="none" />
-                <path d="M6 6h5M6 10h5M6 14h3" stroke="#b8734a" strokeWidth="1.3" strokeLinecap="round" />
-              </svg>
-              <span style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', fontSize: '20px' }}>
-                <span style={{ color: '#1a1714' }}>Close</span><span style={{ color: '#b8734a' }}>Books</span>
-              </span>
-            </div>
-          </Link>
+    <PublicShell>
+      <main style={{ padding: '120px 24px 60px', maxWidth: 460, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <h1
+            style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: 36,
+              letterSpacing: '-0.03em',
+              color: '#F0F0F5',
+              margin: 0,
+              fontWeight: 400,
+              lineHeight: 1.1,
+            }}
+          >
+            Set a new password
+          </h1>
+          <p style={{ fontSize: 14, color: '#A8A8BC', margin: '10px 0 0' }}>
+            Choose a strong password for your account.
+          </p>
         </div>
 
-        <div className="rounded-2xl border p-8" style={{ backgroundColor: '#fff', borderColor: '#e0dbd4' }}>
-          <h1 className="text-2xl mb-1" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#1a1714', letterSpacing: '-0.02em' }}>
-            Set new password
-          </h1>
-          <p className="text-sm mb-6" style={{ color: '#a09a94' }}>Choose a strong password for your account.</p>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {[
-              { label: 'New Password', value: password, onChange: setPassword, autoComplete: 'new-password' },
-              { label: 'Confirm Password', value: confirm, onChange: setConfirm, autoComplete: 'new-password' },
-            ].map(f => (
-              <div key={f.label} className="space-y-1.5">
-                <label className="block text-sm font-medium" style={{ color: '#1a1714' }}>{f.label}</label>
-                <input
-                  type="password"
-                  value={f.value}
-                  onChange={e => f.onChange(e.target.value)}
-                  placeholder="8+ characters"
-                  required
-                  minLength={8}
-                  autoComplete={f.autoComplete}
-                  className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
-                  style={{ borderColor: '#e0dbd4', color: '#1a1714', backgroundColor: '#faf8f4' }}
-                  onFocus={e => { e.currentTarget.style.borderColor = '#b8734a' }}
-                  onBlur={e => { e.currentTarget.style.borderColor = '#e0dbd4' }}
-                />
-              </div>
-            ))}
-
+        <DarkCard>
+          <form onSubmit={handleSubmit}>
             {error && (
-              <div className="rounded-lg px-3 py-2.5 text-sm" style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
-                {error}
+              <div style={{ marginBottom: 16 }}>
+                <DarkError>{error}</DarkError>
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
-              style={{ backgroundColor: '#2d5a27' }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#1e3d1a' }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
-            >
+            <div style={{ marginBottom: 14 }}>
+              <DarkLabel htmlFor="password">New password</DarkLabel>
+              <DarkInput
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="8+ characters"
+              />
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <DarkLabel htmlFor="confirm">Confirm password</DarkLabel>
+              <DarkInput
+                id="confirm"
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="Re-enter password"
+              />
+            </div>
+
+            <DarkButton type="submit" block disabled={loading}>
               {loading ? 'Updating…' : 'Update password'}
-            </button>
+            </DarkButton>
           </form>
-        </div>
-      </div>
-    </div>
+
+          <p style={{ marginTop: 20, fontSize: 13, textAlign: 'center', color: '#A8A8BC' }}>
+            <Link href="/login" style={{ color: '#A8A8BC', textDecoration: 'none' }}>
+              ← Back to sign in
+            </Link>
+          </p>
+        </DarkCard>
+      </main>
+    </PublicShell>
   )
 }

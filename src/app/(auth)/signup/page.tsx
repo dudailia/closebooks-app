@@ -1,113 +1,46 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient, supabaseConfigured } from '@/lib/supabase/client'
 import { dbEnsureFirm } from '@/lib/db'
 import { loadFirmSettings, saveFirmSettings } from '@/lib/firmSettings'
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared input components
-// ─────────────────────────────────────────────────────────────────────────────
-
-const baseStyle = { borderColor: '#e0dbd4', color: '#1a1714', backgroundColor: '#faf8f4' }
-const focusStyle = { borderColor: '#b8734a', backgroundColor: '#ffffff', boxShadow: '0 0 0 3px rgba(184,115,74,0.12)' }
-const inputCls = 'w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-colors'
-
-function Field({
-  label,
-  type = 'text',
-  value,
-  onChange,
-  placeholder,
-  autoComplete,
-  minLength,
-}: {
-  label: string
-  type?: string
-  value: string
-  onChange: (v: string) => void
-  placeholder?: string
-  autoComplete?: string
-  minLength?: number
-}) {
-  const [focused, setFocused] = useState(false)
-  return (
-    <div className="space-y-1.5">
-      <label className="block text-sm font-medium" style={{ color: '#1a1714' }}>{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        required
-        minLength={minLength}
-        className={inputCls}
-        style={focused ? { ...baseStyle, ...focusStyle } : baseStyle}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-      />
-    </div>
-  )
-}
-
-function SelectField({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  options: { value: string; label: string }[]
-}) {
-  const [focused, setFocused] = useState(false)
-  return (
-    <div className="space-y-1.5">
-      <label className="block text-sm font-medium" style={{ color: '#1a1714' }}>{label}</label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required
-        className={inputCls + ' appearance-none cursor-pointer'}
-        style={focused ? { ...baseStyle, ...focusStyle } : baseStyle}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-      >
-        <option value="" disabled>Select…</option>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
-    </div>
-  )
-}
+import PublicShell from '@/components/landing/PublicShell'
+import {
+  DarkCard,
+  DarkInput,
+  DarkSelect,
+  DarkLabel,
+  DarkButton,
+  DarkDivider,
+  DarkError,
+  GoogleIcon,
+} from '@/components/landing/DarkFormPrimitives'
+import { TIERS } from '@/lib/landing/tiers'
 
 const FIRM_SIZE_OPTIONS = [
-  { value: '1-5',   label: '1–5 people'   },
-  { value: '6-15',  label: '6–15 people'  },
+  { value: '1-5', label: '1–5 people' },
+  { value: '6-15', label: '6–15 people' },
   { value: '16-50', label: '16–50 people' },
-  { value: '50+',   label: '50+ people'   },
+  { value: '50+', label: '50+ people' },
 ]
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Page
-// ─────────────────────────────────────────────────────────────────────────────
-
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter()
-  const [fullName,  setFullName]  = useState('')
-  const [email,     setEmail]     = useState('')
-  const [password,  setPassword]  = useState('')
-  const [firmName,  setFirmName]  = useState('')
-  const [firmSize,  setFirmSize]  = useState('')
-  const [error,     setError]     = useState<string | null>(null)
-  const [loading,   setLoading]   = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false)
+  const searchParams = useSearchParams()
+  const planSlug = searchParams.get('plan')
+  const billing = searchParams.get('billing')
+  const selectedTier = TIERS.find((t) => t.id === planSlug) ?? null
 
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [firmName, setFirmName] = useState('')
+  const [firmSize, setFirmSize] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [emailConfirmRequired, setEmailConfirmRequired] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -117,7 +50,6 @@ export default function SignupPage() {
 
     const supabase = createClient()
     if (!supabase) {
-      // Demo mode — save firm info and go to dashboard
       if (firmName) {
         void saveFirmSettings({ ...loadFirmSettings(), firmName, preparedBy: fullName })
       }
@@ -126,7 +58,7 @@ export default function SignupPage() {
       return
     }
 
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -134,26 +66,34 @@ export default function SignupPage() {
           full_name: fullName,
           firm_name: firmName,
           firm_size: firmSize,
+          selected_plan: planSlug ?? undefined,
+          selected_billing: billing ?? undefined,
         },
       },
     })
 
-    if (error) { setError(error.message); setLoading(false); return }
+    if (authError) {
+      setError(authError.message)
+      setLoading(false)
+      return
+    }
 
-    // If email confirmation is required, the user object will be present but
-    // the session will be null. Show a confirmation notice instead of redirecting.
     if (data.user && !data.session) {
       setEmailConfirmRequired(true)
       setLoading(false)
       return
     }
 
-    // Create firm record in Supabase (fire-and-forget — app works without it)
     if (data.user) {
       dbEnsureFirm(firmName || email.split('@')[0], data.user.id).catch(() => {})
     }
 
-    router.push('/dashboard')
+    // If a plan was pre-selected, route to /pricing for checkout
+    if (planSlug) {
+      router.push('/pricing')
+    } else {
+      router.push('/dashboard')
+    }
     router.refresh()
     setLoading(false)
   }
@@ -168,229 +108,241 @@ export default function SignupPage() {
       return
     }
 
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error: authError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
-    if (error) { setError(error.message); setGoogleLoading(false) }
+    if (authError) {
+      setError(authError.message)
+      setGoogleLoading(false)
+    }
   }
-
-  // ── Email confirmation notice ─────────────────────────────────────────────
 
   if (emailConfirmRequired) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#faf8f4' }}>
-        <div className="w-full max-w-md rounded-2xl border p-8 text-center space-y-4" style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}>
-          <LedgerLogo />
-          <div className="text-4xl mt-2">📬</div>
-          <h1 className="text-xl font-semibold" style={{ color: '#1a1714' }}>Check your email</h1>
-          <p className="text-sm" style={{ color: '#6b6560' }}>
-            We sent a confirmation link to <strong>{email}</strong>.<br />
-            Click the link to activate your account and go straight to your dashboard.
-          </p>
-          <p className="text-xs" style={{ color: '#a09a94' }}>
-            Didn&apos;t get it? Check spam or{' '}
-            <button onClick={() => setEmailConfirmRequired(false)} className="underline" style={{ color: '#b8734a' }}>
-              try again
-            </button>
-            .
-          </p>
-          <Link href="/demo" className="inline-block text-sm font-medium mt-2" style={{ color: '#2d5a27' }}>
-            While you wait, try the live demo →
-          </Link>
-        </div>
-      </div>
+      <PublicShell>
+        <main style={{ padding: '120px 24px 60px', maxWidth: 460, margin: '0 auto', textAlign: 'center' }}>
+          <DarkCard>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>📬</div>
+            <h1 style={{ fontSize: 22, fontWeight: 600, color: '#F0F0F5', margin: 0, marginBottom: 10 }}>
+              Check your email
+            </h1>
+            <p style={{ fontSize: 14, color: '#A8A8BC', margin: 0, lineHeight: 1.55 }}>
+              We sent a confirmation link to <strong style={{ color: '#F0F0F5' }}>{email}</strong>.
+              Click it to activate your account and continue to your dashboard.
+            </p>
+            <p style={{ fontSize: 12, color: '#6E6E85', marginTop: 14 }}>
+              Didn&apos;t get it? Check spam or{' '}
+              <button
+                onClick={() => setEmailConfirmRequired(false)}
+                style={{
+                  color: '#00D97E',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  fontSize: 12,
+                }}
+              >
+                try again
+              </button>
+              .
+            </p>
+          </DarkCard>
+        </main>
+      </PublicShell>
     )
   }
 
-  // ── Unconfigured: redirect to dashboard (demo mode) ──────────────────────
-
   if (!supabaseConfigured) {
-    // In demo mode (no Supabase), just create a local account and go to dashboard
     if (typeof window !== 'undefined') {
-      // Save basic firm info to localStorage so dashboard can use it
       if (firmName) {
         void saveFirmSettings({ ...loadFirmSettings(), firmName, preparedBy: fullName })
       }
       window.location.href = '/dashboard'
     }
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#faf8f4' }}>
-        <div className="text-sm" style={{ color: '#a09a94' }}>Setting up your account…</div>
-      </div>
+      <PublicShell>
+        <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ fontSize: 14, color: '#6E6E85' }}>Setting up your account…</p>
+        </main>
+      </PublicShell>
     )
   }
 
-  // ── Main form ──────────────────────────────────────────────────────────────
-
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12" style={{ backgroundColor: '#faf8f4' }}>
-      <div className="w-full max-w-md">
-
-        {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <Link href="/" className="flex items-center gap-2.5 select-none">
-            <LedgerLogo />
-          </Link>
-        </div>
-
-        {/* Card */}
-        <div className="rounded-2xl border p-8" style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}>
-
+    <PublicShell>
+      <main style={{ padding: '120px 24px 60px', maxWidth: 520, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <h1
-            className="text-2xl mb-1"
             style={{
-              fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
-              color: '#1a1714',
-              letterSpacing: '-0.02em',
+              fontFamily: 'var(--font-serif)',
+              fontSize: 40,
+              letterSpacing: '-0.03em',
+              color: '#F0F0F5',
+              margin: 0,
+              fontWeight: 400,
+              lineHeight: 1.1,
             }}
           >
             Start closing faster
           </h1>
-          <p className="text-sm mb-6" style={{ color: '#a09a94' }}>
+          <p style={{ fontSize: 14, color: '#A8A8BC', margin: '10px 0 0' }}>
             Free to try — no credit card required
-          </p>
-
-          {/* Google */}
-          <button
-            type="button"
-            onClick={handleGoogle}
-            disabled={googleLoading || loading}
-            className="w-full flex items-center justify-center gap-3 rounded-xl border py-2.5 text-sm font-medium transition-colors disabled:opacity-50 mb-5"
-            style={{ borderColor: '#e0dbd4', color: '#1a1714', backgroundColor: '#faf8f4' }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f0ebe3' }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#faf8f4' }}
-          >
-            <GoogleIcon />
-            {googleLoading ? 'Redirecting…' : 'Continue with Google'}
-          </button>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 mb-5">
-            <div className="flex-1 h-px" style={{ backgroundColor: '#e8e0d4' }} />
-            <span className="text-xs" style={{ color: '#a09a94' }}>or sign up with email</span>
-            <div className="flex-1 h-px" style={{ backgroundColor: '#e8e0d4' }} />
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field
-                label="Full Name"
-                value={fullName}
-                onChange={setFullName}
-                placeholder="Jane Smith"
-                autoComplete="name"
-              />
-              <Field
-                label="Email"
-                type="email"
-                value={email}
-                onChange={setEmail}
-                placeholder="jane@firm.com"
-                autoComplete="email"
-              />
-            </div>
-
-            <Field
-              label="Password"
-              type="password"
-              value={password}
-              onChange={setPassword}
-              placeholder="8+ characters"
-              autoComplete="new-password"
-              minLength={8}
-            />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field
-                label="Firm Name"
-                value={firmName}
-                onChange={setFirmName}
-                placeholder="Smith CPA"
-                autoComplete="organization"
-              />
-              <SelectField
-                label="Firm Size"
-                value={firmSize}
-                onChange={setFirmSize}
-                options={FIRM_SIZE_OPTIONS}
-              />
-            </div>
-
-            {error && (
-              <div
-                className="rounded-lg px-3 py-2.5 text-sm"
-                style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}
-              >
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading || googleLoading}
-              className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-50"
-              style={{ backgroundColor: '#2d5a27' }}
-              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#1e3d1a' }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
-            >
-              {loading ? 'Creating account…' : 'Create free account'}
-            </button>
-          </form>
-
-          <p className="mt-5 text-sm text-center" style={{ color: '#6b6560' }}>
-            Already have an account?{' '}
-            <Link href="/login" className="font-medium" style={{ color: '#b8734a' }}
-              onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline' }}
-              onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none' }}
-            >
-              Sign in
-            </Link>
           </p>
         </div>
 
-        <p className="mt-6 text-center text-xs" style={{ color: '#a09a94' }}>
-          <Link href="/demo" style={{ color: '#a09a94' }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = '#6b6560' }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = '#a09a94' }}
-          >
-            Try the demo first — no account needed →
+        <DarkCard>
+          {selectedTier && (
+            <div
+              style={{
+                padding: '10px 14px',
+                borderRadius: 10,
+                backgroundColor: 'rgba(0,217,126,0.08)',
+                border: '1px solid rgba(0,217,126,0.24)',
+                marginBottom: 18,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 8,
+                flexWrap: 'wrap',
+              }}
+            >
+              <p style={{ margin: 0, fontSize: 13, color: '#F0F0F5' }}>
+                Starting <strong>{selectedTier.name}</strong>
+                {billing === 'annual' ? ' · Annual (20% off)' : ' · Monthly'}
+              </p>
+              <Link
+                href="/pricing"
+                style={{ fontSize: 12, color: '#00D97E', textDecoration: 'none' }}
+              >
+                Change plan
+              </Link>
+            </div>
+          )}
+
+          {error && (
+            <div style={{ marginBottom: 16 }}>
+              <DarkError>{error}</DarkError>
+            </div>
+          )}
+
+          <DarkButton variant="ghost" block onClick={handleGoogle} disabled={googleLoading || loading}>
+            <GoogleIcon />
+            {googleLoading ? 'Redirecting…' : 'Continue with Google'}
+          </DarkButton>
+
+          <DarkDivider label="or" />
+
+          <form onSubmit={handleSubmit}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+              <div>
+                <DarkLabel htmlFor="fullName">Full Name</DarkLabel>
+                <DarkInput
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  autoComplete="name"
+                  placeholder="Jane Smith"
+                />
+              </div>
+              <div>
+                <DarkLabel htmlFor="email">Email</DarkLabel>
+                <DarkInput
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  placeholder="jane@firm.com"
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <DarkLabel htmlFor="password">Password</DarkLabel>
+              <DarkInput
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="8+ characters"
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+              <div>
+                <DarkLabel htmlFor="firmName">Firm Name</DarkLabel>
+                <DarkInput
+                  id="firmName"
+                  type="text"
+                  value={firmName}
+                  onChange={(e) => setFirmName(e.target.value)}
+                  required
+                  autoComplete="organization"
+                  placeholder="Smith CPA"
+                />
+              </div>
+              <div>
+                <DarkLabel htmlFor="firmSize">Firm Size</DarkLabel>
+                <DarkSelect
+                  id="firmSize"
+                  value={firmSize}
+                  onChange={(e) => setFirmSize(e.target.value)}
+                  required
+                >
+                  <option value="" disabled>Select…</option>
+                  {FIRM_SIZE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value} style={{ backgroundColor: '#111118', color: '#F0F0F5' }}>
+                      {o.label}
+                    </option>
+                  ))}
+                </DarkSelect>
+              </div>
+            </div>
+
+            <DarkButton type="submit" block disabled={loading || googleLoading}>
+              {loading ? 'Creating account…' : 'Create free account'}
+            </DarkButton>
+          </form>
+
+          <p style={{ marginTop: 20, fontSize: 13, textAlign: 'center', color: '#A8A8BC' }}>
+            Already have an account?{' '}
+            <Link href="/login" style={{ color: '#00D97E', textDecoration: 'none', fontWeight: 600 }}>
+              Sign in →
+            </Link>
+          </p>
+        </DarkCard>
+
+        <p style={{ marginTop: 20, fontSize: 12, textAlign: 'center', color: '#6E6E85' }}>
+          <Link href="/demo" style={{ color: '#6E6E85', textDecoration: 'none' }}>
+            Try the live demo first — no account needed →
           </Link>
         </p>
-      </div>
-    </div>
+      </main>
+    </PublicShell>
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Icons
-// ─────────────────────────────────────────────────────────────────────────────
-
-function LedgerLogo() {
+export default function SignupPage() {
   return (
-    <div className="flex items-center gap-2.5">
-      <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
-        <rect x="2" y="1" width="13" height="17" rx="2" stroke="#b8734a" strokeWidth="1.5" fill="none" />
-        <path d="M6 6h5M6 10h5M6 14h3" stroke="#b8734a" strokeWidth="1.3" strokeLinecap="round" />
-        <rect x="13" y="4" width="5" height="13" rx="1.5" fill="#b8734a" opacity="0.15" />
-        <path d="M14 7h3M14 10h3M14 13h2" stroke="#b8734a" strokeWidth="1.1" strokeLinecap="round" opacity="0.6" />
-      </svg>
-      <span style={{ fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif', fontSize: '20px', letterSpacing: '-0.01em', lineHeight: 1 }}>
-        <span style={{ color: '#1a1714' }}>Close</span>
-        <span style={{ color: '#b8734a' }}>Books</span>
-      </span>
-    </div>
-  )
-}
-
-function GoogleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-      <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
-      <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-    </svg>
+    <Suspense
+      fallback={
+        <PublicShell>
+          <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <p style={{ fontSize: 14, color: '#6E6E85' }}>Loading…</p>
+          </main>
+        </PublicShell>
+      }
+    >
+      <SignupForm />
+    </Suspense>
   )
 }
