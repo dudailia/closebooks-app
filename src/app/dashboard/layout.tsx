@@ -9,6 +9,7 @@ import SubscriptionBanners from '@/components/SubscriptionBanners'
 import UpgradeModal from '@/components/UpgradeModal'
 import SessionPulse from '@/components/SessionPulse'
 import CopilotShortcut from '@/components/CopilotShortcut'
+import AppChatPanelHost from '@/components/ai/AppChatPanelHost'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -49,6 +50,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <UpgradeModal />
         </SubscriptionProvider>
       </div>
+      <AppChatPanelHost />
     </div>
   )
 }
