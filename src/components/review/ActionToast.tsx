@@ -44,7 +44,7 @@ function ActionToast({ toast, onDismiss }: { toast: ToastMsg; onDismiss: (id: st
   }, [toast.id, toast.durationMs, onDismiss])
 
   const toneBg =
-    toast.tone === 'success' ? '#2d5a27' : toast.tone === 'warning' ? '#b8734a' : '#1a1714'
+    toast.tone === 'success' ? 'var(--accent)' : toast.tone === 'warning' ? 'var(--warning)' : 'var(--text-primary)'
   return (
     <div
       style={{

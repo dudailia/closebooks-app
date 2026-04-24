@@ -43,8 +43,8 @@ function MobileCard({
   const isCredit = transaction.type === 'credit'
   const amt = transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const statusColors: Record<Transaction['status'], [string, string]> = {
-    approved: ['#065f46', '#ecfdf5'], pending: ['#854d0e', '#fef9c3'],
-    flagged: ['#991b1b', '#fef2f2'], edited: ['#1d4ed8', '#eff6ff'],
+    approved: ['var(--accent)', 'var(--accent-soft)'], pending: ['var(--warning)', 'var(--warning-soft)'],
+    flagged: ['var(--danger)', 'var(--danger-soft)'], edited: ['var(--ring-focus)', 'var(--ring-soft)'],
   }
   const [tc, bg] = statusColors[transaction.status]
   function approve() {
@@ -58,38 +58,38 @@ function MobileCard({
     setExpanded(false)
   }
   return (
-    <div style={{ border: `1px solid ${selected ? '#b8734a' : '#e0dbd4'}`, borderRadius: 10, backgroundColor: selected ? '#fdf2e9' : '#fff', overflow: 'hidden' }}>
+    <div style={{ border: `1px solid ${selected ? 'var(--warning)' : 'var(--border-subtle)'}`, borderRadius: 10, backgroundColor: selected ? 'var(--surface-elevated)' : '#fff', overflow: 'hidden' }}>
       <div style={{ display: 'flex', gap: 10, padding: '10px 12px', cursor: 'pointer', alignItems: 'flex-start' }} onClick={() => setExpanded(v => !v)}>
         <div onClick={e => { e.stopPropagation(); onToggleSelect(transaction.id) }} style={{ paddingTop: 2 }}>
-          <input type="checkbox" checked={selected} onChange={() => onToggleSelect(transaction.id)} style={{ accentColor: '#2d5a27' }} />
+          <input type="checkbox" checked={selected} onChange={() => onToggleSelect(transaction.id)} style={{ accentColor: 'var(--accent)' }} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#6b6560' }}>{transaction.date}</span>
-            <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 600, color: isCredit ? '#166534' : '#991b1b', flexShrink: 0 }}>
+            <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--text-secondary)' }}>{transaction.date}</span>
+            <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 600, color: isCredit ? 'var(--accent)' : 'var(--danger)', flexShrink: 0 }}>
               {isCredit ? '+' : '−'}${amt}
             </span>
           </div>
-          <p style={{ fontSize: 13, fontWeight: 500, color: '#1a1714', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={transaction.description}>
+          <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={transaction.description}>
             {transaction.description}
           </p>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <span style={{ fontSize: 11, fontWeight: 500, padding: '1px 7px', borderRadius: 999, color: tc, backgroundColor: bg }}>{transaction.status}</span>
-            {transaction.suggested_category && <span style={{ fontSize: 11, color: '#6b6560', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{transaction.suggested_category}</span>}
+            {transaction.suggested_category && <span style={{ fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{transaction.suggested_category}</span>}
           </div>
         </div>
         <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', flexShrink: 0, marginTop: 4 }}>
-          <path d="M2 4l4 4 4-4" stroke="#6b6560" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M2 4l4 4 4-4" stroke="var(--text-secondary)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </div>
       {expanded && (
-        <div style={{ padding: '8px 12px 12px', borderTop: '1px solid #f0ebe3', display: 'flex', gap: 6 }}>
-          <button onClick={approve} style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', backgroundColor: '#2d5a27', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Approve</button>
-          <button onClick={flag} style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: '1px solid #dc2626', backgroundColor: '#fff', color: '#991b1b', fontSize: 12, cursor: 'pointer' }}>Flag</button>
+        <div style={{ padding: '8px 12px 12px', borderTop: '1px solid var(--border-subtle)', display: 'flex', gap: 6 }}>
+          <button onClick={approve} style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', backgroundColor: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Approve</button>
+          <button onClick={flag} style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: '1px solid var(--danger)', backgroundColor: 'var(--surface-card)', color: 'var(--danger)', fontSize: 12, cursor: 'pointer' }}>Flag</button>
           <select value={transaction.final_account_code ?? transaction.suggested_account_code ?? ''}
             onChange={e => { const a = chartOfAccounts.find(x => x.code === e.target.value); onChange({ ...transaction, status: 'edited', final_account_code: e.target.value, final_category: a?.name ?? e.target.value }) }}
             onClick={e => e.stopPropagation()}
-            style={{ flex: 1, border: '1px solid #e0dbd4', borderRadius: 8, padding: '6px 4px', fontSize: 11, color: '#1a1714' }}>
+            style={{ flex: 1, border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '6px 4px', fontSize: 11, color: 'var(--text-primary)' }}>
             <option value="">Category…</option>
             {chartOfAccounts.map(a => <option key={a.code} value={a.code}>[{a.code}] {a.name}</option>)}
           </select>
@@ -109,22 +109,22 @@ function ConfirmModal({ count, remaining, onConfirm, onCancel }: { count: number
   }, [onCancel])
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, backgroundColor: 'rgba(0,0,0,0.35)' }} onClick={onCancel}>
-      <div style={{ backgroundColor: '#fff', borderRadius: 16, border: '1px solid #e0dbd4', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', padding: 24, maxWidth: 360, width: '100%' }} onClick={e => e.stopPropagation()}>
+      <div style={{ backgroundColor: 'var(--surface-card)', borderRadius: 16, border: '1px solid var(--border-subtle)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', padding: 24, maxWidth: 360, width: '100%' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#e8f0e6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8l4 4 8-8" stroke="#2d5a27" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <div style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8l4 4 8-8" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
           <div>
-            <p style={{ fontSize: 14, fontWeight: 600, color: '#1a1714', margin: 0 }}>Approve high-confidence transactions?</p>
-            <p style={{ fontSize: 13, color: '#6b6560', marginTop: 4 }}>
-              Approves <strong style={{ color: '#2d5a27' }}>{count}</strong> transaction{count !== 1 ? 's' : ''} with confidence ≥ 85%
+            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Approve high-confidence transactions?</p>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+              Approves <strong style={{ color: 'var(--accent)' }}>{count}</strong> transaction{count !== 1 ? 's' : ''} with confidence ≥ 85%
               {remaining > 0 ? `, leaving ${remaining} for manual review.` : '. All pending transactions will be approved.'}
             </p>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button onClick={onCancel} style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid #e0dbd4', backgroundColor: '#fff', color: '#6b6560', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-          <button onClick={onConfirm} style={{ padding: '7px 16px', borderRadius: 8, border: 'none', backgroundColor: '#2d5a27', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Approve {count}</button>
+          <button onClick={onCancel} style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid var(--border-subtle)', backgroundColor: 'var(--surface-card)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+          <button onClick={onConfirm} style={{ padding: '7px 16px', borderRadius: 8, border: 'none', backgroundColor: 'var(--accent)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Approve {count}</button>
         </div>
       </div>
     </div>
@@ -744,14 +744,14 @@ export default function TransactionTable({
     padding: '10px 8px',
     fontSize: 11,
     fontWeight: 500,
-    color: '#6b6560',
+    color: 'var(--text-secondary)',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
     textAlign: 'left',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
-    borderBottom: '1px solid #e0dbd4',
-    backgroundColor: '#f5f0ea',
+    borderBottom: '1px solid var(--border-subtle)',
+    backgroundColor: 'var(--surface-elevated)',
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -760,13 +760,13 @@ export default function TransactionTable({
     <div>
 
       {approveResult && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', marginBottom: 10, borderRadius: 10, border: '1px solid #059669', backgroundColor: '#ecfdf5', color: '#065f46', fontSize: 13 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', marginBottom: 10, borderRadius: 10, border: '1px solid var(--accent)', backgroundColor: 'var(--accent-soft)', color: 'var(--accent)', fontSize: 13 }}>
           <span><strong>✓ {approveResult.approved} approved.</strong>{approveResult.remaining > 0 ? ` ${approveResult.remaining} transaction${approveResult.remaining !== 1 ? 's' : ''} remaining.` : ' All transactions approved.'}</span>
-          <button onClick={() => setApproveResult(null)} style={{ background: 'none', border: 'none', fontSize: 18, lineHeight: 1, opacity: 0.5, cursor: 'pointer', color: '#065f46' }}>×</button>
+          <button onClick={() => setApproveResult(null)} style={{ background: 'none', border: 'none', fontSize: 18, lineHeight: 1, opacity: 0.5, cursor: 'pointer', color: 'var(--accent)' }}>×</button>
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid #e0dbd4', flexWrap: 'wrap', paddingBottom: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid var(--border-subtle)', flexWrap: 'wrap', paddingBottom: 0 }}>
         <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
           {(['all', 'pending', 'approved', 'flagged'] as FilterTab[]).map(tab => {
             const labels: Record<FilterTab, string> = { all: 'All', pending: 'Pending', approved: 'Approved', flagged: 'Flagged' }
@@ -774,9 +774,9 @@ export default function TransactionTable({
             return (
               <button key={tab}
                 onClick={() => { setActiveTab(tab); setSelected(new Set()) }}
-                style={{ padding: '8px 10px', fontSize: 13, fontWeight: 500, border: 'none', borderBottom: `2px solid ${active ? '#2d5a27' : 'transparent'}`, marginBottom: -1, backgroundColor: 'transparent', color: active ? '#2d5a27' : '#6b6560', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                style={{ padding: '8px 10px', fontSize: 13, fontWeight: 500, border: 'none', borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`, marginBottom: -1, backgroundColor: 'transparent', color: active ? 'var(--accent)' : 'var(--text-secondary)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                 {labels[tab]}
-                <span style={{ marginLeft: 5, fontSize: 11, fontFamily: 'monospace', padding: '1px 5px', borderRadius: 999, backgroundColor: active ? '#d4e8d0' : '#f5f0ea', color: active ? '#2d5a27' : '#a09a94' }}>
+                <span style={{ marginLeft: 5, fontSize: 11, fontFamily: 'monospace', padding: '1px 5px', borderRadius: 999, backgroundColor: active ? 'var(--accent-soft)' : 'var(--surface-elevated)', color: active ? 'var(--accent)' : 'var(--text-tertiary)' }}>
                   {counts[tab]}
                 </span>
               </button>
@@ -788,9 +788,9 @@ export default function TransactionTable({
 
         {highConfPending > 0 && (
           <button onClick={() => setShowConfirm(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, border: 'none', backgroundColor: '#2d5a27', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2d5a27' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, border: 'none', backgroundColor: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent)' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--accent)' }}>
             <svg width="10" height="10" viewBox="0 0 13 13" fill="none"><path d="M2 6.5l3 3 6-6" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
             Approve {highConfPending} high-confidence
           </button>
@@ -798,13 +798,13 @@ export default function TransactionTable({
 
         <div style={{ position: 'relative', flexShrink: 0, paddingBottom: 2 }}>
           <svg style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="13" height="13" viewBox="0 0 14 14" fill="none">
-            <circle cx="6" cy="6" r="4" stroke="#a09a94" strokeWidth="1.4"/>
-            <path d="M9.5 9.5L12 12" stroke="#a09a94" strokeWidth="1.4" strokeLinecap="round"/>
+            <circle cx="6" cy="6" r="4" stroke="var(--text-tertiary)" strokeWidth="1.4"/>
+            <path d="M9.5 9.5L12 12" stroke="var(--text-tertiary)" strokeWidth="1.4" strokeLinecap="round"/>
           </svg>
           <input ref={searchInputRef} type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search… (press /)"
-            style={{ paddingLeft: 26, paddingRight: 10, paddingTop: 6, paddingBottom: 6, width: 200, borderRadius: 8, border: '1px solid #e0dbd4', backgroundColor: '#faf8f4', fontSize: 13, color: '#1a1714', outline: 'none' }}
-            onFocus={e => { e.currentTarget.style.borderColor = '#2d5a27' }}
-            onBlur={e => { e.currentTarget.style.borderColor = '#e0dbd4' }}
+            style={{ paddingLeft: 26, paddingRight: 10, paddingTop: 6, paddingBottom: 6, width: 200, borderRadius: 8, border: '1px solid var(--border-subtle)', backgroundColor: 'var(--surface-base)', fontSize: 13, color: 'var(--text-primary)', outline: 'none' }}
+            onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)' }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)' }}
           />
         </div>
       </div>
@@ -812,7 +812,7 @@ export default function TransactionTable({
       {/* Mobile cards */}
       <div className="md:hidden" style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
         {visible.length === 0
-          ? <p style={{ textAlign: 'center', padding: '40px 0', color: '#a09a94', fontSize: 13 }}>{search ? 'No transactions match your search.' : 'No transactions in this category.'}</p>
+          ? <p style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-tertiary)', fontSize: 13 }}>{search ? 'No transactions match your search.' : 'No transactions in this category.'}</p>
           : visible.map(tx => (
             <MobileCard key={tx.id} transaction={tx} selected={selected.has(tx.id)} onToggleSelect={toggleSelect} onChange={handleChange} chartOfAccounts={chartOfAccounts} onAudit={onAudit} />
           ))
@@ -820,10 +820,10 @@ export default function TransactionTable({
       </div>
 
       {/* Desktop table */}
-      <div className="hidden md:block" style={{ marginTop: 10, borderRadius: 10, border: '1px solid #e0dbd4', overflow: 'hidden' }}>
+      <div className="hidden md:block" style={{ marginTop: 10, borderRadius: 10, border: '1px solid var(--border-subtle)', overflow: 'hidden' }}>
         {visible.length === 0 ? (
           <div style={{ padding: '48px 0', textAlign: 'center' }}>
-            <p style={{ color: '#a09a94', fontSize: 13 }}>{search ? 'No transactions match your search.' : 'No transactions in this category.'}</p>
+            <p style={{ color: 'var(--text-tertiary)', fontSize: 13 }}>{search ? 'No transactions match your search.' : 'No transactions in this category.'}</p>
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
@@ -833,7 +833,7 @@ export default function TransactionTable({
             <thead>
               <tr>
                 <th style={{ ...TH, textAlign: 'center' }}>
-                  <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} style={{ accentColor: '#2d5a27', cursor: 'pointer' }} title={allSelected ? 'Deselect all' : 'Select all'} />
+                  <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} style={{ accentColor: 'var(--accent)', cursor: 'pointer' }} title={allSelected ? 'Deselect all' : 'Select all'} />
                 </th>
                 <th style={TH}>Date</th>
                 <th style={TH}>Description</th>
@@ -870,7 +870,7 @@ export default function TransactionTable({
 
       {visible.length > 0 && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: 8 }}>
-          <p style={{ fontSize: 12, color: '#a09a94' }}>Showing {visible.length} of {transactions.length}</p>
+          <p style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Showing {visible.length} of {transactions.length}</p>
         </div>
       )}
 

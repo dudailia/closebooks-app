@@ -47,7 +47,7 @@ export default function BulkActionBar({ count, totalAmount, actions, onClear }: 
         transform: `translate(-50%, ${visible ? '0' : '100%'})`,
         transition: 'transform 0.22s cubic-bezier(.2,.8,.2,1)',
         zIndex: 800,
-        backgroundColor: '#1a1714',
+        backgroundColor: 'var(--text-primary)',
         color: '#fff',
         borderRadius: 14,
         padding: '10px 14px',
@@ -79,15 +79,15 @@ export default function BulkActionBar({ count, totalAmount, actions, onClear }: 
       {actions.map((a) => {
         const bg =
           a.tone === 'success'
-            ? '#2d5a27'
+            ? 'var(--accent)'
             : a.tone === 'danger'
-            ? '#991b1b'
+            ? 'var(--danger)'
             : 'rgba(255,255,255,0.08)'
         const hoverBg =
           a.tone === 'success'
-            ? '#1e3d1a'
+            ? 'var(--accent)'
             : a.tone === 'danger'
-            ? '#7f1d1d'
+            ? 'var(--danger)'
             : 'rgba(255,255,255,0.18)'
         return (
           <button

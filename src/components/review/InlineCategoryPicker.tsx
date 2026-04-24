@@ -54,8 +54,8 @@ export default function InlineCategoryPicker({ anchor, chartOfAccounts, onSelect
         top,
         left,
         zIndex: 999,
-        backgroundColor: '#fff',
-        border: '1px solid #e0dbd4',
+        backgroundColor: 'var(--surface-card)',
+        border: '1px solid var(--border-subtle)',
         borderRadius: 10,
         boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
         padding: 6,
@@ -94,7 +94,7 @@ export default function InlineCategoryPicker({ anchor, chartOfAccounts, onSelect
           width: '100%',
           padding: '6px 8px',
           fontSize: 13,
-          border: '1px solid #e0dbd4',
+          border: '1px solid var(--border-subtle)',
           borderRadius: 6,
           outline: 'none',
           boxSizing: 'border-box',
@@ -102,7 +102,7 @@ export default function InlineCategoryPicker({ anchor, chartOfAccounts, onSelect
       />
       <div style={{ marginTop: 4 }}>
         {filtered.length === 0 && (
-          <div style={{ padding: 8, fontSize: 12, color: '#a09a94' }}>No matches.</div>
+          <div style={{ padding: 8, fontSize: 12, color: 'var(--text-tertiary)' }}>No matches.</div>
         )}
         {filtered.map((a, i) => (
           <button
@@ -118,13 +118,13 @@ export default function InlineCategoryPicker({ anchor, chartOfAccounts, onSelect
               padding: '6px 8px',
               borderRadius: 6,
               border: 'none',
-              background: i === idx ? '#f5f0ea' : 'transparent',
-              color: '#1a1714',
+              background: i === idx ? 'var(--surface-elevated)' : 'transparent',
+              color: 'var(--text-primary)',
               fontSize: 13,
               cursor: 'pointer',
             }}
           >
-            <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#6b6560', marginRight: 6 }}>
+            <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--text-secondary)', marginRight: 6 }}>
               {a.code}
             </span>
             {a.name}

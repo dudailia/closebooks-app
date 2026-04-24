@@ -28,11 +28,11 @@ export default function HistoryDrawer({ open, entries, onClose, onUndoUpTo }: Pr
         style={{
           width: 380,
           maxWidth: '90vw',
-          backgroundColor: '#fff',
+          backgroundColor: 'var(--surface-card)',
           height: '100%',
           padding: 18,
           overflowY: 'auto',
-          borderLeft: '1px solid #e0dbd4',
+          borderLeft: '1px solid var(--border-subtle)',
           boxShadow: '-12px 0 32px rgba(0,0,0,0.08)',
         }}
       >
@@ -49,7 +49,7 @@ export default function HistoryDrawer({ open, entries, onClose, onUndoUpTo }: Pr
               margin: 0,
               fontSize: 14,
               fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
-              color: '#1a1714',
+              color: 'var(--text-primary)',
             }}
           >
             History
@@ -59,7 +59,7 @@ export default function HistoryDrawer({ open, entries, onClose, onUndoUpTo }: Pr
             style={{
               border: 'none',
               background: 'none',
-              color: '#6b6560',
+              color: 'var(--text-secondary)',
               fontSize: 20,
               cursor: 'pointer',
             }}
@@ -68,7 +68,7 @@ export default function HistoryDrawer({ open, entries, onClose, onUndoUpTo }: Pr
           </button>
         </div>
         {list.length === 0 && (
-          <p style={{ fontSize: 13, color: '#a09a94' }}>
+          <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
             No actions yet. Approve, flag, or edit a transaction to see it here.
           </p>
         )}
@@ -77,7 +77,7 @@ export default function HistoryDrawer({ open, entries, onClose, onUndoUpTo }: Pr
             key={e.id}
             style={{
               padding: '10px 0',
-              borderBottom: '1px solid #f0ece4',
+              borderBottom: '1px solid var(--border-subtle)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -89,7 +89,7 @@ export default function HistoryDrawer({ open, entries, onClose, onUndoUpTo }: Pr
                 style={{
                   margin: 0,
                   fontSize: 13,
-                  color: '#1a1714',
+                  color: 'var(--text-primary)',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -97,16 +97,16 @@ export default function HistoryDrawer({ open, entries, onClose, onUndoUpTo }: Pr
               >
                 {e.label}
               </p>
-              <p style={{ margin: '2px 0 0', fontSize: 11, color: '#a09a94' }}>
+              <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-tertiary)' }}>
                 {new Date(e.createdAt).toLocaleTimeString()}
               </p>
             </div>
             <button
               onClick={() => onUndoUpTo(e.id)}
               style={{
-                border: '1px solid #e0dbd4',
-                backgroundColor: '#fff',
-                color: '#6b6560',
+                border: '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--surface-card)',
+                color: 'var(--text-secondary)',
                 padding: '4px 10px',
                 borderRadius: 6,
                 fontSize: 11,

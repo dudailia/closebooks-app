@@ -145,7 +145,7 @@ export default function AutoCloseModal({ open, job, onClose, onApply }: Props) {
           width: 960,
           maxWidth: '95vw',
           height: '85vh',
-          backgroundColor: '#1a1714',
+          backgroundColor: 'var(--text-primary)',
           color: '#fff',
           borderRadius: 16,
           overflow: 'hidden',
@@ -276,7 +276,7 @@ export default function AutoCloseModal({ open, job, onClose, onApply }: Props) {
                   onClose()
                 }}
                 style={{
-                  backgroundColor: '#2d5a27',
+                  backgroundColor: 'var(--accent)',
                   color: '#fff',
                   border: 'none',
                   borderRadius: 6,

@@ -97,8 +97,8 @@ export default function NarrativeInsight({
   return (
     <div
       style={{
-        backgroundColor: '#fff',
-        border: '1px solid #e0dbd4',
+        backgroundColor: 'var(--surface-card)',
+        border: '1px solid var(--border-subtle)',
         borderRadius: 12,
         padding: 18,
         marginBottom: 16,
@@ -120,14 +120,14 @@ export default function NarrativeInsight({
               margin: 0,
               fontSize: 13,
               fontWeight: 600,
-              color: '#1a1714',
+              color: 'var(--text-primary)',
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
             }}
           >
             ✦ AI Narrative Summary
           </h3>
-          <p style={{ margin: '2px 0 0', fontSize: 11, color: '#a09a94' }}>
+          <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-tertiary)' }}>
             {clientName} · {period}
           </p>
         </div>
@@ -141,9 +141,9 @@ export default function NarrativeInsight({
                 fontSize: 11,
                 borderRadius: 6,
                 textTransform: 'capitalize',
-                border: tone === t ? '1px solid #2d5a27' : '1px solid #e0dbd4',
-                backgroundColor: tone === t ? '#e8f0e6' : '#fff',
-                color: tone === t ? '#2d5a27' : '#6b6560',
+                border: tone === t ? '1px solid var(--accent)' : '1px solid var(--border-subtle)',
+                backgroundColor: tone === t ? 'var(--accent-soft)' : '#fff',
+                color: tone === t ? 'var(--accent)' : 'var(--text-secondary)',
                 cursor: 'pointer',
               }}
             >
@@ -154,7 +154,7 @@ export default function NarrativeInsight({
       </div>
 
       {error && (
-        <p style={{ fontSize: 12, color: '#991b1b' }}>
+        <p style={{ fontSize: 12, color: 'var(--danger)' }}>
           {error}{' '}
           <button
             onClick={generate}
@@ -163,7 +163,7 @@ export default function NarrativeInsight({
               fontSize: 12,
               background: 'none',
               border: 'none',
-              color: '#2d5a27',
+              color: 'var(--accent)',
               cursor: 'pointer',
               textDecoration: 'underline',
             }}
@@ -174,7 +174,7 @@ export default function NarrativeInsight({
       )}
 
       {streaming && !narrative && (
-        <p style={{ fontSize: 13, color: '#6b6560', fontStyle: 'italic' }}>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
           Generating narrative…
         </p>
       )}
@@ -182,7 +182,7 @@ export default function NarrativeInsight({
       {current && (
         <>
           <div
-            style={{ fontSize: 13, color: '#1a1714', lineHeight: 1.6 }}
+            style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6 }}
             dangerouslySetInnerHTML={{ __html: current.html }}
           />
 
@@ -194,9 +194,9 @@ export default function NarrativeInsight({
                   onClick={() => onHighlight?.(new Set(c.txIds))}
                   style={{
                     fontSize: 11,
-                    backgroundColor: '#fdf2e9',
-                    border: '1px solid #e8c9a8',
-                    color: '#7a4e2a',
+                    backgroundColor: 'var(--surface-elevated)',
+                    border: '1px solid var(--warning-soft)',
+                    color: 'var(--warning)',
                     padding: '2px 8px',
                     borderRadius: 999,
                     cursor: 'pointer',
@@ -213,9 +213,9 @@ export default function NarrativeInsight({
               style={{
                 marginTop: 14,
                 fontSize: 13,
-                color: '#2d5a27',
+                color: 'var(--accent)',
                 fontStyle: 'italic',
-                borderLeft: '3px solid #2d5a27',
+                borderLeft: '3px solid var(--accent)',
                 paddingLeft: 10,
               }}
             >
@@ -230,7 +230,7 @@ export default function NarrativeInsight({
               }
               style={{
                 padding: '6px 12px',
-                backgroundColor: '#2d5a27',
+                backgroundColor: 'var(--accent)',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 8,
@@ -246,9 +246,9 @@ export default function NarrativeInsight({
               disabled={streaming}
               style={{
                 padding: '6px 12px',
-                backgroundColor: '#fff',
-                color: '#6b6560',
-                border: '1px solid #e0dbd4',
+                backgroundColor: 'var(--surface-card)',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: 8,
                 fontSize: 12,
                 cursor: 'pointer',

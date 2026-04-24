@@ -25,8 +25,8 @@ export default function SaveRuleToast({ vendor, categoryName, matchingCount, onS
         opacity: mounted ? 1 : 0,
         transition: 'all 0.2s',
         zIndex: 1001,
-        backgroundColor: '#fff',
-        border: '1px solid #2d5a27',
+        backgroundColor: 'var(--surface-card)',
+        border: '1px solid var(--accent)',
         borderRadius: 12,
         boxShadow: '0 12px 32px rgba(0,0,0,0.18)',
         padding: '14px 18px',
@@ -41,7 +41,7 @@ export default function SaveRuleToast({ vendor, categoryName, matchingCount, onS
           width: 30,
           height: 30,
           borderRadius: 8,
-          backgroundColor: '#e8f0e6',
+          backgroundColor: 'var(--accent-soft)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -49,16 +49,16 @@ export default function SaveRuleToast({ vendor, categoryName, matchingCount, onS
         }}
       >
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-          <path d="M2 8l4 4 8-8" stroke="#2d5a27" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M2 8l4 4 8-8" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
       <div style={{ flex: 1 }}>
-        <p style={{ margin: 0, fontSize: 13, color: '#1a1714' }}>
+        <p style={{ margin: 0, fontSize: 13, color: 'var(--text-primary)' }}>
           Always categorize <strong>{vendor || '(this vendor)'}</strong> as <strong>{categoryName}</strong>?
         </p>
         {matchingCount > 0 && (
-          <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6b6560' }}>
-            Will also fix <strong style={{ color: '#2d5a27' }}>{matchingCount}</strong> other pending transaction
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+            Will also fix <strong style={{ color: 'var(--accent)' }}>{matchingCount}</strong> other pending transaction
             {matchingCount !== 1 ? 's' : ''}.
           </p>
         )}
@@ -70,7 +70,7 @@ export default function SaveRuleToast({ vendor, categoryName, matchingCount, onS
             padding: '6px 12px',
             borderRadius: 8,
             border: 'none',
-            backgroundColor: '#2d5a27',
+            backgroundColor: 'var(--accent)',
             color: '#fff',
             fontSize: 13,
             fontWeight: 600,
@@ -84,9 +84,9 @@ export default function SaveRuleToast({ vendor, categoryName, matchingCount, onS
           style={{
             padding: '6px 10px',
             borderRadius: 8,
-            border: '1px solid #e0dbd4',
-            backgroundColor: '#fff',
-            color: '#6b6560',
+            border: '1px solid var(--border-subtle)',
+            backgroundColor: 'var(--surface-card)',
+            color: 'var(--text-secondary)',
             fontSize: 13,
             cursor: 'pointer',
           }}
