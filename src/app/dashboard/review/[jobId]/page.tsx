@@ -1025,6 +1025,37 @@ export default function ReviewPage() {
     dbSaveJob(next).catch(() => { /* localStorage fallback already written inside dbSaveJob */ })
   }
 
+  // Broadcast review context to the global AI chat panel
+  useEffect(() => {
+    if (!job) return
+    window.dispatchEvent(new CustomEvent('cb-chat-context', {
+      detail: {
+        clientName: job.client_name,
+        clientIndustry: clientIndustry ?? undefined,
+        jobId: job.id,
+        jobMonth: new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        transactions: job.transactions,
+        overdueCount: 0,
+      },
+    }))
+  }, [job, clientIndustry])
+
+  // Broadcast a mutator so the chat panel can apply AI tool calls
+  useEffect(() => {
+    const mutator = (ids: string[], patch: (t: Transaction) => Transaction) => {
+      setJob((prev) => {
+        if (!prev) return prev
+        const updated = prev.transactions.map((t) => (ids.includes(t.id) ? patch(t) : t))
+        const approvedCount = updated.filter((t) => t.status === 'approved' || t.status === 'edited').length
+        const flaggedCount  = updated.filter((t) => t.status === 'flagged').length
+        const next: CategorizationJob = { ...prev, transactions: updated, approved: approvedCount, flagged: flaggedCount }
+        dbSaveJob(next).catch(() => { /* fallback */ })
+        return next
+      })
+    }
+    window.dispatchEvent(new CustomEvent('cb-chat-mutator', { detail: mutator }))
+  }, [])
+
   async function handleExport(format: ExportFormat) {
     if (!job) return
 
