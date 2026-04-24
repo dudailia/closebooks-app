@@ -3,13 +3,31 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient, supabaseConfigured } from '@/lib/supabase/client'
+import PublicShell from '@/components/landing/PublicShell'
+import {
+  DarkCard,
+  DarkInput,
+  DarkLabel,
+  DarkButton,
+  DarkError,
+} from '@/components/landing/DarkFormPrimitives'
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+interface ErrInfo {
+  title: string
+  body: string
+  isRateLimit: boolean
+  isConfig: boolean
+}
 
-function friendlyError(msg: string): { title: string; body: string; isRateLimit: boolean; isConfig: boolean } {
+function friendlyError(msg: string): ErrInfo {
   const lower = msg.toLowerCase()
 
-  if (lower.includes('rate limit') || lower.includes('too many') || lower.includes('429') || lower.includes('exceeded')) {
+  if (
+    lower.includes('rate limit') ||
+    lower.includes('too many') ||
+    lower.includes('429') ||
+    lower.includes('exceeded')
+  ) {
     return {
       title: 'Too many requests',
       body: 'Password reset emails are temporarily limited. Please wait 60 minutes before trying again.',
@@ -18,7 +36,6 @@ function friendlyError(msg: string): { title: string; body: string; isRateLimit:
     }
   }
 
-  // "Error sending reset password" — Supabase SMTP not configured or redirect URL not whitelisted
   if (
     lower.includes('error sending') ||
     lower.includes('smtp') ||
@@ -29,7 +46,7 @@ function friendlyError(msg: string): { title: string; body: string; isRateLimit:
   ) {
     return {
       title: 'Email delivery unavailable',
-      body: 'Our email service is not yet configured. You can still access your account — contact us and we\'ll reset your password immediately.',
+      body: "Our email service is not yet configured. You can still access your account — contact us and we'll reset your password immediately.",
       isRateLimit: false,
       isConfig: true,
     }
@@ -47,14 +64,11 @@ function friendlyError(msg: string): { title: string; body: string; isRateLimit:
   return { title: 'Something went wrong', body: msg, isRateLimit: false, isConfig: false }
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
-  const [errInfo, setErrInfo] = useState<{ title: string; body: string; isRateLimit: boolean; isConfig: boolean } | null>(null)
+  const [errInfo, setErrInfo] = useState<ErrInfo | null>(null)
   const [loading, setLoading] = useState(false)
-  const [focused, setFocused] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -63,11 +77,11 @@ export default function ForgotPasswordPage() {
 
     const supabase = createClient()
     if (!supabase) {
-      // No Supabase configured — tell user to contact support
       setErrInfo({
         title: 'Auth not configured',
         body: 'Password reset is not available in demo mode. Please contact support.',
         isRateLimit: false,
+        isConfig: true,
       })
       setLoading(false)
       return
@@ -89,193 +103,163 @@ export default function ForgotPasswordPage() {
 
   if (!supabaseConfigured) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#faf8f4' }}>
-        <div className="w-full max-w-md rounded-2xl border p-8 text-center space-y-4" style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}>
-          <Logo />
-          <h1 className="text-xl font-semibold" style={{ color: '#1a1714' }}>Password reset unavailable</h1>
-          <p className="text-sm" style={{ color: '#6b6560' }}>
-            This app is running in demo mode without authentication configured.<br />
-            You can access all features directly from the dashboard.
-          </p>
-          <Link href="/dashboard" className="inline-block mt-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#2d5a27' }}>
-            Go to Dashboard →
-          </Link>
-        </div>
-      </div>
+      <PublicShell>
+        <main style={{ padding: '120px 24px 60px', maxWidth: 460, margin: '0 auto', textAlign: 'center' }}>
+          <DarkCard>
+            <h1 style={{ fontSize: 22, fontWeight: 600, color: '#F0F0F5', margin: 0, marginBottom: 10 }}>
+              Password reset unavailable
+            </h1>
+            <p style={{ fontSize: 14, color: '#A8A8BC', margin: 0, lineHeight: 1.55 }}>
+              This app is running in demo mode without authentication configured. You can access
+              all features directly from the dashboard.
+            </p>
+            <div style={{ marginTop: 18 }}>
+              <Link
+                href="/dashboard"
+                style={{
+                  display: 'inline-flex',
+                  padding: '11px 18px',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: '#00110A',
+                  background: 'linear-gradient(135deg, #00D97E 0%, #00B368 100%)',
+                  borderRadius: 10,
+                  textDecoration: 'none',
+                }}
+              >
+                Go to Dashboard →
+              </Link>
+            </div>
+          </DarkCard>
+        </main>
+      </PublicShell>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12" style={{ backgroundColor: '#faf8f4' }}>
-      <div className="w-full max-w-md">
-
-        <div className="flex justify-center mb-8">
-          <Link href="/"><Logo /></Link>
+    <PublicShell>
+      <main style={{ padding: '120px 24px 60px', maxWidth: 460, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <h1
+            style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: 36,
+              letterSpacing: '-0.03em',
+              color: '#F0F0F5',
+              margin: 0,
+              fontWeight: 400,
+              lineHeight: 1.1,
+            }}
+          >
+            Reset your password
+          </h1>
+          <p style={{ fontSize: 14, color: '#A8A8BC', margin: '10px 0 0' }}>
+            We&apos;ll send you a secure reset link.
+          </p>
         </div>
 
-        <div className="rounded-2xl border p-6 sm:p-8" style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}>
-
+        <DarkCard>
           {sent ? (
-            /* ── Success state ── */
-            <div className="text-center space-y-4">
-              <div className="text-5xl">📬</div>
-              <h1 className="text-xl font-semibold" style={{ color: '#1a1714' }}>Check your email</h1>
-              <p className="text-sm" style={{ color: '#6b6560' }}>
-                We sent a password reset link to <strong>{email}</strong>.
-                It should arrive within a minute — check your spam folder if you don&apos;t see it.
+            <div style={{ textAlign: 'center', padding: '12px 0' }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>📬</div>
+              <h2 style={{ fontSize: 18, fontWeight: 600, color: '#F0F0F5', margin: 0, marginBottom: 10 }}>
+                Check your inbox
+              </h2>
+              <p style={{ fontSize: 14, color: '#A8A8BC', margin: 0, lineHeight: 1.55 }}>
+                We sent a reset link to <strong style={{ color: '#F0F0F5' }}>{email}</strong>. It
+                should arrive within a minute.
               </p>
-              <p className="text-xs" style={{ color: '#a09a94' }}>
-                Didn&apos;t get it?{' '}
+              <p style={{ fontSize: 12, color: '#6E6E85', marginTop: 14 }}>
+                Didn&apos;t get it? Check spam or{' '}
                 <button
-                  onClick={() => { setSent(false); setErrInfo(null) }}
-                  className="underline"
-                  style={{ color: '#b8734a', cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
+                  onClick={() => {
+                    setSent(false)
+                    setErrInfo(null)
+                  }}
+                  style={{
+                    color: '#00D97E',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    fontSize: 12,
+                  }}
                 >
-                  Try again
+                  try again
                 </button>
+                .
               </p>
-              <Link
-                href="/login"
-                className="inline-block text-sm font-medium"
-                style={{ color: '#2d5a27' }}
-              >
-                ← Back to sign in
-              </Link>
-            </div>
-          ) : (
-            /* ── Form state ── */
-            <>
-              <h1
-                className="text-2xl mb-1"
-                style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#1a1714', letterSpacing: '-0.02em' }}
-              >
-                Reset your password
-              </h1>
-              <p className="text-sm mb-6" style={{ color: '#a09a94' }}>
-                Enter your email and we&apos;ll send you a reset link.
-              </p>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-medium" style={{ color: '#1a1714' }}>Email address</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="you@yourfirm.com"
-                    required
-                    autoComplete="email"
-                    inputMode="email"
-                    autoCapitalize="none"
-                    className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-colors"
-                    style={{
-                      borderColor: focused ? '#b8734a' : '#e0dbd4',
-                      color: '#1a1714',
-                      backgroundColor: '#faf8f4',
-                      fontSize: '16px',
-                      boxShadow: focused ? '0 0 0 3px rgba(184,115,74,0.12)' : 'none',
-                    }}
-                    onFocus={() => setFocused(true)}
-                    onBlur={() => setFocused(false)}
-                  />
-                </div>
-
-                {/* Error message */}
-                {errInfo && (
-                  <div
-                    className="rounded-xl px-4 py-3 space-y-1"
-                    style={{
-                      backgroundColor: errInfo.isRateLimit ? '#fffbeb' : errInfo.isConfig ? '#eff6ff' : '#fef2f2',
-                      border: `1px solid ${errInfo.isRateLimit ? '#fde68a' : errInfo.isConfig ? '#bfdbfe' : '#fecaca'}`,
-                      color: errInfo.isRateLimit ? '#92400e' : errInfo.isConfig ? '#1e40af' : '#991b1b',
-                    }}
-                  >
-                    <p className="text-sm font-semibold">{errInfo.isRateLimit ? '⏳' : errInfo.isConfig ? 'ℹ️' : '⚠'} {errInfo.title}</p>
-                    <p className="text-xs" style={{ opacity: 0.85 }}>{errInfo.body}</p>
-                    {(errInfo.isRateLimit || errInfo.isConfig) && (
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs font-medium">Your options right now:</p>
-                        <p className="text-xs">
-                          1.{' '}
-                          <a
-                            href="mailto:hello@closebooks.app?subject=Password Reset Request&body=Please reset the password for: "
-                            className="underline font-semibold"
-                            style={{ color: errInfo.isConfig ? '#1d4ed8' : '#92400e' }}
-                          >
-                            Email us
-                          </a>
-                          {' '}and we&apos;ll reset it manually within minutes.
-                        </p>
-                        <p className="text-xs">
-                          2. Or{' '}
-                          <a href="/signup" className="underline" style={{ color: errInfo.isConfig ? '#1d4ed8' : '#92400e' }}>
-                            create a new account
-                          </a>
-                          {' '}— your demo data is saved in your browser.
-                        </p>
-                        {errInfo.isConfig && (
-                          <p className="text-xs opacity-70">
-                            (This is a temporary configuration issue — we&apos;re working on it)
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading || !email.trim()}
-                  className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-50"
-                  style={{ backgroundColor: '#2d5a27' }}
-                  onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#1e3d1a' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
-                >
-                  {loading ? 'Sending…' : 'Send reset link'}
-                </button>
-              </form>
-
-              <p className="mt-5 text-sm text-center" style={{ color: '#6b6560' }}>
-                Remembered it?{' '}
+              <div style={{ marginTop: 18 }}>
                 <Link
                   href="/login"
-                  className="font-medium"
-                  style={{ color: '#b8734a' }}
-                  onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline' }}
-                  onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none' }}
+                  style={{ fontSize: 13, color: '#A8A8BC', textDecoration: 'none' }}
                 >
+                  ← Back to sign in
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              {errInfo && (
+                <div style={{ marginBottom: 16 }}>
+                  <DarkError>
+                    <strong>
+                      {errInfo.isRateLimit ? '⏳ ' : errInfo.isConfig ? 'ℹ ' : '⚠ '}
+                      {errInfo.title}
+                    </strong>
+                    <div style={{ marginTop: 4, opacity: 0.85 }}>{errInfo.body}</div>
+                    {(errInfo.isRateLimit || errInfo.isConfig) && (
+                      <div style={{ marginTop: 8, fontSize: 12 }}>
+                        <a
+                          href="mailto:hello@closebooks.app?subject=Password Reset Request"
+                          style={{ color: '#00D97E', textDecoration: 'underline' }}
+                        >
+                          Email us
+                        </a>{' '}
+                        and we&apos;ll reset it manually within minutes.
+                      </div>
+                    )}
+                  </DarkError>
+                </div>
+              )}
+
+              <div style={{ marginBottom: 20 }}>
+                <DarkLabel htmlFor="email">Email address</DarkLabel>
+                <DarkInput
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  placeholder="you@yourfirm.com"
+                />
+              </div>
+
+              <DarkButton type="submit" block disabled={loading || !email.trim()}>
+                {loading ? 'Sending…' : 'Send reset link'}
+              </DarkButton>
+
+              <p style={{ marginTop: 20, fontSize: 13, textAlign: 'center', color: '#A8A8BC' }}>
+                Remembered it?{' '}
+                <Link href="/login" style={{ color: '#00D97E', textDecoration: 'none', fontWeight: 600 }}>
                   Sign in
                 </Link>
               </p>
-            </>
+            </form>
           )}
-        </div>
+        </DarkCard>
 
-        {/* Rate limit info note */}
-        <p className="mt-4 text-center text-xs" style={{ color: '#a09a94' }}>
+        <p style={{ marginTop: 20, fontSize: 12, textAlign: 'center', color: '#6E6E85' }}>
           Having trouble?{' '}
-          <a href="mailto:hello@closebooks.app" style={{ color: '#a09a94', textDecoration: 'underline' }}>
+          <a href="mailto:hello@closebooks.app" style={{ color: '#6E6E85', textDecoration: 'underline' }}>
             Contact support
           </a>
         </p>
-      </div>
-    </div>
-  )
-}
-
-// ─── Logo ─────────────────────────────────────────────────────────────────────
-
-function Logo() {
-  return (
-    <div className="flex items-center gap-2.5">
-      <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
-        <rect x="2" y="1" width="13" height="17" rx="2" stroke="#b8734a" strokeWidth="1.5" fill="none" />
-        <path d="M6 6h5M6 10h5M6 14h3" stroke="#b8734a" strokeWidth="1.3" strokeLinecap="round" />
-        <rect x="13" y="4" width="5" height="13" rx="1.5" fill="#b8734a" opacity="0.15" />
-      </svg>
-      <span style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', fontSize: '20px', letterSpacing: '-0.01em' }}>
-        <span style={{ color: '#1a1714' }}>Close</span><span style={{ color: '#b8734a' }}>Books</span>
-      </span>
-    </div>
+      </main>
+    </PublicShell>
   )
 }

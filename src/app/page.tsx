@@ -4,7 +4,7 @@ import StatBand from '@/components/landing/StatBand'
 import BentoGrid from '@/components/landing/BentoGrid'
 import HowItWorks from '@/components/landing/HowItWorks'
 import Testimonials from '@/components/landing/Testimonials'
-import PricingTeaser from '@/components/landing/PricingTeaser'
+import PricingSection from '@/components/landing/PricingSection'
 import CtaBand from '@/components/landing/CtaBand'
 import Footer from '@/components/landing/Footer'
 
@@ -26,7 +26,7 @@ export default function LandingPage() {
         <BentoGrid />
         <HowItWorks />
         <Testimonials />
-        <PricingTeaser />
+        <PricingSection />
         <CtaBand />
       </main>
       <Footer />
