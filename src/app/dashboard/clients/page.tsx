@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
+import HealthPill from '@/components/health/HealthPill'
+import type { HealthBreakdown } from '@/lib/health/scoreClient'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getClients, saveClient, deleteClient, getJobsForClient } from '@/lib/storage'
@@ -209,6 +211,7 @@ function ClientCard({
   client: Client
   onEdit: (c: Client) => void
   onDelete: (id: string) => void
+  health?: HealthBreakdown
 }) {
   const router = useRouter()
   const jobs = getJobsForClient(client.business_name)
@@ -294,6 +297,11 @@ function ClientCard({
             </span>
           </span>
         )}
+        {health && (
+          <span onClick={(e) => e.stopPropagation()}>
+            <HealthPill breakdown={health} />
+          </span>
+        )}
         <span
           className="ml-auto text-xs px-2 py-0.5 rounded"
           style={{ backgroundColor: '#f5f0ea', color: '#a09a94' }}
@@ -317,11 +325,33 @@ export default function ClientsPage() {
   const [industry,  setIndustry]  = useState<ClientIndustry | 'All'>('All')
   const [showModal, setShowModal] = useState(false)
   const [editing,   setEditing]   = useState<Client | undefined>()
+  const [healthByName, setHealthByName] = useState<Record<string, HealthBreakdown>>({})
 
   useEffect(() => {
     setClients(getClients())
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    if (clients.length === 0) return
+    const payload = {
+      clients: clients.map((c) => ({
+        clientName: c.business_name,
+        jobs: getJobsForClient(c.business_name),
+      })),
+    }
+    void (async () => {
+      try {
+        const res = await fetch('/api/clients/health', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        const data = await res.json()
+        if (data?.scores) setHealthByName(data.scores)
+      } catch { /* non-fatal */ }
+    })()
+  }, [clients])
 
   function handleSave(client: Client) {
     const isNew = !clients.some((c) => c.id === client.id)
@@ -503,7 +533,7 @@ export default function ClientsPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {filtered.map((c) => (
-              <ClientCard key={c.id} client={c} onEdit={openEdit} onDelete={handleDelete} />
+              <ClientCard key={c.id} client={c} onEdit={openEdit} onDelete={handleDelete} health={healthByName[c.business_name]} />
             ))}
           </div>
         )}

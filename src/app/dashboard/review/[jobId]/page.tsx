@@ -7,6 +7,7 @@ import { KeyboardShortcutProvider } from '@/lib/review/KeyboardShortcutProvider'
 import { hydrateRules, applyRulesToJob } from '@/lib/review/rules'
 import { getSupabaseAndFirm } from '@/lib/syncSupabase'
 import NarrativeInsight from '@/components/ai/NarrativeInsight'
+import SendMonthlyReportButton from '@/components/reports/SendMonthlyReportButton'
 import AutoCloseModal from '@/components/ai/AutoCloseModal'
 import { getJob, saveJob, getJobs } from '@/lib/storage'
 import { dbGetJob, dbSaveJob } from '@/lib/db'
@@ -1424,6 +1425,12 @@ export default function ReviewPage() {
               Email Client
             </button>
 
+            <SendMonthlyReportButton
+              job={job}
+              priorJob={allClientJobs.find((j) => j.id !== job.id && j.created_at < job.created_at) ?? null}
+              clientEmail={getClients().find((c) => c.business_name === job.client_name)?.contact_email}
+            />
+
             {/* Push to QuickBooks — only shown when connected */}
             {qboConn && approvedCount > 0 && (
               <button
@@ -1530,6 +1537,14 @@ export default function ReviewPage() {
             priorTransactions={allClientJobs.find((j) => j.id !== job.id && j.created_at < job.created_at)?.transactions ?? null}
             onHighlight={(ids) => setChatHighlightIds(ids)}
             onEmailClient={() => setShowEmailDraft(true)}
+            onNarrativeGenerated={(n) => {
+              setJob((prev) => {
+                if (!prev) return prev
+                const next = { ...prev, narrative: n }
+                dbSaveJob(next).catch(() => { /* localStorage fallback inside dbSaveJob */ })
+                return next
+              })
+            }}
           />
         )}
 

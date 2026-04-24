@@ -9,6 +9,12 @@ export interface FirmSettings {
   inboxSlug: string
   /** Product tour dismissed — stored in firm_settings payload */
   onboardingComplete?: boolean
+  /** Client-facing branding (used by monthly-report email + portal) */
+  logoUrl?: string
+  primaryColor?: string
+  emailFromName?: string
+  emailReplyTo?: string
+  clientFacingName?: string
 }
 
 const DEFAULTS: FirmSettings = {
@@ -18,6 +24,7 @@ const DEFAULTS: FirmSettings = {
   preparedBy: '',
   inboxSlug: '',
   onboardingComplete: false,
+  primaryColor: '#2d5a27',
 }
 
 let _cache: FirmSettings = { ...DEFAULTS }

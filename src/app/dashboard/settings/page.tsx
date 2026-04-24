@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { loadFirmSettings, saveFirmSettings } from '@/lib/firmSettings'
 import type { FirmSettings } from '@/lib/firmSettings'
+import BrandingSettings from '@/components/settings/BrandingSettings'
 
 const ACCENT_PRESETS = [
   { label: 'Forest',  color: '#2d5a27' },
@@ -239,6 +240,9 @@ export default function SettingsPage() {
             ))}
           </div>
         )}
+
+        {/* Client-facing branding (logo, colors, email from-name) */}
+        <BrandingSettings />
 
         <div
           className="rounded-2xl border p-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap"
