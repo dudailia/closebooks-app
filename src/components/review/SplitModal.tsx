@@ -95,26 +95,26 @@ export default function SplitModal({ transaction, chartOfAccounts, onSave, onClo
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          backgroundColor: '#fff',
+          backgroundColor: 'var(--surface-card)',
           borderRadius: 14,
-          border: '1px solid #e0dbd4',
+          border: '1px solid var(--border-subtle)',
           width: 680,
           maxWidth: '95vw',
           boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
         }}
       >
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #e0dbd4' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
           <h2
             style={{
               margin: 0,
               fontSize: 16,
               fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
-              color: '#1a1714',
+              color: 'var(--text-primary)',
             }}
           >
             Split transaction
           </h2>
-          <p style={{ margin: '4px 0 0', fontSize: 12, color: '#6b6560' }}>
+          <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
             {transaction.description} ·{' '}
             <strong>${transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
           </p>
@@ -123,9 +123,9 @@ export default function SplitModal({ transaction, chartOfAccounts, onSave, onClo
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', fontSize: 11, color: '#6b6560', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0 6px' }}>Amount</th>
-                <th style={{ textAlign: 'left', fontSize: 11, color: '#6b6560', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0 6px' }}>Category</th>
-                <th style={{ textAlign: 'left', fontSize: 11, color: '#6b6560', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0 6px' }}>Notes</th>
+                <th style={{ textAlign: 'left', fontSize: 11, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0 6px' }}>Amount</th>
+                <th style={{ textAlign: 'left', fontSize: 11, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0 6px' }}>Category</th>
+                <th style={{ textAlign: 'left', fontSize: 11, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0 6px' }}>Notes</th>
                 <th></th>
               </tr>
             </thead>
@@ -140,7 +140,7 @@ export default function SplitModal({ transaction, chartOfAccounts, onSave, onClo
                       onChange={e => update(i, { amount: parseFloat(e.target.value) || 0 })}
                       style={{
                         width: 110,
-                        border: '1px solid #e0dbd4',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: 6,
                         padding: '6px 8px',
                         fontFamily: 'monospace',
@@ -160,7 +160,7 @@ export default function SplitModal({ transaction, chartOfAccounts, onSave, onClo
                       }}
                       style={{
                         width: 240,
-                        border: '1px solid #e0dbd4',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: 6,
                         padding: '6px 8px',
                         fontSize: 13,
@@ -190,7 +190,7 @@ export default function SplitModal({ transaction, chartOfAccounts, onSave, onClo
                       placeholder="Optional"
                       style={{
                         width: '100%',
-                        border: '1px solid #e0dbd4',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: 6,
                         padding: '6px 8px',
                         fontSize: 13,
@@ -205,7 +205,7 @@ export default function SplitModal({ transaction, chartOfAccounts, onSave, onClo
                       style={{
                         border: 'none',
                         background: 'none',
-                        color: splits.length <= 2 ? '#c4bdb8' : '#991b1b',
+                        color: splits.length <= 2 ? 'var(--border-strong)' : 'var(--danger)',
                         fontSize: 18,
                         cursor: splits.length <= 2 ? 'not-allowed' : 'pointer',
                       }}
@@ -221,9 +221,9 @@ export default function SplitModal({ transaction, chartOfAccounts, onSave, onClo
             <button
               onClick={addRow}
               style={{
-                border: '1px dashed #c4bdb8',
+                border: '1px dashed var(--border-strong)',
                 backgroundColor: 'transparent',
-                color: '#6b6560',
+                color: 'var(--text-secondary)',
                 padding: '6px 12px',
                 borderRadius: 8,
                 fontSize: 12,
@@ -235,9 +235,9 @@ export default function SplitModal({ transaction, chartOfAccounts, onSave, onClo
             <button
               onClick={splitEven}
               style={{
-                border: '1px solid #e0dbd4',
-                backgroundColor: '#faf8f4',
-                color: '#1a1714',
+                border: '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--surface-base)',
+                color: 'var(--text-primary)',
                 padding: '6px 12px',
                 borderRadius: 8,
                 fontSize: 12,
@@ -250,9 +250,9 @@ export default function SplitModal({ transaction, chartOfAccounts, onSave, onClo
               <button
                 onClick={split50}
                 style={{
-                  border: '1px solid #e0dbd4',
-                  backgroundColor: '#faf8f4',
-                  color: '#1a1714',
+                  border: '1px solid var(--border-subtle)',
+                  backgroundColor: 'var(--surface-base)',
+                  color: 'var(--text-primary)',
                   padding: '6px 12px',
                   borderRadius: 8,
                   fontSize: 12,
@@ -267,7 +267,7 @@ export default function SplitModal({ transaction, chartOfAccounts, onSave, onClo
         <div
           style={{
             padding: '14px 20px',
-            borderTop: '1px solid #e0dbd4',
+            borderTop: '1px solid var(--border-subtle)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -277,7 +277,7 @@ export default function SplitModal({ transaction, chartOfAccounts, onSave, onClo
             style={{
               fontFamily: 'monospace',
               fontSize: 13,
-              color: balanced ? '#059669' : '#991b1b',
+              color: balanced ? 'var(--accent)' : 'var(--danger)',
             }}
           >
             {balanced
@@ -288,9 +288,9 @@ export default function SplitModal({ transaction, chartOfAccounts, onSave, onClo
             <button
               onClick={onClose}
               style={{
-                border: '1px solid #e0dbd4',
-                backgroundColor: '#fff',
-                color: '#6b6560',
+                border: '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--surface-card)',
+                color: 'var(--text-secondary)',
                 padding: '7px 14px',
                 borderRadius: 8,
                 fontSize: 13,
@@ -304,7 +304,7 @@ export default function SplitModal({ transaction, chartOfAccounts, onSave, onClo
               onClick={() => onSave(splits)}
               style={{
                 border: 'none',
-                backgroundColor: balanced && allCategorized ? '#2d5a27' : '#a09a94',
+                backgroundColor: balanced && allCategorized ? 'var(--accent)' : 'var(--text-tertiary)',
                 color: '#fff',
                 padding: '7px 16px',
                 borderRadius: 8,

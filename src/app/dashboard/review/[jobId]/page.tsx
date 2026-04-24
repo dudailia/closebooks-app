@@ -1319,7 +1319,7 @@ export default function ReviewPage() {
 
   return (
     <KeyboardShortcutProvider>
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
+    <div data-theme="dark" className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--surface-base)', color: 'var(--text-primary)' }}>
       {showPush && qboConn && (
         <PushModal
           count={approvedCount}

@@ -47,7 +47,7 @@ export default function ShortcutLegend() {
             bottom: 20,
             right: 20,
             zIndex: 900,
-            backgroundColor: '#1a1714',
+            backgroundColor: 'var(--text-primary)',
             color: '#fff',
             padding: '8px 12px',
             borderRadius: 8,
@@ -99,8 +99,8 @@ export default function ShortcutLegend() {
             width: 360,
             maxHeight: '70vh',
             overflowY: 'auto',
-            backgroundColor: '#fff',
-            border: '1px solid #e0dbd4',
+            backgroundColor: 'var(--surface-card)',
+            border: '1px solid var(--border-subtle)',
             borderRadius: 12,
             boxShadow: '0 16px 40px rgba(0,0,0,0.18)',
             padding: 14,
@@ -114,7 +114,7 @@ export default function ShortcutLegend() {
               marginBottom: 10,
             }}
           >
-            <h3 style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1a1714' }}>
+            <h3 style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
               Keyboard shortcuts
             </h3>
             <button
@@ -122,7 +122,7 @@ export default function ShortcutLegend() {
               style={{
                 border: 'none',
                 background: 'none',
-                color: '#6b6560',
+                color: 'var(--text-secondary)',
                 fontSize: 18,
                 lineHeight: 1,
                 cursor: 'pointer',
@@ -137,7 +137,7 @@ export default function ShortcutLegend() {
                 style={{
                   fontSize: 10,
                   fontWeight: 600,
-                  color: '#6b6560',
+                  color: 'var(--text-secondary)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.06em',
                   margin: '0 0 6px',
@@ -157,13 +157,13 @@ export default function ShortcutLegend() {
                       marginBottom: 4,
                     }}
                   >
-                    <span style={{ color: '#1a1714' }}>{s.label}</span>
+                    <span style={{ color: 'var(--text-primary)' }}>{s.label}</span>
                     <span
                       style={{
                         fontFamily: 'monospace',
                         fontSize: 11,
-                        color: '#1a1714',
-                        border: '1px solid #e0dbd4',
+                        color: 'var(--text-primary)',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: 4,
                         padding: '1px 5px',
                       }}

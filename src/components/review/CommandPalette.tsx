@@ -64,8 +64,8 @@ export default function CommandPalette({ open, onClose }: Props) {
         style={{
           width: 520,
           maxWidth: '90vw',
-          backgroundColor: '#fff',
-          border: '1px solid #e0dbd4',
+          backgroundColor: 'var(--surface-card)',
+          border: '1px solid var(--border-subtle)',
           borderRadius: 12,
           boxShadow: '0 16px 48px rgba(0,0,0,0.22)',
           overflow: 'hidden',
@@ -100,13 +100,13 @@ export default function CommandPalette({ open, onClose }: Props) {
             fontSize: 14,
             border: 'none',
             outline: 'none',
-            borderBottom: '1px solid #e0dbd4',
+            borderBottom: '1px solid var(--border-subtle)',
             boxSizing: 'border-box',
           }}
         />
         <div style={{ maxHeight: 320, overflowY: 'auto' }}>
           {actions.length === 0 && (
-            <div style={{ padding: 16, fontSize: 12, color: '#a09a94' }}>No actions match.</div>
+            <div style={{ padding: 16, fontSize: 12, color: 'var(--text-tertiary)' }}>No actions match.</div>
           )}
           {actions.map((a, i) => (
             <button
@@ -122,7 +122,7 @@ export default function CommandPalette({ open, onClose }: Props) {
                 width: '100%',
                 padding: '9px 14px',
                 border: 'none',
-                background: i === idx ? '#f5f0ea' : 'transparent',
+                background: i === idx ? 'var(--surface-elevated)' : 'transparent',
                 cursor: 'pointer',
                 textAlign: 'left',
               }}
@@ -131,7 +131,7 @@ export default function CommandPalette({ open, onClose }: Props) {
                 <span
                   style={{
                     fontSize: 11,
-                    color: '#a09a94',
+                    color: 'var(--text-tertiary)',
                     marginRight: 8,
                     textTransform: 'uppercase',
                     letterSpacing: '0.04em',
@@ -139,14 +139,14 @@ export default function CommandPalette({ open, onClose }: Props) {
                 >
                   {a.group}
                 </span>
-                <span style={{ fontSize: 13, color: '#1a1714' }}>{a.label}</span>
+                <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>{a.label}</span>
               </span>
               <span
                 style={{
                   fontFamily: 'monospace',
                   fontSize: 11,
-                  color: '#6b6560',
-                  border: '1px solid #e0dbd4',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--border-subtle)',
                   borderRadius: 4,
                   padding: '1px 6px',
                 }}
