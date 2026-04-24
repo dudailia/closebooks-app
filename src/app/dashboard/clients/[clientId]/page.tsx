@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import HealthPill from '@/components/health/HealthPill'
+import type { HealthBreakdown } from '@/lib/health/scoreClient'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { getClient, getJobsForClient, saveClient } from '@/lib/storage'
@@ -313,6 +315,24 @@ export default function ClientDetailPage() {
   const [jobs,     setJobs]     = useState<CategorizationJob[]>([])
   const [notFound, setNotFound] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
+  const [health,   setHealth]   = useState<HealthBreakdown | null>(null)
+
+  useEffect(() => {
+    if (!client) return
+    const payload = { clients: [{ clientName: client.business_name, jobs }] }
+    void (async () => {
+      try {
+        const res = await fetch('/api/clients/health', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        const data = await res.json()
+        const s = data?.scores?.[client.business_name]
+        if (s) setHealth(s)
+      } catch { /* non-fatal */ }
+    })()
+  }, [client, jobs.length])
 
   useEffect(() => {
     const c = getClient(clientId)
@@ -413,6 +433,7 @@ export default function ClientDetailPage() {
               >
                 {client.accounting_software}
               </span>
+              {health && <HealthPill breakdown={health} />}
             </div>
             {client.contact_email && (
               <p className="text-sm mt-1.5" style={{ color: '#6b6560' }}>{client.contact_email}</p>

@@ -56,6 +56,17 @@ export type Client = {
   notes?: string
 }
 
+export interface JobNarrativeParagraph {
+  tone: 'formal' | 'conversational' | 'owner'
+  html: string
+  citations: Array<{ phrase: string; txIds: string[] }>
+}
+
+export interface JobNarrative {
+  paragraphs: JobNarrativeParagraph[]
+  forwardLookingLine: string
+}
+
 export type CategorizationJob = {
   id: string
   client_name: string
@@ -67,6 +78,8 @@ export type CategorizationJob = {
   flagged: number
   transactions: Transaction[]
   chart_of_accounts: ChartOfAccounts[]
+  narrative?: JobNarrative
+  monthlyReportSentAt?: string
 }
 
 // ─── Copilot ─────────────────────────────────────────────────────────────────
