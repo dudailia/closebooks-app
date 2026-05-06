@@ -1,314 +1,623 @@
 'use client'
-import { motion } from 'framer-motion'
-import { ReactNode } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence, useInView } from 'framer-motion'
+import { GlowCard } from '@/components/ui/GlowCard'
 
-interface BentoCardProps {
-  title: string
-  body: string
-  icon: ReactNode
-  span?: 'small' | 'large'
-  children?: ReactNode
-}
+// ─── Card 1: Before/After toggle ─────────────────────────────────────────────
 
-function BentoCard({ title, body, icon, span = 'small', children }: BentoCardProps) {
+const TXS = [
+  { name: 'Notion Labs',  wrong: 'Personal',     right: 'Software'             },
+  { name: 'Amazon AWS',   wrong: 'Office Misc',  right: 'Cloud Infrastructure' },
+  { name: 'Stripe',       wrong: 'Unknown',      right: 'Transaction Fees'     },
+  { name: 'DoorDash',     wrong: 'Entertainment',right: 'Meals'                },
+  { name: 'Uber',         wrong: 'Other',        right: 'Travel'               },
+]
+
+function BeforeAfterVisual() {
+  const [after, setAfter] = useState(false)
+
   return (
-    <motion.div
-      whileHover={{ y: -3 }}
-      transition={{ type: 'spring', stiffness: 280, damping: 22 }}
-      style={{
-        position: 'relative',
-        gridColumn: span === 'large' ? 'span 4' : 'span 2',
-        backgroundColor: '#111118',
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: 20,
-        padding: 28,
-        overflow: 'hidden',
-        minHeight: span === 'large' ? 320 : 260,
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-      className="bento-card"
-    >
-      <style jsx>{`
-        :global(.bento-card)::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: 20px;
-          padding: 1px;
-          background: linear-gradient(135deg, rgba(0,217,126,0) 0%, rgba(0,217,126,0.35) 50%, rgba(0,217,126,0) 100%);
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          opacity: 0;
-          transition: opacity 280ms ease;
-          pointer-events: none;
-        }
-        :global(.bento-card:hover)::before {
-          opacity: 1;
-        }
-      `}</style>
-      <div
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 10,
-          backgroundColor: 'rgba(0,217,126,0.1)',
-          border: '1px solid rgba(0,217,126,0.24)',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#00D97E',
-          marginBottom: 18,
-        }}
-      >
-        {icon}
+    <div style={{ marginTop: 20 }}>
+      {/* Toggle row */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <button
+          type="button"
+          onClick={() => setAfter(v => !v)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '5px 10px 5px 5px',
+            borderRadius: 999,
+            border: `1px solid ${after ? 'rgba(0,200,83,0.3)' : '#222'}`,
+            background: after ? 'rgba(0,200,83,0.07)' : '#101010',
+            cursor: 'pointer',
+            transition: 'border-color 250ms, background 250ms',
+            minHeight: 'auto',
+          }}
+        >
+          {/* Track */}
+          <div
+            style={{
+              position: 'relative',
+              width: 30, height: 16, borderRadius: 999,
+              background: after ? '#00C853' : '#222',
+              border: after ? 'none' : '1px solid #333',
+              flexShrink: 0,
+              transition: 'background 250ms',
+            }}
+          >
+            <motion.div
+              animate={{ x: after ? 14 : 1 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+              style={{
+                position: 'absolute',
+                top: 1, left: 0,
+                width: 14, height: 14, borderRadius: '50%',
+                background: '#fff',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
+              }}
+            />
+          </div>
+          <span
+            style={{
+              fontSize: 11, fontWeight: 500, fontFamily: 'var(--font-sans)',
+              color: after ? '#00C853' : '#555',
+              transition: 'color 250ms',
+            }}
+          >
+            {after ? 'After CloseBooks' : 'Before CloseBooks'}
+          </span>
+        </button>
       </div>
-      <h3
-        style={{
-          fontSize: 20,
-          fontWeight: 600,
-          color: '#F0F0F5',
-          margin: 0,
-          marginBottom: 8,
-          letterSpacing: '-0.02em',
-        }}
-      >
-        {title}
-      </h3>
-      <p
-        style={{
-          fontSize: 14,
-          lineHeight: 1.55,
-          color: '#A8A8BC',
-          margin: 0,
-          flex: 1,
-        }}
-      >
-        {body}
-      </p>
-      {children && <div style={{ marginTop: 24 }}>{children}</div>}
-    </motion.div>
+
+      {/* Transaction rows */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {TXS.map((tx, i) => (
+          <div
+            key={tx.name}
+            style={{
+              display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between', gap: 12,
+              padding: '7px 10px',
+              background: '#080808', border: '1px solid #141414', borderRadius: 8,
+            }}
+          >
+            <span style={{ fontSize: 12, color: '#FAFAFA', fontFamily: 'var(--font-sans)', flex: 1 }}>
+              {tx.name}
+            </span>
+            {/* Badge — key change causes remount → entrance animation */}
+            <motion.span
+              key={`${after ? 'after' : 'before'}-${i}`}
+              initial={{ opacity: 0, scale: 0.88, y: 4 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: i * 0.04, duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                fontSize: 10, fontWeight: 500,
+                padding: '2px 8px', borderRadius: 999,
+                backgroundColor: after ? 'rgba(0,200,83,0.08)' : 'rgba(255,68,68,0.07)',
+                border: `1px solid ${after ? 'rgba(0,200,83,0.2)' : 'rgba(255,68,68,0.2)'}`,
+                color: after ? '#00C853' : '#FF6B6B',
+                fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap',
+                textDecoration: after ? 'none' : 'line-through',
+              }}
+            >
+              {after ? tx.right : tx.wrong}
+            </motion.span>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
-function CategorizationDemo() {
-  const rows = [
-    { vendor: 'Notion Labs', cat: 'Software', conf: 97 },
-    { vendor: 'Amazon AWS', cat: 'Cloud Infrastructure', conf: 99 },
-    { vendor: 'DoorDash', cat: 'Meals', conf: 94 },
-  ]
+// ─── Card 2: Progress tracker ─────────────────────────────────────────────────
+
+const STEPS = [
+  { emoji: '📄', label: 'Statement uploaded'   },
+  { emoji: '🔍', label: 'Parsing transactions'  },
+  { emoji: '🧠', label: 'AI categorization'     },
+  { emoji: '⚠️',  label: 'Exceptions flagged'   },
+  { emoji: '📋', label: 'Narrative generated'   },
+]
+
+function ProgressTracker() {
+  const [active, setActive] = useState(2)
+  useEffect(() => {
+    const iv = setInterval(() => setActive(s => (s + 1) % STEPS.length), 3800)
+    return () => clearInterval(iv)
+  }, [])
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginTop: 20 }}>
+      {STEPS.map((step, i) => {
+        const done    = i < active
+        const current = i === active
+        const pending = i > active
+
+        return (
+          <div key={step.label} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            {/* Dot + connector */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 22, flexShrink: 0 }}>
+              <div style={{ height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                {done && (
+                  <div style={{
+                    width: 18, height: 18, borderRadius: '50%',
+                    background: 'rgba(0,200,83,0.12)',
+                    border: '1px solid rgba(0,200,83,0.35)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+                      <path d="M1 3.5l2 2 5-4" stroke="#00C853" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                )}
+                {current && (
+                  <>
+                    <motion.div
+                      animate={{ scale: [1, 2, 1], opacity: [0.6, 0.1, 0.6] }}
+                      transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                      style={{
+                        position: 'absolute', width: 18, height: 18,
+                        borderRadius: '50%', background: 'rgba(0,200,83,0.25)',
+                      }}
+                    />
+                    <div style={{
+                      width: 10, height: 10, borderRadius: '50%',
+                      background: '#00C853',
+                      boxShadow: '0 0 10px rgba(0,200,83,0.7)',
+                      position: 'relative', zIndex: 1,
+                    }} />
+                  </>
+                )}
+                {pending && (
+                  <div style={{
+                    width: 10, height: 10, borderRadius: '50%',
+                    background: '#1a1a1a', border: '1px solid #252525',
+                  }} />
+                )}
+              </div>
+              {i < STEPS.length - 1 && (
+                <div style={{
+                  width: 1, height: 28,
+                  background: done ? 'rgba(0,200,83,0.25)' : '#1a1a1a',
+                  transition: 'background 500ms',
+                }} />
+              )}
+            </div>
+
+            {/* Text */}
+            <div style={{ paddingTop: 3, paddingBottom: i < STEPS.length - 1 ? 28 : 0 }}>
+              <span style={{
+                fontSize: 13,
+                fontWeight: current ? 600 : 400,
+                color: done ? '#555' : current ? '#FAFAFA' : '#333',
+                fontFamily: 'var(--font-sans)',
+                transition: 'color 300ms',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <span>{step.emoji}</span>
+                {step.label}
+                {current && (
+                  <motion.span
+                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    transition={{ duration: 1.4, repeat: Infinity }}
+                    style={{ fontSize: 10, color: '#00C853', fontWeight: 500 }}
+                  >
+                    running
+                  </motion.span>
+                )}
+              </span>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ─── Card 3: Rules engine visual ──────────────────────────────────────────────
+
+function RuleBlock() {
   return (
     <div
       style={{
-        backgroundColor: '#0A0A0F',
-        border: '1px solid rgba(255,255,255,0.06)',
-        borderRadius: 12,
-        overflow: 'hidden',
+        marginTop: 18,
+        padding: '12px 14px',
+        background: '#080808',
+        border: '1px solid #1a1a1a',
+        borderRadius: 8,
+        fontFamily: 'var(--font-mono)',
+        fontSize: 11.5,
+        lineHeight: 2,
       }}
     >
-      {rows.map((r, i) => (
-        <div
-          key={r.vendor}
+      <div>
+        <span style={{ color: '#555' }}>IF    </span>
+        <span style={{ color: '#FAFAFA' }}>vendor</span>
+        <span style={{ color: '#555' }}> = </span>
+        <span style={{ color: '#F97316' }}>&ldquo;Amazon AWS&rdquo;</span>
+      </div>
+      <div>
+        <span style={{ color: '#00C853' }}>→     </span>
+        <span style={{ color: '#FAFAFA' }}>CATEGORY</span>
+        <span style={{ color: '#555' }}> = </span>
+        <span style={{ color: '#69B6FF' }}>&ldquo;Cloud Infrastructure&rdquo;</span>
+        <span style={{ color: '#00C853' }}>  ✓</span>
+      </div>
+    </div>
+  )
+}
+
+// ─── Card 4: Narrative preview ────────────────────────────────────────────────
+
+function NarrativePreview() {
+  return (
+    <div style={{ marginTop: 18, position: 'relative' }}>
+      <div
+        style={{
+          padding: '12px 14px',
+          background: '#080808',
+          border: '1px solid #1a1a1a',
+          borderRadius: 8,
+        }}
+      >
+        {/* Simulated text lines */}
+        {[88, 72, 80, 58, 44, 66].map((w, i) => (
+          <div
+            key={i}
+            style={{
+              height: 8,
+              width: `${w}%`,
+              borderRadius: 4,
+              background: i === 0 ? '#242424' : '#1a1a1a',
+              marginBottom: i < 5 ? 7 : 0,
+            }}
+          />
+        ))}
+      </div>
+      {/* AI badge */}
+      <div style={{ position: 'absolute', bottom: 10, right: 10 }}>
+        <span
           style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr auto auto',
-            gap: 10,
-            padding: '10px 14px',
-            alignItems: 'center',
-            borderBottom: i < rows.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+            fontSize: 10, fontWeight: 600,
+            padding: '3px 9px', borderRadius: 999,
+            background: 'rgba(0,200,83,0.1)',
+            border: '1px solid rgba(0,200,83,0.22)',
+            color: '#00C853',
+            fontFamily: 'var(--font-sans)',
           }}
         >
-          <span style={{ fontSize: 12, color: '#F0F0F5', fontWeight: 500 }}>{r.vendor}</span>
-          <span
+          Generated by AI ✦
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// ─── Card 5: Multi-client avatars ────────────────────────────────────────────
+
+const CLIENTS = [
+  { init: 'AK', color: '#1E4ED8' }, { init: 'BR', color: '#EA580C' },
+  { init: 'CP', color: '#7C3AED' }, { init: 'DL', color: '#0D9488' },
+  { init: 'EF', color: '#DC2626' }, { init: 'FG', color: '#059669' },
+  { init: 'GH', color: '#D97706' }, { init: 'HI', color: '#4B5563' },
+  { init: 'IJ', color: '#BE185D' },
+]
+
+function ClientGrid() {
+  return (
+    <div style={{ marginTop: 18 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 8,
+          marginBottom: 10,
+        }}
+      >
+        {CLIENTS.map((c, i) => (
+          <motion.div
+            key={c.init}
+            initial={{ scale: 0, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.04, type: 'spring', stiffness: 400, damping: 18 }}
             style={{
-              fontSize: 11,
-              color: '#00D97E',
-              padding: '2px 8px',
-              borderRadius: 999,
-              backgroundColor: 'rgba(0,217,126,0.1)',
+              width: '100%',
+              paddingBottom: '100%',
+              position: 'relative',
+              borderRadius: '50%',
             }}
           >
-            {r.cat}
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 36, height: 4, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden' }}>
-              <div style={{ width: `${r.conf}%`, height: '100%', backgroundColor: '#00D97E' }} />
+            <div
+              style={{
+                position: 'absolute', inset: 0,
+                borderRadius: '50%',
+                background: `${c.color}20`,
+                border: `1px solid ${c.color}40`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 700, color: c.color, fontFamily: 'var(--font-sans)' }}>
+                {c.init}
+              </span>
             </div>
-            <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: '#6E6E85' }}>{r.conf}%</span>
-          </div>
-        </div>
+          </motion.div>
+        ))}
+      </div>
+      <p style={{ margin: 0, fontSize: 11, color: '#444', fontFamily: 'var(--font-sans)', textAlign: 'center' }}>
+        +491 more clients
+      </p>
+    </div>
+  )
+}
+
+// ─── Green icon wrapper ───────────────────────────────────────────────────────
+
+function FeatureIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        width: 36, height: 36, borderRadius: 10,
+        background: 'rgba(0,200,83,0.08)',
+        border: '1px solid rgba(0,200,83,0.18)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: '#00C853', marginBottom: 14, flexShrink: 0,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+// ─── Card entry variants ──────────────────────────────────────────────────────
+
+const cardVariants = {
+  hidden: { scale: 0.95, opacity: 0, y: 16 },
+  show: (i: number) => ({
+    scale: 1, opacity: 1, y: 0,
+    transition: { delay: i * 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] },
+  }),
+}
+
+// ─── Staggered headline ───────────────────────────────────────────────────────
+
+function StaggerWords({ text, style }: { text: string; style?: React.CSSProperties }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-60px' })
+
+  return (
+    <div ref={ref} style={{ display: 'inline', ...style }}>
+      {text.split(' ').map((word, i) => (
+        <motion.span
+          key={word + i}
+          initial={{ opacity: 0, y: 18 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: i * 0.09, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          style={{ display: 'inline-block', marginRight: '0.26em' }}
+        >
+          {word}
+        </motion.span>
       ))}
     </div>
   )
 }
 
-function NarrativeDemo() {
-  return (
-    <div
-      style={{
-        backgroundColor: '#0A0A0F',
-        border: '1px solid rgba(255,255,255,0.06)',
-        borderRadius: 12,
-        padding: 16,
-      }}
-    >
-      <p
-        style={{
-          fontSize: 12,
-          lineHeight: 1.55,
-          color: '#D5D5E0',
-          margin: 0,
-          marginBottom: 10,
-        }}
-      >
-        Revenue of <span style={{ color: '#00D97E', fontWeight: 600 }}>$48,200</span> was up{' '}
-        <span style={{ color: '#00D97E', fontWeight: 600 }}>+12%</span> from March, led by three new recurring clients…
-      </p>
-      <p
-        style={{
-          fontSize: 11,
-          color: '#00D97E',
-          fontStyle: 'italic',
-          margin: 0,
-          padding: '8px 0 0',
-          borderTop: '1px solid rgba(0,217,126,0.14)',
-        }}
-      >
-        ➜ Projected cash runway: 14 months at current burn.
-      </p>
-    </div>
-  )
-}
+// ─── Main export ──────────────────────────────────────────────────────────────
 
 export default function BentoGrid() {
+  const gridRef = useRef<HTMLDivElement>(null)
+  const gridInView = useInView(gridRef, { once: true, margin: '-80px' })
+
   return (
-    <section id="features" style={{ padding: '80px 0 120px', position: 'relative' }}>
-      <div
-        style={{
-          maxWidth: 1200,
-          margin: '0 auto',
-          padding: '0 28px',
-        }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: 72, maxWidth: 720, margin: '0 auto 72px' }}>
-          <p
+    <section id="features" style={{ padding: '120px 0 100px', position: 'relative' }}>
+      <style jsx>{`
+        .bento-grid {
+          display: grid;
+          grid-template-columns: repeat(12, 1fr);
+          grid-template-rows: auto auto;
+          gap: 12px;
+        }
+        .bento-card-large { grid-column: span 7; }
+        .bento-card-tall  { grid-column: span 5; }
+        .bento-card-small { grid-column: span 4; }
+
+        @media (max-width: 960px) {
+          .bento-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+          .bento-card-large,
+          .bento-card-tall { grid-column: span 2; }
+          .bento-card-small { grid-column: span 1; }
+        }
+        @media (max-width: 600px) {
+          .bento-grid { grid-template-columns: 1fr; }
+          .bento-card-large,
+          .bento-card-tall,
+          .bento-card-small { grid-column: span 1; }
+        }
+      `}</style>
+
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px' }}>
+
+        {/* ── Section header ── */}
+        <div style={{ textAlign: 'center', marginBottom: 72 }}>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.5 }}
             style={{
-              fontSize: 12,
-              fontWeight: 500,
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
-              color: '#00D97E',
-              margin: 0,
-              marginBottom: 14,
+              margin: 0, marginBottom: 18,
+              fontSize: 12, fontWeight: 500,
+              letterSpacing: '0.15em', textTransform: 'uppercase',
+              color: '#00C853', fontFamily: 'var(--font-sans)',
             }}
           >
             Features
-          </p>
+          </motion.p>
+
           <h2
             style={{
-              fontFamily: 'var(--font-serif)',
+              fontFamily: 'var(--font-display)',
               fontSize: 'clamp(38px, 5vw, 56px)',
-              lineHeight: 1.05,
-              letterSpacing: '-0.03em',
-              color: '#F0F0F5',
-              margin: 0,
+              lineHeight: 1.06,
+              letterSpacing: '-0.035em',
+              margin: 0, marginBottom: 4,
               fontWeight: 400,
-              marginBottom: 18,
             }}
           >
-            Everything a month-end close needs.
-            <br />
-            <span style={{ color: '#6E6E85' }}>Nothing it doesn&apos;t.</span>
+            <StaggerWords
+              text="Everything a month-end close needs."
+              style={{ color: '#FAFAFA' }}
+            />
+          </h2>
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(38px, 5vw, 56px)',
+              lineHeight: 1.06,
+              letterSpacing: '-0.035em',
+              margin: 0,
+              fontWeight: 400,
+              fontStyle: 'italic',
+              color: '#333333',
+            }}
+          >
+            <StaggerWords text="Nothing it doesn't." />
           </h2>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(6, 1fr)',
-            gap: 16,
-          }}
-          className="bento-grid"
-        >
-          <style jsx>{`
-            @media (max-width: 900px) {
-              .bento-grid {
-                grid-template-columns: 1fr !important;
-              }
-              .bento-grid :global(.bento-card) {
-                grid-column: auto !important;
-              }
-            }
-          `}</style>
+        {/* ── Bento grid ── */}
+        <div ref={gridRef} className="bento-grid">
 
-          <BentoCard
-            span="large"
-            title="AI categorization that actually learns"
-            body="Claude-powered categorization with 94% accuracy out of the box. Corrections train a rules engine that drives accuracy to 99% within two months."
-            icon={
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2v16M2 10h16M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-            }
+          {/* ─ CARD 1: Large — AI categorization ─ */}
+          <motion.div
+            className="bento-card-large"
+            custom={0}
+            variants={cardVariants}
+            initial="hidden"
+            animate={gridInView ? 'show' : 'hidden'}
           >
-            <CategorizationDemo />
-          </BentoCard>
+            <GlowCard style={{ padding: 28, height: '100%', minHeight: 360 }}>
+              <FeatureIcon>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 1v14M1 8h14M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+              </FeatureIcon>
+              <h3 style={{ margin: 0, marginBottom: 8, fontSize: 20, fontWeight: 600, color: '#FAFAFA', fontFamily: 'var(--font-sans)', letterSpacing: '-0.025em' }}>
+                AI that learns your firm
+              </h3>
+              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, color: '#888', fontFamily: 'var(--font-sans)', maxWidth: 480 }}>
+                Claude reads your correction patterns and builds firm-specific rules. After two months, accuracy reaches 99% without any manual rule-writing.
+              </p>
+              <BeforeAfterVisual />
+            </GlowCard>
+          </motion.div>
 
-          <BentoCard
-            title="Smart rules engine"
-            body="Teach it once. CloseBooks applies your firm's rules to every future transaction, automatically."
-            icon={
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <path d="M4 6h12M4 10h8M4 14h12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-            }
-          />
-
-          <BentoCard
-            title="Bank reconciliation"
-            body="Match statements to books in seconds. Fuzzy matching plus drag-to-pair for edge cases."
-            icon={
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <path d="M4 6h12M4 14h12M8 3l-4 3 4 3M12 11l4 3-4 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            }
-          />
-
-          <BentoCard
-            title="Auto-close agent"
-            body="One click runs categorize → reconcile → anomaly scan → JEs → report. Live reasoning, full audit trail."
-            icon={
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.6" />
-                <path d="M10 6v4l3 2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-            }
-          />
-
-          <BentoCard
-            title="Keyboard-first review"
-            body="J/K to navigate. A to approve. ⌘K for anything. 500 transactions an hour without touching a mouse."
-            icon={
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <rect x="2" y="5" width="16" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
-                <path d="M6 9h.01M9 9h.01M12 9h.01M6 13h8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-            }
-          />
-
-          <BentoCard
-            span="large"
-            title="Narrative insights your clients actually read"
-            body="Every close finishes with a three-paragraph summary in the tone you pick — boardroom formal, CPA brief, or warm to the owner. Forward-looking advisory line included."
-            icon={
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <path d="M4 4h12v12H4zM4 8h12M8 8v8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            }
+          {/* ─ CARD 2: Tall — Close agent ─ */}
+          <motion.div
+            className="bento-card-tall"
+            custom={1}
+            variants={cardVariants}
+            initial="hidden"
+            animate={gridInView ? 'show' : 'hidden'}
           >
-            <NarrativeDemo />
-          </BentoCard>
+            <GlowCard style={{ padding: 28, height: '100%', minHeight: 360 }}>
+              <FeatureIcon>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
+                  <path d="M8 5v3l2.5 1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </FeatureIcon>
+              <h3 style={{ margin: 0, marginBottom: 8, fontSize: 20, fontWeight: 600, color: '#FAFAFA', fontFamily: 'var(--font-sans)', letterSpacing: '-0.025em' }}>
+                Autonomous close agent
+              </h3>
+              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, color: '#888', fontFamily: 'var(--font-sans)' }}>
+                Upload the bank statement. CloseBooks handles the rest.
+              </p>
+              <ProgressTracker />
+            </GlowCard>
+          </motion.div>
+
+          {/* ─ CARD 3: Small — Rules engine ─ */}
+          <motion.div
+            className="bento-card-small"
+            custom={2}
+            variants={cardVariants}
+            initial="hidden"
+            animate={gridInView ? 'show' : 'hidden'}
+          >
+            <GlowCard style={{ padding: 24, height: '100%', minHeight: 260 }}>
+              <FeatureIcon>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.4" />
+                  <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.1 3.1l1.4 1.4M11.5 11.5l1.4 1.4M3.1 12.9l1.4-1.4M11.5 4.5l1.4-1.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+              </FeatureIcon>
+              <h3 style={{ margin: 0, marginBottom: 8, fontSize: 17, fontWeight: 600, color: '#FAFAFA', fontFamily: 'var(--font-sans)', letterSpacing: '-0.02em' }}>
+                Rules engine
+              </h3>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#888', fontFamily: 'var(--font-sans)' }}>
+                Teach it once. CloseBooks applies your firm's rules to every future transaction, automatically.
+              </p>
+              <RuleBlock />
+            </GlowCard>
+          </motion.div>
+
+          {/* ─ CARD 4: Small — Narratives ─ */}
+          <motion.div
+            className="bento-card-small"
+            custom={3}
+            variants={cardVariants}
+            initial="hidden"
+            animate={gridInView ? 'show' : 'hidden'}
+          >
+            <GlowCard style={{ padding: 24, height: '100%', minHeight: 260 }}>
+              <FeatureIcon>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <rect x="2" y="1.5" width="12" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+                  <path d="M5 5.5h6M5 8h6M5 10.5h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+              </FeatureIcon>
+              <h3 style={{ margin: 0, marginBottom: 8, fontSize: 17, fontWeight: 600, color: '#FAFAFA', fontFamily: 'var(--font-sans)', letterSpacing: '-0.02em' }}>
+                Auto-generated narratives
+              </h3>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#888', fontFamily: 'var(--font-sans)' }}>
+                Ship client-ready month-end summaries without writing a single word.
+              </p>
+              <NarrativePreview />
+            </GlowCard>
+          </motion.div>
+
+          {/* ─ CARD 5: Small — Multi-client ─ */}
+          <motion.div
+            className="bento-card-small"
+            custom={4}
+            variants={cardVariants}
+            initial="hidden"
+            animate={gridInView ? 'show' : 'hidden'}
+          >
+            <GlowCard style={{ padding: 24, height: '100%', minHeight: 260 }}>
+              <FeatureIcon>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+                  <rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+                  <rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+                  <rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+                </svg>
+              </FeatureIcon>
+              <h3 style={{ margin: 0, marginBottom: 8, fontSize: 17, fontWeight: 600, color: '#FAFAFA', fontFamily: 'var(--font-sans)', letterSpacing: '-0.02em' }}>
+                500 clients, one dashboard
+              </h3>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#888', fontFamily: 'var(--font-sans)' }}>
+                Manage your entire book of business from a single workspace.
+              </p>
+              <ClientGrid />
+            </GlowCard>
+          </motion.div>
+
         </div>
       </div>
     </section>

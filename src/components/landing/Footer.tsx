@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 
 const COLUMNS = [
   {
@@ -43,54 +44,101 @@ export default function Footer() {
   return (
     <footer
       style={{
-        borderTop: '1px solid rgba(255,255,255,0.06)',
+        borderTop: '1px solid #1f1f1f',
         padding: '72px 0 40px',
+        position: 'relative',
       }}
     >
+      {/* Top edge glow */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          top: -1,
+          left: '30%',
+          right: '30%',
+          height: 1,
+          background: 'linear-gradient(90deg, transparent, rgba(0,200,83,0.3), transparent)',
+          pointerEvents: 'none',
+        }}
+      />
+
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px' }}>
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(240px, 1.4fr) repeat(auto-fit, minmax(140px, 1fr))',
+            gridTemplateColumns: 'minmax(240px, 1.4fr) repeat(auto-fit, minmax(130px, 1fr))',
             gap: 48,
-            marginBottom: 56,
+            marginBottom: 60,
           }}
         >
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <span
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+              <div
                 style={{
                   width: 28,
                   height: 28,
                   borderRadius: 8,
-                  background: 'linear-gradient(135deg, #00D97E 0%, #00B368 100%)',
+                  background: '#00C853',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#00110A',
-                  fontFamily: 'var(--font-sans)',
-                  fontWeight: 700,
-                  fontSize: 13,
+                  boxShadow: '0 0 12px rgba(0,200,83,0.3)',
                 }}
               >
-                C
-              </span>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 13V8M6 13V5M9 13V3M12 13V7" stroke="#000" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </div>
               <span
                 style={{
-                  fontFamily: 'var(--font-serif)',
+                  fontFamily: 'var(--font-display)',
                   fontSize: 20,
                   fontWeight: 400,
-                  color: '#F0F0F5',
+                  color: '#FAFAFA',
                   letterSpacing: '-0.02em',
                 }}
               >
                 CloseBooks
               </span>
             </div>
-            <p style={{ fontSize: 14, lineHeight: 1.55, color: '#A8A8BC', margin: 0, maxWidth: 300 }}>
+            <p style={{ fontSize: 14, lineHeight: 1.6, color: '#888888', margin: 0, maxWidth: 280, fontFamily: 'var(--font-sans)' }}>
               The AI co-pilot for month-end close. Built with CPAs, for CPAs.
             </p>
+            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+              {['X', 'LI', 'GH'].map((s) => (
+                <div
+                  key={s}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    border: '1px solid #1f1f1f',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: '#444444',
+                    cursor: 'pointer',
+                    transition: 'border-color 200ms, color 200ms',
+                    fontFamily: 'var(--font-mono)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(0,200,83,0.3)'
+                    e.currentTarget.style.color = '#00C853'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#1f1f1f'
+                    e.currentTarget.style.color = '#444444'
+                  }}
+                >
+                  {s}
+                </div>
+              ))}
+            </div>
           </div>
+
           {COLUMNS.map((c) => (
             <div key={c.title}>
               <p
@@ -99,9 +147,10 @@ export default function Footer() {
                   fontWeight: 600,
                   letterSpacing: '0.16em',
                   textTransform: 'uppercase',
-                  color: '#6E6E85',
+                  color: '#444444',
                   margin: 0,
-                  marginBottom: 14,
+                  marginBottom: 16,
+                  fontFamily: 'var(--font-sans)',
                 }}
               >
                 {c.title}
@@ -113,12 +162,13 @@ export default function Footer() {
                       href={l.href}
                       style={{
                         fontSize: 13,
-                        color: '#A8A8BC',
+                        color: '#888888',
                         textDecoration: 'none',
                         transition: 'color 150ms',
+                        fontFamily: 'var(--font-sans)',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = '#F0F0F5')}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = '#A8A8BC')}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = '#FAFAFA')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = '#888888')}
                     >
                       {l.label}
                     </Link>
@@ -135,20 +185,24 @@ export default function Footer() {
             justifyContent: 'space-between',
             alignItems: 'center',
             paddingTop: 28,
-            borderTop: '1px solid rgba(255,255,255,0.06)',
+            borderTop: '1px solid #1f1f1f',
             flexWrap: 'wrap',
             gap: 10,
           }}
         >
-          <p style={{ fontSize: 12, color: '#6E6E85', margin: 0 }}>
+          <p style={{ fontSize: 12, color: '#444444', margin: 0, fontFamily: 'var(--font-sans)' }}>
             © {new Date().getFullYear()} CloseBooks. Crafted for finance teams.
           </p>
-          <p style={{ fontSize: 12, color: '#6E6E85', margin: 0 }}>
+          <p style={{ fontSize: 12, color: '#444444', margin: 0, fontFamily: 'var(--font-sans)' }}>
             Built on{' '}
-            <a href="https://vercel.com" style={{ color: '#A8A8BC', textDecoration: 'none' }}>
+            <a href="https://vercel.com" style={{ color: '#888888', textDecoration: 'none', transition: 'color 150ms' }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#FAFAFA')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#888888')}
+            >
               Vercel
             </a>{' '}
-            · Powered by Claude
+            · Powered by{' '}
+            <span style={{ color: '#00C853' }}>Claude</span>
           </p>
         </div>
       </div>

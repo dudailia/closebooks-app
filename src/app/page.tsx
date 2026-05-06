@@ -14,8 +14,8 @@ export default function LandingPage() {
       data-theme="dark"
       style={{
         minHeight: '100vh',
-        backgroundColor: '#0A0A0F',
-        color: '#F0F0F5',
+        backgroundColor: '#080808',
+        color: '#FAFAFA',
         overflowX: 'hidden',
       }}
     >

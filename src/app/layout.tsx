@@ -1,25 +1,26 @@
 import type { Metadata, Viewport } from 'next'
-import { DM_Sans, DM_Mono, DM_Serif_Display } from 'next/font/google'
+import { Inter, Instrument_Serif, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 
-const dmSans = DM_Sans({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-dm-sans',
+  variable: '--font-inter',
   weight: ['300', '400', '500', '600', '700'],
   display: 'swap',
 })
 
-const dmMono = DM_Mono({
+const instrumentSerif = Instrument_Serif({
   subsets: ['latin'],
-  variable: '--font-dm-mono',
-  weight: ['300', '400', '500'],
+  variable: '--font-display',
+  weight: '400',
+  style: ['normal', 'italic'],
   display: 'swap',
 })
 
-const dmSerif = DM_Serif_Display({
+const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  variable: '--font-dm-serif',
-  weight: '400',
+  variable: '--font-jetbrains',
+  weight: ['300', '400', '500', '600'],
   display: 'swap',
 })
 
@@ -27,9 +28,8 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
-  themeColor: '#2d5a27',
+  themeColor: '#00C853',
   viewportFit: 'cover',
-  // Prevent iOS text size adjustment on rotate
   userScalable: true,
 }
 
@@ -72,7 +72,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${dmMono.variable} ${dmSerif.variable}`}>
+    <html lang="en" className={`${inter.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased">
         {children}
       </body>
