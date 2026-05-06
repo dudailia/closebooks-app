@@ -1,6 +1,9 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { GlowCard } from '@/components/ui/GlowCard'
+import { MagneticButton } from '@/components/ui/MagneticButton'
 import {
   TIERS,
   annualTotal,
@@ -20,14 +23,14 @@ export default function PricingTiers({ variant = 'landing', annualDefault = fals
   return (
     <div>
       {/* Toggle */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 44 }}>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 48 }}>
         <div
           style={{
             display: 'inline-flex',
             padding: 4,
             borderRadius: 999,
-            backgroundColor: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            backgroundColor: '#0f0f0f',
+            border: '1px solid #1f1f1f',
           }}
         >
           {(['Monthly', 'Annual'] as const).map((label, i) => {
@@ -38,20 +41,21 @@ export default function PricingTiers({ variant = 'landing', annualDefault = fals
                 type="button"
                 onClick={() => setAnnual(i === 1)}
                 style={{
-                  padding: '8px 18px',
+                  padding: '8px 20px',
                   fontSize: 13,
                   fontWeight: 600,
                   borderRadius: 999,
                   border: 'none',
                   cursor: 'pointer',
-                  color: isActive ? '#00110A' : '#A8A8BC',
-                  background: isActive
-                    ? 'linear-gradient(135deg, #00D97E 0%, #00B368 100%)'
-                    : 'transparent',
-                  transition: 'all 160ms',
+                  color: isActive ? '#000' : '#888888',
+                  background: isActive ? '#00C853' : 'transparent',
+                  transition: 'all 200ms',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 6,
+                  boxShadow: isActive ? '0 4px 16px rgba(0,200,83,0.3)' : 'none',
+                  fontFamily: 'var(--font-sans)',
+                  minHeight: 'auto',
                 }}
               >
                 {label}
@@ -62,10 +66,8 @@ export default function PricingTiers({ variant = 'landing', annualDefault = fals
                       fontWeight: 700,
                       padding: '1px 6px',
                       borderRadius: 999,
-                      backgroundColor: isActive
-                        ? 'rgba(0,17,10,0.15)'
-                        : 'rgba(0,217,126,0.16)',
-                      color: isActive ? '#00110A' : '#00D97E',
+                      backgroundColor: isActive ? 'rgba(0,0,0,0.15)' : 'rgba(0,200,83,0.12)',
+                      color: isActive ? '#000' : '#00C853',
                     }}
                   >
                     −20%
@@ -82,12 +84,20 @@ export default function PricingTiers({ variant = 'landing', annualDefault = fals
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: 20,
+          gap: 16,
           alignItems: 'stretch',
         }}
       >
-        {TIERS.map((tier) => (
-          <TierCard key={tier.id} tier={tier} annual={annual} variant={variant} />
+        {TIERS.map((tier, i) => (
+          <motion.div
+            key={tier.id}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: i * 0.08 }}
+          >
+            <TierCard key={tier.id} tier={tier} annual={annual} variant={variant} />
+          </motion.div>
         ))}
       </div>
 
@@ -96,7 +106,8 @@ export default function PricingTiers({ variant = 'landing', annualDefault = fals
           textAlign: 'center',
           marginTop: 28,
           fontSize: 13,
-          color: '#6E6E85',
+          color: '#444444',
+          fontFamily: 'var(--font-sans)',
         }}
       >
         14-day trial on every plan · Cancel anytime · Annual saves 20%
@@ -118,37 +129,38 @@ function TierCard({
   const suffix = annual ? '/yr' : '/mo'
 
   return (
-    <div
+    <GlowCard
       style={{
-        position: 'relative',
         padding: 28,
-        borderRadius: 20,
-        backgroundColor: '#111118',
-        border: tier.popular
-          ? '1px solid rgba(0,217,126,0.5)'
-          : '1px solid rgba(255,255,255,0.07)',
-        boxShadow: tier.popular ? '0 24px 60px rgba(0,217,126,0.12)' : 'none',
         display: 'flex',
         flexDirection: 'column',
+        position: 'relative',
+        height: '100%',
+        ...(tier.popular ? {
+          borderColor: 'rgba(0,200,83,0.4)',
+          boxShadow: '0 0 40px rgba(0,200,83,0.12)',
+          animation: 'glow-pulse 3s ease-in-out infinite',
+        } : {}),
       }}
     >
       {tier.popular && (
         <div
           style={{
             position: 'absolute',
-            top: -12,
+            top: -13,
             left: '50%',
             transform: 'translateX(-50%)',
-            padding: '4px 12px',
+            padding: '4px 14px',
             fontSize: 11,
             fontWeight: 700,
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: '#00110A',
-            background: 'linear-gradient(135deg, #00D97E, #00B368)',
+            color: '#000',
+            background: '#00C853',
             borderRadius: 999,
             whiteSpace: 'nowrap',
-            boxShadow: '0 8px 24px rgba(0,217,126,0.3)',
+            boxShadow: '0 4px 20px rgba(0,200,83,0.4)',
+            fontFamily: 'var(--font-sans)',
           }}
         >
           Most popular
@@ -157,44 +169,45 @@ function TierCard({
 
       <p
         style={{
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: 600,
-          letterSpacing: '0.16em',
+          letterSpacing: '0.18em',
           textTransform: 'uppercase',
-          color: '#00D97E',
+          color: '#00C853',
           margin: 0,
-          marginBottom: 12,
+          marginBottom: 14,
+          fontFamily: 'var(--font-sans)',
         }}
       >
         {tier.name}
       </p>
 
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 2 }}>
         <span
           style={{
-            fontFamily: 'var(--font-serif)',
-            fontSize: 56,
+            fontFamily: 'var(--font-display)',
+            fontSize: 60,
             lineHeight: 1,
-            color: '#F0F0F5',
-            letterSpacing: '-0.035em',
+            color: '#FAFAFA',
+            letterSpacing: '-0.04em',
             fontWeight: 400,
           }}
         >
           ${display}
         </span>
-        <span style={{ fontSize: 14, color: '#A8A8BC' }}>{suffix}</span>
+        <span style={{ fontSize: 14, color: '#888888', fontFamily: 'var(--font-sans)' }}>{suffix}</span>
       </div>
 
       {annual && (
-        <p style={{ fontSize: 11, color: '#00D97E', margin: '4px 0 0' }}>
+        <p style={{ fontSize: 11, color: '#00C853', margin: '4px 0 0', fontFamily: 'var(--font-sans)' }}>
           20% off vs ${tier.monthly * 12}/yr
         </p>
       )}
 
-      <p style={{ fontSize: 13, color: '#A8A8BC', margin: '12px 0 4px' }}>
+      <p style={{ fontSize: 13, color: '#888888', margin: '12px 0 4px', fontFamily: 'var(--font-sans)' }}>
         {tier.clients} · {tier.users}
       </p>
-      <p style={{ fontSize: 13, color: '#6E6E85', margin: 0, marginBottom: 20 }}>
+      <p style={{ fontSize: 13, color: '#444444', margin: 0, marginBottom: 22, fontFamily: 'var(--font-sans)' }}>
         {tier.tagline}
       </p>
 
@@ -206,26 +219,15 @@ function TierCard({
               display: 'flex',
               alignItems: 'flex-start',
               gap: 10,
-              padding: '6px 0',
+              padding: '5px 0',
               fontSize: 13,
-              color: '#D5D5E0',
+              color: '#888888',
+              fontFamily: 'var(--font-sans)',
             }}
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              style={{ marginTop: 2, flexShrink: 0 }}
-            >
-              <circle cx="8" cy="8" r="7" fill="rgba(0,217,126,0.1)" />
-              <path
-                d="M5 8l2 2 4-4"
-                stroke="#00D97E"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ marginTop: 2, flexShrink: 0 }}>
+              <circle cx="8" cy="8" r="7" fill="rgba(0,200,83,0.08)" />
+              <path d="M5 8l2 2 4-4" stroke="#00C853" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             {f}
           </li>
@@ -237,48 +239,69 @@ function TierCard({
       ) : (
         <PricingCta tier={tier} annual={annual} />
       )}
-    </div>
+    </GlowCard>
   )
 }
 
 function LandingCta({ tier, annual }: { tier: Tier; annual: boolean }) {
   const href = `/signup?plan=${tier.id}&billing=${annual ? 'annual' : 'monthly'}`
+
+  if (tier.popular) {
+    return (
+      <MagneticButton style={{ width: '100%' }}>
+        <Link
+          href={href}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            padding: '13px 16px',
+            fontSize: 14,
+            fontWeight: 600,
+            borderRadius: 10,
+            textDecoration: 'none',
+            color: '#000',
+            background: '#00C853',
+            boxShadow: '0 6px 24px rgba(0,200,83,0.35)',
+            transition: 'box-shadow 200ms',
+            fontFamily: 'var(--font-sans)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 10px 36px rgba(0,200,83,0.55)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,200,83,0.35)' }}
+        >
+          Start 14-day trial
+        </Link>
+      </MagneticButton>
+    )
+  }
+
   return (
     <Link
       href={href}
       style={{
-        display: 'inline-flex',
+        display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',
-        padding: '12px 16px',
+        padding: '13px 16px',
         fontSize: 14,
         fontWeight: 600,
         borderRadius: 10,
         textDecoration: 'none',
-        color: tier.popular ? '#00110A' : '#F0F0F5',
-        background: tier.popular
-          ? 'linear-gradient(135deg, #00D97E 0%, #00B368 100%)'
-          : 'rgba(255,255,255,0.04)',
-        border: tier.popular ? 'none' : '1px solid rgba(255,255,255,0.12)',
-        boxShadow: tier.popular ? '0 8px 24px rgba(0,217,126,0.28)' : 'none',
-        transition: 'transform 160ms, box-shadow 160ms',
+        color: '#FAFAFA',
+        background: 'rgba(255,255,255,0.04)',
+        border: '1px solid #1f1f1f',
+        transition: 'background 200ms, border-color 200ms',
+        fontFamily: 'var(--font-sans)',
       }}
       onMouseEnter={(e) => {
-        if (tier.popular) {
-          e.currentTarget.style.transform = 'translateY(-1px)'
-          e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,217,126,0.42)'
-        } else {
-          e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'
-        }
+        e.currentTarget.style.background = 'rgba(255,255,255,0.08)'
+        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'
       }}
       onMouseLeave={(e) => {
-        if (tier.popular) {
-          e.currentTarget.style.transform = 'translateY(0)'
-          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,217,126,0.28)'
-        } else {
-          e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'
-        }
+        e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
+        e.currentTarget.style.borderColor = '#1f1f1f'
       }}
     >
       Start 14-day trial
@@ -328,14 +351,14 @@ function PricingCta({ tier, annual }: { tier: Tier; annual: boolean }) {
           width: '100%',
           padding: '10px 12px',
           fontSize: 13,
-          color: '#F0F0F5',
-          backgroundColor: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.1)',
+          color: '#FAFAFA',
+          backgroundColor: '#141414',
+          border: '1px solid #1f1f1f',
           borderRadius: 8,
           outline: 'none',
           marginBottom: 10,
           boxSizing: 'border-box',
-          fontFamily: 'inherit',
+          fontFamily: 'var(--font-sans)',
         }}
       />
       {configured ? (
@@ -345,30 +368,28 @@ function PricingCta({ tier, annual }: { tier: Tier; annual: boolean }) {
           disabled={loading}
           style={{
             width: '100%',
-            padding: '12px 16px',
+            padding: '13px 16px',
             fontSize: 14,
             fontWeight: 600,
             borderRadius: 10,
             cursor: loading ? 'wait' : 'pointer',
-            color: tier.popular ? '#00110A' : '#F0F0F5',
-            background: tier.popular
-              ? 'linear-gradient(135deg, #00D97E 0%, #00B368 100%)'
-              : 'rgba(255,255,255,0.04)',
-            border: tier.popular ? 'none' : '1px solid rgba(255,255,255,0.12)',
-            boxShadow: tier.popular ? '0 8px 24px rgba(0,217,126,0.28)' : 'none',
+            color: tier.popular ? '#000' : '#FAFAFA',
+            background: tier.popular ? '#00C853' : 'rgba(255,255,255,0.04)',
+            border: tier.popular ? 'none' : '1px solid #1f1f1f',
+            boxShadow: tier.popular ? '0 6px 24px rgba(0,200,83,0.3)' : 'none',
             opacity: loading ? 0.7 : 1,
-            fontFamily: 'inherit',
+            fontFamily: 'var(--font-sans)',
           }}
         >
           {loading ? 'Redirecting to Stripe…' : 'Subscribe'}
         </button>
       ) : (
-        <p style={{ fontSize: 11, textAlign: 'center', color: '#6E6E85', marginTop: 4 }}>
+        <p style={{ fontSize: 11, textAlign: 'center', color: '#444444', marginTop: 4, fontFamily: 'var(--font-sans)' }}>
           Set {priceEnvKey(tier.id, annual)} in env to enable checkout.
         </p>
       )}
       {error && (
-        <p style={{ marginTop: 8, fontSize: 12, color: '#FF8FA0' }}>{error}</p>
+        <p style={{ marginTop: 8, fontSize: 12, color: '#FF4444', fontFamily: 'var(--font-sans)' }}>{error}</p>
       )}
     </>
   )

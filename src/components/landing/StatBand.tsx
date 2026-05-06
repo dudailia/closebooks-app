@@ -1,134 +1,341 @@
 'use client'
-import StatCounter from './StatCounter'
+import { useEffect, useRef, useState } from 'react'
+import { motion, useInView } from 'framer-motion'
 
-const FIRMS = ['NORTHPEAK CPA', 'HANSEN & CO', 'MERIDIAN BOOKS', 'ASCEND ACCOUNTING', 'DUE NORTH', 'BALANCE LEDGER']
+// ─── Data ─────────────────────────────────────────────────────────────────────
 
-export default function StatBand() {
+const ROW1 = [
+  'Northpeak CPA', 'Hansen & Co', 'Meridian Books', 'Ascend Accounting',
+  'Due North', 'Balance Ledger', 'Vertex Partners', 'Summit CPA',
+]
+const ROW2 = [
+  'Harbor Accounting', 'Crestview CPA', 'Alpine Books', 'Pacific Ledger',
+  'Coastal Close', 'Ridge & Partners', 'Apex Accounting', 'Clearwater CPA',
+]
+
+const TRUST = [
+  { icon: '🔒', label: 'SOC 2 compliant' },
+  { icon: '🤖', label: 'Powered by Claude AI' },
+  { icon: '⚡', label: '99.9% uptime' },
+  { icon: '🔁', label: 'Syncs with QuickBooks' },
+]
+
+// ─── Eased count-up ───────────────────────────────────────────────────────────
+
+function useCountUp(from: number, to: number, durationSecs: number, active: boolean) {
+  const [value, setValue] = useState(from)
+  useEffect(() => {
+    if (!active) return
+    const t0 = performance.now()
+    let rafId: number
+    function tick(now: number) {
+      const progress = Math.min((now - t0) / (durationSecs * 1000), 1)
+      const eased = 1 - Math.pow(1 - progress, 4) // ease-out quart
+      setValue(Math.round(from + (to - from) * eased))
+      if (progress < 1) rafId = requestAnimationFrame(tick)
+    }
+    rafId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafId)
+  }, [active, from, to, durationSecs])
+  return value
+}
+
+// ─── Marquee row ──────────────────────────────────────────────────────────────
+
+function MarqueeRow({ firms, reverse, duration }: { firms: string[]; reverse?: boolean; duration: number }) {
+  // Duplicate so the seamless -50% loop works
+  const doubled = [...firms, ...firms]
   return (
-    <section style={{ position: 'relative', padding: '80px 0 120px' }}>
+    <div
+      style={{
+        overflow: 'hidden',
+        maskImage: 'linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)',
+        padding: '4px 0',
+      }}
+    >
       <div
         style={{
-          maxWidth: 1200,
-          margin: '0 auto',
-          padding: '0 28px',
+          display: 'flex',
+          gap: 10,
+          width: 'max-content',
+          animation: `${reverse ? 'marquee-right' : 'marquee-left'} ${duration}s linear infinite`,
+          willChange: 'transform',
         }}
       >
-        {/* Trust strip */}
-        <div style={{ textAlign: 'center', marginBottom: 64 }}>
-          <p
+        {doubled.map((firm, i) => (
+          <span
+            key={i}
             style={{
-              fontSize: 11,
-              fontWeight: 500,
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: '#6E6E85',
-              margin: 0,
-              marginBottom: 18,
-            }}
-          >
-            Trusted by 200+ CPA firms · 12,000+ books closed monthly
-          </p>
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: '22px 48px',
+              padding: '5px 14px',
+              borderRadius: 999,
+              backgroundColor: '#0f0f0f',
+              border: '1px solid #1a1a1a',
+              whiteSpace: 'nowrap',
+              fontSize: 13,
+              color: '#555555',
+              fontFamily: 'var(--font-sans)',
+              letterSpacing: '-0.01em',
+              userSelect: 'none',
             }}
           >
-            {FIRMS.map((f) => (
-              <span
-                key={f}
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  letterSpacing: '0.12em',
-                  color: 'rgba(168,168,188,0.6)',
-                }}
-              >
-                {f}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: 48,
-            paddingTop: 60,
-            borderTop: '1px solid rgba(255,255,255,0.06)',
-          }}
-        >
-          <StatItem value={<StatCounter to={94} suffix="%" />} label="AI categorization accuracy" sublabel="Learns from your corrections" />
-          <StatItem
-            value={
-              <>
-                <StatCounter to={3} />
-                <span style={{ color: '#6E6E85', fontSize: '0.4em', marginLeft: 6 }}>hrs</span>
-              </>
-            }
-            label="Time to close one client"
-            sublabel="Down from 3 days"
-          />
-          <StatItem
-            value={
-              <>
-                <span style={{ color: '#6E6E85' }}>$</span>
-                <StatCounter to={2400} />
-              </>
-            }
-            label="Monthly savings per firm"
-            sublabel="vs. traditional bookkeeping tools"
-          />
-        </div>
+            {firm}
+          </span>
+        ))}
       </div>
-    </section>
+    </div>
   )
 }
 
-function StatItem({
-  value,
-  label,
-  sublabel,
-}: {
-  value: React.ReactNode
+// ─── Single metric ────────────────────────────────────────────────────────────
+
+interface StatProps {
+  from: number
+  to: number
+  prefix?: string
+  suffix?: string
   label: string
   sublabel: string
-}) {
+  showDownArrow?: boolean
+  active: boolean
+  format?: (n: number) => string
+}
+
+function StatItem({ from, to, prefix, suffix, label, sublabel, showDownArrow, active, format }: StatProps) {
+  const value = useCountUp(from, to, 1.5, active)
+  const display = format ? format(value) : String(value)
+
   return (
-    <div style={{ textAlign: 'left' }}>
-      <p
+    <div style={{ textAlign: 'center', padding: '0 32px' }}>
+      {/* Big number */}
+      <div
         style={{
-          fontFamily: 'var(--font-serif)',
-          fontSize: 'clamp(56px, 6.5vw, 92px)',
-          fontWeight: 400,
-          color: '#F0F0F5',
-          letterSpacing: '-0.035em',
-          lineHeight: 1,
-          margin: 0,
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'center',
+          gap: 0,
           marginBottom: 14,
-          fontVariantNumeric: 'tabular-nums',
+          lineHeight: 1,
         }}
       >
-        {value}
-      </p>
+        {prefix && (
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 'clamp(28px, 3.5vw, 38px)',
+              color: '#444444',
+              letterSpacing: '-0.02em',
+              marginRight: 4,
+            }}
+          >
+            {prefix}
+          </span>
+        )}
+        <span
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(56px, 7vw, 80px)',
+            fontWeight: 400,
+            color: '#FAFAFA',
+            letterSpacing: '-0.045em',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          {display}
+        </span>
+        {suffix && (
+          <span
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: 'clamp(18px, 2vw, 24px)',
+              fontWeight: 600,
+              color: '#00C853',
+              marginLeft: 6,
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {suffix}
+          </span>
+        )}
+      </div>
+
+      {/* Label */}
       <p
         style={{
-          fontSize: 15,
-          color: '#F0F0F5',
           margin: 0,
-          marginBottom: 4,
+          marginBottom: 6,
+          fontSize: 15,
           fontWeight: 500,
+          color: '#FAFAFA',
+          fontFamily: 'var(--font-sans)',
+          letterSpacing: '-0.01em',
         }}
       >
         {label}
       </p>
-      <p style={{ fontSize: 13, color: '#6E6E85', margin: 0 }}>{sublabel}</p>
+
+      {/* Sublabel */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+        {showDownArrow && (
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden>
+            <path
+              d="M6.5 2v9M3 8l3.5 3.5L10 8"
+              stroke="#00C853"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+        <span style={{ fontSize: 13, color: '#444444', fontFamily: 'var(--font-sans)' }}>
+          {sublabel}
+        </span>
+      </div>
     </div>
+  )
+}
+
+// ─── Vertical divider ─────────────────────────────────────────────────────────
+
+function VDivider() {
+  return (
+    <div
+      className="stat-vdivider"
+      style={{ width: 1, height: 90, background: '#1a1a1a', flexShrink: 0, alignSelf: 'center' }}
+    />
+  )
+}
+
+// ─── Main export ──────────────────────────────────────────────────────────────
+
+export default function StatBand() {
+  const metricsRef = useRef<HTMLDivElement>(null)
+  const isInView   = useInView(metricsRef, { once: true, margin: '-80px' })
+
+  return (
+    <section
+      style={{
+        position: 'relative',
+        padding: '80px 0',
+        background: '#0a0a0a',
+        borderTop: '1px solid #1f1f1f',
+      }}
+    >
+      {/* ── Keyframes (global) ── */}
+      <style jsx global>{`
+        @keyframes marquee-left {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes marquee-right {
+          0%   { transform: translateX(-50%); }
+          100% { transform: translateX(0); }
+        }
+        @media (max-width: 640px) {
+          .stats-row {
+            flex-direction: column !important;
+            gap: 44px !important;
+          }
+          .stat-vdivider {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      {/* ════ PART 1 — Logo marquee ════ */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 72 }}>
+        <MarqueeRow firms={ROW1} duration={30} />
+        <MarqueeRow firms={ROW2} reverse duration={24} />
+      </div>
+
+      {/* ════ PART 2 — Three hero metrics ════ */}
+      <div ref={metricsRef} style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+          className="stats-row"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <StatItem
+            from={0} to={94}
+            suffix="%"
+            label="AI categorization accuracy"
+            sublabel="Learns from your corrections"
+            active={isInView}
+          />
+
+          <VDivider />
+
+          <StatItem
+            from={8} to={3}
+            suffix="hrs"
+            label="Time to close one client"
+            sublabel="Down from 3 days"
+            showDownArrow
+            active={isInView}
+          />
+
+          <VDivider />
+
+          <StatItem
+            from={0} to={2400}
+            prefix="$"
+            label="Monthly savings per firm"
+            sublabel="vs. traditional bookkeeping tools"
+            active={isInView}
+            format={(n) => n.toLocaleString()}
+          />
+        </motion.div>
+      </div>
+
+      {/* ════ PART 3 — Trust badges ════ */}
+      <div style={{ maxWidth: 1200, margin: '56px auto 0', padding: '0 28px' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '10px 40px',
+            paddingTop: 24,
+            borderTop: '1px solid #141414',
+          }}
+        >
+          {TRUST.map((item) => (
+            <div
+              key={item.label}
+              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+            >
+              <span
+                style={{
+                  fontSize: 14,
+                  filter: 'grayscale(0.4) brightness(0.65)',
+                  lineHeight: 1,
+                }}
+              >
+                {item.icon}
+              </span>
+              <span
+                style={{
+                  fontSize: 13,
+                  color: '#444444',
+                  fontFamily: 'var(--font-sans)',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                {item.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   )
 }

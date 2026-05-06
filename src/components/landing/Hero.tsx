@@ -1,237 +1,732 @@
 'use client'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
-import HeroTransactionFeed from './HeroTransactionFeed'
+import { motion, AnimatePresence, useInView } from 'framer-motion'
+import { MagneticButton } from '@/components/ui/MagneticButton'
+
+// ─── Transaction data ────────────────────────────────────────────────────────
+
+const TRANSACTIONS = [
+  { id: 1, monogram: 'AW', color: '#1E4ED8', name: 'Amazon AWS',    amount: '-$412.09',   category: 'Cloud Infrastructure' },
+  { id: 2, monogram: 'SF', color: '#EA580C', name: 'Salesforce',    amount: '-$1,200.00', category: 'CRM Software'          },
+  { id: 3, monogram: 'SL', color: '#7C3AED', name: 'Slack',         amount: '-$87.50',    category: 'Communications'        },
+  { id: 4, monogram: 'GS', color: '#4B5563', name: 'Google Suite',  amount: '-$340.00',   category: 'Productivity'          },
+  { id: 5, monogram: 'QK', color: '#0D9488', name: 'QuickBooks',    amount: '-$299.00',   category: 'Accounting Software'   },
+] as const
+
+// ─── Typewriter badge ────────────────────────────────────────────────────────
+
+function TypewriterText({ text, delayMs }: { text: string; delayMs: number }) {
+  const [chars, setChars] = useState(0)
+
+  useEffect(() => {
+    setChars(0)
+    const start = setTimeout(() => {
+      const iv = setInterval(() => {
+        setChars(c => {
+          if (c >= text.length) { clearInterval(iv); return c }
+          return c + 1
+        })
+      }, 32)
+      return () => clearInterval(iv)
+    }, delayMs)
+    return () => clearTimeout(start)
+  }, [text, delayMs])
+
+  return <>{text.slice(0, chars)}</>
+}
+
+// ─── Single transaction row ──────────────────────────────────────────────────
+
+function TxRow({ tx, index }: { tx: typeof TRANSACTIONS[number]; index: number }) {
+  const rowDelay      = index * 0.15
+  const checkDelay    = rowDelay + 0.55
+  const badgeDelayMs  = (rowDelay + 0.45) * 1000
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: rowDelay, duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '30px 1fr auto auto auto',
+        gap: 8,
+        alignItems: 'center',
+        padding: '8px 0',
+        borderBottom: index < TRANSACTIONS.length - 1 ? '1px solid #141414' : 'none',
+      }}
+    >
+      {/* Monogram circle */}
+      <div
+        style={{
+          width: 30, height: 30, borderRadius: '50%',
+          background: `${tx.color}22`,
+          border: `1px solid ${tx.color}50`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 9, fontWeight: 700, color: tx.color,
+          fontFamily: 'var(--font-sans)', flexShrink: 0,
+          letterSpacing: '-0.01em',
+        }}
+      >
+        {tx.monogram}
+      </div>
+
+      {/* Name */}
+      <span
+        style={{
+          fontSize: 12, fontWeight: 500, color: '#FAFAFA',
+          fontFamily: 'var(--font-sans)',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}
+      >
+        {tx.name}
+      </span>
+
+      {/* Amount */}
+      <span
+        style={{
+          fontSize: 11, color: '#FF4444',
+          fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums',
+          flexShrink: 0,
+        }}
+      >
+        {tx.amount}
+      </span>
+
+      {/* Category badge — typewriter */}
+      <span
+        style={{
+          fontSize: 10, fontWeight: 500,
+          padding: '2px 7px', borderRadius: 999,
+          backgroundColor: 'rgba(0,200,83,0.08)',
+          border: '1px solid rgba(0,200,83,0.15)',
+          color: '#00C853',
+          fontFamily: 'var(--font-sans)',
+          whiteSpace: 'nowrap', flexShrink: 0,
+          display: 'inline-block', minWidth: 70,
+        }}
+      >
+        <TypewriterText text={tx.category} delayMs={badgeDelayMs} />
+      </span>
+
+      {/* Checkmark */}
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: checkDelay, type: 'spring', stiffness: 480, damping: 16 }}
+        style={{
+          width: 20, height: 20, borderRadius: '50%',
+          backgroundColor: 'rgba(0,200,83,0.12)',
+          border: '1px solid rgba(0,200,83,0.25)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+          <path d="M1 4l2.5 2.5L9 1" stroke="#00C853" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ─── Looping transaction feed ─────────────────────────────────────────────────
+
+function TransactionFeedDemo() {
+  const [cycleKey,    setCycleKey]    = useState(0)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [visible,     setVisible]     = useState(true)
+
+  useEffect(() => {
+    setShowSuccess(false)
+    setVisible(true)
+    const t1 = setTimeout(() => setShowSuccess(true),               2600)
+    const t2 = setTimeout(() => setVisible(false),                  4300)
+    const t3 = setTimeout(() => setCycleKey(k => k + 1),           5100)
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+  }, [cycleKey])
+
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          key={cycleKey}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: { duration: 0.45 } }}
+          transition={{ duration: 0.25 }}
+        >
+          {TRANSACTIONS.map((tx, i) => (
+            <TxRow key={tx.id} tx={tx} index={i} />
+          ))}
+
+          <AnimatePresence>
+            {showSuccess && (
+              <motion.div
+                key="success-bar"
+                initial={{ y: 8, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 4, opacity: 0 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                style={{
+                  marginTop: 12,
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  backgroundColor: 'rgba(0,200,83,0.07)',
+                  border: '1px solid rgba(0,200,83,0.18)',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}
+              >
+                <motion.div
+                  animate={{ opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{
+                    width: 6, height: 6, borderRadius: '50%',
+                    backgroundColor: '#00C853', flexShrink: 0,
+                    boxShadow: '0 0 0 3px rgba(0,200,83,0.2)',
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: 12, color: '#00C853',
+                    fontFamily: 'var(--font-sans)', fontWeight: 500,
+                  }}
+                >
+                  All transactions categorized · 94% confidence
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
+// ─── Browser chrome mockup card ───────────────────────────────────────────────
+
+function DashboardMockup() {
+  return (
+    <motion.div
+      initial={{ rotate: -2 }}
+      whileHover={{ rotate: 0 }}
+      transition={{ type: 'spring', stiffness: 180, damping: 22 }}
+      style={{ position: 'relative' }}
+    >
+      {/* Ambient green glow behind card */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 400, height: 400,
+          background: 'radial-gradient(circle, rgba(0,200,83,0.12) 0%, transparent 70%)',
+          pointerEvents: 'none',
+          zIndex: -1,
+        }}
+      />
+
+      {/* Card */}
+      <div
+        style={{
+          background: '#0f0f0f',
+          border: '1px solid #1f1f1f',
+          borderRadius: 16,
+          overflow: 'hidden',
+          boxShadow: '0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset',
+        }}
+      >
+        {/* Browser chrome */}
+        <div
+          style={{
+            padding: '12px 14px',
+            borderBottom: '1px solid #141414',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            background: '#080808',
+          }}
+        >
+          <div style={{ display: 'flex', gap: 5 }}>
+            {['#FF5F57', '#FEBC2E', '#28C840'].map((c) => (
+              <div key={c} style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: c, opacity: 0.8 }} />
+            ))}
+          </div>
+          <div
+            style={{
+              flex: 1,
+              height: 24,
+              borderRadius: 6,
+              background: '#141414',
+              border: '1px solid #1f1f1f',
+              display: 'flex',
+              alignItems: 'center',
+              paddingLeft: 10,
+            }}
+          >
+            <span style={{ fontSize: 10, color: '#444444', fontFamily: 'var(--font-mono)' }}>
+              app.closebooks.io/review
+            </span>
+          </div>
+        </div>
+
+        {/* Content area */}
+        <div style={{ padding: 18 }}>
+          {/* Header */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#FAFAFA', fontFamily: 'var(--font-sans)' }}>
+                Live categorization
+              </span>
+              <div
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '3px 8px', borderRadius: 999,
+                  background: 'rgba(0,200,83,0.08)',
+                  border: '1px solid rgba(0,200,83,0.15)',
+                }}
+              >
+                <motion.div
+                  animate={{ opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#00C853' }}
+                />
+                <span style={{ fontSize: 10, color: '#00C853', fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
+                  Processing…
+                </span>
+              </div>
+            </div>
+            <p style={{ margin: '4px 0 0', fontSize: 11, color: '#444444', fontFamily: 'var(--font-sans)' }}>
+              32 transactions · April 2025
+            </p>
+          </div>
+
+          {/* Column headers */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '30px 1fr auto auto auto',
+              gap: 8,
+              padding: '0 0 6px',
+              borderBottom: '1px solid #1f1f1f',
+              marginBottom: 2,
+            }}
+          >
+            {['', 'Vendor', 'Amount', 'Category', ''].map((h, i) => (
+              <span
+                key={i}
+                style={{
+                  fontSize: 9,
+                  fontWeight: 600,
+                  color: '#444444',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  fontFamily: 'var(--font-sans)',
+                }}
+              >
+                {h}
+              </span>
+            ))}
+          </div>
+
+          {/* Animated transaction rows */}
+          <TransactionFeedDemo />
+        </div>
+      </div>
+
+      {/* Floating stat pills */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: -14,
+          left: -14,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '7px 12px',
+          borderRadius: 999,
+          background: 'rgba(8,8,8,0.85)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(0,200,83,0.2)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+          animation: 'float-gentle 3s ease-in-out infinite',
+        }}
+      >
+        <span style={{ fontSize: 13 }}>⚡</span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: '#00C853', fontFamily: 'var(--font-sans)' }}>
+          94% accuracy
+        </span>
+      </div>
+
+      <div
+        style={{
+          position: 'absolute',
+          bottom: -20,
+          right: -14,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '7px 12px',
+          borderRadius: 999,
+          background: 'rgba(8,8,8,0.85)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(0,200,83,0.2)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+          animation: 'float-gentle 3s ease-in-out infinite 1.5s',
+        }}
+      >
+        <span style={{ fontSize: 13 }}>⏱</span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: '#00C853', fontFamily: 'var(--font-sans)' }}>
+          3hrs to close
+        </span>
+      </div>
+    </motion.div>
+  )
+}
+
+// ─── Animated underline on "autopilot" ───────────────────────────────────────
+
+function AnimatedUnderlineWord({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const isInView = useInView(ref, { once: true, margin: '-80px' })
+
+  return (
+    <span ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
+      {children}
+      <svg
+        aria-hidden
+        style={{
+          position: 'absolute',
+          bottom: -6,
+          left: 0,
+          width: '100%',
+          height: 10,
+          overflow: 'visible',
+          pointerEvents: 'none',
+        }}
+        viewBox="0 0 100 10"
+        preserveAspectRatio="none"
+      >
+        <motion.path
+          d="M0 6 C20 2 50 9 80 4 C90 2 96 5 100 5"
+          stroke="#00C853"
+          strokeWidth="2.5"
+          fill="none"
+          strokeLinecap="round"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={isInView ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.35 }}
+        />
+      </svg>
+    </span>
+  )
+}
+
+// ─── Green dot separator ──────────────────────────────────────────────────────
+
+function GreenDot() {
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        width: 4,
+        height: 4,
+        borderRadius: '50%',
+        backgroundColor: '#00C853',
+        margin: '0 10px',
+        verticalAlign: 'middle',
+        opacity: 0.6,
+      }}
+    />
+  )
+}
+
+// ─── Entrance animation variants ─────────────────────────────────────────────
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  show: (d: number) => ({
+    opacity: 1, y: 0,
+    transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: d },
+  }),
+}
+
+// ─── Main Hero ────────────────────────────────────────────────────────────────
 
 export default function Hero() {
   return (
     <section
       style={{
         position: 'relative',
-        paddingTop: 128,
-        paddingBottom: 88,
         minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        paddingTop: 80,
+        paddingBottom: 80,
         overflow: 'hidden',
       }}
     >
-      {/* Ambient glow */}
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          top: -180,
-          right: -120,
-          width: 720,
-          height: 720,
-          background:
-            'radial-gradient(50% 50% at 50% 50%, rgba(0,217,126,0.12) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }}
-      />
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          top: 260,
-          left: -120,
-          width: 520,
-          height: 520,
-          background:
-            'radial-gradient(50% 50% at 50% 50%, rgba(76,126,255,0.06) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }}
-      />
-      {/* Subtle grid */}
+      {/* ── Background ── */}
+      {/* Grid handled by globals.css on [data-theme="dark"] */}
+
+      {/* Top atmospheric glow */}
       <div
         aria-hidden
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
-          backgroundSize: '64px 64px',
-          maskImage: 'radial-gradient(60% 60% at 50% 30%, black, transparent)',
-          WebkitMaskImage: 'radial-gradient(60% 60% at 50% 30%, black, transparent)',
+          background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,200,83,0.04) 0%, transparent 70%)',
           pointerEvents: 'none',
         }}
       />
 
+      {/* ── Content ── */}
       <div
         style={{
           position: 'relative',
           maxWidth: 1200,
           margin: '0 auto',
           padding: '0 28px',
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr)',
-          gap: 48,
-          alignItems: 'center',
+          width: '100%',
         }}
-        className="hero-grid"
       >
-        <style jsx>{`
-          @media (min-width: 960px) {
-            .hero-grid {
-              grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) !important;
+        <div
+          className="hero-two-col"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr',
+            gap: 64,
+            alignItems: 'center',
+          }}
+        >
+          <style jsx>{`
+            @media (min-width: 900px) {
+              .hero-two-col {
+                grid-template-columns: 55fr 45fr !important;
+              }
+              .hero-right-col {
+                display: flex !important;
+              }
             }
-            .hero-canvas {
-              display: block !important;
-            }
-          }
-        `}</style>
+          `}</style>
 
-        <div>
-          {/* Eyebrow pill */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '5px 12px',
-              borderRadius: 999,
-              backgroundColor: 'rgba(0,217,126,0.08)',
-              border: '1px solid rgba(0,217,126,0.24)',
-              marginBottom: 28,
-            }}
-          >
-            <span
+          {/* ════════════════════ LEFT COLUMN ════════════════════ */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+            {/* Badge */}
+            <motion.div
+              custom={0}
+              initial="hidden"
+              animate="show"
+              variants={fadeUp}
               style={{
-                width: 6,
-                height: 6,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '5px 14px',
                 borderRadius: 999,
-                backgroundColor: '#00D97E',
-                boxShadow: '0 0 0 3px rgba(0,217,126,0.2)',
-              }}
-            />
-            <span
-              style={{
-                fontSize: 12,
-                fontWeight: 500,
-                color: '#00D97E',
-                letterSpacing: '0.02em',
+                backgroundColor: 'rgba(0,200,83,0.08)',
+                border: '1px solid rgba(0,200,83,0.2)',
+                marginBottom: 28,
+                width: 'fit-content',
               }}
             >
-              Now in private beta · Powered by Claude
-            </span>
+              <motion.span
+                animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  backgroundColor: '#00C853',
+                  boxShadow: '0 0 0 3px rgba(0,200,83,0.2)',
+                  flexShrink: 0,
+                  display: 'inline-block',
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 12, fontWeight: 500, color: '#00C853',
+                  letterSpacing: '0.01em', fontFamily: 'var(--font-sans)',
+                }}
+              >
+                Powered by Claude AI · Now in private beta
+              </span>
+            </motion.div>
+
+            {/* Headline */}
+            <motion.h1
+              custom={0.1}
+              initial="hidden"
+              animate="show"
+              variants={fadeUp}
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(48px, 7vw, 72px)',
+                lineHeight: 1.05,
+                letterSpacing: '-0.04em',
+                color: '#FAFAFA',
+                margin: 0,
+                marginBottom: 24,
+                fontWeight: 400,
+              }}
+            >
+              Month-end close,
+              <br />
+              on{' '}
+              <AnimatedUnderlineWord>autopilot</AnimatedUnderlineWord>
+              .
+            </motion.h1>
+
+            {/* Subheadline */}
+            <motion.p
+              custom={0.2}
+              initial="hidden"
+              animate="show"
+              variants={fadeUp}
+              style={{
+                fontSize: 18,
+                lineHeight: 1.7,
+                color: '#888888',
+                maxWidth: 480,
+                margin: 0,
+                marginBottom: 36,
+                fontFamily: 'var(--font-sans)',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              CloseBooks learns how your firm categorizes transactions, runs an
+              autonomous close agent, and ships client-ready narratives. One CPA
+              reviews 500 books in the time it used to take to close five.
+            </motion.p>
+
+            {/* CTA row */}
+            <motion.div
+              custom={0.3}
+              initial="hidden"
+              animate="show"
+              variants={fadeUp}
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 12,
+                marginBottom: 24,
+                alignItems: 'center',
+              }}
+            >
+              <MagneticButton>
+                <Link
+                  href="/signup"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '14px 28px',
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: '#080808',
+                    backgroundColor: '#00C853',
+                    borderRadius: 10,
+                    textDecoration: 'none',
+                    transition: 'background-color 200ms, box-shadow 200ms',
+                    boxShadow: '0 6px 28px rgba(0,200,83,0.35)',
+                    fontFamily: 'var(--font-sans)',
+                    whiteSpace: 'nowrap',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#00E564'
+                    e.currentTarget.style.boxShadow = '0 10px 40px rgba(0,200,83,0.55)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#00C853'
+                    e.currentTarget.style.boxShadow = '0 6px 28px rgba(0,200,83,0.35)'
+                  }}
+                >
+                  Start closing smarter
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M3 7h8m0 0L7.5 3.5M11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </Link>
+              </MagneticButton>
+
+              <a
+                href="#how"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '13px 24px',
+                  fontSize: 15,
+                  fontWeight: 500,
+                  color: '#888888',
+                  backgroundColor: 'transparent',
+                  border: '1px solid #1f1f1f',
+                  borderRadius: 10,
+                  textDecoration: 'none',
+                  transition: 'border-color 200ms, color 200ms',
+                  fontFamily: 'var(--font-sans)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#333333'
+                  e.currentTarget.style.color = '#FAFAFA'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#1f1f1f'
+                  e.currentTarget.style.color = '#888888'
+                }}
+              >
+                See how it works
+              </a>
+            </motion.div>
+
+            {/* Trust line */}
+            <motion.p
+              custom={0.4}
+              initial="hidden"
+              animate="show"
+              variants={fadeUp}
+              style={{
+                fontSize: 13,
+                color: '#444444',
+                margin: 0,
+                fontFamily: 'var(--font-sans)',
+                display: 'flex',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 0,
+                lineHeight: 2,
+              }}
+            >
+              No credit card required
+              <GreenDot />
+              14-day trial
+              <GreenDot />
+              Set up in under 2 minutes
+            </motion.p>
           </div>
 
-          <h1
+          {/* ════════════════════ RIGHT COLUMN ════════════════════ */}
+          <div
+            className="hero-right-col"
             style={{
-              fontFamily: 'var(--font-serif)',
-              fontSize: 'clamp(48px, 7vw, 82px)',
-              lineHeight: 0.98,
-              letterSpacing: '-0.035em',
-              color: '#F0F0F5',
-              margin: 0,
-              marginBottom: 24,
-              fontWeight: 400,
+              display: 'none',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+              paddingBottom: 32,
+              paddingTop: 16,
             }}
           >
-            The AI co-pilot
-            <br />
-            for month-end{' '}
-            <span
-              style={{
-                background: 'linear-gradient(135deg, #00D97E 0%, #4CFFB3 60%, #00D97E 100%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                fontStyle: 'italic',
-              }}
+            <motion.div
+              initial={{ opacity: 0, y: 32 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.25 }}
+              style={{ width: '100%', maxWidth: 480 }}
             >
-              close
-            </span>
-            .
-          </h1>
-
-          <p
-            style={{
-              fontSize: 20,
-              lineHeight: 1.5,
-              color: '#A8A8BC',
-              maxWidth: 560,
-              margin: 0,
-              marginBottom: 36,
-              letterSpacing: '-0.01em',
-            }}
-          >
-            CloseBooks learns how your firm categorizes transactions, runs an
-            autonomous close agent, and ships client-ready narratives. One CPA
-            reviews 500 books in the time it used to take to close five.
-          </p>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 28 }}>
-            <Link
-              href="/signup"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '14px 22px',
-                fontSize: 15,
-                fontWeight: 600,
-                color: '#00110A',
-                background: 'linear-gradient(135deg, #00D97E 0%, #00B368 100%)',
-                borderRadius: 12,
-                textDecoration: 'none',
-                boxShadow: '0 10px 32px rgba(0,217,126,0.26)',
-                transition: 'transform 180ms, box-shadow 180ms',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-1px)'
-                e.currentTarget.style.boxShadow = '0 14px 40px rgba(0,217,126,0.4)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = '0 10px 32px rgba(0,217,126,0.26)'
-              }}
-            >
-              Start closing smarter
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M3 7h8m0 0L7.5 3.5M11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-            <a
-              href="#how"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '13px 20px',
-                fontSize: 15,
-                fontWeight: 500,
-                color: '#F0F0F5',
-                backgroundColor: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: 12,
-                textDecoration: 'none',
-                transition: 'background-color 180ms, border-color 180ms',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'
-              }}
-            >
-              See how it works
-            </a>
+              <DashboardMockup />
+            </motion.div>
           </div>
-
-          <p
-            style={{
-              fontSize: 13,
-              color: '#6E6E85',
-              margin: 0,
-            }}
-          >
-            No credit card required  ·  14-day trial  ·  Set up in under 2 minutes
-          </p>
-        </div>
-
-        <div className="hero-canvas" style={{ display: 'none', position: 'relative' }}>
-          <HeroTransactionFeed />
         </div>
       </div>
     </section>

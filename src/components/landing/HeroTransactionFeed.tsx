@@ -46,9 +46,9 @@ function Glyph({ label, highlight }: { label: string; highlight: boolean }) {
         fontWeight: 600,
         fontSize: 12,
         letterSpacing: '-0.02em',
-        color: highlight ? '#00110A' : '#D5D5E0',
+        color: highlight ? '#00110A' : '#888888',
         background: highlight
-          ? 'linear-gradient(135deg, #00D97E 0%, #00B368 100%)'
+          ? 'linear-gradient(135deg, #00C853 0%, #00B368 100%)'
           : 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
         border: `1px solid ${highlight ? 'rgba(0,217,126,0.4)' : 'rgba(255,255,255,0.08)'}`,
         transition: 'background 300ms, color 300ms, border-color 300ms',
@@ -99,7 +99,7 @@ function TxCard({
         width: 360,
         padding: '12px 14px',
         borderRadius: 12,
-        backgroundColor: '#111118',
+        backgroundColor: '#0f0f0f',
         border: focusing
           ? '1px solid rgba(0,217,126,0.4)'
           : '1px solid rgba(255,255,255,0.07)',
@@ -128,7 +128,7 @@ function TxCard({
               margin: 0,
               fontSize: 13,
               fontWeight: 500,
-              color: '#F0F0F5',
+              color: '#FAFAFA',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -142,7 +142,7 @@ function TxCard({
               fontFamily: 'var(--font-mono)',
               fontSize: 12,
               fontWeight: 500,
-              color: '#FF5D73',
+              color: '#FF4444',
               fontVariantNumeric: 'tabular-nums',
               flexShrink: 0,
             }}
@@ -162,7 +162,7 @@ function TxCard({
           <span
             style={{
               fontSize: 11,
-              color: categorized || focusing ? '#00D97E' : '#6E6E85',
+              color: categorized || focusing ? '#00C853' : '#444444',
               fontWeight: 500,
               transition: 'color 300ms',
               overflow: 'hidden',
@@ -176,7 +176,7 @@ function TxCard({
             style={{
               fontSize: 10,
               fontFamily: 'var(--font-mono)',
-              color: '#6E6E85',
+              color: '#444444',
               flexShrink: 0,
             }}
           >
@@ -208,10 +208,10 @@ function TxCard({
       >
         {categorized || focusing ? (
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-            <path d="M2.5 6.2l2.3 2.3 4.7-5" stroke="#00D97E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M2.5 6.2l2.3 2.3 4.7-5" stroke="#00C853" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         ) : (
-          <span style={{ fontSize: 11, color: '#6E6E85', fontWeight: 600 }}>?</span>
+          <span style={{ fontSize: 11, color: '#444444', fontWeight: 600 }}>?</span>
         )}
         {focusing && (
           <motion.span
@@ -306,7 +306,7 @@ function AssembledLabel() {
         fontSize: 11,
         fontWeight: 500,
         letterSpacing: '0.02em',
-        color: '#00D97E',
+        color: '#00C853',
         fontFamily: 'var(--font-sans)',
       }}
     >
@@ -318,7 +318,7 @@ function AssembledLabel() {
           width: 6,
           height: 6,
           borderRadius: 999,
-          backgroundColor: '#00D97E',
+          backgroundColor: '#00C853',
         }}
       />
       Real-time AI categorization

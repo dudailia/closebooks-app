@@ -6,9 +6,9 @@
    CSS custom properties — single source of truth for the palette
 --------------------------------------------------------------------------- */
 :root {
-  --color-accent:       #2d5a27;
+  --color-accent:       #00C853;
   --color-accent-light: #e8f0e6;
-  --color-accent-dark:  #1e3d1a;
+  --color-accent-dark:  #009640;
   --color-copper:       #b8734a;
   --color-sand:         #f0ece4;
   --color-warm:         #e8e0d4;
@@ -28,40 +28,47 @@
   --text-primary:     #1a1714;
   --text-secondary:   #6b6560;
   --text-tertiary:    #a09a94;
-  --accent:           #2d5a27;
-  --accent-soft:      rgba(45,90,39,0.12);
+  --accent:           #00C853;
+  --accent-soft:      rgba(0,200,83,0.12);
   --accent-contrast:  #ffffff;
   --danger:           #991b1b;
   --danger-soft:      rgba(153,27,27,0.12);
   --warning:          #b8734a;
   --warning-soft:     rgba(184,115,74,0.12);
-  --ring-focus:       #3b5bdb;
-  --ring-soft:        rgba(59,91,219,0.14);
+  --ring-focus:       #00C853;
+  --ring-soft:        rgba(0,200,83,0.18);
 
-  --font-sans:  var(--font-dm-sans),  'DM Sans',          system-ui, -apple-system, sans-serif;
-  --font-mono:  var(--font-dm-mono),  'DM Mono',          'Fira Mono', monospace;
-  --font-serif: var(--font-dm-serif), 'DM Serif Display', Georgia, serif;
+  /* Font stacks */
+  --font-sans:    var(--font-inter),       'Inter',            system-ui, -apple-system, sans-serif;
+  --font-mono:    var(--font-jetbrains),   'JetBrains Mono',   'Fira Mono', monospace;
+  --font-serif:   var(--font-display),     'Instrument Serif', Georgia, serif;
+  --font-display: var(--font-display),     'Instrument Serif', Georgia, serif;
+
+  /* Legacy compat */
+  --font-dm-sans:  var(--font-inter),    'Inter',            system-ui, sans-serif;
+  --font-dm-mono:  var(--font-jetbrains),'JetBrains Mono',   monospace;
+  --font-dm-serif: var(--font-display),  'Instrument Serif', Georgia, serif;
 }
 
 [data-theme="dark"] {
-  --surface-base:     #0A0A0F;
-  --surface-card:     #111118;
-  --surface-elevated: #16161F;
-  --surface-overlay:  rgba(0,0,0,0.65);
-  --border-subtle:    rgba(255,255,255,0.07);
-  --border-strong:    rgba(255,255,255,0.14);
-  --text-primary:     #F0F0F5;
-  --text-secondary:   #A8A8BC;
-  --text-tertiary:    #6E6E85;
-  --accent:           #00D97E;
-  --accent-soft:      rgba(0,217,126,0.12);
-  --accent-contrast:  #00110A;
-  --danger:           #FF5D73;
-  --danger-soft:      rgba(255,93,115,0.14);
-  --warning:          #FFB454;
-  --warning-soft:     rgba(255,180,84,0.12);
-  --ring-focus:       #4C7EFF;
-  --ring-soft:        rgba(76,126,255,0.18);
+  --surface-base:     #080808;
+  --surface-card:     #0f0f0f;
+  --surface-elevated: #141414;
+  --surface-overlay:  rgba(0,0,0,0.75);
+  --border-subtle:    #161616;
+  --border-strong:    #1f1f1f;
+  --text-primary:     #FAFAFA;
+  --text-secondary:   #888888;
+  --text-tertiary:    #444444;
+  --accent:           #00C853;
+  --accent-soft:      rgba(0,200,83,0.12);
+  --accent-contrast:  #000000;
+  --danger:           #FF4444;
+  --danger-soft:      rgba(255,68,68,0.14);
+  --warning:          #F59E0B;
+  --warning-soft:     rgba(245,158,11,0.12);
+  --ring-focus:       #00C853;
+  --ring-soft:        rgba(0,200,83,0.2);
 
   background-color: var(--surface-base);
   color: var(--text-primary);
@@ -340,6 +347,55 @@
 /* Smooth scroll for the whole page */
 html {
   scroll-behavior: smooth;
+}
+
+/* Landing page grid background */
+[data-theme="dark"] body,
+.landing-bg {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+/* Selection color for dark sections */
+[data-theme="dark"] ::selection {
+  background-color: #00C853;
+  color: #000000;
+}
+
+/* Dark scrollbar for landing page */
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: #1f1f1f;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 99px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #00C853;
+}
+
+/* Green shimmer for badges */
+@keyframes green-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* Glow pulse keyframe */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(0,200,83,0.1), 0 0 60px rgba(0,200,83,0.05); }
+  50%       { box-shadow: 0 0 40px rgba(0,200,83,0.25), 0 0 80px rgba(0,200,83,0.1); }
+}
+
+/* Float keyframe for hero elements */
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
 }
 
 /* ─── Mobile / Touch Optimizations ──────────────────────────────────────────── */
