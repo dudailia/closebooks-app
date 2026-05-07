@@ -208,21 +208,42 @@ function TransactionFeedDemo() {
 
 function DashboardMockup() {
   return (
+    /* Outer: entrance animation */
     <motion.div
-      initial={{ rotate: -2 }}
-      whileHover={{ rotate: 0 }}
-      transition={{ type: 'spring', stiffness: 180, damping: 22 }}
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
       style={{ position: 'relative' }}
     >
-      {/* Ambient green glow behind card */}
+      {/* Inner: continuous float — no rotation */}
+      <motion.div
+        animate={{ y: [0, -12, 0] }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
+        style={{ position: 'relative' }}
+      >
+      {/* Wide soft glow */}
       <div
         aria-hidden
         style={{
           position: 'absolute',
           top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: 400, height: 400,
-          background: 'radial-gradient(circle, rgba(0,200,83,0.12) 0%, transparent 70%)',
+          width: 640, height: 480,
+          background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(0,200,83,0.16) 0%, rgba(0,200,83,0.04) 45%, transparent 70%)',
+          pointerEvents: 'none',
+          zIndex: -1,
+        }}
+      />
+      {/* Tight inner bloom */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          top: '20%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 220, height: 180,
+          background: 'rgba(0,200,83,0.18)',
+          filter: 'blur(48px)',
           pointerEvents: 'none',
           zIndex: -1,
         }}
@@ -231,11 +252,17 @@ function DashboardMockup() {
       {/* Card */}
       <div
         style={{
-          background: '#0f0f0f',
-          border: '1px solid #1f1f1f',
-          borderRadius: 16,
+          background: 'linear-gradient(160deg, #141414 0%, #0f0f0f 40%, #0a0a0a 100%)',
+          border: '1px solid #252525',
+          borderTop: '1px solid rgba(0,200,83,0.22)',
+          borderRadius: 18,
           overflow: 'hidden',
-          boxShadow: '0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset',
+          boxShadow: [
+            '0 0 0 1px rgba(255,255,255,0.03) inset',
+            '0 24px 80px rgba(0,0,0,0.85)',
+            '0 8px 32px rgba(0,0,0,0.6)',
+            '0 0 80px rgba(0,200,83,0.08)',
+          ].join(', '),
         }}
       >
         {/* Browser chrome */}
@@ -336,54 +363,60 @@ function DashboardMockup() {
         </div>
       </div>
 
-      {/* Floating stat pills */}
-      <div
+      {/* Floating stat pills — offset stagger for organic feel */}
+      <motion.div
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 1.2, duration: 0.6 }}
         style={{
           position: 'absolute',
-          bottom: -14,
-          left: -14,
+          bottom: -18,
+          left: -18,
           display: 'flex',
           alignItems: 'center',
-          gap: 6,
-          padding: '7px 12px',
+          gap: 8,
+          padding: '9px 16px',
           borderRadius: 999,
-          background: 'rgba(8,8,8,0.85)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          border: '1px solid rgba(0,200,83,0.2)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-          animation: 'float-gentle 3s ease-in-out infinite',
+          background: 'rgba(6,6,6,0.92)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1px solid rgba(0,200,83,0.28)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,200,83,0.08) inset',
         }}
       >
-        <span style={{ fontSize: 13 }}>⚡</span>
-        <span style={{ fontSize: 12, fontWeight: 600, color: '#00C853', fontFamily: 'var(--font-sans)' }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 8px rgba(0,200,83,0.8)' }} />
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#00C853', fontFamily: 'var(--font-sans)', letterSpacing: '-0.01em' }}>
           94% accuracy
         </span>
-      </div>
+      </motion.div>
 
-      <div
+      <motion.div
+        initial={{ opacity: 0, x: 10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 1.4, duration: 0.6 }}
         style={{
           position: 'absolute',
-          bottom: -20,
-          right: -14,
+          bottom: -26,
+          right: -18,
           display: 'flex',
           alignItems: 'center',
-          gap: 6,
-          padding: '7px 12px',
+          gap: 8,
+          padding: '9px 16px',
           borderRadius: 999,
-          background: 'rgba(8,8,8,0.85)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          border: '1px solid rgba(0,200,83,0.2)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-          animation: 'float-gentle 3s ease-in-out infinite 1.5s',
+          background: 'rgba(6,6,6,0.92)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1px solid rgba(0,200,83,0.28)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,200,83,0.08) inset',
         }}
       >
-        <span style={{ fontSize: 13 }}>⏱</span>
-        <span style={{ fontSize: 12, fontWeight: 600, color: '#00C853', fontFamily: 'var(--font-sans)' }}>
-          3hrs to close
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 8px rgba(0,200,83,0.8)' }} />
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#00C853', fontFamily: 'var(--font-sans)', letterSpacing: '-0.01em' }}>
+          3 hrs to close
         </span>
-      </div>
+      </motion.div>
+
+      </motion.div>
     </motion.div>
   )
 }
@@ -718,14 +751,9 @@ export default function Hero() {
               paddingTop: 16,
             }}
           >
-            <motion.div
-              initial={{ opacity: 0, y: 32 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.25 }}
-              style={{ width: '100%', maxWidth: 480 }}
-            >
+            <div style={{ width: '100%', maxWidth: 520 }}>
               <DashboardMockup />
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>

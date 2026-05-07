@@ -16,7 +16,7 @@ export default function LandingPage() {
         minHeight: '100vh',
         backgroundColor: '#080808',
         color: '#FAFAFA',
-        overflowX: 'hidden',
+        overflowX: 'clip',
       }}
     >
       <Nav />

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence, useInView } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { GlowCard } from '@/components/ui/GlowCard'
 
 // ─── Card 1: Before/After toggle ─────────────────────────────────────────────
@@ -371,36 +371,25 @@ function FeatureIcon({ children }: { children: React.ReactNode }) {
   )
 }
 
-// ─── Card entry variants ──────────────────────────────────────────────────────
-
-const cardVariants = {
-  hidden: { scale: 0.95, opacity: 0, y: 16 },
-  show: (i: number) => ({
-    scale: 1, opacity: 1, y: 0,
-    transition: { delay: i * 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] },
-  }),
-}
-
 // ─── Staggered headline ───────────────────────────────────────────────────────
 
+// Uses whileInView per-word — more reliable than useInView + animate pattern
 function StaggerWords({ text, style }: { text: string; style?: React.CSSProperties }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { once: true, margin: '-60px' })
-
   return (
-    <div ref={ref} style={{ display: 'inline', ...style }}>
+    <span style={{ display: 'inline' }}>
       {text.split(' ').map((word, i) => (
         <motion.span
           key={word + i}
           initial={{ opacity: 0, y: 18 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0 }}
           transition={{ delay: i * 0.09, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          style={{ display: 'inline-block', marginRight: '0.26em' }}
+          style={{ display: 'inline-block', marginRight: '0.26em', ...style }}
         >
           {word}
         </motion.span>
       ))}
-    </div>
+    </span>
   )
 }
 
@@ -408,7 +397,6 @@ function StaggerWords({ text, style }: { text: string; style?: React.CSSProperti
 
 export default function BentoGrid() {
   const gridRef = useRef<HTMLDivElement>(null)
-  const gridInView = useInView(gridRef, { once: true, margin: '-80px' })
 
   return (
     <section id="features" style={{ padding: '120px 0 100px', position: 'relative' }}>
@@ -495,10 +483,10 @@ export default function BentoGrid() {
           {/* ─ CARD 1: Large — AI categorization ─ */}
           <motion.div
             className="bento-card-large"
-            custom={0}
-            variants={cardVariants}
-            initial="hidden"
-            animate={gridInView ? 'show' : 'hidden'}
+            initial={{ scale: 0.96, opacity: 0, y: 14 }}
+            whileInView={{ scale: 1, opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0 }}
+            transition={{ delay: 0, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
           >
             <GlowCard style={{ padding: 28, height: '100%', minHeight: 360 }}>
               <FeatureIcon>
@@ -519,10 +507,10 @@ export default function BentoGrid() {
           {/* ─ CARD 2: Tall — Close agent ─ */}
           <motion.div
             className="bento-card-tall"
-            custom={1}
-            variants={cardVariants}
-            initial="hidden"
-            animate={gridInView ? 'show' : 'hidden'}
+            initial={{ scale: 0.96, opacity: 0, y: 14 }}
+            whileInView={{ scale: 1, opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0 }}
+            transition={{ delay: 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
           >
             <GlowCard style={{ padding: 28, height: '100%', minHeight: 360 }}>
               <FeatureIcon>
@@ -544,10 +532,10 @@ export default function BentoGrid() {
           {/* ─ CARD 3: Small — Rules engine ─ */}
           <motion.div
             className="bento-card-small"
-            custom={2}
-            variants={cardVariants}
-            initial="hidden"
-            animate={gridInView ? 'show' : 'hidden'}
+            initial={{ scale: 0.96, opacity: 0, y: 14 }}
+            whileInView={{ scale: 1, opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0 }}
+            transition={{ delay: 0.16, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
           >
             <GlowCard style={{ padding: 24, height: '100%', minHeight: 260 }}>
               <FeatureIcon>
@@ -569,10 +557,10 @@ export default function BentoGrid() {
           {/* ─ CARD 4: Small — Narratives ─ */}
           <motion.div
             className="bento-card-small"
-            custom={3}
-            variants={cardVariants}
-            initial="hidden"
-            animate={gridInView ? 'show' : 'hidden'}
+            initial={{ scale: 0.96, opacity: 0, y: 14 }}
+            whileInView={{ scale: 1, opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0 }}
+            transition={{ delay: 0.22, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
           >
             <GlowCard style={{ padding: 24, height: '100%', minHeight: 260 }}>
               <FeatureIcon>
@@ -594,10 +582,10 @@ export default function BentoGrid() {
           {/* ─ CARD 5: Small — Multi-client ─ */}
           <motion.div
             className="bento-card-small"
-            custom={4}
-            variants={cardVariants}
-            initial="hidden"
-            animate={gridInView ? 'show' : 'hidden'}
+            initial={{ scale: 0.96, opacity: 0, y: 14 }}
+            whileInView={{ scale: 1, opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0 }}
+            transition={{ delay: 0.30, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
           >
             <GlowCard style={{ padding: 24, height: '100%', minHeight: 260 }}>
               <FeatureIcon>
