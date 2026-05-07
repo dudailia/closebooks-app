@@ -12,7 +12,7 @@ export default function PricingPage() {
               fontWeight: 500,
               letterSpacing: '0.18em',
               textTransform: 'uppercase',
-              color: '#00D97E',
+              color: '#00C853',
               margin: 0,
               marginBottom: 16,
             }}
@@ -25,7 +25,7 @@ export default function PricingPage() {
               fontSize: 'clamp(44px, 6vw, 68px)',
               lineHeight: 1.05,
               letterSpacing: '-0.03em',
-              color: '#F0F0F5',
+              color: '#FAFAFA',
               margin: 0,
               fontWeight: 400,
             }}
@@ -35,7 +35,7 @@ export default function PricingPage() {
           <p
             style={{
               fontSize: 18,
-              color: '#A8A8BC',
+              color: '#888888',
               margin: '18px auto 0',
               maxWidth: 620,
               lineHeight: 1.55,

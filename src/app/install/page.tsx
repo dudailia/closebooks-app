@@ -45,7 +45,7 @@ function StepGrid({ label, steps }: { label: string; steps: typeof STEPS_IOS }) 
           fontWeight: 600,
           letterSpacing: '0.16em',
           textTransform: 'uppercase',
-          color: '#00D97E',
+          color: '#00C853',
           margin: 0,
           marginBottom: 16,
         }}
@@ -64,7 +64,7 @@ function StepGrid({ label, steps }: { label: string; steps: typeof STEPS_IOS }) 
             key={s.n}
             style={{
               padding: 22,
-              backgroundColor: '#111118',
+              backgroundColor: '#0f0f0f',
               border: '1px solid rgba(255,255,255,0.07)',
               borderRadius: 16,
             }}
@@ -73,7 +73,7 @@ function StepGrid({ label, steps }: { label: string; steps: typeof STEPS_IOS }) 
               style={{
                 fontFamily: 'var(--font-serif)',
                 fontSize: 14,
-                color: '#00D97E',
+                color: '#00C853',
                 letterSpacing: '0.18em',
               }}
             >
@@ -83,14 +83,14 @@ function StepGrid({ label, steps }: { label: string; steps: typeof STEPS_IOS }) 
               style={{
                 fontSize: 18,
                 fontWeight: 600,
-                color: '#F0F0F5',
+                color: '#FAFAFA',
                 margin: '10px 0 6px',
                 letterSpacing: '-0.02em',
               }}
             >
               {s.title}
             </h3>
-            <p style={{ fontSize: 13, lineHeight: 1.55, color: '#A8A8BC', margin: 0 }}>{s.body}</p>
+            <p style={{ fontSize: 13, lineHeight: 1.55, color: '#888888', margin: 0 }}>{s.body}</p>
           </div>
         ))}
       </div>
@@ -109,7 +109,7 @@ export default function InstallPage() {
               fontWeight: 500,
               letterSpacing: '0.18em',
               textTransform: 'uppercase',
-              color: '#00D97E',
+              color: '#00C853',
               margin: 0,
               marginBottom: 16,
             }}
@@ -121,7 +121,7 @@ export default function InstallPage() {
               fontFamily: 'var(--font-serif)',
               fontSize: 'clamp(40px, 6vw, 64px)',
               letterSpacing: '-0.03em',
-              color: '#F0F0F5',
+              color: '#FAFAFA',
               margin: 0,
               fontWeight: 400,
               lineHeight: 1.05,
@@ -132,7 +132,7 @@ export default function InstallPage() {
           <p
             style={{
               fontSize: 17,
-              color: '#A8A8BC',
+              color: '#888888',
               margin: '16px auto 0',
               maxWidth: 540,
               lineHeight: 1.55,

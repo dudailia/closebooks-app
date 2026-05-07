@@ -106,10 +106,10 @@ export default function ForgotPasswordPage() {
       <PublicShell>
         <main style={{ padding: '120px 24px 60px', maxWidth: 460, margin: '0 auto', textAlign: 'center' }}>
           <DarkCard>
-            <h1 style={{ fontSize: 22, fontWeight: 600, color: '#F0F0F5', margin: 0, marginBottom: 10 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 600, color: '#FAFAFA', margin: 0, marginBottom: 10 }}>
               Password reset unavailable
             </h1>
-            <p style={{ fontSize: 14, color: '#A8A8BC', margin: 0, lineHeight: 1.55 }}>
+            <p style={{ fontSize: 14, color: '#888888', margin: 0, lineHeight: 1.55 }}>
               This app is running in demo mode without authentication configured. You can access
               all features directly from the dashboard.
             </p>
@@ -121,8 +121,9 @@ export default function ForgotPasswordPage() {
                   padding: '11px 18px',
                   fontSize: 14,
                   fontWeight: 600,
-                  color: '#00110A',
-                  background: 'linear-gradient(135deg, #00D97E 0%, #00B368 100%)',
+                  color: '#000',
+                  background: '#00C853',
+                  boxShadow: '0 6px 28px rgba(0,200,83,0.35)',
                   borderRadius: 10,
                   textDecoration: 'none',
                 }}
@@ -142,10 +143,10 @@ export default function ForgotPasswordPage() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <h1
             style={{
-              fontFamily: 'var(--font-serif)',
+              fontFamily: 'var(--font-display)',
               fontSize: 36,
               letterSpacing: '-0.03em',
-              color: '#F0F0F5',
+              color: '#FAFAFA',
               margin: 0,
               fontWeight: 400,
               lineHeight: 1.1,
@@ -153,7 +154,7 @@ export default function ForgotPasswordPage() {
           >
             Reset your password
           </h1>
-          <p style={{ fontSize: 14, color: '#A8A8BC', margin: '10px 0 0' }}>
+          <p style={{ fontSize: 14, color: '#888888', margin: '10px 0 0' }}>
             We&apos;ll send you a secure reset link.
           </p>
         </div>
@@ -162,14 +163,14 @@ export default function ForgotPasswordPage() {
           {sent ? (
             <div style={{ textAlign: 'center', padding: '12px 0' }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>📬</div>
-              <h2 style={{ fontSize: 18, fontWeight: 600, color: '#F0F0F5', margin: 0, marginBottom: 10 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 600, color: '#FAFAFA', margin: 0, marginBottom: 10 }}>
                 Check your inbox
               </h2>
-              <p style={{ fontSize: 14, color: '#A8A8BC', margin: 0, lineHeight: 1.55 }}>
-                We sent a reset link to <strong style={{ color: '#F0F0F5' }}>{email}</strong>. It
+              <p style={{ fontSize: 14, color: '#888888', margin: 0, lineHeight: 1.55 }}>
+                We sent a reset link to <strong style={{ color: '#FAFAFA' }}>{email}</strong>. It
                 should arrive within a minute.
               </p>
-              <p style={{ fontSize: 12, color: '#6E6E85', marginTop: 14 }}>
+              <p style={{ fontSize: 12, color: '#444444', marginTop: 14 }}>
                 Didn&apos;t get it? Check spam or{' '}
                 <button
                   onClick={() => {
@@ -177,7 +178,7 @@ export default function ForgotPasswordPage() {
                     setErrInfo(null)
                   }}
                   style={{
-                    color: '#00D97E',
+                    color: '#00C853',
                     background: 'none',
                     border: 'none',
                     padding: 0,
@@ -193,7 +194,7 @@ export default function ForgotPasswordPage() {
               <div style={{ marginTop: 18 }}>
                 <Link
                   href="/login"
-                  style={{ fontSize: 13, color: '#A8A8BC', textDecoration: 'none' }}
+                  style={{ fontSize: 13, color: '#888888', textDecoration: 'none' }}
                 >
                   ← Back to sign in
                 </Link>
@@ -213,7 +214,7 @@ export default function ForgotPasswordPage() {
                       <div style={{ marginTop: 8, fontSize: 12 }}>
                         <a
                           href="mailto:hello@closebooks.app?subject=Password Reset Request"
-                          style={{ color: '#00D97E', textDecoration: 'underline' }}
+                          style={{ color: '#00C853', textDecoration: 'underline' }}
                         >
                           Email us
                         </a>{' '}
@@ -243,9 +244,9 @@ export default function ForgotPasswordPage() {
                 {loading ? 'Sending…' : 'Send reset link'}
               </DarkButton>
 
-              <p style={{ marginTop: 20, fontSize: 13, textAlign: 'center', color: '#A8A8BC' }}>
+              <p style={{ marginTop: 20, fontSize: 13, textAlign: 'center', color: '#888888' }}>
                 Remembered it?{' '}
-                <Link href="/login" style={{ color: '#00D97E', textDecoration: 'none', fontWeight: 600 }}>
+                <Link href="/login" style={{ color: '#00C853', textDecoration: 'none', fontWeight: 600 }}>
                   Sign in
                 </Link>
               </p>
@@ -253,9 +254,9 @@ export default function ForgotPasswordPage() {
           )}
         </DarkCard>
 
-        <p style={{ marginTop: 20, fontSize: 12, textAlign: 'center', color: '#6E6E85' }}>
+        <p style={{ marginTop: 20, fontSize: 12, textAlign: 'center', color: '#444444' }}>
           Having trouble?{' '}
-          <a href="mailto:hello@closebooks.app" style={{ color: '#6E6E85', textDecoration: 'underline' }}>
+          <a href="mailto:hello@closebooks.app" style={{ color: '#444444', textDecoration: 'underline' }}>
             Contact support
           </a>
         </p>

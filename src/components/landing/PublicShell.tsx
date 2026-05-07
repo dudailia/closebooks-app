@@ -7,11 +7,14 @@ export default function PublicShell({ children }: { children: React.ReactNode })
       data-theme="dark"
       style={{
         minHeight: '100vh',
-        backgroundColor: '#0A0A0F',
-        color: '#F0F0F5',
+        backgroundColor: '#080808',
+        color: '#FAFAFA',
         overflowX: 'hidden',
         display: 'flex',
         flexDirection: 'column',
+        backgroundImage:
+          'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)',
+        backgroundSize: '64px 64px',
       }}
     >
       <Nav />

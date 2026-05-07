@@ -13,15 +13,15 @@ import type { ChartOfAccounts, CategorizationJob, Transaction } from '@/types'
 // ─────────────────────────────────────────────────────────────────────────────
 
 const COLORS = {
-  bg: '#faf8f4',
-  accent: '#2d5a27',
+  bg: '#080808',
+  accent: '#00C853',
   copper: '#b8734a',
-  text: '#1a1714',
-  border: '#e8e0d4',
-  card: '#ffffff',
-  muted: '#7a7065',
-  lightGreen: '#f0f7ef',
-  errorRed: '#c0392b',
+  text: '#FAFAFA',
+  border: '#1f1f1f',
+  card: '#0f0f0f',
+  muted: '#888888',
+  lightGreen: '#00C85315',
+  errorRed: '#ff4d4d',
 }
 
 type RawTransaction = {
@@ -623,20 +623,20 @@ export default function GetStartedPage() {
           transition: opacity 0.18s ease, transform 0.18s ease;
         }
         .btn-option:hover {
-          border-color: #2d5a27 !important;
-          background-color: #f0f7ef !important;
+          border-color: #00C853 !important;
+          background-color: #00C85315 !important;
         }
         .btn-option:focus {
-          outline: 2px solid #2d5a27;
+          outline: 2px solid #00C853;
           outline-offset: 2px;
         }
         .template-btn:hover {
-          border-color: #2d5a27 !important;
-          background-color: #f0f7ef !important;
+          border-color: #00C853 !important;
+          background-color: #00C85315 !important;
         }
         .drag-zone:hover {
-          border-color: #2d5a27 !important;
-          background-color: #f8fbf7 !important;
+          border-color: #00C853 !important;
+          background-color: #00C85310 !important;
         }
       `}</style>
 
@@ -905,9 +905,9 @@ export default function GetStartedPage() {
                 padding: '40px 24px',
                 cursor: 'pointer',
                 backgroundColor: dragging
-                  ? '#f0f7ef'
+                  ? '#00C85315'
                   : uploadedFile
-                  ? '#f0f7ef'
+                  ? '#00C85315'
                   : COLORS.card,
                 transition: 'all 0.2s ease',
                 marginBottom: '12px',

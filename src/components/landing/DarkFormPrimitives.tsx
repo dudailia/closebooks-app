@@ -11,8 +11,8 @@ export function DarkCard({
   return (
     <div
       style={{
-        backgroundColor: '#111118',
-        border: '1px solid rgba(255,255,255,0.07)',
+        backgroundColor: '#0f0f0f',
+        border: '1px solid #1f1f1f',
         borderRadius: 18,
         padding: 28,
         ...style,
@@ -39,7 +39,7 @@ export function DarkLabel({
         fontWeight: 600,
         letterSpacing: '0.14em',
         textTransform: 'uppercase',
-        color: '#6E6E85',
+        color: '#888888',
         marginBottom: 8,
       }}
     >
@@ -52,9 +52,9 @@ const inputStyles: React.CSSProperties = {
   width: '100%',
   padding: '12px 14px',
   fontSize: 14,
-  color: '#F0F0F5',
+  color: '#FAFAFA',
   backgroundColor: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  border: '1px solid #1f1f1f',
   borderRadius: 10,
   outline: 'none',
   transition: 'border-color 160ms, box-shadow 160ms',
@@ -70,12 +70,12 @@ export const DarkInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLIn
         {...props}
         style={{ ...inputStyles, ...props.style }}
         onFocus={(e) => {
-          e.currentTarget.style.borderColor = '#00D97E'
-          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0,217,126,0.18)'
+          e.currentTarget.style.borderColor = '#00C853'
+          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0,200,83,0.18)'
           props.onFocus?.(e)
         }}
         onBlur={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
+          e.currentTarget.style.borderColor = '#1f1f1f'
           e.currentTarget.style.boxShadow = 'none'
           props.onBlur?.(e)
         }}
@@ -92,12 +92,12 @@ export const DarkSelect = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTM
         {...props}
         style={{ ...inputStyles, appearance: 'none', cursor: 'pointer', ...props.style }}
         onFocus={(e) => {
-          e.currentTarget.style.borderColor = '#00D97E'
-          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0,217,126,0.18)'
+          e.currentTarget.style.borderColor = '#00C853'
+          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0,200,83,0.18)'
           props.onFocus?.(e)
         }}
         onBlur={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
+          e.currentTarget.style.borderColor = '#1f1f1f'
           e.currentTarget.style.boxShadow = 'none'
           props.onBlur?.(e)
         }}
@@ -137,14 +137,14 @@ export function DarkButton({
   }
   const primary: React.CSSProperties = {
     color: '#00110A',
-    background: 'linear-gradient(135deg, #00D97E 0%, #00B368 100%)',
+    background: 'linear-gradient(135deg, #00C853 0%, #009a40 100%)',
     border: 'none',
-    boxShadow: '0 8px 24px rgba(0,217,126,0.22)',
+    boxShadow: '0 8px 24px rgba(0,200,83,0.22)',
   }
   const ghost: React.CSSProperties = {
-    color: '#F0F0F5',
+    color: '#FAFAFA',
     backgroundColor: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.12)',
+    border: '1px solid #1f1f1f',
   }
   return (
     <button
@@ -154,10 +154,10 @@ export function DarkButton({
         if (rest.disabled) return
         if (variant === 'primary') {
           e.currentTarget.style.transform = 'translateY(-1px)'
-          e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,217,126,0.36)'
+          e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,200,83,0.36)'
         } else {
           e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'
-          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)'
+          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'
         }
         rest.onMouseEnter?.(e)
       }}
@@ -165,10 +165,10 @@ export function DarkButton({
         if (rest.disabled) return
         if (variant === 'primary') {
           e.currentTarget.style.transform = 'translateY(0)'
-          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,217,126,0.22)'
+          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,200,83,0.22)'
         } else {
           e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'
-          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'
+          e.currentTarget.style.borderColor = '#1f1f1f'
         }
         rest.onMouseLeave?.(e)
       }}
@@ -205,7 +205,7 @@ export function DarkDivider({ label }: { label?: string }) {
           fontSize: 11,
           letterSpacing: '0.14em',
           textTransform: 'uppercase',
-          color: '#6E6E85',
+          color: '#888888',
         }}
       >
         {label}
