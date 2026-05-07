@@ -18,7 +18,7 @@ export function GlowCard({ children, className, style, onClick, as = 'div' }: Gl
       transition={{ type: 'spring', stiffness: 300, damping: 22 }}
       onClick={onClick}
       className={cn(
-        'relative rounded-2xl border overflow-hidden',
+        'relative rounded-2xl border',
         'transition-all duration-300',
         className
       )}

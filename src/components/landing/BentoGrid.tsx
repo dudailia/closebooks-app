@@ -219,32 +219,41 @@ function ProgressTracker() {
 // ─── Card 3: Rules engine visual ──────────────────────────────────────────────
 
 function RuleBlock() {
+  const rules = [
+    { vendor: '"Amazon AWS"', cat: '"Cloud Infrastructure"', hits: 47 },
+    { vendor: '"Notion Labs"',  cat: '"Software"',           hits: 31 },
+    { vendor: '"DoorDash*"',    cat: '"Meals"',              hits: 22 },
+  ]
   return (
-    <div
-      style={{
-        marginTop: 18,
-        padding: '12px 14px',
-        background: '#080808',
-        border: '1px solid #1a1a1a',
-        borderRadius: 8,
-        fontFamily: 'var(--font-mono)',
-        fontSize: 11.5,
-        lineHeight: 2,
-      }}
-    >
-      <div>
-        <span style={{ color: '#555' }}>IF    </span>
-        <span style={{ color: '#FAFAFA' }}>vendor</span>
-        <span style={{ color: '#555' }}> = </span>
-        <span style={{ color: '#F97316' }}>&ldquo;Amazon AWS&rdquo;</span>
-      </div>
-      <div>
-        <span style={{ color: '#00C853' }}>→     </span>
-        <span style={{ color: '#FAFAFA' }}>CATEGORY</span>
-        <span style={{ color: '#555' }}> = </span>
-        <span style={{ color: '#69B6FF' }}>&ldquo;Cloud Infrastructure&rdquo;</span>
-        <span style={{ color: '#00C853' }}>  ✓</span>
-      </div>
+    <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {rules.map((r, i) => (
+        <motion.div
+          key={r.vendor}
+          initial={{ opacity: 0, x: -8 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, amount: 0 }}
+          transition={{ delay: i * 0.1, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          style={{
+            padding: '8px 11px',
+            background: '#080808',
+            border: '1px solid #1a1a1a',
+            borderRadius: 8,
+            borderLeft: '2px solid rgba(0,200,83,0.4)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#555' }}>IF</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#F97316' }}>{r.vendor}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#00C853' }}>→</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#69B6FF' }}>{r.cat}</span>
+            </div>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#333' }}>{r.hits}× applied</span>
+          </div>
+        </motion.div>
+      ))}
     </div>
   )
 }
@@ -252,44 +261,43 @@ function RuleBlock() {
 // ─── Card 4: Narrative preview ────────────────────────────────────────────────
 
 function NarrativePreview() {
+  const lines = [
+    { w: 92, bright: true },
+    { w: 78, bright: false },
+    { w: 85, bright: false },
+    { w: 60, bright: false },
+    { w: 70, bright: false },
+  ]
   return (
-    <div style={{ marginTop: 18, position: 'relative' }}>
+    <div style={{ marginTop: 18 }}>
       <div
         style={{
-          padding: '12px 14px',
+          padding: '14px',
           background: '#080808',
           border: '1px solid #1a1a1a',
+          borderTop: '1px solid rgba(0,200,83,0.15)',
           borderRadius: 8,
+          position: 'relative',
         }}
       >
-        {/* Simulated text lines */}
-        {[88, 72, 80, 58, 44, 66].map((w, i) => (
-          <div
-            key={i}
-            style={{
-              height: 8,
-              width: `${w}%`,
-              borderRadius: 4,
-              background: i === 0 ? '#242424' : '#1a1a1a',
-              marginBottom: i < 5 ? 7 : 0,
-            }}
+        {/* Cursor blink on first line */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
+          <div style={{ flex: `0 0 ${lines[0].w}%`, height: 8, borderRadius: 4, background: '#2a2a2a' }} />
+          <motion.div
+            animate={{ opacity: [1, 0, 1] }}
+            transition={{ duration: 1, repeat: Infinity, ease: 'steps(1)' }}
+            style={{ width: 2, height: 11, background: '#00C853', borderRadius: 1, flexShrink: 0 }}
           />
+        </div>
+        {lines.slice(1).map((l, i) => (
+          <div key={i} style={{ height: 8, width: `${l.w}%`, borderRadius: 4, background: '#1a1a1a', marginBottom: i < lines.length - 2 ? 7 : 0 }} />
         ))}
-      </div>
-      {/* AI badge */}
-      <div style={{ position: 'absolute', bottom: 10, right: 10 }}>
-        <span
-          style={{
-            fontSize: 10, fontWeight: 600,
-            padding: '3px 9px', borderRadius: 999,
-            background: 'rgba(0,200,83,0.1)',
-            border: '1px solid rgba(0,200,83,0.22)',
-            color: '#00C853',
-            fontFamily: 'var(--font-sans)',
-          }}
-        >
-          Generated by AI ✦
-        </span>
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #141414', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 10, color: '#444', fontFamily: 'var(--font-sans)' }}>April 2025 report</span>
+          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: 'rgba(0,200,83,0.1)', border: '1px solid rgba(0,200,83,0.2)', color: '#00C853', fontFamily: 'var(--font-sans)' }}>
+            AI ✦
+          </span>
+        </div>
       </div>
     </div>
   )
@@ -308,47 +316,43 @@ const CLIENTS = [
 function ClientGrid() {
   return (
     <div style={{ marginTop: 18 }}>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 8,
-          marginBottom: 10,
-        }}
-      >
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 12 }}>
         {CLIENTS.map((c, i) => (
           <motion.div
             key={c.init}
             initial={{ scale: 0, opacity: 0 }}
             whileInView={{ scale: 1, opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: i * 0.04, type: 'spring', stiffness: 400, damping: 18 }}
-            style={{
-              width: '100%',
-              paddingBottom: '100%',
-              position: 'relative',
-              borderRadius: '50%',
-            }}
+            viewport={{ once: true, amount: 0 }}
+            transition={{ delay: i * 0.05, type: 'spring', stiffness: 360, damping: 18 }}
           >
             <div
               style={{
-                position: 'absolute', inset: 0,
+                aspectRatio: '1',
                 borderRadius: '50%',
-                background: `${c.color}20`,
-                border: `1px solid ${c.color}40`,
+                background: `${c.color}18`,
+                border: `1px solid ${c.color}38`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <span style={{ fontSize: 11, fontWeight: 700, color: c.color, fontFamily: 'var(--font-sans)' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: c.color, fontFamily: 'var(--font-sans)' }}>
                 {c.init}
               </span>
             </div>
           </motion.div>
         ))}
       </div>
-      <p style={{ margin: 0, fontSize: 11, color: '#444', fontFamily: 'var(--font-sans)', textAlign: 'center' }}>
-        +491 more clients
-      </p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <p style={{ margin: 0, fontSize: 11, color: '#444', fontFamily: 'var(--font-sans)' }}>
+          +491 more firms
+        </p>
+        <div style={{ display: 'flex', gap: -4 }}>
+          {CLIENTS.slice(0, 4).map((c, i) => (
+            <div key={i} style={{ width: 18, height: 18, borderRadius: '50%', background: `${c.color}30`, border: `1.5px solid #080808`, marginLeft: i > 0 ? -6 : 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 7, fontWeight: 700, color: c.color, fontFamily: 'var(--font-sans)' }}>{c.init}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
@@ -396,7 +400,7 @@ function StaggerWords({ text, style }: { text: string; style?: React.CSSProperti
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export default function BentoGrid() {
-  const gridRef = useRef<HTMLDivElement>(null)
+  const gridRef = useRef<HTMLDivElement | null>(null)
 
   return (
     <section id="features" style={{ padding: '120px 0 100px', position: 'relative' }}>
