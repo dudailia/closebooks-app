@@ -131,41 +131,40 @@ function TierCard({
   return (
     <GlowCard
       style={{
-        padding: 28,
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
         height: '100%',
+        overflow: 'hidden',
         ...(tier.popular ? {
-          borderColor: 'rgba(0,200,83,0.4)',
-          boxShadow: '0 0 40px rgba(0,200,83,0.12)',
+          borderColor: 'rgba(0,200,83,0.45)',
+          boxShadow: '0 0 48px rgba(0,200,83,0.15), 0 0 0 1px rgba(0,200,83,0.2) inset',
           animation: 'glow-pulse 3s ease-in-out infinite',
         } : {}),
       }}
     >
+      {/* Popular banner — inside the card at the top, always visible */}
       {tier.popular && (
         <div
           style={{
-            position: 'absolute',
-            top: -13,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            padding: '4px 14px',
+            background: 'linear-gradient(90deg, #00C853, #00d95a)',
+            padding: '7px 28px',
+            textAlign: 'center',
             fontSize: 11,
             fontWeight: 700,
-            letterSpacing: '0.1em',
+            letterSpacing: '0.12em',
             textTransform: 'uppercase',
             color: '#000',
-            background: '#00C853',
-            borderRadius: 999,
-            whiteSpace: 'nowrap',
-            boxShadow: '0 4px 20px rgba(0,200,83,0.4)',
             fontFamily: 'var(--font-sans)',
+            flexShrink: 0,
           }}
         >
-          Most popular
+          ✦ Most popular
         </div>
       )}
+
+      {/* Card body */}
+      <div style={{ padding: 28, display: 'flex', flexDirection: 'column', flex: 1 }}>
 
       <p
         style={{
@@ -239,6 +238,7 @@ function TierCard({
       ) : (
         <PricingCta tier={tier} annual={annual} />
       )}
+      </div>{/* end card body */}
     </GlowCard>
   )
 }

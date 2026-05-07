@@ -133,74 +133,70 @@ function TxRow({ tx, index }: { tx: typeof TRANSACTIONS[number]; index: number }
 
 // ─── Looping transaction feed ─────────────────────────────────────────────────
 
+// Fixed-height container: rows key on cycleKey so old rows unmount instantly
+// (no exit animation = no collapse), new rows animate in fresh from initial state.
 function TransactionFeedDemo() {
   const [cycleKey,    setCycleKey]    = useState(0)
   const [showSuccess, setShowSuccess] = useState(false)
-  const [visible,     setVisible]     = useState(true)
 
   useEffect(() => {
     setShowSuccess(false)
-    setVisible(true)
-    const t1 = setTimeout(() => setShowSuccess(true),               2600)
-    const t2 = setTimeout(() => setVisible(false),                  4300)
-    const t3 = setTimeout(() => setCycleKey(k => k + 1),           5100)
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+    // Show success bar after all rows have typed in
+    const allDoneMs = TRANSACTIONS.length * 520 + 600
+    const t1 = setTimeout(() => setShowSuccess(true), allDoneMs)
+    // Loop seamlessly: just bump cycleKey (old rows unmount instantly)
+    const t2 = setTimeout(() => setCycleKey(k => k + 1), allDoneMs + 1800)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [cycleKey])
 
   return (
-    <AnimatePresence>
-      {visible && (
+    // minHeight locks the card height — impossible to collapse
+    <div style={{ minHeight: TRANSACTIONS.length * 46 + 56, position: 'relative' }}>
+      {TRANSACTIONS.map((tx, i) => (
+        // key includes cycleKey → instant unmount+remount on cycle reset
         <motion.div
-          key={cycleKey}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 0.45 } }}
-          transition={{ duration: 0.25 }}
+          key={`${cycleKey}-${tx.id}`}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.13, duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
         >
-          {TRANSACTIONS.map((tx, i) => (
-            <TxRow key={tx.id} tx={tx} index={i} />
-          ))}
-
-          <AnimatePresence>
-            {showSuccess && (
-              <motion.div
-                key="success-bar"
-                initial={{ y: 8, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 4, opacity: 0 }}
-                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                style={{
-                  marginTop: 12,
-                  padding: '8px 12px',
-                  borderRadius: 8,
-                  backgroundColor: 'rgba(0,200,83,0.07)',
-                  border: '1px solid rgba(0,200,83,0.18)',
-                  display: 'flex', alignItems: 'center', gap: 8,
-                }}
-              >
-                <motion.div
-                  animate={{ opacity: [0.4, 1, 0.4] }}
-                  transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-                  style={{
-                    width: 6, height: 6, borderRadius: '50%',
-                    backgroundColor: '#00C853', flexShrink: 0,
-                    boxShadow: '0 0 0 3px rgba(0,200,83,0.2)',
-                  }}
-                />
-                <span
-                  style={{
-                    fontSize: 12, color: '#00C853',
-                    fontFamily: 'var(--font-sans)', fontWeight: 500,
-                  }}
-                >
-                  All transactions categorized · 94% confidence
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <TxRow tx={tx} index={i} />
         </motion.div>
-      )}
-    </AnimatePresence>
+      ))}
+
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            key={`success-${cycleKey}`}
+            initial={{ y: 8, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.2 } }}
+            transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              marginTop: 10,
+              padding: '8px 12px',
+              borderRadius: 8,
+              backgroundColor: 'rgba(0,200,83,0.07)',
+              border: '1px solid rgba(0,200,83,0.18)',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}
+          >
+            <motion.div
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+              style={{
+                width: 6, height: 6, borderRadius: '50%',
+                backgroundColor: '#00C853', flexShrink: 0,
+                boxShadow: '0 0 0 3px rgba(0,200,83,0.2)',
+              }}
+            />
+            <span style={{ fontSize: 12, color: '#00C853', fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
+              All transactions categorized · 94% confidence
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }
 

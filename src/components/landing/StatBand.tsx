@@ -57,10 +57,10 @@ function MarqueeRow({ firms, reverse, duration }: { firms: string[]; reverse?: b
       <div
         style={{
           display: 'flex',
-          gap: 10,
           width: 'max-content',
           animation: `${reverse ? 'marquee-right' : 'marquee-left'} ${duration}s linear infinite`,
           willChange: 'transform',
+          transform: 'translateZ(0)',
         }}
       >
         {doubled.map((firm, i) => (
@@ -68,6 +68,7 @@ function MarqueeRow({ firms, reverse, duration }: { firms: string[]; reverse?: b
             key={i}
             style={{
               display: 'inline-flex',
+              marginRight: 10,
               alignItems: 'center',
               padding: '5px 14px',
               borderRadius: 999,
