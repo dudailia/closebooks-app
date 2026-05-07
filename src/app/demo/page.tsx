@@ -92,30 +92,30 @@ function UploadStep({ onNext }: { onNext: () => void }) {
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#f0f5ef', color: '#2d5a27' }}>
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#2d5a27' }} />
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: 'rgba(0,200,83,0.1)', color: '#00C853' }}>
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#00C853' }} />
           Step 1 of 4
         </div>
-        <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#1a1714' }}>
+        <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#FAFAFA' }}>
           Upload your bank statement
         </h2>
-        <p className="text-sm" style={{ color: '#6b6560' }}>
+        <p className="text-sm" style={{ color: '#888888' }}>
           CloseBooks reads any CSV export from Chase, Bank of America, Wells Fargo, and more.
         </p>
       </div>
 
       {/* Sample download prompt */}
-      <div className="rounded-xl border p-4 flex items-center justify-between gap-4" style={{ borderColor: '#d4e5d0', backgroundColor: '#f0f7ee' }}>
+      <div className="rounded-xl border p-4 flex items-center justify-between gap-4" style={{ borderColor: 'rgba(0,200,83,0.2)', backgroundColor: 'rgba(0,200,83,0.06)' }}>
         <div>
-          <p className="text-sm font-semibold" style={{ color: '#1a1714' }}>Don&apos;t have a CSV handy?</p>
-          <p className="text-xs mt-0.5" style={{ color: '#6b6560' }}>Download our sample — 20 real transactions from Sunrise Advisory LLC</p>
+          <p className="text-sm font-semibold" style={{ color: '#FAFAFA' }}>Don&apos;t have a CSV handy?</p>
+          <p className="text-xs mt-0.5" style={{ color: '#888888' }}>Download our sample — 20 real transactions from Sunrise Advisory LLC</p>
         </div>
         <button
           onClick={downloadSample}
-          className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all"
-          style={{ backgroundColor: '#2d5a27' }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+          className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+          style={{ backgroundColor: '#00C853', color: '#080808' }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#00b34a' }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#00C853' }}
         >
           {downloading ? '✓ Downloading' : '↓ Download CSV'}
         </button>
@@ -128,28 +128,28 @@ function UploadStep({ onNext }: { onNext: () => void }) {
         onDrop={handleDrop}
         className="block cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition-all"
         style={{
-          borderColor: dragging ? '#2d5a27' : fileName ? '#2d5a27' : '#d0c9c0',
-          backgroundColor: dragging ? '#f0f7ee' : fileName ? '#f0f7ee' : '#faf8f4',
+          borderColor: dragging ? '#00C853' : fileName ? '#00C853' : '#1f1f1f',
+          backgroundColor: dragging ? 'rgba(0,200,83,0.06)' : fileName ? 'rgba(0,200,83,0.06)' : '#141414',
         }}
       >
         <input type="file" accept=".csv" className="hidden" onChange={handleFile} />
         {fileName ? (
           <div className="space-y-2">
             <div className="text-3xl">✓</div>
-            <p className="font-semibold text-sm" style={{ color: '#2d5a27' }}>{fileName}</p>
-            <p className="text-xs" style={{ color: '#6b6560' }}>Uploading…</p>
+            <p className="font-semibold text-sm" style={{ color: '#00C853' }}>{fileName}</p>
+            <p className="text-xs" style={{ color: '#888888' }}>Uploading…</p>
           </div>
         ) : (
           <div className="space-y-3">
             <div className="text-4xl">📂</div>
-            <p className="font-semibold text-sm" style={{ color: '#1a1714' }}>Drop your CSV here, or click to browse</p>
-            <p className="text-xs" style={{ color: '#a09a94' }}>Supports any bank CSV export · Encrypted in transit</p>
+            <p className="font-semibold text-sm" style={{ color: '#FAFAFA' }}>Drop your CSV here, or click to browse</p>
+            <p className="text-xs" style={{ color: '#444444' }}>Supports any bank CSV export · Encrypted in transit</p>
           </div>
         )}
       </label>
 
       <div className="text-center">
-        <span className="text-xs" style={{ color: '#a09a94' }}>or</span>
+        <span className="text-xs" style={{ color: '#444444' }}>or</span>
         <button
           onClick={onNext}
           className="block mx-auto mt-2 text-sm font-medium underline"
@@ -245,14 +245,14 @@ function CategorizingStep({ onNext }: CategorizingStepProps) {
   return (
     <div className="space-y-6 text-center">
       <div className="space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#fdf2e9', color: '#b8734a' }}>
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: 'rgba(184,115,74,0.15)', color: '#b8734a' }}>
           <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#b8734a' }} />
           Step 2 of 4
         </div>
-        <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#1a1714' }}>
+        <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#FAFAFA' }}>
           CloseBooks AI is categorizing your transactions
         </h2>
-        <p className="text-sm" style={{ color: '#6b6560' }}>
+        <p className="text-sm" style={{ color: '#888888' }}>
           Every transaction is matched to your chart of accounts with a confidence score
         </p>
       </div>
@@ -261,10 +261,10 @@ function CategorizingStep({ onNext }: CategorizingStepProps) {
       <div className="flex justify-center py-4">
         <div className="relative w-32 h-32">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="42" fill="none" stroke="#f0ece4" strokeWidth="8" />
+            <circle cx="50" cy="50" r="42" fill="none" stroke="#1f1f1f" strokeWidth="8" />
             <circle
               cx="50" cy="50" r="42" fill="none"
-              stroke="#2d5a27" strokeWidth="8"
+              stroke="#00C853" strokeWidth="8"
               strokeLinecap="round"
               strokeDasharray={`${2 * Math.PI * 42}`}
               strokeDashoffset={`${2 * Math.PI * 42 * (1 - (isAiPhase ? count / total : 0))}`}
@@ -272,10 +272,10 @@ function CategorizingStep({ onNext }: CategorizingStepProps) {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-2xl font-bold tabular-nums" style={{ color: '#1a1714' }}>
+            <span className="text-2xl font-bold tabular-nums" style={{ color: '#FAFAFA' }}>
               {isAiPhase ? count : 0}
             </span>
-            <span className="text-xs" style={{ color: '#6b6560' }}>of {total}</span>
+            <span className="text-xs" style={{ color: '#888888' }}>of {total}</span>
           </div>
         </div>
       </div>
@@ -287,10 +287,10 @@ function CategorizingStep({ onNext }: CategorizingStepProps) {
           return (
             <div key={s.id} className="flex items-center gap-3">
               <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                style={{ backgroundColor: s.done ? '#2d5a27' : isActive ? '#fef3c7' : '#f0ece4', color: s.done ? '#fff' : isActive ? '#92400e' : '#a09a94' }}>
+                style={{ backgroundColor: s.done ? '#00C853' : isActive ? 'rgba(184,115,74,0.2)' : '#1f1f1f', color: s.done ? '#080808' : isActive ? '#b8734a' : '#444444' }}>
                 {s.done ? '✓' : isActive ? '…' : i + 1}
               </span>
-              <span className="text-sm" style={{ color: s.done ? '#2d5a27' : isActive ? '#1a1714' : '#a09a94', fontWeight: isActive ? 600 : 400 }}>
+              <span className="text-sm" style={{ color: s.done ? '#00C853' : isActive ? '#FAFAFA' : '#444444', fontWeight: isActive ? 600 : 400 }}>
                 {s.label}
               </span>
             </div>
@@ -299,8 +299,8 @@ function CategorizingStep({ onNext }: CategorizingStepProps) {
       </div>
 
       {phase === 'done' && (
-        <div className="rounded-xl border p-4 text-center" style={{ borderColor: '#a7f3d0', backgroundColor: '#ecfdf5' }}>
-          <p className="font-semibold text-sm" style={{ color: '#065f46' }}>
+        <div className="rounded-xl border p-4 text-center" style={{ borderColor: 'rgba(0,200,83,0.3)', backgroundColor: 'rgba(0,200,83,0.1)' }}>
+          <p className="font-semibold text-sm" style={{ color: '#00C853' }}>
             ✓ {total} transactions categorized · {autoApproved} auto-approved
           </p>
         </div>
@@ -341,27 +341,27 @@ function ReviewStep({ transactions, onNext }: { transactions: Transaction[]; onN
   return (
     <div className="space-y-4">
       <div className="text-center space-y-1">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#f3f4f6', color: '#374151' }}>
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#1f1f1f', color: '#888888' }}>
           Step 3 of 4
         </div>
-        <h2 className="text-xl font-bold" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#1a1714' }}>
+        <h2 className="text-xl font-bold" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#FAFAFA' }}>
           Review AI categorizations
         </h2>
-        <p className="text-sm" style={{ color: '#6b6560' }}>Approve, edit, or flag — your call is final</p>
+        <p className="text-sm" style={{ color: '#888888' }}>Approve, edit, or flag — your call is final</p>
       </div>
 
       {/* Summary bar */}
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: 'Approved', count: approved, color: '#059669', bg: '#ecfdf5', filter: 'all' as const },
-          { label: 'Pending',  count: pending,  color: '#ca8a04', bg: '#fefce8', filter: 'pending' as const },
-          { label: 'Flagged',  count: flagged,  color: '#dc2626', bg: '#fef2f2', filter: 'flagged' as const },
+          { label: 'Approved', count: approved, color: '#00C853', bg: 'rgba(0,200,83,0.1)', filter: 'all' as const },
+          { label: 'Pending',  count: pending,  color: '#ca8a04', bg: 'rgba(202,138,4,0.1)', filter: 'pending' as const },
+          { label: 'Flagged',  count: flagged,  color: '#dc2626', bg: 'rgba(220,38,38,0.1)', filter: 'flagged' as const },
         ].map(s => (
           <button key={s.label} onClick={() => setFilter(s.filter)}
             className="rounded-xl p-3 text-center border transition-all"
-            style={{ backgroundColor: s.bg, borderColor: filter === s.filter ? s.color : 'transparent' }}>
+            style={{ backgroundColor: s.bg, borderColor: filter === s.filter ? s.color : '#1f1f1f' }}>
             <div className="text-xl font-bold tabular-nums" style={{ color: s.color }}>{s.count}</div>
-            <div className="text-xs" style={{ color: '#6b6560' }}>{s.label}</div>
+            <div className="text-xs" style={{ color: '#888888' }}>{s.label}</div>
           </button>
         ))}
       </div>
@@ -369,28 +369,28 @@ function ReviewStep({ transactions, onNext }: { transactions: Transaction[]; onN
       {pending > 0 && (
         <button onClick={approveAll}
           className="w-full py-2 rounded-xl text-sm font-semibold border transition-all"
-          style={{ borderColor: '#2d5a27', color: '#2d5a27', backgroundColor: '#f0f7ee' }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#dcfce7' }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#f0f7ee' }}>
+          style={{ borderColor: '#00C853', color: '#00C853', backgroundColor: 'rgba(0,200,83,0.08)' }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(0,200,83,0.15)' }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(0,200,83,0.08)' }}>
           ✓ Approve all {pending} pending transactions
         </button>
       )}
 
       {/* Transaction list */}
-      <div className="space-y-1 max-h-64 sm:max-h-72 overflow-y-auto rounded-xl border" style={{ borderColor: '#e8e0d4' }}>
+      <div className="space-y-1 max-h-64 sm:max-h-72 overflow-y-auto rounded-xl border" style={{ borderColor: '#1f1f1f' }}>
         {visible.map(tx => {
           const sc = STATUS_COLORS[tx.status]
           return (
             <div key={tx.id} className="flex items-start sm:items-center gap-2 sm:gap-3 px-3 py-2.5 border-b last:border-b-0"
-              style={{ borderColor: '#f0ece4', backgroundColor: '#fff' }}>
+              style={{ borderColor: '#1f1f1f', backgroundColor: '#0f0f0f' }}>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium truncate" style={{ color: '#1a1714' }}>{tx.description}</p>
-                <p className="text-xs" style={{ color: '#a09a94' }}>
+                <p className="text-xs font-medium truncate" style={{ color: '#FAFAFA' }}>{tx.description}</p>
+                <p className="text-xs" style={{ color: '#444444' }}>
                   {tx.suggested_category || tx.final_category || '—'} · {Math.round(tx.confidence * 100)}%
                 </p>
               </div>
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                <span className="text-xs font-semibold tabular-nums" style={{ color: tx.type === 'credit' ? '#059669' : '#1a1714' }}>
+                <span className="text-xs font-semibold tabular-nums" style={{ color: tx.type === 'credit' ? '#00C853' : '#FAFAFA' }}>
                   {tx.type === 'credit' ? '+' : '-'}${tx.amount.toFixed(0)}
                 </span>
                 <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
@@ -400,8 +400,8 @@ function ReviewStep({ transactions, onNext }: { transactions: Transaction[]; onN
                 {tx.status === 'pending' && (
                   <div className="flex gap-1">
                     <button onClick={() => approve(tx.id)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold"
-                      style={{ backgroundColor: '#2d5a27', minHeight: 'auto' }}>✓</button>
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold"
+                      style={{ backgroundColor: '#00C853', color: '#080808', minHeight: 'auto' }}>✓</button>
                     <button onClick={() => flag(tx.id)}
                       className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs"
                       style={{ backgroundColor: '#dc2626', minHeight: 'auto' }}>⚑</button>
@@ -415,8 +415,8 @@ function ReviewStep({ transactions, onNext }: { transactions: Transaction[]; onN
 
       <button
         onClick={() => onNext(txs)}
-        className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all"
-        style={{ backgroundColor: approved > 0 ? '#2d5a27' : '#a09a94' }}
+        className="w-full py-3 rounded-xl text-sm font-semibold transition-all"
+        style={{ backgroundColor: approved > 0 ? '#00C853' : '#1f1f1f', color: approved > 0 ? '#080808' : '#444444' }}
         disabled={approved === 0}>
         {approved > 0 ? `Export ${approved} approved transactions →` : 'Approve transactions first'}
       </button>
@@ -461,29 +461,29 @@ function ExportStep({ transactions }: { transactions: Transaction[] }) {
   return (
     <div className="space-y-5">
       <div className="text-center space-y-1">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#f3e8ff', color: '#6b21a8' }}>
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: 'rgba(107,33,168,0.15)', color: '#a855f7' }}>
           Step 4 of 4
         </div>
-        <h2 className="text-xl font-bold" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#1a1714' }}>
+        <h2 className="text-xl font-bold" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#FAFAFA' }}>
           Close complete — ready to export
         </h2>
-        <p className="text-sm" style={{ color: '#6b6560' }}>
+        <p className="text-sm" style={{ color: '#888888' }}>
           Download your QBO-ready file or standard CSV
         </p>
       </div>
 
       {/* Summary */}
-      <div className="rounded-xl border p-4 space-y-2" style={{ borderColor: '#e8e0d4', backgroundColor: '#fff' }}>
-        <p className="text-sm font-semibold" style={{ color: '#1a1714' }}>Sunrise Advisory LLC · March 2026</p>
+      <div className="rounded-xl border p-4 space-y-2" style={{ borderColor: '#1f1f1f', backgroundColor: '#0f0f0f' }}>
+        <p className="text-sm font-semibold" style={{ color: '#FAFAFA' }}>Sunrise Advisory LLC · March 2026</p>
         <div className="grid grid-cols-3 gap-3 pt-1">
           {[
             { label: 'Transactions', value: String(approved.length) },
             { label: 'Total Expenses', value: `$${totalDebits.toLocaleString('en-US', { maximumFractionDigits: 0 })}` },
             { label: 'Total Revenue', value: `$${totalCredits.toLocaleString('en-US', { maximumFractionDigits: 0 })}` },
           ].map(s => (
-            <div key={s.label} className="text-center rounded-lg py-2" style={{ backgroundColor: '#faf8f4' }}>
-              <p className="text-base font-bold" style={{ color: '#1a1714' }}>{s.value}</p>
-              <p className="text-xs" style={{ color: '#a09a94' }}>{s.label}</p>
+            <div key={s.label} className="text-center rounded-lg py-2" style={{ backgroundColor: '#141414' }}>
+              <p className="text-base font-bold" style={{ color: '#FAFAFA' }}>{s.value}</p>
+              <p className="text-xs" style={{ color: '#444444' }}>{s.label}</p>
             </div>
           ))}
         </div>
@@ -492,33 +492,33 @@ function ExportStep({ transactions }: { transactions: Transaction[] }) {
       {/* Export buttons */}
       <div className="space-y-2">
         {[
-          { format: 'quickbooks' as const, label: 'Export to QuickBooks', sub: 'QBO-compatible CSV — import directly', icon: '📥', accent: '#2d5a27' },
-          { format: 'standard' as const,   label: 'Export Standard CSV',  sub: 'Date · Category · Amount · Status',   icon: '📄', accent: '#6b6560' },
+          { format: 'quickbooks' as const, label: 'Export to QuickBooks', sub: 'QBO-compatible CSV — import directly', icon: '📥', accent: '#00C853' },
+          { format: 'standard' as const,   label: 'Export Standard CSV',  sub: 'Date · Category · Amount · Status',   icon: '📄', accent: '#888888' },
         ].map(b => (
           <button key={b.format} onClick={() => doExport(b.format)} disabled={exporting}
             className="w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all disabled:opacity-60"
-            style={{ borderColor: done === b.format ? b.accent : '#e8e0d4', backgroundColor: done === b.format ? '#f0f7ee' : '#fff' }}
+            style={{ borderColor: done === b.format ? b.accent : '#1f1f1f', backgroundColor: done === b.format ? 'rgba(0,200,83,0.08)' : '#141414' }}
             onMouseEnter={e => { if (!exporting) e.currentTarget.style.borderColor = b.accent }}
-            onMouseLeave={e => { if (done !== b.format) e.currentTarget.style.borderColor = '#e8e0d4' }}>
+            onMouseLeave={e => { if (done !== b.format) e.currentTarget.style.borderColor = '#1f1f1f' }}>
             <span className="text-2xl">{done === b.format ? '✓' : b.icon}</span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold" style={{ color: done === b.format ? b.accent : '#1a1714' }}>{b.label}</p>
-              <p className="text-xs" style={{ color: '#a09a94' }}>{b.sub}</p>
+              <p className="text-sm font-semibold" style={{ color: done === b.format ? b.accent : '#FAFAFA' }}>{b.label}</p>
+              <p className="text-xs" style={{ color: '#444444' }}>{b.sub}</p>
             </div>
-            {done === b.format && <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#dcfce7', color: '#166534' }}>Downloaded!</span>}
+            {done === b.format && <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0,200,83,0.15)', color: '#00C853' }}>Downloaded!</span>}
           </button>
         ))}
       </div>
 
       {/* CTA to sign up */}
-      <div className="rounded-2xl p-5 text-center space-y-3" style={{ backgroundColor: '#1a1714' }}>
-        <p className="font-bold text-white">You just closed a client&apos;s books in under 2 minutes.</p>
-        <p className="text-sm" style={{ color: '#a09a94' }}>Start your free trial and do this for all your clients.</p>
+      <div className="rounded-2xl p-5 text-center space-y-3" style={{ backgroundColor: '#0f0f0f', border: '1px solid #1f1f1f' }}>
+        <p className="font-bold" style={{ color: '#FAFAFA' }}>You just closed a client&apos;s books in under 2 minutes.</p>
+        <p className="text-sm" style={{ color: '#888888' }}>Start your free trial and do this for all your clients.</p>
         <Link href="/get-started"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white transition-all"
-          style={{ backgroundColor: '#2d5a27' }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#3d7a35' }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2d5a27' }}>
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all"
+          style={{ backgroundColor: '#00C853', color: '#080808' }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#00b34a' }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#00C853' }}>
           Start Free Trial — No Credit Card
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </Link>
@@ -536,10 +536,10 @@ export default function DemoPage() {
   function goTo(s: DemoStep) { setStep(s) }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#faf8f4' }}>
+    <div className="min-h-screen" data-theme="dark" style={{ backgroundColor: '#080808' }}>
 
       {/* Nav */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b" style={{ backgroundColor: 'rgba(250,248,244,0.95)', backdropFilter: 'blur(12px)', borderColor: '#e8e0d4' }}>
+      <header className="fixed top-0 left-0 right-0 z-50 border-b" style={{ backgroundColor: 'rgba(8,8,8,0.95)', backdropFilter: 'blur(12px)', borderColor: '#1f1f1f' }}>
         <div className="max-w-6xl mx-auto px-5 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -547,12 +547,12 @@ export default function DemoPage() {
               <path d="M6 6h5M6 10h5M6 14h3" stroke="#b8734a" strokeWidth="1.3" strokeLinecap="round" />
             </svg>
             <span style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', fontSize: 17, letterSpacing: '-0.01em' }}>
-              <span style={{ color: '#1a1714' }}>Close</span><span style={{ color: '#b8734a' }}>Books</span>
+              <span style={{ color: '#FAFAFA' }}>Close</span><span style={{ color: '#b8734a' }}>Books</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
-            <span className="text-xs font-medium px-2.5 py-1 rounded-full" style={{ backgroundColor: '#f0f5ef', color: '#2d5a27' }}>Live Demo</span>
-            <Link href="/get-started" className="px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#2d5a27' }}>
+            <span className="text-xs font-medium px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(0,200,83,0.1)', color: '#00C853' }}>Live Demo</span>
+            <Link href="/get-started" className="px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#00C853', color: '#080808' }}>
               Start Free Trial
             </Link>
           </div>
@@ -563,10 +563,10 @@ export default function DemoPage() {
 
         {/* Page title */}
         <div className="text-center mb-6 sm:mb-10">
-          <h1 className="text-2xl sm:text-3xl mb-2" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#1a1714', letterSpacing: '-0.02em' }}>
+          <h1 className="text-2xl sm:text-3xl mb-2" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#FAFAFA', letterSpacing: '-0.02em' }}>
             Watch CloseBooks close books — live
           </h1>
-          <p className="text-sm" style={{ color: '#6b6560' }}>
+          <p className="text-sm" style={{ color: '#888888' }}>
             Real AI. Real transactions. No signup required.
           </p>
         </div>
@@ -585,17 +585,17 @@ export default function DemoPage() {
                   style={{ opacity: done || active ? 1 : 0.4, cursor: done ? 'pointer' : 'default', minHeight: 'auto' }}>
                   <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shrink-0"
                     style={{
-                      backgroundColor: done ? '#2d5a27' : active ? '#1a1714' : '#e8e0d4',
-                      color: done || active ? '#fff' : '#a09a94',
+                      backgroundColor: done ? '#00C853' : active ? '#FAFAFA' : '#1f1f1f',
+                      color: done ? '#080808' : active ? '#080808' : '#444444',
                     }}>
                     {done ? '✓' : i + 1}
                   </span>
-                  <span className="text-xs font-medium mt-1 whitespace-nowrap hidden sm:block" style={{ color: active ? '#1a1714' : '#a09a94', fontSize: 11 }}>
+                  <span className="text-xs font-medium mt-1 whitespace-nowrap hidden sm:block" style={{ color: active ? '#FAFAFA' : '#444444', fontSize: 11 }}>
                     {s.label}
                   </span>
                 </button>
                 {i < STEPS.length - 1 && (
-                  <div className="w-6 sm:w-12 h-0.5 mx-0.5 sm:mx-1 mb-3 sm:mb-4 shrink-0" style={{ backgroundColor: i < idx ? '#2d5a27' : '#e8e0d4' }} />
+                  <div className="w-6 sm:w-12 h-0.5 mx-0.5 sm:mx-1 mb-3 sm:mb-4 shrink-0" style={{ backgroundColor: i < idx ? '#00C853' : '#1f1f1f' }} />
                 )}
               </div>
             )
@@ -606,7 +606,7 @@ export default function DemoPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
 
           {/* Left: Interactive step */}
-          <div className="rounded-2xl border p-4 sm:p-6 lg:p-8" style={{ borderColor: '#e8e0d4', backgroundColor: '#fff' }}>
+          <div className="rounded-2xl border p-4 sm:p-6 lg:p-8" style={{ borderColor: '#1f1f1f', backgroundColor: '#0f0f0f' }}>
             {step === 'upload' && (
               <UploadStep onNext={() => goTo('categorizing')} />
             )}
@@ -625,13 +625,13 @@ export default function DemoPage() {
           <div className="space-y-5 lg:sticky lg:top-24">
 
             {/* What's happening */}
-            <div className="rounded-2xl border p-5" style={{ borderColor: '#e8e0d4', backgroundColor: '#fff' }}>
+            <div className="rounded-2xl border p-5" style={{ borderColor: '#1f1f1f', backgroundColor: '#0f0f0f' }}>
               <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#b8734a' }}>What just happened</p>
               {step === 'upload' && (
                 <div className="space-y-2">
-                  <p className="text-sm" style={{ color: '#1a1714' }}><strong>CloseBooks reads any CSV</strong> exported from your client&apos;s bank.</p>
-                  <p className="text-sm" style={{ color: '#6b6560' }}>Chase, Bank of America, Wells Fargo, Citi — one CSV, zero formatting required.</p>
-                  <ul className="text-xs space-y-1 mt-3" style={{ color: '#6b6560' }}>
+                  <p className="text-sm" style={{ color: '#FAFAFA' }}><strong>CloseBooks reads any CSV</strong> exported from your client&apos;s bank.</p>
+                  <p className="text-sm" style={{ color: '#888888' }}>Chase, Bank of America, Wells Fargo, Citi — one CSV, zero formatting required.</p>
+                  <ul className="text-xs space-y-1 mt-3" style={{ color: '#888888' }}>
                     <li>✓ Handles 1 or 10,000 transactions</li>
                     <li>✓ Auto-detects column formats</li>
                     <li>✓ Encrypted upload — SOC 2 ready</li>
@@ -640,9 +640,9 @@ export default function DemoPage() {
               )}
               {step === 'categorizing' && (
                 <div className="space-y-2">
-                  <p className="text-sm" style={{ color: '#1a1714' }}><strong>CloseBooks AI</strong> reads every transaction description and maps it to the right account — with a confidence score.</p>
-                  <p className="text-sm" style={{ color: '#6b6560' }}>Payroll, rent, SaaS subscriptions, client payments — recognized instantly.</p>
-                  <ul className="text-xs space-y-1 mt-3" style={{ color: '#6b6560' }}>
+                  <p className="text-sm" style={{ color: '#FAFAFA' }}><strong>CloseBooks AI</strong> reads every transaction description and maps it to the right account — with a confidence score.</p>
+                  <p className="text-sm" style={{ color: '#888888' }}>Payroll, rent, SaaS subscriptions, client payments — recognized instantly.</p>
+                  <ul className="text-xs space-y-1 mt-3" style={{ color: '#888888' }}>
                     <li>✓ Learns your firm&apos;s past corrections</li>
                     <li>✓ 85–95% auto-approval rate</li>
                     <li>✓ Under 60 seconds for 500 transactions</li>
@@ -651,9 +651,9 @@ export default function DemoPage() {
               )}
               {step === 'review' && (
                 <div className="space-y-2">
-                  <p className="text-sm" style={{ color: '#1a1714' }}><strong>You stay in control.</strong> High-confidence items are pre-approved. Low-confidence ones are flagged for your review.</p>
-                  <p className="text-sm" style={{ color: '#6b6560' }}>Approve all, approve selectively, or edit categories inline. Every decision is logged in your audit trail.</p>
-                  <ul className="text-xs space-y-1 mt-3" style={{ color: '#6b6560' }}>
+                  <p className="text-sm" style={{ color: '#FAFAFA' }}><strong>You stay in control.</strong> High-confidence items are pre-approved. Low-confidence ones are flagged for your review.</p>
+                  <p className="text-sm" style={{ color: '#888888' }}>Approve all, approve selectively, or edit categories inline. Every decision is logged in your audit trail.</p>
+                  <ul className="text-xs space-y-1 mt-3" style={{ color: '#888888' }}>
                     <li>✓ One-click bulk approve</li>
                     <li>✓ Inline category editing</li>
                     <li>✓ Full audit trail for every change</li>
@@ -662,9 +662,9 @@ export default function DemoPage() {
               )}
               {step === 'export' && (
                 <div className="space-y-2">
-                  <p className="text-sm" style={{ color: '#1a1714' }}><strong>One click to QuickBooks.</strong> Your export is formatted exactly how QBO expects it — no reformatting, no pivot tables.</p>
-                  <p className="text-sm" style={{ color: '#6b6560' }}>Also supports standard CSV, Xero format, and our full close report PDF.</p>
-                  <ul className="text-xs space-y-1 mt-3" style={{ color: '#6b6560' }}>
+                  <p className="text-sm" style={{ color: '#FAFAFA' }}><strong>One click to QuickBooks.</strong> Your export is formatted exactly how QBO expects it — no reformatting, no pivot tables.</p>
+                  <p className="text-sm" style={{ color: '#888888' }}>Also supports standard CSV, Xero format, and our full close report PDF.</p>
+                  <ul className="text-xs space-y-1 mt-3" style={{ color: '#888888' }}>
                     <li>✓ QBO-native column format</li>
                     <li>✓ Xero and standard CSV</li>
                     <li>✓ Branded client PDF report</li>
@@ -674,32 +674,32 @@ export default function DemoPage() {
             </div>
 
             {/* Time saved */}
-            <div className="rounded-2xl p-5" style={{ backgroundColor: '#f0f5ef', border: '1px solid #c4d9c0' }}>
-              <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#2d5a27' }}>Time saved on this close</p>
+            <div className="rounded-2xl p-5" style={{ backgroundColor: 'rgba(0,200,83,0.08)', border: '1px solid rgba(0,200,83,0.2)' }}>
+              <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#00C853' }}>Time saved on this close</p>
               <div className="flex items-end gap-3">
-                <span className="text-3xl font-bold" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#2d5a27' }}>
+                <span className="text-3xl font-bold" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#00C853' }}>
                   ~{Math.round(DEMO_TRANSACTIONS.length * 2)} min
                 </span>
-                <span className="text-sm pb-1" style={{ color: '#6b6560' }}>vs manual review</span>
+                <span className="text-sm pb-1" style={{ color: '#888888' }}>vs manual review</span>
               </div>
-              <p className="text-xs mt-2" style={{ color: '#6b6560' }}>
-                At 50 clients/month, CloseBooks saves your firm <strong style={{ color: '#1a1714' }}>~83 hours</strong> every month.
+              <p className="text-xs mt-2" style={{ color: '#888888' }}>
+                At 50 clients/month, CloseBooks saves your firm <strong style={{ color: '#FAFAFA' }}>~83 hours</strong> every month.
               </p>
             </div>
 
             {/* Testimonial */}
-            <div className="rounded-2xl border p-5" style={{ borderColor: '#e8e0d4', backgroundColor: '#fff' }}>
+            <div className="rounded-2xl border p-5" style={{ borderColor: '#1f1f1f', backgroundColor: '#0f0f0f' }}>
               <div className="flex gap-1 mb-2">
                 {[...Array(5)].map((_, i) => <span key={i} style={{ color: '#f59e0b' }}>★</span>)}
               </div>
-              <p className="text-sm italic" style={{ color: '#1a1714' }}>
+              <p className="text-sm italic" style={{ color: '#FAFAFA' }}>
                 &ldquo;We closed 18 clients in the time it used to take us to close 6. CloseBooks paid for itself in the first week.&rdquo;
               </p>
-              <p className="text-xs mt-2 font-medium" style={{ color: '#6b6560' }}>— Sarah K., CPA, 12-person firm</p>
+              <p className="text-xs mt-2 font-medium" style={{ color: '#888888' }}>— Sarah K., CPA, 12-person firm</p>
             </div>
 
             {/* More features */}
-            <div className="rounded-2xl border p-5 space-y-3" style={{ borderColor: '#e8e0d4', backgroundColor: '#fff' }}>
+            <div className="rounded-2xl border p-5 space-y-3" style={{ borderColor: '#1f1f1f', backgroundColor: '#0f0f0f' }}>
               <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#b8734a' }}>Also included in every plan</p>
               {[
                 { icon: '🤖', text: 'Autopilot — fully automated close with zero manual input' },
@@ -710,7 +710,7 @@ export default function DemoPage() {
               ].map(f => (
                 <div key={f.icon} className="flex items-start gap-2.5">
                   <span className="text-base shrink-0">{f.icon}</span>
-                  <p className="text-xs" style={{ color: '#1a1714' }}>{f.text}</p>
+                  <p className="text-xs" style={{ color: '#FAFAFA' }}>{f.text}</p>
                 </div>
               ))}
             </div>

@@ -26,7 +26,7 @@ function Logo() {
           lineHeight: 1,
         }}
       >
-        <span style={{ color: '#1a1714' }}>Close</span>
+        <span style={{ color: '#FAFAFA' }}>Close</span>
         <span style={{ color: '#b8734a' }}>Books</span>
       </span>
     </Link>
@@ -41,8 +41,8 @@ function TopNav() {
   return (
     <nav
       style={{
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid #e8e0d4',
+        backgroundColor: '#080808',
+        borderBottom: '1px solid #1f1f1f',
         position: 'sticky',
         top: 0,
         zIndex: 50,
@@ -63,7 +63,7 @@ function TopNav() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <Link
             href="/pricing"
-            style={{ fontSize: '14px', color: '#6b6560', textDecoration: 'none' }}
+            style={{ fontSize: '14px', color: '#888888', textDecoration: 'none' }}
           >
             Pricing
           </Link>
@@ -72,16 +72,16 @@ function TopNav() {
             style={{
               fontSize: '14px',
               fontWeight: 600,
-              color: '#1a1714',
+              color: '#FAFAFA',
               textDecoration: 'none',
               padding: '7px 16px',
               borderRadius: 9,
-              border: '1px solid #e8e0d4',
-              backgroundColor: '#ffffff',
+              border: '1px solid #1f1f1f',
+              backgroundColor: '#0f0f0f',
               transition: 'background-color 0.15s ease',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f0ea' }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#141414' }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#0f0f0f' }}
           >
             Sign In
           </Link>
@@ -129,8 +129,8 @@ function FilterSidebar({
     >
       <div
         style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #e8e0d4',
+          backgroundColor: '#0f0f0f',
+          border: '1px solid #1f1f1f',
           borderRadius: 14,
           padding: '18px',
           display: 'flex',
@@ -139,7 +139,7 @@ function FilterSidebar({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <p style={{ fontSize: '13px', fontWeight: 700, color: '#1a1714' }}>Filters</p>
+          <p style={{ fontSize: '13px', fontWeight: 700, color: '#FAFAFA' }}>Filters</p>
           {(filters.industry || filters.state || filters.service || filters.minRating > 0) && (
             <button
               onClick={() => onChange({ industry: '', state: '', service: '', minRating: 0 })}
@@ -159,7 +159,7 @@ function FilterSidebar({
 
         {/* Industry */}
         <div>
-          <p style={{ fontSize: '11px', fontWeight: 600, color: '#6b6560', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
+          <p style={{ fontSize: '11px', fontWeight: 600, color: '#888888', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
             Industry
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -173,8 +173,8 @@ function FilterSidebar({
                   borderRadius: 8,
                   fontSize: '13px',
                   cursor: 'pointer',
-                  backgroundColor: filters.industry === ind ? '#e8f0e6' : 'transparent',
-                  color: filters.industry === ind ? '#2d5a27' : '#6b6560',
+                  backgroundColor: filters.industry === ind ? 'rgba(0,200,83,0.1)' : 'transparent',
+                  color: filters.industry === ind ? '#00C853' : '#888888',
                   border: 'none',
                   fontWeight: filters.industry === ind ? 600 : 400,
                   transition: 'all 0.12s ease',
@@ -188,7 +188,7 @@ function FilterSidebar({
 
         {/* Location */}
         <div>
-          <p style={{ fontSize: '11px', fontWeight: 600, color: '#6b6560', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
+          <p style={{ fontSize: '11px', fontWeight: 600, color: '#888888', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
             Location
           </p>
           <select
@@ -198,9 +198,9 @@ function FilterSidebar({
               width: '100%',
               padding: '8px 10px',
               borderRadius: 8,
-              border: '1px solid #e8e0d4',
-              backgroundColor: '#ffffff',
-              color: '#1a1714',
+              border: '1px solid #1f1f1f',
+              backgroundColor: '#141414',
+              color: '#FAFAFA',
               fontSize: '13px',
               cursor: 'pointer',
               outline: 'none',
@@ -215,7 +215,7 @@ function FilterSidebar({
 
         {/* Services */}
         <div>
-          <p style={{ fontSize: '11px', fontWeight: 600, color: '#6b6560', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
+          <p style={{ fontSize: '11px', fontWeight: 600, color: '#888888', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
             Services
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -229,8 +229,8 @@ function FilterSidebar({
                   borderRadius: 8,
                   fontSize: '13px',
                   cursor: 'pointer',
-                  backgroundColor: filters.service === svc ? '#e8f0e6' : 'transparent',
-                  color: filters.service === svc ? '#2d5a27' : '#6b6560',
+                  backgroundColor: filters.service === svc ? 'rgba(0,200,83,0.1)' : 'transparent',
+                  color: filters.service === svc ? '#00C853' : '#888888',
                   border: 'none',
                   fontWeight: filters.service === svc ? 600 : 400,
                   transition: 'all 0.12s ease',
@@ -244,7 +244,7 @@ function FilterSidebar({
 
         {/* Rating */}
         <div>
-          <p style={{ fontSize: '11px', fontWeight: 600, color: '#6b6560', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
+          <p style={{ fontSize: '11px', fontWeight: 600, color: '#888888', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
             Min. Rating
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -258,8 +258,8 @@ function FilterSidebar({
                   borderRadius: 8,
                   fontSize: '13px',
                   cursor: 'pointer',
-                  backgroundColor: filters.minRating === r && r > 0 ? '#e8f0e6' : 'transparent',
-                  color: filters.minRating === r && r > 0 ? '#2d5a27' : '#6b6560',
+                  backgroundColor: filters.minRating === r && r > 0 ? 'rgba(0,200,83,0.1)' : 'transparent',
+                  color: filters.minRating === r && r > 0 ? '#00C853' : '#888888',
                   border: 'none',
                   fontWeight: filters.minRating === r && r > 0 ? 600 : 400,
                   transition: 'all 0.12s ease',
@@ -274,17 +274,17 @@ function FilterSidebar({
 
       <div
         style={{
-          backgroundColor: '#f0f5ef',
-          border: '1px solid #c4d9c0',
+          backgroundColor: 'rgba(0,200,83,0.06)',
+          border: '1px solid rgba(0,200,83,0.2)',
           borderRadius: 14,
           padding: '16px',
           textAlign: 'center',
         }}
       >
-        <p style={{ fontSize: '22px', fontWeight: 700, color: '#2d5a27', margin: '0 0 4px', fontFamily: 'var(--font-dm-serif), Georgia, serif' }}>
+        <p style={{ fontSize: '22px', fontWeight: 700, color: '#00C853', margin: '0 0 4px', fontFamily: 'var(--font-dm-serif), Georgia, serif' }}>
           {totalResults}
         </p>
-        <p style={{ fontSize: '12px', color: '#6b9965' }}>
+        <p style={{ fontSize: '12px', color: '#888888' }}>
           {totalResults === 1 ? 'firm matches' : 'firms match'} your criteria
         </p>
       </div>
@@ -326,13 +326,14 @@ export default function DirectoryPage() {
   }, [filters, searchQuery])
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#faf8f4' }}>
+    <div data-theme="dark" style={{ minHeight: '100vh', backgroundColor: '#080808' }}>
       <TopNav />
 
       {/* Hero */}
       <div
         style={{
-          backgroundColor: '#1a1714',
+          backgroundColor: '#080808',
+          borderBottom: '1px solid #1f1f1f',
           padding: '64px 24px 56px',
           textAlign: 'center',
           position: 'relative',
@@ -390,19 +391,19 @@ export default function DirectoryPage() {
               display: 'flex',
               alignItems: 'center',
               gap: 0,
-              backgroundColor: '#ffffff',
+              backgroundColor: '#0f0f0f',
               borderRadius: 14,
-              border: '1px solid #e8e0d4',
+              border: '1px solid #1f1f1f',
               overflow: 'hidden',
               maxWidth: 580,
               margin: '0 auto',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
             }}
           >
             <div style={{ padding: '0 14px', flexShrink: 0 }}>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <circle cx="8" cy="8" r="5.5" stroke="#a09a94" strokeWidth="1.5" />
-                <path d="M12 12l3 3" stroke="#a09a94" strokeWidth="1.5" strokeLinecap="round" />
+                <circle cx="8" cy="8" r="5.5" stroke="#444444" strokeWidth="1.5" />
+                <path d="M12 12l3 3" stroke="#444444" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             </div>
             <input
@@ -416,7 +417,7 @@ export default function DirectoryPage() {
                 border: 'none',
                 outline: 'none',
                 fontSize: '15px',
-                color: '#1a1714',
+                color: '#FAFAFA',
                 backgroundColor: 'transparent',
               }}
             />
@@ -428,7 +429,7 @@ export default function DirectoryPage() {
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  color: '#a09a94',
+                  color: '#444444',
                   fontSize: '18px',
                   flexShrink: 0,
                 }}
@@ -483,7 +484,7 @@ export default function DirectoryPage() {
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* Result count */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-            <p style={{ fontSize: '14px', color: '#6b6560' }}>
+            <p style={{ fontSize: '14px', color: '#888888' }}>
               {filtered.length === 0
                 ? 'No firms match your filters'
                 : `${filtered.length} verified ${filtered.length === 1 ? 'firm' : 'firms'}`}
@@ -504,7 +505,7 @@ export default function DirectoryPage() {
                 </button>
               )}
             </p>
-            <p style={{ fontSize: '12px', color: '#a09a94' }}>
+            <p style={{ fontSize: '12px', color: '#444444' }}>
               Sorted by: Accuracy
             </p>
           </div>
@@ -512,8 +513,8 @@ export default function DirectoryPage() {
           {filtered.length === 0 ? (
             <div
               style={{
-                backgroundColor: '#ffffff',
-                border: '2px dashed #e8e0d4',
+                backgroundColor: '#0f0f0f',
+                border: '2px dashed #1f1f1f',
                 borderRadius: 16,
                 padding: '60px 40px',
                 textAlign: 'center',
@@ -523,13 +524,13 @@ export default function DirectoryPage() {
                 style={{
                   fontFamily: 'var(--font-dm-serif), Georgia, serif',
                   fontSize: '20px',
-                  color: '#1a1714',
+                  color: '#FAFAFA',
                   marginBottom: 8,
                 }}
               >
                 No firms found
               </p>
-              <p style={{ fontSize: '14px', color: '#6b6560', marginBottom: 20 }}>
+              <p style={{ fontSize: '14px', color: '#888888', marginBottom: 20 }}>
                 Try broadening your search or removing some filters.
               </p>
               <button
@@ -540,8 +541,8 @@ export default function DirectoryPage() {
                 style={{
                   padding: '10px 20px',
                   borderRadius: 10,
-                  backgroundColor: '#2d5a27',
-                  color: '#ffffff',
+                  backgroundColor: '#00C853',
+                  color: '#080808',
                   fontSize: '14px',
                   fontWeight: 600,
                   border: 'none',
@@ -570,14 +571,14 @@ export default function DirectoryPage() {
       {/* Footer */}
       <footer
         style={{
-          borderTop: '1px solid #e8e0d4',
+          borderTop: '1px solid #1f1f1f',
           padding: '32px 24px',
           textAlign: 'center',
-          backgroundColor: '#ffffff',
+          backgroundColor: '#080808',
         }}
       >
         <Logo />
-        <p style={{ fontSize: '13px', color: '#a09a94', marginTop: 12 }}>
+        <p style={{ fontSize: '13px', color: '#444444', marginTop: 12 }}>
           © 2026 CloseBooks — AI-Powered Month-End Close for CPA Firms
         </p>
       </footer>

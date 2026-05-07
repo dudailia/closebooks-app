@@ -182,7 +182,7 @@ function StatusChip({ status }: { status: TxRow['status'] }) {
 
 function MiniNav() {
   return (
-    <nav className="border-b" style={{ backgroundColor: '#ffffff', borderColor: '#e8e0d4' }}>
+    <nav className="border-b" style={{ backgroundColor: '#080808', borderColor: '#1f1f1f' }}>
       <div className="max-w-5xl mx-auto px-5 flex items-center justify-between h-14">
         <Link href="/" className="flex items-center gap-2.5 select-none">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -192,16 +192,16 @@ function MiniNav() {
             <path d="M14 7h3M14 10h3M14 13h2" stroke="#b8734a" strokeWidth="1.1" strokeLinecap="round" opacity="0.6" />
           </svg>
           <span style={{ fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif', fontSize: 18, letterSpacing: '-0.01em', lineHeight: 1 }}>
-            <span style={{ color: '#1a1714' }}>Close</span>
+            <span style={{ color: '#FAFAFA' }}>Close</span>
             <span style={{ color: '#b8734a' }}>Books</span>
           </span>
         </Link>
         <Link
           href="/get-started"
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-          style={{ backgroundColor: '#2d5a27' }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold"
+          style={{ backgroundColor: '#00C853', color: '#080808' }}
+          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#00b34a' }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#00C853' }}
         >
           Start free trial →
         </Link>
@@ -227,13 +227,13 @@ export default function WarrenDemoPage() {
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8f4' }}>
+    <div className="min-h-screen flex flex-col" data-theme="dark" style={{ backgroundColor: '#080808' }}>
       <MiniNav />
 
       {/* ── Personalized banner ─────────────────────────────────────────── */}
       <div
         className="border-b px-5 py-4"
-        style={{ backgroundColor: '#fdf5ec', borderColor: '#f0d4b0' }}
+        style={{ backgroundColor: 'rgba(184,115,74,0.08)', borderColor: 'rgba(184,115,74,0.2)' }}
       >
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-start sm:items-center gap-3">
@@ -243,7 +243,7 @@ export default function WarrenDemoPage() {
             >
               W
             </span>
-            <p className="text-sm leading-relaxed" style={{ color: '#7a4a28' }}>
+            <p className="text-sm leading-relaxed" style={{ color: '#c99a78' }}>
               <strong>This demo was made for you, Warren.</strong> Everything below is real data
               from a bookkeeping firm just like Small Business Bookkeeper — categorized by CloseBooks AI.
             </p>
@@ -271,14 +271,14 @@ export default function WarrenDemoPage() {
             className="text-4xl sm:text-5xl leading-tight"
             style={{
               fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
-              color: '#1a1714',
+              color: '#FAFAFA',
               letterSpacing: '-0.03em',
               maxWidth: '680px',
             }}
           >
             Hi Warren — here's what month-end close looks like with AI.
           </h1>
-          <p className="text-lg max-w-xl" style={{ color: '#6b6560', lineHeight: 1.6 }}>
+          <p className="text-lg max-w-xl" style={{ color: '#888888', lineHeight: 1.6 }}>
             Upload your bank statement. CloseBooks categorizes every transaction in 60 seconds,
             flags the ones that need your eyes, and exports clean data straight to QuickBooks.
           </p>
@@ -294,12 +294,12 @@ export default function WarrenDemoPage() {
               <div
                 key={s.label}
                 className="rounded-xl border px-4 py-3"
-                style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4', minWidth: 120 }}
+                style={{ backgroundColor: '#0f0f0f', borderColor: '#1f1f1f', minWidth: 120 }}
               >
-                <p className="text-2xl font-semibold" style={{ color: '#1a1714', fontVariantNumeric: 'tabular-nums' }}>
+                <p className="text-2xl font-semibold" style={{ color: '#FAFAFA', fontVariantNumeric: 'tabular-nums' }}>
                   {s.value}
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>{s.label}</p>
+                <p className="text-xs mt-0.5" style={{ color: '#444444' }}>{s.label}</p>
               </div>
             ))}
           </div>
@@ -311,17 +311,17 @@ export default function WarrenDemoPage() {
             <div>
               <h2
                 className="text-xl"
-                style={{ fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif', color: '#1a1714', letterSpacing: '-0.02em' }}
+                style={{ fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif', color: '#FAFAFA', letterSpacing: '-0.02em' }}
               >
                 March 2026 · Small Business Bookkeeper
               </h2>
-              <p className="text-sm mt-0.5" style={{ color: '#a09a94' }}>
+              <p className="text-sm mt-0.5" style={{ color: '#444444' }}>
                 AI-categorized in 58 seconds · {approved} auto-approved · 1 flagged for your review
               </p>
             </div>
             <span
               className="hidden sm:inline-block px-3 py-1 rounded-full text-xs font-medium"
-              style={{ backgroundColor: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0' }}
+              style={{ backgroundColor: 'rgba(0,200,83,0.1)', color: '#00C853', border: '1px solid rgba(0,200,83,0.3)' }}
             >
               Live demo — read only
             </span>
@@ -330,17 +330,17 @@ export default function WarrenDemoPage() {
           {/* Table */}
           <div
             className="rounded-2xl border overflow-hidden"
-            style={{ borderColor: '#e0dbd4', backgroundColor: '#ffffff' }}
+            style={{ borderColor: '#1f1f1f', backgroundColor: '#0f0f0f' }}
           >
             {/* Table header */}
             <div
               className="grid text-xs font-semibold uppercase tracking-wide px-5 py-3 border-b"
               style={{
                 gridTemplateColumns: '80px 1fr 110px 120px 140px',
-                color: '#a09a94',
+                color: '#444444',
                 letterSpacing: '0.06em',
-                backgroundColor: '#faf8f4',
-                borderColor: '#f0ebe3',
+                backgroundColor: '#141414',
+                borderColor: '#1f1f1f',
               }}
             >
               <span>Date</span>
@@ -356,25 +356,25 @@ export default function WarrenDemoPage() {
                 className="grid items-center px-5 py-3.5 border-b last:border-0 transition-colors"
                 style={{
                   gridTemplateColumns: '80px 1fr 110px 120px 140px',
-                  borderColor: '#f5f0ea',
+                  borderColor: '#1f1f1f',
                   animationDelay: `${i * 30}ms`,
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#faf8f4' }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#141414' }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
               >
                 {/* Date */}
-                <span className="text-xs tabular-nums" style={{ color: '#a09a94' }}>{tx.date}</span>
+                <span className="text-xs tabular-nums" style={{ color: '#444444' }}>{tx.date}</span>
 
                 {/* Description */}
                 <div className="min-w-0 pr-4">
-                  <p className="text-sm truncate" style={{ color: '#1a1714' }}>{tx.description}</p>
+                  <p className="text-sm truncate" style={{ color: '#FAFAFA' }}>{tx.description}</p>
                 </div>
 
                 {/* Amount */}
                 <div className="text-right">
                   <span
                     className="text-sm font-medium tabular-nums"
-                    style={{ color: tx.type === 'credit' ? '#2d5a27' : '#1a1714' }}
+                    style={{ color: tx.type === 'credit' ? '#00C853' : '#FAFAFA' }}
                   >
                     {tx.type === 'credit' ? '+' : '−'}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </span>
@@ -384,13 +384,13 @@ export default function WarrenDemoPage() {
                 <div className="text-center">
                   {tx.status !== 'flagged' ? (
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-xs truncate max-w-[108px]" style={{ color: '#6b6560' }} title={tx.category}>
+                      <span className="text-xs truncate max-w-[108px]" style={{ color: '#888888' }} title={tx.category}>
                         {tx.category}
                       </span>
                       <ConfBadge value={tx.confidence} />
                     </div>
                   ) : (
-                    <span className="text-xs" style={{ color: '#a09a94' }}>—</span>
+                    <span className="text-xs" style={{ color: '#444444' }}>—</span>
                   )}
                 </div>
 
@@ -402,7 +402,7 @@ export default function WarrenDemoPage() {
             ))}
           </div>
 
-          <p className="mt-3 text-xs text-center" style={{ color: '#a09a94' }}>
+          <p className="mt-3 text-xs text-center" style={{ color: '#444444' }}>
             On the real app you can approve, flag, edit categories, and export to QuickBooks in one click.
           </p>
         </section>
@@ -414,7 +414,7 @@ export default function WarrenDemoPage() {
           </p>
           <h2
             className="text-2xl mb-8"
-            style={{ fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif', color: '#1a1714', letterSpacing: '-0.02em' }}
+            style={{ fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif', color: '#FAFAFA', letterSpacing: '-0.02em' }}
           >
             Three steps. End of month done.
           </h2>
@@ -457,14 +457,14 @@ export default function WarrenDemoPage() {
               <div
                 key={step}
                 className="rounded-2xl border p-6 space-y-3 transition-all duration-200"
-                style={{ backgroundColor: '#ffffff', borderColor: '#e0dbd4' }}
+                style={{ backgroundColor: '#0f0f0f', borderColor: '#1f1f1f' }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = '#b8734a'
                   e.currentTarget.style.boxShadow = '0 4px 20px rgba(184,115,74,0.10)'
                   e.currentTarget.style.transform = 'translateY(-2px)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#e0dbd4'
+                  e.currentTarget.style.borderColor = '#1f1f1f'
                   e.currentTarget.style.boxShadow = 'none'
                   e.currentTarget.style.transform = 'translateY(0)'
                 }}
@@ -472,14 +472,14 @@ export default function WarrenDemoPage() {
                 <div className="flex items-center gap-3">
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: '#fdf5ec' }}
+                    style={{ backgroundColor: 'rgba(184,115,74,0.1)' }}
                   >
                     {icon}
                   </div>
                   <span className="text-xs font-bold" style={{ color: '#b8734a' }}>STEP {step}</span>
                 </div>
-                <h3 className="font-semibold text-base" style={{ color: '#1a1714' }}>{title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: '#6b6560' }}>{body}</p>
+                <h3 className="font-semibold text-base" style={{ color: '#FAFAFA' }}>{title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>{body}</p>
               </div>
             ))}
           </div>
@@ -489,13 +489,13 @@ export default function WarrenDemoPage() {
         <section>
           <div
             className="rounded-2xl p-8 relative overflow-hidden"
-            style={{ backgroundColor: '#1a1714', color: '#ffffff' }}
+            style={{ backgroundColor: '#0f0f0f', color: '#FAFAFA', border: '1px solid #1f1f1f' }}
           >
             {/* Decorative grain */}
             <div
               className="absolute inset-0 opacity-5 pointer-events-none"
               style={{
-                backgroundImage: 'radial-gradient(circle at 20% 50%, #b8734a 0%, transparent 60%), radial-gradient(circle at 80% 20%, #2d5a27 0%, transparent 50%)',
+                backgroundImage: 'radial-gradient(circle at 20% 50%, #b8734a 0%, transparent 60%), radial-gradient(circle at 80% 20%, #00C853 0%, transparent 50%)',
               }}
             />
             <div className="relative z-10 max-w-2xl">
@@ -513,7 +513,7 @@ export default function WarrenDemoPage() {
                   S
                 </div>
                 <div>
-                  <p className="text-sm font-medium" style={{ color: '#f5f0ea' }}>Sarah M.</p>
+                  <p className="text-sm font-medium" style={{ color: '#FAFAFA' }}>Sarah M.</p>
                   <p className="text-xs" style={{ color: '#8a8078' }}>Solo CPA · 18 monthly bookkeeping clients</p>
                 </div>
               </div>
@@ -561,18 +561,18 @@ export default function WarrenDemoPage() {
               href="/dashboard/autopilot/smith-2024/run"
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 10,
-                backgroundColor: '#2d5a27', color: '#fff',
+                backgroundColor: '#00C853', color: '#080808',
                 padding: '14px 32px', borderRadius: 12,
                 fontSize: 15, fontWeight: 700, textDecoration: 'none',
                 transition: 'all 0.15s',
               }}
               onMouseEnter={e => {
-                e.currentTarget.style.backgroundColor = '#1e3d1a'
+                e.currentTarget.style.backgroundColor = '#00b34a'
                 e.currentTarget.style.transform = 'translateY(-1px)'
-                e.currentTarget.style.boxShadow = '0 6px 24px rgba(45,90,39,0.4)'
+                e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,200,83,0.4)'
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.backgroundColor = '#2d5a27'
+                e.currentTarget.style.backgroundColor = '#00C853'
                 e.currentTarget.style.transform = 'translateY(0)'
                 e.currentTarget.style.boxShadow = 'none'
               }}
@@ -587,16 +587,16 @@ export default function WarrenDemoPage() {
           {/* Secondary CTA */}
           <div
             className="rounded-2xl border p-8 sm:p-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
-            style={{ backgroundColor: '#f0f5ef', borderColor: '#c4d9c0' }}
+            style={{ backgroundColor: 'rgba(0,200,83,0.06)', borderColor: 'rgba(0,200,83,0.2)' }}
           >
             <div className="space-y-2 max-w-lg">
               <h2
                 className="text-2xl"
-                style={{ fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif', color: '#1a1714', letterSpacing: '-0.02em' }}
+                style={{ fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif', color: '#FAFAFA', letterSpacing: '-0.02em' }}
               >
                 Ready to try it with your own data?
               </h2>
-              <p className="text-sm leading-relaxed" style={{ color: '#4a6b46' }}>
+              <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>
                 Upload any bank statement CSV and see CloseBooks categorize your real transactions in 60 seconds.
                 Free to try — no credit card, no sales call.
               </p>
@@ -604,26 +604,26 @@ export default function WarrenDemoPage() {
             <div className="flex flex-col items-start sm:items-end gap-3 shrink-0">
               <Link
                 href="/get-started"
-                className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white text-sm whitespace-nowrap transition-all duration-150"
-                style={{ backgroundColor: '#2d5a27' }}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm whitespace-nowrap transition-all duration-150"
+                style={{ backgroundColor: '#00C853', color: '#080808' }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#1e3d1a'
+                  e.currentTarget.style.backgroundColor = '#00b34a'
                   e.currentTarget.style.transform = 'translateY(-1px)'
-                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(45,90,39,0.30)'
+                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,200,83,0.30)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#2d5a27'
+                  e.currentTarget.style.backgroundColor = '#00C853'
                   e.currentTarget.style.transform = 'translateY(0)'
                   e.currentTarget.style.boxShadow = 'none'
                 }}
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <rect x="1" y="1" width="12" height="12" rx="2" stroke="white" strokeWidth="1.3" />
-                  <path d="M7 4v6M4 7l3-3 3 3" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                  <rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3" />
+                  <path d="M7 4v6M4 7l3-3 3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 Upload your bank statement
               </Link>
-              <p className="text-xs" style={{ color: '#6b9965' }}>
+              <p className="text-xs" style={{ color: '#888888' }}>
                 Works with any CSV · Results in 60 seconds
               </p>
             </div>

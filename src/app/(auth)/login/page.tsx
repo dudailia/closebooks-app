@@ -97,7 +97,7 @@ function LoginForm() {
     return (
       <PublicShell>
         <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p style={{ fontSize: 14, color: '#6E6E85' }}>Redirecting…</p>
+          <p style={{ fontSize: 14, color: '#444444' }}>Redirecting…</p>
         </main>
       </PublicShell>
     )
@@ -109,10 +109,10 @@ function LoginForm() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <h1
             style={{
-              fontFamily: 'var(--font-serif)',
+              fontFamily: 'var(--font-display)',
               fontSize: 40,
               letterSpacing: '-0.03em',
-              color: '#F0F0F5',
+              color: '#FAFAFA',
               margin: 0,
               fontWeight: 400,
               lineHeight: 1.1,
@@ -120,7 +120,7 @@ function LoginForm() {
           >
             Welcome back
           </h1>
-          <p style={{ fontSize: 14, color: '#A8A8BC', margin: '10px 0 0' }}>
+          <p style={{ fontSize: 14, color: '#888888', margin: '10px 0 0' }}>
             Sign in to continue closing books.
           </p>
         </div>
@@ -160,7 +160,7 @@ function LoginForm() {
                 <DarkLabel htmlFor="password">Password</DarkLabel>
                 <Link
                   href="/forgot-password"
-                  style={{ fontSize: 12, color: '#00D97E', textDecoration: 'none' }}
+                  style={{ fontSize: 12, color: '#00C853', textDecoration: 'none' }}
                 >
                   Forgot password?
                 </Link>
@@ -181,16 +181,16 @@ function LoginForm() {
             </DarkButton>
           </form>
 
-          <p style={{ marginTop: 20, fontSize: 13, textAlign: 'center', color: '#A8A8BC' }}>
+          <p style={{ marginTop: 20, fontSize: 13, textAlign: 'center', color: '#888888' }}>
             Don&apos;t have an account?{' '}
-            <Link href="/signup" style={{ color: '#00D97E', textDecoration: 'none', fontWeight: 600 }}>
+            <Link href="/signup" style={{ color: '#00C853', textDecoration: 'none', fontWeight: 600 }}>
               Start free →
             </Link>
           </p>
         </DarkCard>
 
-        <p style={{ marginTop: 20, fontSize: 12, textAlign: 'center', color: '#6E6E85' }}>
-          <Link href="/demo" style={{ color: '#6E6E85', textDecoration: 'none' }}>
+        <p style={{ marginTop: 20, fontSize: 12, textAlign: 'center', color: '#444444' }}>
+          <Link href="/demo" style={{ color: '#444444', textDecoration: 'none' }}>
             Try the live demo first — no account needed →
           </Link>
         </p>
@@ -205,7 +205,7 @@ export default function LoginPage() {
       fallback={
         <PublicShell>
           <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <p style={{ fontSize: 14, color: '#6E6E85' }}>Loading…</p>
+            <p style={{ fontSize: 14, color: '#444444' }}>Loading…</p>
           </main>
         </PublicShell>
       }

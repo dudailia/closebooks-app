@@ -124,19 +124,19 @@ function SignupForm() {
         <main style={{ padding: '120px 24px 60px', maxWidth: 460, margin: '0 auto', textAlign: 'center' }}>
           <DarkCard>
             <div style={{ fontSize: 40, marginBottom: 12 }}>📬</div>
-            <h1 style={{ fontSize: 22, fontWeight: 600, color: '#F0F0F5', margin: 0, marginBottom: 10 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 600, color: '#FAFAFA', margin: 0, marginBottom: 10 }}>
               Check your email
             </h1>
-            <p style={{ fontSize: 14, color: '#A8A8BC', margin: 0, lineHeight: 1.55 }}>
-              We sent a confirmation link to <strong style={{ color: '#F0F0F5' }}>{email}</strong>.
+            <p style={{ fontSize: 14, color: '#888888', margin: 0, lineHeight: 1.55 }}>
+              We sent a confirmation link to <strong style={{ color: '#FAFAFA' }}>{email}</strong>.
               Click it to activate your account and continue to your dashboard.
             </p>
-            <p style={{ fontSize: 12, color: '#6E6E85', marginTop: 14 }}>
+            <p style={{ fontSize: 12, color: '#444444', marginTop: 14 }}>
               Didn&apos;t get it? Check spam or{' '}
               <button
                 onClick={() => setEmailConfirmRequired(false)}
                 style={{
-                  color: '#00D97E',
+                  color: '#00C853',
                   background: 'none',
                   border: 'none',
                   padding: 0,
@@ -165,7 +165,7 @@ function SignupForm() {
     return (
       <PublicShell>
         <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p style={{ fontSize: 14, color: '#6E6E85' }}>Setting up your account…</p>
+          <p style={{ fontSize: 14, color: '#444444' }}>Setting up your account…</p>
         </main>
       </PublicShell>
     )
@@ -177,10 +177,10 @@ function SignupForm() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <h1
             style={{
-              fontFamily: 'var(--font-serif)',
+              fontFamily: 'var(--font-display)',
               fontSize: 40,
               letterSpacing: '-0.03em',
-              color: '#F0F0F5',
+              color: '#FAFAFA',
               margin: 0,
               fontWeight: 400,
               lineHeight: 1.1,
@@ -188,7 +188,7 @@ function SignupForm() {
           >
             Start closing faster
           </h1>
-          <p style={{ fontSize: 14, color: '#A8A8BC', margin: '10px 0 0' }}>
+          <p style={{ fontSize: 14, color: '#888888', margin: '10px 0 0' }}>
             Free to try — no credit card required
           </p>
         </div>
@@ -199,8 +199,8 @@ function SignupForm() {
               style={{
                 padding: '10px 14px',
                 borderRadius: 10,
-                backgroundColor: 'rgba(0,217,126,0.08)',
-                border: '1px solid rgba(0,217,126,0.24)',
+                backgroundColor: 'rgba(0,200,83,0.08)',
+                border: '1px solid rgba(0,200,83,0.24)',
                 marginBottom: 18,
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -209,13 +209,13 @@ function SignupForm() {
                 flexWrap: 'wrap',
               }}
             >
-              <p style={{ margin: 0, fontSize: 13, color: '#F0F0F5' }}>
+              <p style={{ margin: 0, fontSize: 13, color: '#FAFAFA' }}>
                 Starting <strong>{selectedTier.name}</strong>
                 {billing === 'annual' ? ' · Annual (20% off)' : ' · Monthly'}
               </p>
               <Link
                 href="/pricing"
-                style={{ fontSize: 12, color: '#00D97E', textDecoration: 'none' }}
+                style={{ fontSize: 12, color: '#00C853', textDecoration: 'none' }}
               >
                 Change plan
               </Link>
@@ -300,7 +300,7 @@ function SignupForm() {
                 >
                   <option value="" disabled>Select…</option>
                   {FIRM_SIZE_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value} style={{ backgroundColor: '#111118', color: '#F0F0F5' }}>
+                    <option key={o.value} value={o.value} style={{ backgroundColor: '#0f0f0f', color: '#FAFAFA' }}>
                       {o.label}
                     </option>
                   ))}
@@ -313,16 +313,16 @@ function SignupForm() {
             </DarkButton>
           </form>
 
-          <p style={{ marginTop: 20, fontSize: 13, textAlign: 'center', color: '#A8A8BC' }}>
+          <p style={{ marginTop: 20, fontSize: 13, textAlign: 'center', color: '#888888' }}>
             Already have an account?{' '}
-            <Link href="/login" style={{ color: '#00D97E', textDecoration: 'none', fontWeight: 600 }}>
+            <Link href="/login" style={{ color: '#00C853', textDecoration: 'none', fontWeight: 600 }}>
               Sign in →
             </Link>
           </p>
         </DarkCard>
 
-        <p style={{ marginTop: 20, fontSize: 12, textAlign: 'center', color: '#6E6E85' }}>
-          <Link href="/demo" style={{ color: '#6E6E85', textDecoration: 'none' }}>
+        <p style={{ marginTop: 20, fontSize: 12, textAlign: 'center', color: '#444444' }}>
+          <Link href="/demo" style={{ color: '#444444', textDecoration: 'none' }}>
             Try the live demo first — no account needed →
           </Link>
         </p>
@@ -337,7 +337,7 @@ export default function SignupPage() {
       fallback={
         <PublicShell>
           <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <p style={{ fontSize: 14, color: '#6E6E85' }}>Loading…</p>
+            <p style={{ fontSize: 14, color: '#444444' }}>Loading…</p>
           </main>
         </PublicShell>
       }

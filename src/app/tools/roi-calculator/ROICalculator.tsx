@@ -26,8 +26,8 @@ function Slider({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <label style={{ fontSize: '14px', fontWeight: 500, color: '#1a1714' }}>{label}</label>
-        <span style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 700, color: '#2d5a27' }}>
+        <label style={{ fontSize: '14px', fontWeight: 500, color: '#FAFAFA' }}>{label}</label>
+        <span style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 700, color: '#00C853' }}>
           {format(value)}
         </span>
       </div>
@@ -45,12 +45,12 @@ function Slider({
           appearance: 'none',
           WebkitAppearance: 'none',
           cursor: 'pointer',
-          accentColor: '#2d5a27',
-          backgroundColor: '#e8e0d4',
+          accentColor: '#00C853',
+          backgroundColor: '#1f1f1f',
           outline: 'none',
         }}
       />
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#a09a94' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#444444' }}>
         <span>{format(min)}</span>
         <span>{format(max)}</span>
       </div>
@@ -73,8 +73,8 @@ function MetricCard({
   return (
     <div
       style={{
-        backgroundColor: '#ffffff',
-        border: '1px solid #e8e0d4',
+        backgroundColor: '#0f0f0f',
+        border: '1px solid #1f1f1f',
         borderRadius: '12px',
         padding: '20px',
         display: 'flex',
@@ -82,12 +82,12 @@ function MetricCard({
         gap: '4px',
       }}
     >
-      <div style={{ fontSize: '13px', color: '#a09a94', fontWeight: 500 }}>{label}</div>
+      <div style={{ fontSize: '13px', color: '#888888', fontWeight: 500 }}>{label}</div>
       <div
         style={{
           fontSize: '28px',
           fontWeight: 700,
-          color: '#2d5a27',
+          color: '#00C853',
           transition: 'all 0.3s ease',
           lineHeight: 1.2,
         }}
@@ -95,7 +95,7 @@ function MetricCard({
         {value}
       </div>
       {subtitle && (
-        <div style={{ fontSize: '12px', color: '#a09a94' }}>{subtitle}</div>
+        <div style={{ fontSize: '12px', color: '#888888' }}>{subtitle}</div>
       )}
     </div>
   )
@@ -132,12 +132,12 @@ export default function ROICalculator() {
   const formatNumber = (v: number) => `${v}`
 
   return (
-    <div style={{ backgroundColor: '#faf8f4', minHeight: '100vh', fontFamily: 'DM Sans, sans-serif' }}>
+    <div style={{ backgroundColor: '#080808', minHeight: '100vh', fontFamily: 'DM Sans, sans-serif' }}>
       {/* Top nav */}
       <nav
         style={{
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #e8e0d4',
+          backgroundColor: '#0f0f0f',
+          borderBottom: '1px solid #1f1f1f',
           padding: '0 24px',
           height: '60px',
           display: 'flex',
@@ -146,13 +146,13 @@ export default function ROICalculator() {
         }}
       >
         <Link href="/" style={{ textDecoration: 'none' }}>
-          <span style={{ fontSize: '20px', fontWeight: 700, color: '#2d5a27' }}>CloseBooks</span>
+          <span style={{ fontSize: '20px', fontWeight: 700, color: '#00C853' }}>CloseBooks</span>
         </Link>
         <Link
           href="/"
           style={{
             fontSize: '14px',
-            color: '#a09a94',
+            color: '#888888',
             textDecoration: 'none',
             display: 'flex',
             alignItems: 'center',
@@ -168,8 +168,8 @@ export default function ROICalculator() {
         <div
           style={{
             display: 'inline-block',
-            backgroundColor: '#2d5a2715',
-            color: '#2d5a27',
+            backgroundColor: '#00C85315',
+            color: '#00C853',
             borderRadius: '9999px',
             padding: '4px 14px',
             fontSize: '13px',
@@ -184,14 +184,14 @@ export default function ROICalculator() {
           style={{
             fontSize: 'clamp(28px, 5vw, 48px)',
             fontWeight: 700,
-            color: '#1a1714',
+            color: '#FAFAFA',
             lineHeight: 1.2,
             margin: '0 0 16px',
           }}
         >
           How much could your firm save<br />with AI-powered close?
         </h1>
-        <p style={{ fontSize: '18px', color: '#a09a94', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
+        <p style={{ fontSize: '18px', color: '#888888', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
           Enter your numbers below to see your personalized ROI
         </p>
       </section>
@@ -211,8 +211,8 @@ export default function ROICalculator() {
         {/* Left column — Inputs */}
         <div
           style={{
-            backgroundColor: '#ffffff',
-            border: '1px solid #e8e0d4',
+            backgroundColor: '#0f0f0f',
+            border: '1px solid #1f1f1f',
             borderRadius: '16px',
             padding: '32px',
             display: 'flex',
@@ -221,10 +221,10 @@ export default function ROICalculator() {
           }}
         >
           <div>
-            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1a1714', margin: '0 0 8px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#FAFAFA', margin: '0 0 8px' }}>
               Your firm details
             </h2>
-            <p style={{ fontSize: '14px', color: '#a09a94', margin: 0 }}>
+            <p style={{ fontSize: '14px', color: '#888888', margin: 0 }}>
               Adjust the sliders to match your current workload
             </p>
           </div>
@@ -269,8 +269,8 @@ export default function ROICalculator() {
           {/* Summary row */}
           <div
             style={{
-              backgroundColor: '#faf8f4',
-              border: '1px solid #e8e0d4',
+              backgroundColor: '#080808',
+              border: '1px solid #1f1f1f',
               borderRadius: '10px',
               padding: '16px',
               display: 'flex',
@@ -278,19 +278,19 @@ export default function ROICalculator() {
               fontSize: '14px',
             }}
           >
-            <span style={{ color: '#a09a94' }}>Current monthly hours</span>
-            <span style={{ fontWeight: 700, color: '#1a1714' }}>{monthlyHoursTotal} hrs</span>
+            <span style={{ color: '#888888' }}>Current monthly hours</span>
+            <span style={{ fontWeight: 700, color: '#FAFAFA' }}>{monthlyHoursTotal} hrs</span>
           </div>
 
           {paybackDays > 0 && isFinite(paybackDays) && (
             <div
               style={{
-                backgroundColor: '#2d5a2710',
-                border: '1px solid #2d5a2730',
+                backgroundColor: '#00C85310',
+                border: '1px solid #00C85330',
                 borderRadius: '10px',
                 padding: '14px 16px',
                 fontSize: '14px',
-                color: '#2d5a27',
+                color: '#00C853',
                 fontWeight: 600,
               }}
             >
@@ -325,8 +325,8 @@ export default function ROICalculator() {
           {/* Comparison bar chart */}
           <div
             style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e8e0d4',
+              backgroundColor: '#0f0f0f',
+              border: '1px solid #1f1f1f',
               borderRadius: '16px',
               padding: '24px',
               display: 'flex',
@@ -334,20 +334,20 @@ export default function ROICalculator() {
               gap: '20px',
             }}
           >
-            <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#1a1714', margin: 0 }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#FAFAFA', margin: 0 }}>
               Monthly cost comparison
             </h3>
 
             {/* Current */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                <span style={{ color: '#a09a94' }}>Current monthly cost</span>
-                <span style={{ fontWeight: 700, color: '#1a1714' }}>{formatDollars(currentMonthlyCost)}</span>
+                <span style={{ color: '#888888' }}>Current monthly cost</span>
+                <span style={{ fontWeight: 700, color: '#FAFAFA' }}>{formatDollars(currentMonthlyCost)}</span>
               </div>
               <div
                 style={{
                   height: '28px',
-                  backgroundColor: '#e8e0d4',
+                  backgroundColor: '#1f1f1f',
                   borderRadius: '6px',
                   overflow: 'hidden',
                 }}
@@ -367,13 +367,13 @@ export default function ROICalculator() {
             {/* With CloseBooks */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                <span style={{ color: '#a09a94' }}>With CloseBooks</span>
-                <span style={{ fontWeight: 700, color: '#2d5a27' }}>{formatDollars(withClosebooks)}</span>
+                <span style={{ color: '#888888' }}>With CloseBooks</span>
+                <span style={{ fontWeight: 700, color: '#00C853' }}>{formatDollars(withClosebooks)}</span>
               </div>
               <div
                 style={{
                   height: '28px',
-                  backgroundColor: '#e8e0d4',
+                  backgroundColor: '#1f1f1f',
                   borderRadius: '6px',
                   overflow: 'hidden',
                 }}
@@ -382,7 +382,7 @@ export default function ROICalculator() {
                   style={{
                     height: '100%',
                     width: `${closebooksBarPct}%`,
-                    backgroundColor: '#2d5a27',
+                    backgroundColor: '#00C853',
                     borderRadius: '6px',
                     transition: 'width 0.4s ease',
                   }}
@@ -394,11 +394,11 @@ export default function ROICalculator() {
             {currentMonthlyCost > withClosebooks && (
               <div
                 style={{
-                  backgroundColor: '#2d5a2710',
+                  backgroundColor: '#00C85310',
                   borderRadius: '8px',
                   padding: '10px 14px',
                   fontSize: '13px',
-                  color: '#2d5a27',
+                  color: '#00C853',
                   fontWeight: 600,
                   textAlign: 'center',
                   transition: 'all 0.3s ease',
@@ -412,7 +412,7 @@ export default function ROICalculator() {
           {/* CTA */}
           <div
             style={{
-              backgroundColor: '#2d5a27',
+              backgroundColor: '#00C853',
               borderRadius: '16px',
               padding: '28px 24px',
               display: 'flex',
@@ -422,7 +422,7 @@ export default function ROICalculator() {
               textAlign: 'center',
             }}
           >
-            <p style={{ fontSize: '20px', fontWeight: 700, color: '#ffffff', margin: 0, lineHeight: 1.3 }}>
+            <p style={{ fontSize: '20px', fontWeight: 700, color: '#FAFAFA', margin: 0, lineHeight: 1.3 }}>
               Start saving {aiHoursSaved} hours this month
             </p>
             <Link
@@ -430,7 +430,7 @@ export default function ROICalculator() {
               style={{
                 display: 'inline-block',
                 backgroundColor: '#ffffff',
-                color: '#2d5a27',
+                color: '#00C853',
                 fontWeight: 700,
                 fontSize: '16px',
                 padding: '14px 32px',
@@ -441,7 +441,7 @@ export default function ROICalculator() {
             >
               Start Free Trial →
             </Link>
-            <p style={{ fontSize: '13px', color: '#ffffff99', margin: 0 }}>
+            <p style={{ fontSize: '13px', color: '#FAFAFA99', margin: 0 }}>
               No credit card required · Cancel anytime
             </p>
           </div>
@@ -451,8 +451,8 @@ export default function ROICalculator() {
       {/* Social proof */}
       <section
         style={{
-          backgroundColor: '#ffffff',
-          borderTop: '1px solid #e8e0d4',
+          backgroundColor: '#0f0f0f',
+          borderTop: '1px solid #1f1f1f',
           padding: '64px 24px',
         }}
       >
@@ -461,7 +461,7 @@ export default function ROICalculator() {
             style={{
               fontSize: '13px',
               fontWeight: 600,
-              color: '#a09a94',
+              color: '#888888',
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
               marginBottom: '40px',
@@ -484,8 +484,8 @@ export default function ROICalculator() {
               <div
                 key={name}
                 style={{
-                  backgroundColor: '#faf8f4',
-                  border: '1px solid #e8e0d4',
+                  backgroundColor: '#080808',
+                  border: '1px solid #1f1f1f',
                   borderRadius: '12px',
                   padding: '24px',
                   textAlign: 'left',
@@ -494,7 +494,7 @@ export default function ROICalculator() {
                 <p
                   style={{
                     fontSize: '15px',
-                    color: '#1a1714',
+                    color: '#FAFAFA',
                     fontStyle: 'italic',
                     margin: '0 0 12px',
                     lineHeight: 1.5,
@@ -502,7 +502,7 @@ export default function ROICalculator() {
                 >
                   &ldquo;{quote}&rdquo;
                 </p>
-                <p style={{ fontSize: '13px', color: '#a09a94', margin: 0, fontWeight: 600 }}>
+                <p style={{ fontSize: '13px', color: '#888888', margin: 0, fontWeight: 600 }}>
                   — {name}
                 </p>
               </div>

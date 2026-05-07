@@ -28,7 +28,7 @@ function Logo() {
           lineHeight: 1,
         }}
       >
-        <span style={{ color: '#1a1714' }}>Close</span>
+        <span style={{ color: '#FAFAFA' }}>Close</span>
         <span style={{ color: '#b8734a' }}>Books</span>
       </span>
     </Link>
@@ -39,8 +39,8 @@ function TopNav() {
   return (
     <nav
       style={{
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid #e8e0d4',
+        backgroundColor: '#080808',
+        borderBottom: '1px solid #1f1f1f',
         position: 'sticky',
         top: 0,
         zIndex: 50,
@@ -61,7 +61,7 @@ function TopNav() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <Link
             href="/directory"
-            style={{ fontSize: '14px', color: '#6b6560', textDecoration: 'none' }}
+            style={{ fontSize: '14px', color: '#888888', textDecoration: 'none' }}
           >
             ← Back to directory
           </Link>
@@ -70,12 +70,12 @@ function TopNav() {
             style={{
               fontSize: '14px',
               fontWeight: 600,
-              color: '#1a1714',
+              color: '#FAFAFA',
               textDecoration: 'none',
               padding: '7px 16px',
               borderRadius: 9,
-              border: '1px solid #e8e0d4',
-              backgroundColor: '#ffffff',
+              border: '1px solid #1f1f1f',
+              backgroundColor: '#0f0f0f',
             }}
           >
             Sign In
@@ -97,8 +97,8 @@ function Stars({ rating }: { rating: number }) {
         <svg key={i} width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path
             d="M7 1l1.5 3.5L12 5l-2.5 2.5.5 3.5L7 9.5 4 11l.5-3.5L2 5l3.5-.5z"
-            fill={i <= rating ? '#f59e0b' : '#e8e0d4'}
-            stroke={i <= rating ? '#f59e0b' : '#e8e0d4'}
+            fill={i <= rating ? '#f59e0b' : '#1f1f1f'}
+            stroke={i <= rating ? '#f59e0b' : '#1f1f1f'}
             strokeWidth="0.5"
             strokeLinejoin="round"
           />
@@ -146,11 +146,11 @@ function ContactModal({ firmName, onClose }: { firmName: string; onClose: () => 
           zIndex: 101,
           width: '100%',
           maxWidth: 480,
-          backgroundColor: '#ffffff',
+          backgroundColor: '#0f0f0f',
           borderRadius: 20,
           padding: '32px',
-          border: '1px solid #e8e0d4',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.2)',
+          border: '1px solid #1f1f1f',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
           margin: '0 16px',
         }}
       >
@@ -163,13 +163,13 @@ function ContactModal({ firmName, onClose }: { firmName: string; onClose: () => 
                     fontFamily: 'var(--font-dm-serif), Georgia, serif',
                     fontSize: '1.5rem',
                     letterSpacing: '-0.02em',
-                    color: '#1a1714',
+                    color: '#FAFAFA',
                     margin: 0,
                   }}
                 >
                   Contact {firmName}
                 </h2>
-                <p style={{ fontSize: '13px', color: '#6b6560', marginTop: 4 }}>
+                <p style={{ fontSize: '13px', color: '#888888', marginTop: 4 }}>
                   Send a message — they typically respond within 1 business day.
                 </p>
               </div>
@@ -179,7 +179,7 @@ function ContactModal({ firmName, onClose }: { firmName: string; onClose: () => 
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  color: '#6b6560',
+                  color: '#888888',
                   fontSize: '22px',
                   lineHeight: 1,
                   flexShrink: 0,
@@ -191,7 +191,7 @@ function ContactModal({ firmName, onClose }: { firmName: string; onClose: () => 
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#1a1714', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#FAFAFA', marginBottom: 6 }}>
                   Your Name
                 </label>
                 <input
@@ -204,18 +204,19 @@ function ContactModal({ firmName, onClose }: { firmName: string; onClose: () => 
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: 10,
-                    border: '1px solid #e8e0d4',
+                    border: '1px solid #1f1f1f',
                     fontSize: '14px',
-                    color: '#1a1714',
+                    color: '#FAFAFA',
+                    backgroundColor: '#141414',
                     outline: 'none',
                     boxSizing: 'border-box',
                   }}
-                  onFocus={(e) => { e.target.style.borderColor = '#2d5a27' }}
-                  onBlur={(e) => { e.target.style.borderColor = '#e8e0d4' }}
+                  onFocus={(e) => { e.target.style.borderColor = '#00C853' }}
+                  onBlur={(e) => { e.target.style.borderColor = '#1f1f1f' }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#1a1714', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#FAFAFA', marginBottom: 6 }}>
                   Email Address
                 </label>
                 <input
@@ -228,18 +229,19 @@ function ContactModal({ firmName, onClose }: { firmName: string; onClose: () => 
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: 10,
-                    border: '1px solid #e8e0d4',
+                    border: '1px solid #1f1f1f',
                     fontSize: '14px',
-                    color: '#1a1714',
+                    color: '#FAFAFA',
+                    backgroundColor: '#141414',
                     outline: 'none',
                     boxSizing: 'border-box',
                   }}
-                  onFocus={(e) => { e.target.style.borderColor = '#2d5a27' }}
-                  onBlur={(e) => { e.target.style.borderColor = '#e8e0d4' }}
+                  onFocus={(e) => { e.target.style.borderColor = '#00C853' }}
+                  onBlur={(e) => { e.target.style.borderColor = '#1f1f1f' }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#1a1714', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#FAFAFA', marginBottom: 6 }}>
                   Message
                 </label>
                 <textarea
@@ -252,16 +254,17 @@ function ContactModal({ firmName, onClose }: { firmName: string; onClose: () => 
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: 10,
-                    border: '1px solid #e8e0d4',
+                    border: '1px solid #1f1f1f',
                     fontSize: '14px',
-                    color: '#1a1714',
+                    color: '#FAFAFA',
+                    backgroundColor: '#141414',
                     outline: 'none',
                     resize: 'vertical',
                     fontFamily: 'inherit',
                     boxSizing: 'border-box',
                   }}
-                  onFocus={(e) => { e.target.style.borderColor = '#2d5a27' }}
-                  onBlur={(e) => { e.target.style.borderColor = '#e8e0d4' }}
+                  onFocus={(e) => { e.target.style.borderColor = '#00C853' }}
+                  onBlur={(e) => { e.target.style.borderColor = '#1f1f1f' }}
                 />
               </div>
               <button
@@ -269,16 +272,16 @@ function ContactModal({ firmName, onClose }: { firmName: string; onClose: () => 
                 style={{
                   padding: '12px',
                   borderRadius: 10,
-                  backgroundColor: '#2d5a27',
-                  color: '#ffffff',
+                  backgroundColor: '#00C853',
+                  color: '#080808',
                   fontSize: '14px',
                   fontWeight: 600,
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'background-color 0.15s ease',
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#00b34a' }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#00C853' }}
               >
                 Send Message
               </button>
@@ -291,7 +294,7 @@ function ContactModal({ firmName, onClose }: { firmName: string; onClose: () => 
                 width: 56,
                 height: 56,
                 borderRadius: '50%',
-                backgroundColor: '#e8f0e6',
+                backgroundColor: 'rgba(0,200,83,0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -299,20 +302,20 @@ function ContactModal({ firmName, onClose }: { firmName: string; onClose: () => 
               }}
             >
               <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                <path d="M6 14l5.5 5.5L22 8" stroke="#2d5a27" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M6 14l5.5 5.5L22 8" stroke="#00C853" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
             <h3
               style={{
                 fontFamily: 'var(--font-dm-serif), Georgia, serif',
                 fontSize: '1.4rem',
-                color: '#1a1714',
+                color: '#FAFAFA',
                 margin: '0 0 8px',
               }}
             >
               Message sent!
             </h3>
-            <p style={{ fontSize: '14px', color: '#6b6560', marginBottom: 24 }}>
+            <p style={{ fontSize: '14px', color: '#888888', marginBottom: 24 }}>
               {firmName} will be in touch soon.
             </p>
             <button
@@ -320,8 +323,8 @@ function ContactModal({ firmName, onClose }: { firmName: string; onClose: () => 
               style={{
                 padding: '10px 24px',
                 borderRadius: 10,
-                backgroundColor: '#f5f0ea',
-                color: '#1a1714',
+                backgroundColor: '#1f1f1f',
+                color: '#FAFAFA',
                 fontSize: '14px',
                 fontWeight: 600,
                 border: 'none',
@@ -351,13 +354,14 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
   ).slice(0, 3)
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#faf8f4' }}>
+    <div data-theme="dark" style={{ minHeight: '100vh', backgroundColor: '#080808' }}>
       <TopNav />
 
       {/* Hero header */}
       <div
         style={{
-          backgroundColor: '#1a1714',
+          backgroundColor: '#080808',
+          borderBottom: '1px solid #1f1f1f',
           padding: '48px 24px 44px',
           position: 'relative',
           overflow: 'hidden',
@@ -412,8 +416,8 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
               style={{
                 padding: '13px 28px',
                 borderRadius: 12,
-                backgroundColor: '#2d5a27',
-                color: '#ffffff',
+                backgroundColor: '#00C853',
+                color: '#080808',
                 fontSize: '15px',
                 fontWeight: 600,
                 border: 'none',
@@ -421,8 +425,8 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
                 flexShrink: 0,
                 transition: 'background-color 0.15s ease',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#00b34a' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#00C853' }}
             >
               Contact This Firm
             </button>
@@ -433,8 +437,8 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
       {/* Hero metrics bar */}
       <div
         style={{
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #e8e0d4',
+          backgroundColor: '#0f0f0f',
+          borderBottom: '1px solid #1f1f1f',
         }}
       >
         <div
@@ -457,7 +461,7 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
               style={{
                 padding: '20px 16px',
                 textAlign: 'center',
-                borderRight: '1px solid #f0ece4',
+                borderRight: '1px solid #1f1f1f',
               }}
             >
               <p
@@ -465,14 +469,14 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
                   fontFamily: 'var(--font-dm-serif), Georgia, serif',
                   fontSize: '1.8rem',
                   letterSpacing: '-0.02em',
-                  color: accent ? '#2d5a27' : '#1a1714',
+                  color: accent ? '#00C853' : '#FAFAFA',
                   margin: 0,
                   lineHeight: 1,
                 }}
               >
                 {value}
               </p>
-              <p style={{ fontSize: '12px', color: '#a09a94', marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <p style={{ fontSize: '12px', color: '#444444', marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {label}
               </p>
             </div>
@@ -497,8 +501,8 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
           {/* About */}
           <div
             style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e8e0d4',
+              backgroundColor: '#0f0f0f',
+              border: '1px solid #1f1f1f',
               borderRadius: 16,
               padding: '28px',
             }}
@@ -506,7 +510,7 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
             <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#b8734a', marginBottom: 10 }}>
               About
             </p>
-            <p style={{ fontSize: '15px', color: '#1a1714', lineHeight: 1.7, margin: 0 }}>
+            <p style={{ fontSize: '15px', color: '#FAFAFA', lineHeight: 1.7, margin: 0 }}>
               {firm.bio}
             </p>
           </div>
@@ -514,8 +518,8 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
           {/* Specialties */}
           <div
             style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e8e0d4',
+              backgroundColor: '#0f0f0f',
+              border: '1px solid #1f1f1f',
               borderRadius: 16,
               padding: '28px',
             }}
@@ -523,7 +527,7 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
             <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#b8734a', marginBottom: 10 }}>
               Specialties
             </p>
-            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#1a1714', marginBottom: 16 }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#FAFAFA', marginBottom: 16 }}>
               Industries Served
             </h2>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
@@ -535,9 +539,9 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
                     borderRadius: 20,
                     fontSize: '14px',
                     fontWeight: 500,
-                    backgroundColor: '#e8f0e6',
-                    color: '#2d5a27',
-                    border: '1px solid #c4d9c0',
+                    backgroundColor: 'rgba(0,200,83,0.1)',
+                    color: '#00C853',
+                    border: '1px solid rgba(0,200,83,0.2)',
                   }}
                 >
                   {s}
@@ -549,8 +553,8 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
           {/* Services */}
           <div
             style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e8e0d4',
+              backgroundColor: '#0f0f0f',
+              border: '1px solid #1f1f1f',
               borderRadius: 16,
               padding: '28px',
             }}
@@ -558,7 +562,7 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
             <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#b8734a', marginBottom: 10 }}>
               Services
             </p>
-            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#1a1714', marginBottom: 16 }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#FAFAFA', marginBottom: 16 }}>
               What they offer
             </h2>
             <div
@@ -577,8 +581,8 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
                     gap: 10,
                     padding: '10px 14px',
                     borderRadius: 10,
-                    backgroundColor: '#faf8f4',
-                    border: '1px solid #e8e0d4',
+                    backgroundColor: '#141414',
+                    border: '1px solid #1f1f1f',
                   }}
                 >
                   <span
@@ -586,7 +590,7 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
                       width: 20,
                       height: 20,
                       borderRadius: '50%',
-                      backgroundColor: '#e8f0e6',
+                      backgroundColor: 'rgba(0,200,83,0.1)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -594,10 +598,10 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
                     }}
                   >
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5l2 2 4-4" stroke="#2d5a27" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M2 5l2 2 4-4" stroke="#00C853" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
-                  <span style={{ fontSize: '13px', color: '#1a1714', fontWeight: 500 }}>{svc}</span>
+                  <span style={{ fontSize: '13px', color: '#FAFAFA', fontWeight: 500 }}>{svc}</span>
                 </div>
               ))}
             </div>
@@ -606,8 +610,8 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
           {/* Pricing */}
           <div
             style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e8e0d4',
+              backgroundColor: '#0f0f0f',
+              border: '1px solid #1f1f1f',
               borderRadius: 16,
               padding: '28px',
               display: 'flex',
@@ -620,7 +624,7 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
               <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#b8734a', marginBottom: 6 }}>
                 Pricing
               </p>
-              <p style={{ fontSize: '14px', color: '#6b6560', margin: 0 }}>
+              <p style={{ fontSize: '14px', color: '#888888', margin: 0 }}>
                 Hourly rate range
               </p>
             </div>
@@ -629,20 +633,20 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
                 fontFamily: 'var(--font-dm-serif), Georgia, serif',
                 fontSize: '1.8rem',
                 letterSpacing: '-0.02em',
-                color: '#1a1714',
+                color: '#FAFAFA',
                 margin: 0,
               }}
             >
               ${firm.hourlyRateMin}–${firm.hourlyRateMax}
-              <span style={{ fontSize: '1rem', color: '#6b6560', fontFamily: 'inherit' }}>/hr</span>
+              <span style={{ fontSize: '1rem', color: '#888888', fontFamily: 'inherit' }}>/hr</span>
             </p>
           </div>
 
           {/* Reviews */}
           <div
             style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e8e0d4',
+              backgroundColor: '#0f0f0f',
+              border: '1px solid #1f1f1f',
               borderRadius: 16,
               padding: '28px',
             }}
@@ -656,7 +660,7 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
                   fontFamily: 'var(--font-dm-serif), Georgia, serif',
                   fontSize: '3rem',
                   letterSpacing: '-0.03em',
-                  color: '#1a1714',
+                  color: '#FAFAFA',
                   margin: 0,
                   lineHeight: 1,
                 }}
@@ -665,7 +669,7 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
               </p>
               <div>
                 <Stars rating={Math.round(firm.clientSatisfaction)} />
-                <p style={{ fontSize: '13px', color: '#6b6560', marginTop: 4 }}>
+                <p style={{ fontSize: '13px', color: '#888888', marginTop: 4 }}>
                   Based on {firm.reviews.length} verified reviews
                 </p>
               </div>
@@ -677,8 +681,8 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
                   style={{
                     padding: '20px',
                     borderRadius: 12,
-                    backgroundColor: '#faf8f4',
-                    border: '1px solid #f0ece4',
+                    backgroundColor: '#141414',
+                    border: '1px solid #1f1f1f',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -688,35 +692,35 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
                           width: 36,
                           height: 36,
                           borderRadius: '50%',
-                          backgroundColor: '#e8f0e6',
+                          backgroundColor: 'rgba(0,200,83,0.1)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '14px',
                           fontWeight: 700,
-                          color: '#2d5a27',
+                          color: '#00C853',
                           flexShrink: 0,
                         }}
                       >
                         {review.author[0]}
                       </div>
                       <div>
-                        <p style={{ fontSize: '14px', fontWeight: 600, color: '#1a1714', margin: 0 }}>
+                        <p style={{ fontSize: '14px', fontWeight: 600, color: '#FAFAFA', margin: 0 }}>
                           {review.author}
                         </p>
-                        <p style={{ fontSize: '12px', color: '#6b6560', margin: '2px 0 0' }}>
+                        <p style={{ fontSize: '12px', color: '#888888', margin: '2px 0 0' }}>
                           {review.company}
                         </p>
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <Stars rating={review.rating} />
-                      <p style={{ fontSize: '11px', color: '#a09a94', marginTop: 3 }}>
+                      <p style={{ fontSize: '11px', color: '#444444', marginTop: 3 }}>
                         {new Date(review.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                       </p>
                     </div>
                   </div>
-                  <p style={{ fontSize: '14px', color: '#1a1714', lineHeight: 1.6, margin: 0 }}>
+                  <p style={{ fontSize: '14px', color: '#FAFAFA', lineHeight: 1.6, margin: 0 }}>
                     "{review.text}"
                   </p>
                 </div>
@@ -727,9 +731,10 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
           {/* CTA bottom */}
           <div
             style={{
-              backgroundColor: '#1a1714',
+              backgroundColor: '#0f0f0f',
               borderRadius: 20,
               padding: '36px 32px',
+              border: '1px solid #1f1f1f',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -744,7 +749,7 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
               style={{
                 position: 'absolute',
                 inset: 0,
-                backgroundImage: 'radial-gradient(ellipse at 10% 50%, rgba(45,90,39,0.35) 0%, transparent 60%)',
+                backgroundImage: 'radial-gradient(ellipse at 10% 50%, rgba(0,200,83,0.12) 0%, transparent 60%)',
                 pointerEvents: 'none',
               }}
             />
@@ -754,13 +759,13 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
                   fontFamily: 'var(--font-dm-serif), Georgia, serif',
                   fontSize: '1.5rem',
                   letterSpacing: '-0.02em',
-                  color: '#ffffff',
+                  color: '#FAFAFA',
                   margin: '0 0 6px',
                 }}
               >
                 Ready to work with {firm.name}?
               </p>
-              <p style={{ fontSize: '14px', color: '#8a8078', margin: 0 }}>
+              <p style={{ fontSize: '14px', color: '#888888', margin: 0 }}>
                 Send a message and they'll get back to you within 1 business day.
               </p>
             </div>
@@ -769,8 +774,8 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
               style={{
                 padding: '13px 28px',
                 borderRadius: 12,
-                backgroundColor: '#2d5a27',
-                color: '#ffffff',
+                backgroundColor: '#00C853',
+                color: '#080808',
                 fontSize: '15px',
                 fontWeight: 600,
                 border: 'none',
@@ -779,8 +784,8 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
                 position: 'relative',
                 transition: 'background-color 0.15s ease',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#4a8c42' }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#00b34a' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#00C853' }}
             >
               Contact This Firm →
             </button>
@@ -818,9 +823,9 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
                 borderRadius: 10,
                 fontSize: '14px',
                 fontWeight: 600,
-                color: '#2d5a27',
-                backgroundColor: '#e8f0e6',
-                border: '1px solid #c4d9c0',
+                color: '#00C853',
+                backgroundColor: 'rgba(0,200,83,0.08)',
+                border: '1px solid rgba(0,200,83,0.2)',
                 textDecoration: 'none',
               }}
             >
@@ -833,14 +838,14 @@ export default function FirmProfilePage({ params }: { params: Promise<{ slug: st
       {/* Footer */}
       <footer
         style={{
-          borderTop: '1px solid #e8e0d4',
+          borderTop: '1px solid #1f1f1f',
           padding: '32px 24px',
           textAlign: 'center',
-          backgroundColor: '#ffffff',
+          backgroundColor: '#080808',
         }}
       >
         <Logo />
-        <p style={{ fontSize: '13px', color: '#a09a94', marginTop: 12 }}>
+        <p style={{ fontSize: '13px', color: '#444444', marginTop: 12 }}>
           © 2026 CloseBooks — AI-Powered Month-End Close for CPA Firms
         </p>
       </footer>
