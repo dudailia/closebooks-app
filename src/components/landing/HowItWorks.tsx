@@ -1,6 +1,6 @@
 'use client'
 import { useRef, useState, useEffect } from 'react'
-import { motion, useScroll, useTransform, useMotionValueEvent } from 'framer-motion'
+import { motion, AnimatePresence, useInView } from 'framer-motion'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -342,24 +342,19 @@ function Visual3Review({ active }: { active: boolean }) {
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export default function HowItWorks() {
-  const colRef  = useRef<HTMLDivElement>(null)
-  const [step, setStep] = useState(0)
+  // One ref per step — useInView fires when each step crosses the viewport centre
+  const s1Ref = useRef<HTMLDivElement>(null)
+  const s2Ref = useRef<HTMLDivElement>(null)
+  const s3Ref = useRef<HTMLDivElement>(null)
 
-  const { scrollYProgress } = useScroll({
-    target: colRef,
-    offset: ['start start', 'end start'],
-  })
+  const s1 = useInView(s1Ref, { margin: '-45% 0px -45% 0px', once: false })
+  const s2 = useInView(s2Ref, { margin: '-45% 0px -45% 0px', once: false })
+  const s3 = useInView(s3Ref, { margin: '-45% 0px -45% 0px', once: false })
 
-  // Crossfade opacities
-  const op1 = useTransform(scrollYProgress, [0, 0.26, 0.34], [1, 1, 0])
-  const op2 = useTransform(scrollYProgress, [0.26, 0.34, 0.59, 0.67], [0, 1, 1, 0])
-  const op3 = useTransform(scrollYProgress, [0.59, 0.67, 1], [0, 1, 1])
+  // Last in-view step wins; default to 0
+  const step = s3 ? 2 : s2 ? 1 : 0
 
-  useMotionValueEvent(scrollYProgress, 'change', v => {
-    if (v < 0.34) setStep(0)
-    else if (v < 0.67) setStep(1)
-    else setStep(2)
-  })
+  const stepRefs = [s1Ref, s2Ref, s3Ref]
 
   return (
     <section id="how" style={{ background: '#080808' }}>
@@ -371,12 +366,12 @@ export default function HowItWorks() {
         }
       `}</style>
 
-      {/* Section header */}
+      {/* ── Section header ── */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '120px 28px 80px', textAlign: 'center' }}>
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0 }}
           transition={{ duration: 0.5 }}
           style={{ margin: 0, marginBottom: 18, fontSize: 11, fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#00C853', fontFamily: 'var(--font-sans)' }}
         >
@@ -385,7 +380,7 @@ export default function HowItWorks() {
         <motion.h2
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
           style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 'clamp(38px, 5vw, 56px)', fontWeight: 400, lineHeight: 1.05, letterSpacing: '-0.035em', color: '#FAFAFA' }}
         >
@@ -394,63 +389,84 @@ export default function HowItWorks() {
         </motion.h2>
       </div>
 
-      {/* Sticky two-column */}
+      {/* ── Two-column sticky layout ── */}
       <div
-        ref={colRef}
         className="how-cols"
-        style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px', display: 'grid', gridTemplateColumns: '1fr 1fr' }}
+        style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px', display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'start' }}
       >
-        {/* LEFT — sticky visual */}
+        {/* LEFT — sticky panel */}
         <div
           className="how-left"
-          style={{ position: 'sticky', top: 0, height: '100vh', display: 'flex', alignItems: 'center', paddingRight: 36, paddingTop: 24, paddingBottom: 24 }}
+          style={{
+            position: 'sticky',
+            top: 0,
+            height: '100vh',
+            alignSelf: 'start',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingRight: 40,
+            paddingTop: 24,
+            paddingBottom: 24,
+            overflow: 'hidden',
+          }}
         >
           {/* Step indicator strip */}
-          <div style={{ position: 'absolute', left: -4, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[0, 1, 2].map(i => (
               <motion.div
                 key={i}
-                animate={{ height: step === i ? 32 : 16, opacity: step === i ? 1 : 0.3, background: step === i ? '#00C853' : '#333' }}
-                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                animate={{
+                  height: step === i ? 32 : 14,
+                  opacity: step === i ? 1 : 0.25,
+                  background: step === i ? '#00C853' : '#333',
+                }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                 style={{ width: 3, borderRadius: 999 }}
               />
             ))}
           </div>
 
           {/* Ambient glow */}
-          <div aria-hidden style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 360, height: 360, background: 'radial-gradient(circle, rgba(0,200,83,0.06) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+          <div aria-hidden style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 440, height: 440, background: 'radial-gradient(circle, rgba(0,200,83,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-          {/* Stacked visuals */}
-          <div style={{ position: 'relative', width: '100%', height: 440 }}>
-            <motion.div style={{ opacity: op1, position: 'absolute', inset: 0 }}>
-              <Visual1Upload active={step === 0} />
-            </motion.div>
-            <motion.div style={{ opacity: op2, position: 'absolute', inset: 0 }}>
-              <Visual2Categorize active={step === 1} />
-            </motion.div>
-            <motion.div style={{ opacity: op3, position: 'absolute', inset: 0 }}>
-              <Visual3Review active={step === 2} />
-            </motion.div>
+          {/* Single active visual — AnimatePresence for crossfade */}
+          <div style={{ width: '100%', position: 'relative' }}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`visual-${step}`}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -14 }}
+                transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {step === 0 && <Visual1Upload active />}
+                {step === 1 && <Visual2Categorize active />}
+                {step === 2 && <Visual3Review active />}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
 
-        {/* RIGHT — scrollable steps */}
-        <div style={{ paddingLeft: 40 }}>
+        {/* RIGHT — scrollable step text */}
+        <div style={{ paddingLeft: 48 }}>
           {STEPS.map((s, i) => (
             <div
               key={s.num}
+              ref={stepRefs[i]}
               className="how-step"
               style={{ height: '100vh', display: 'flex', alignItems: 'center' }}
             >
               <motion.div
-                animate={{ opacity: step === i ? 1 : 0.25, x: step === i ? 0 : 14 }}
+                animate={{ opacity: step === i ? 1 : 0.22, x: step === i ? 0 : 16 }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 style={{ maxWidth: 460 }}
               >
                 <motion.p
                   animate={{ color: step === i ? '#00C853' : '#2a2a2a' }}
                   transition={{ duration: 0.4 }}
-                  style={{ margin: 0, marginBottom: 18, fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, letterSpacing: '0.06em' }}
+                  style={{ margin: 0, marginBottom: 20, fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, letterSpacing: '0.06em' }}
                 >
                   {s.num}
                 </motion.p>
