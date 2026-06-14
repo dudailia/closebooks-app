@@ -44,7 +44,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     try {
       const res = await fetch('/api/subscription', { cache: 'no-store' })
       if (!res.ok) {
-        setSubscription({ ...EMPTY_SUBSCRIPTION, hasAccess: true })
+        setSubscription(EMPTY_SUBSCRIPTION)
         return
       }
       const data = (await res.json()) as { subscription: SubscriptionState }
@@ -54,7 +54,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       else if (t === 'professional') activatePlan('growth')
       else if (t === 'enterprise') activatePlan('scale')
     } catch {
-      setSubscription({ ...EMPTY_SUBSCRIPTION, hasAccess: true })
+      setSubscription(EMPTY_SUBSCRIPTION)
     } finally {
       setLoading(false)
     }

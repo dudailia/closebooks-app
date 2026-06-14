@@ -382,7 +382,7 @@ function DashboardMockup() {
       >
         <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 8px rgba(0,200,83,0.8)' }} />
         <span style={{ fontSize: 13, fontWeight: 600, color: '#00C853', fontFamily: 'var(--font-sans)', letterSpacing: '-0.01em' }}>
-          94% accuracy
+          Confidence scored
         </span>
       </motion.div>
 
@@ -581,7 +581,7 @@ export default function Hero() {
                   letterSpacing: '0.01em', fontFamily: 'var(--font-sans)',
                 }}
               >
-                Powered by Claude AI · Now in private beta
+                Powered by Claude AI · Built for CPA firm workflows
               </span>
             </motion.div>
 

@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { getUserFromRequest, isSupabaseEnvConfigured } from '@/lib/supabase/routeAuth'
 
 // ---------------------------------------------------------------------------
 // In-memory store (demo — replace with Supabase in production)
@@ -46,6 +47,17 @@ const keyStore: ApiKey[] = [...DEMO_KEYS]
 // Helpers
 // ---------------------------------------------------------------------------
 
+async function requireUser(request: NextRequest) {
+  const user = await getUserFromRequest(request)
+  if (isSupabaseEnvConfigured() && !user) {
+    return {
+      user: null,
+      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    }
+  }
+  return { user, response: null }
+}
+
 function generateSecureKey(type: 'live' | 'test'): { full: string; masked: string; prefix: string } {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
   const rand = (len: number) => {
@@ -71,7 +83,10 @@ function generateId(): string {
 // GET /api/connect/keys — list masked keys
 // ---------------------------------------------------------------------------
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await requireUser(request)
+  if (auth.response) return auth.response
+
   const masked = keyStore.map(({ fullKey: _full, ...rest }) => rest)
   return NextResponse.json({ keys: masked })
 }
@@ -80,7 +95,10 @@ export async function GET() {
 // POST /api/connect/keys — create new key (returns full key ONCE)
 // ---------------------------------------------------------------------------
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const auth = await requireUser(request)
+  if (auth.response) return auth.response
+
   let body: { name?: string; scopes?: string[]; type?: 'live' | 'test' }
   try {
     body = await request.json()
@@ -133,7 +151,10 @@ export async function POST(request: Request) {
 // DELETE /api/connect/keys — revoke a key
 // ---------------------------------------------------------------------------
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
+  const auth = await requireUser(request)
+  if (auth.response) return auth.response
+
   let body: { id?: string }
   try {
     body = await request.json()

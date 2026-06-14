@@ -634,7 +634,7 @@ export default function DemoPage() {
                   <ul className="text-xs space-y-1 mt-3" style={{ color: '#888888' }}>
                     <li>✓ Handles 1 or 10,000 transactions</li>
                     <li>✓ Auto-detects column formats</li>
-                    <li>✓ Encrypted upload — SOC 2 ready</li>
+                    <li>✓ Security-first upload workflow</li>
                   </ul>
                 </div>
               )}

@@ -66,7 +66,7 @@ function TopNav() {
             ← Back to directory
           </Link>
           <Link
-            href="/auth/sign-in"
+            href="/login"
             style={{
               fontSize: '14px',
               fontWeight: 600,

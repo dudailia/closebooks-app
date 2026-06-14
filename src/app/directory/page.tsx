@@ -68,7 +68,7 @@ function TopNav() {
             Pricing
           </Link>
           <Link
-            href="/auth/sign-in"
+            href="/login"
             style={{
               fontSize: '14px',
               fontWeight: 600,

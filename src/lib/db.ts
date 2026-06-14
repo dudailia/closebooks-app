@@ -260,10 +260,22 @@ export async function dbEnsureFirm(firmName: string, ownerId: string): Promise<v
   try {
     const supabase = createClient()
     if (!supabase) return
-    await supabase.from('firms').upsert(
+    const { data } = await supabase.from('firms').upsert(
       { owner_id: ownerId, name: firmName },
       { onConflict: 'owner_id' }
-    )
+    ).select('id').single()
+
+    if (data?.id) {
+      await supabase.from('firm_usage').upsert(
+        {
+          firm_id: data.id,
+          trial_started_at: new Date().toISOString(),
+          plan_status: 'free',
+          closes_used: 0,
+        },
+        { onConflict: 'firm_id', ignoreDuplicates: true }
+      )
+    }
   } catch {
     // ignore — app works without this
   }

@@ -38,14 +38,14 @@ export const metadata: Metadata = {
     default: 'CloseBooks — AI Accounting for CPA Firms',
     template: '%s | CloseBooks',
   },
-  description: 'The complete AI accounting platform. Autonomous close, tax preparation, client portals, and more. Used by 1,200+ CPA firms.',
+  description: 'AI accounting software for CPA firms: transaction categorization, month-end close review, client portals, and QuickBooks-ready exports.',
   keywords: ['accounting software', 'AI bookkeeping', 'CPA tools', 'automated close', 'tax preparation', 'autonomous accounting'],
   openGraph: {
     siteName: 'CloseBooks',
     type: 'website',
     locale: 'en_US',
     title: 'CloseBooks — AI Accounting for CPA Firms',
-    description: 'The complete AI accounting platform. Autonomous close in minutes, not hours.',
+    description: 'AI-assisted month-end close for CPA firms, with confidence-scored categorization and human review built in.',
   },
   twitter: {
     card: 'summary_large_image',
