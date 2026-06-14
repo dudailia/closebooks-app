@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Papa from 'papaparse'
 import type { Transaction } from '@/types'
+import { getUserFromRequest, isSupabaseEnvConfigured } from '@/lib/supabase/routeAuth'
 
 type ExportFormat = 'quickbooks' | 'standard'
 
@@ -86,6 +87,11 @@ function buildStandardCSV(transactions: Transaction[]): string {
 // Route handler
 // ---------------------------------------------------------------------------
 export async function POST(request: NextRequest) {
+  const user = await getUserFromRequest(request)
+  if (isSupabaseEnvConfigured() && !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   let body: unknown
   try {
     body = await request.json()

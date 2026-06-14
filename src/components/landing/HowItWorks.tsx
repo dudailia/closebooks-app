@@ -43,7 +43,7 @@ const STEPS = [
   {
     num: '02',
     title: 'Watch AI do the work',
-    body: "Claude reads each transaction, applies your firm's learned rules, and categorizes with 94% accuracy out of the box. Exceptions are flagged for your 60-second review.",
+    body: "Claude reads each transaction, applies your firm's learned rules, and returns a confidence-scored category. Lower-confidence items are flagged for your 60-second review.",
   },
   {
     num: '03',

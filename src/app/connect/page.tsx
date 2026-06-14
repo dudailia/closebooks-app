@@ -57,7 +57,7 @@ function ConnectNav() {
 
         <div className="flex items-center gap-2">
           <Link
-            href="/auth/sign-in"
+            href="/login"
             className="text-sm px-4 py-2 rounded-lg transition-colors hidden sm:block"
             style={{ color: '#6b6560' }}
             onMouseEnter={(e) => { e.currentTarget.style.color = '#1a1714'; e.currentTarget.style.backgroundColor = '#f0ece4' }}

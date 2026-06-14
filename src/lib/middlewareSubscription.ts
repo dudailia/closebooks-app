@@ -34,6 +34,14 @@ export async function shouldAllowDashboardAccess(
 
   const email = userEmail.toLowerCase()
 
+  const { data: firm } = await supabase.from('firms').select('id').eq('owner_id', userId).maybeSingle()
+
+  let firmUsage: { trial_started_at?: string | null } | null = null
+  if (firm?.id) {
+    const { data: usage } = await supabase.from('firm_usage').select('trial_started_at').eq('firm_id', firm.id).maybeSingle()
+    firmUsage = usage
+  }
+
   const { data: row } = await supabase
     .from('subscriptions')
     .select(
@@ -43,18 +51,6 @@ export async function shouldAllowDashboardAccess(
     .order('updated_at', { ascending: false })
     .limit(1)
     .maybeSingle()
-
-  if (!row) {
-    return true
-  }
-
-  const { data: firm } = await supabase.from('firms').select('id').eq('owner_id', userId).maybeSingle()
-
-  let firmUsage: { trial_started_at?: string | null } | null = null
-  if (firm?.id) {
-    const { data: usage } = await supabase.from('firm_usage').select('trial_started_at').eq('firm_id', firm.id).maybeSingle()
-    firmUsage = usage
-  }
 
   const { hasAccess } = computeSubscriptionAccess(row as SubscriptionRow | null, firmUsage)
 

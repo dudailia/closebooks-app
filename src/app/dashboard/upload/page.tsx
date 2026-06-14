@@ -126,9 +126,9 @@ function CategorizeStep({
   }, [state, numBatches])
 
   async function handleCategorize() {
-    // Check free trial limit before starting
+    // Check trial access before starting
     if (!canStartClose()) {
-      setError('You have used all 5 free closes. Please upgrade to continue.')
+      setError('Your 14-day trial has ended. Please upgrade to continue.')
       setState('error')
       return
     }
@@ -264,12 +264,12 @@ function CategorizeStep({
             style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b' }}
           >
             <p className="font-semibold">
-              {error.includes('free closes') ? '🔒 Free trial limit reached' : 'Categorization failed'}
+              {error.includes('trial') || error.includes('free closes') ? '🔒 Trial access required' : 'Categorization failed'}
             </p>
-            {error.includes('free closes') ? (
+            {error.includes('trial') || error.includes('free closes') ? (
               <div className="space-y-2">
-                <p className="text-xs">You&apos;ve used all 5 free closes. Upgrade to continue with unlimited closes.</p>
-                <a href="/pricing" className="inline-block text-xs font-semibold px-3 py-1.5 rounded-lg text-white" style={{ backgroundColor: '#b8734a' }}>
+                <p className="text-xs">Your 14-day trial has ended. Upgrade to keep closing clients with AI.</p>
+                <a href="/pricing?required=1" className="inline-block text-xs font-semibold px-3 py-1.5 rounded-lg text-white" style={{ backgroundColor: '#b8734a' }}>
                   View pricing plans →
                 </a>
               </div>
@@ -365,9 +365,9 @@ export default function UploadPage() {
           <div className="text-4xl mb-4">🔒</div>
           <h2 className="text-xl font-bold mb-2" style={{ color: '#1a1714' }}>Free trial complete</h2>
           <p className="text-sm mb-6" style={{ color: '#6b6560' }}>
-            You&apos;ve used all 5 free closes. Upgrade to continue — plans start at $99/month with unlimited closes.
+            Your 14-day trial has ended. Upgrade to continue closing clients — plans start at $49/month.
           </p>
-          <a href="/pricing" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#2d5a27' }}>
+          <a href="/pricing?required=1" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#2d5a27' }}>
             View pricing & upgrade →
           </a>
           <p className="mt-4 text-xs" style={{ color: '#a09a94' }}>
@@ -393,7 +393,7 @@ export default function UploadPage() {
           </p>
           {trialStatus?.isOnFreeTier && !trialStatus.hasExhaustedTrial && (
             <p className="text-xs mt-1" style={{ color: '#b8734a' }}>
-              {trialStatus.closesRemaining} free {trialStatus.closesRemaining === 1 ? 'close' : 'closes'} remaining
+              {trialStatus.daysLeftInTrial} trial {trialStatus.daysLeftInTrial === 1 ? 'day' : 'days'} remaining
             </p>
           )}
         </div>

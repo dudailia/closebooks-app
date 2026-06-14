@@ -14,10 +14,10 @@ const ROW2 = [
 ]
 
 const TRUST = [
-  { icon: '🔒', label: 'SOC 2 compliant' },
+  { icon: '🔒', label: 'Security-first controls' },
   { icon: '🤖', label: 'Powered by Claude AI' },
-  { icon: '⚡', label: '99.9% uptime' },
-  { icon: '🔁', label: 'Syncs with QuickBooks' },
+  { icon: '⚡', label: 'Human review built in' },
+  { icon: '🔁', label: 'QuickBooks-ready exports' },
 ]
 
 // ─── Eased count-up ───────────────────────────────────────────────────────────
@@ -265,10 +265,10 @@ export default function StatBand() {
           }}
         >
           <StatItem
-            from={0} to={94}
+            from={0} to={85}
             suffix="%"
-            label="AI categorization accuracy"
-            sublabel="Learns from your corrections"
+            label="Auto-approval threshold"
+            sublabel="Lower confidence stays in review"
             active={isInView}
           />
 

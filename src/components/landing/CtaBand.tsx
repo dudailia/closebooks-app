@@ -199,7 +199,7 @@ export default function CtaBand() {
                   e.currentTarget.style.borderColor = '#1f1f1f'
                 }}
               >
-                Book a 20-min demo
+                Try the interactive demo
               </Link>
             </motion.div>
           </div>

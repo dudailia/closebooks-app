@@ -6,6 +6,7 @@ import { getSupabaseAndFirm } from '@/lib/syncSupabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const FREE_CLOSES = 5
+const APP_TRIAL_DAYS = 14
 
 interface TrialState {
   closesUsed: number
@@ -68,13 +69,12 @@ export function getClosesUsed(): number {
 }
 
 export function getFreeClosesRemaining(): number {
-  if (_cache.plan !== 'free') return Infinity
-  return Math.max(0, FREE_CLOSES - _cache.closesUsed)
+  return Infinity
 }
 
 export function canStartClose(): boolean {
   if (_cache.plan !== 'free') return true
-  return _cache.closesUsed < FREE_CLOSES
+  return getTrialDaysLeft() > 0
 }
 
 export function getCurrentPlan(): TrialState['plan'] {
@@ -90,25 +90,43 @@ export function activatePlan(plan: TrialState['plan']): void {
 
 export { TRIAL_EVENT }
 
+function getTrialStartedAt(): number {
+  const startedAt = new Date(_cache.startedAt).getTime()
+  return Number.isFinite(startedAt) ? startedAt : Date.now()
+}
+
+function getTrialEndsAt(): number {
+  return getTrialStartedAt() + APP_TRIAL_DAYS * 86400000
+}
+
+function getTrialDaysLeft(): number {
+  return Math.max(0, Math.ceil((getTrialEndsAt() - Date.now()) / 86400000))
+}
+
 export function getTrialStatus(): {
   plan: TrialState['plan']
   closesUsed: number
   closesRemaining: number
+  daysLeftInTrial: number
+  trialEndsAt: string
   isOnFreeTier: boolean
   hasExhaustedTrial: boolean
   percentUsed: number
 } {
   const isOnFreeTier = _cache.plan === 'free'
-  const closesRemaining = isOnFreeTier ? Math.max(0, FREE_CLOSES - _cache.closesUsed) : Infinity
-  const hasExhaustedTrial = isOnFreeTier && _cache.closesUsed >= FREE_CLOSES
+  const daysLeftInTrial = isOnFreeTier ? getTrialDaysLeft() : Infinity
+  const hasExhaustedTrial = isOnFreeTier && daysLeftInTrial <= 0
+  const elapsedDays = Math.max(0, APP_TRIAL_DAYS - daysLeftInTrial)
   return {
     plan: _cache.plan,
     closesUsed: _cache.closesUsed,
-    closesRemaining,
+    closesRemaining: Infinity,
+    daysLeftInTrial,
+    trialEndsAt: new Date(getTrialEndsAt()).toISOString(),
     isOnFreeTier,
     hasExhaustedTrial,
-    percentUsed: isOnFreeTier ? Math.min(100, Math.round((_cache.closesUsed / FREE_CLOSES) * 100)) : 0,
+    percentUsed: isOnFreeTier ? Math.min(100, Math.round((elapsedDays / APP_TRIAL_DAYS) * 100)) : 0,
   }
 }
 
-export { FREE_CLOSES }
+export { APP_TRIAL_DAYS, FREE_CLOSES }

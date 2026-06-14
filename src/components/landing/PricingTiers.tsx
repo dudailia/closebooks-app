@@ -9,15 +9,17 @@ import {
   annualTotal,
   resolvePriceId,
   priceEnvKey,
+  type TierId,
   type Tier,
 } from '@/lib/landing/tiers'
 
 interface Props {
   variant?: 'landing' | 'pricing'
   annualDefault?: boolean
+  selectedTierId?: TierId
 }
 
-export default function PricingTiers({ variant = 'landing', annualDefault = false }: Props) {
+export default function PricingTiers({ variant = 'landing', annualDefault = false, selectedTierId }: Props) {
   const [annual, setAnnual] = useState(annualDefault)
 
   return (
@@ -96,7 +98,13 @@ export default function PricingTiers({ variant = 'landing', annualDefault = fals
             viewport={{ once: true }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: i * 0.08 }}
           >
-            <TierCard key={tier.id} tier={tier} annual={annual} variant={variant} />
+            <TierCard
+              key={tier.id}
+              tier={tier}
+              annual={annual}
+              variant={variant}
+              selected={selectedTierId === tier.id}
+            />
           </motion.div>
         ))}
       </div>
@@ -120,10 +128,12 @@ function TierCard({
   tier,
   annual,
   variant,
+  selected,
 }: {
   tier: Tier
   annual: boolean
   variant: 'landing' | 'pricing'
+  selected: boolean
 }) {
   const display = annual ? annualTotal(tier.monthly) : tier.monthly
   const suffix = annual ? '/yr' : '/mo'
@@ -140,6 +150,10 @@ function TierCard({
           borderColor: 'rgba(0,200,83,0.45)',
           boxShadow: '0 0 48px rgba(0,200,83,0.15), 0 0 0 1px rgba(0,200,83,0.2) inset',
           animation: 'glow-pulse 3s ease-in-out infinite',
+        } : {}),
+        ...(selected ? {
+          borderColor: 'rgba(0,200,83,0.7)',
+          boxShadow: '0 0 0 2px rgba(0,200,83,0.28), 0 0 48px rgba(0,200,83,0.18)',
         } : {}),
       }}
     >
@@ -165,6 +179,21 @@ function TierCard({
 
       {/* Card body */}
       <div style={{ padding: 28, display: 'flex', flexDirection: 'column', flex: 1 }}>
+      {selected && (
+        <p
+          style={{
+            margin: '0 0 12px',
+            color: '#00C853',
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            fontFamily: 'var(--font-sans)',
+          }}
+        >
+          Selected during signup
+        </p>
+      )}
 
       <p
         style={{

@@ -18,7 +18,7 @@ export default function ReferralLandingPage({ params }: Props) {
   const stats = [
     { value: '72%', label: 'of transactions auto-categorized on average' },
     { value: '3.5 hrs', label: 'saved per client per month' },
-    { value: '94%', label: 'average AI categorization accuracy' },
+    { value: '85%+', label: 'confidence threshold for auto-approval' },
   ]
 
   const features = [
