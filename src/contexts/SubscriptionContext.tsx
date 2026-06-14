@@ -15,7 +15,6 @@ import {
   featureMinTier,
   tierAtLeast,
   type GatedFeature,
-  type PlanTierId,
 } from '@/lib/plans'
 import { activatePlan } from '@/lib/freeTrial'
 

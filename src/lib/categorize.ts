@@ -221,7 +221,7 @@ export async function categorizeTransactions(
     let items: ClaudeItem[]
     try {
       items = await categorizeBatch(batch, chartOfAccounts, corrections)
-    } catch (err) {
+    } catch {
       for (const tx of batch) results.push({ ...tx, status: 'flagged' })
       continue
     }

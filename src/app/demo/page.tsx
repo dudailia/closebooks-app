@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import type { Transaction, ChartOfAccounts } from '@/types'
+import type { Transaction } from '@/types'
 import { DEMO_COA, DEMO_TRANSACTIONS, DEMO_SUMMARY } from '@/lib/demoData'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
