@@ -1,6 +1,7 @@
 import Nav from '@/components/landing/Nav'
 import Hero from '@/components/landing/Hero'
 import StatBand from '@/components/landing/StatBand'
+import AutomationTheater from '@/components/landing/AutomationTheater'
 import BentoGrid from '@/components/landing/BentoGrid'
 import HowItWorks from '@/components/landing/HowItWorks'
 import Testimonials from '@/components/landing/Testimonials'
@@ -23,6 +24,7 @@ export default function LandingPage() {
       <main>
         <Hero />
         <StatBand />
+        <AutomationTheater />
         <BentoGrid />
         <HowItWorks />
         <Testimonials />

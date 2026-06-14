@@ -191,7 +191,7 @@ function TransactionFeedDemo() {
               }}
             />
             <span style={{ fontSize: 12, color: '#00C853', fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
-              All transactions categorized · 94% confidence
+              COA validated · ready for review
             </span>
           </motion.div>
         )}
