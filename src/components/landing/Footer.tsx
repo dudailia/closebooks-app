@@ -9,6 +9,8 @@ const COLUMNS = [
       { href: '#features', label: 'Features' },
       { href: '/cpa-firms', label: 'CPA Firms' },
       { href: '/pilot', label: 'Paid Pilot' },
+      { href: '/implementation', label: 'Implementation' },
+      { href: '/sample-close-package', label: 'Sample Package' },
       { href: '#pricing', label: 'Pricing' },
       { href: '/install', label: 'Install' },
       { href: '/demo', label: 'Demo' },
@@ -18,8 +20,10 @@ const COLUMNS = [
     title: 'Resources',
     links: [
       { href: '/security', label: 'Security' },
+      { href: '/security/questionnaire', label: 'Security Questionnaire' },
       { href: '/tools/roi-calculator', label: 'ROI Calculator' },
       { href: '/connect/docs', label: 'API Docs' },
+      { href: '/compare/floqast', label: 'Compare' },
     ],
   },
   {

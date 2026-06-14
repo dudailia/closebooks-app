@@ -28,6 +28,14 @@ const PROOF_CARDS = [
     initials: '03',
     color: '#F59E0B',
   },
+  {
+    title: 'Sample close package',
+    copy: 'Preview validated rows, exception list, export checks, and the client-ready narrative before uploading your own files.',
+    href: '/sample-close-package',
+    cta: 'View sample',
+    initials: '04',
+    color: '#38BDF8',
+  },
 ] as const
 
 function Avatar({ initials, color }: { initials: string; color: string }) {
