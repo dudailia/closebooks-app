@@ -202,11 +202,11 @@ function CategorizingStep({ onNext }: CategorizingStepProps) {
 
       setPhase('done')
       await new Promise(r => setTimeout(r, 800))
-      onNext(categorized.length ? categorized : DEMO_TRANSACTIONS)
+      onNext(DEMO_TRANSACTIONS)
     }
 
     run()
-  }, [onNext, total, categorized.length])
+  }, [onNext, total])
 
   const steps = [
     { id: 'parsing', label: 'Parsing CSV — 20 transactions found', done: phase !== 'parsing' },
