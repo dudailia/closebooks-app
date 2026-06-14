@@ -216,9 +216,9 @@ export default function AgentOrchestra() {
               Not software. A close team that never sleeps.
             </h2>
             <p style={{ margin: '22px 0 0', color: '#A1A1A1', fontSize: 16, lineHeight: 1.7, maxWidth: 560 }}>
-              The first impression should feel like automation is already happening. CloseBooks
-              coordinates specialized AI agents for parsing, categorization, validation, review,
-              export, and client communication in one beautiful flow.
+              CloseBooks coordinates specialized AI agents for parsing, categorization,
+              validation, review, export, and client communication, so your team can manage
+              every close from one beautiful workflow.
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10, marginTop: 28 }}>

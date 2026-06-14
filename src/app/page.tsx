@@ -3,6 +3,7 @@ import Hero from '@/components/landing/Hero'
 import StatBand from '@/components/landing/StatBand'
 import AutomationTheater from '@/components/landing/AutomationTheater'
 import AgentOrchestra from '@/components/landing/AgentOrchestra'
+import WhyCloseBooks from '@/components/landing/WhyCloseBooks'
 import BentoGrid from '@/components/landing/BentoGrid'
 import HowItWorks from '@/components/landing/HowItWorks'
 import Testimonials from '@/components/landing/Testimonials'
@@ -27,6 +28,7 @@ export default function LandingPage() {
         <StatBand />
         <AutomationTheater />
         <AgentOrchestra />
+        <WhyCloseBooks />
         <BentoGrid />
         <HowItWorks />
         <Testimonials />
