@@ -87,7 +87,16 @@ export async function GET(request: NextRequest) {
   const auth = await requireUser(request)
   if (auth.response) return auth.response
 
-  const masked = keyStore.map(({ fullKey: _full, ...rest }) => rest)
+  const masked = keyStore.map((key) => ({
+    id: key.id,
+    name: key.name,
+    prefix: key.prefix,
+    maskedKey: key.maskedKey,
+    scopes: key.scopes,
+    createdAt: key.createdAt,
+    lastUsed: key.lastUsed,
+    status: key.status,
+  }))
   return NextResponse.json({ keys: masked })
 }
 

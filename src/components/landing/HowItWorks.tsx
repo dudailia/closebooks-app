@@ -352,7 +352,7 @@ export default function HowItWorks() {
   const s3 = useInView(s3Ref, { margin: '-45% 0px -45% 0px', once: false })
 
   // Last in-view step wins; default to 0
-  const step = s3 ? 2 : s2 ? 1 : 0
+  const step = s3 ? 2 : s2 ? 1 : s1 ? 0 : 0
 
   const stepRefs = [s1Ref, s2Ref, s3Ref]
 

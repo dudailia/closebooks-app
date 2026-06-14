@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { use } from 'react'
-import { DEMO_FIRMS, type Firm } from '@/lib/directoryData'
+import { DEMO_FIRMS } from '@/lib/directoryData'
 import VerifiedBadge from '@/components/VerifiedBadge'
 import FirmCard from '@/components/FirmCard'
 
