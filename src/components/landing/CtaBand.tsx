@@ -176,7 +176,7 @@ export default function CtaBand() {
               </MagneticButton>
 
               <Link
-                href="/demo"
+                href="/pilot"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -200,7 +200,7 @@ export default function CtaBand() {
                   e.currentTarget.style.borderColor = '#1f1f1f'
                 }}
               >
-                Try the interactive demo
+                See paid pilot
               </Link>
             </motion.div>
           </div>

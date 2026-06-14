@@ -7,9 +7,9 @@ import { MagneticButton } from '@/components/ui/MagneticButton'
 const LINKS = [
   { href: '#features', label: 'Features' },
   { href: '#why-closebooks', label: 'Platform' },
+  { href: '/cpa-firms', label: 'CPA Firms' },
   { href: '#trust', label: 'Security' },
   { href: '/demo', label: 'Demo' },
-  { href: '#testimonials', label: 'Proof' },
   { href: '#pricing', label: 'Pricing' },
 ]
 
@@ -133,7 +133,7 @@ export default function Nav() {
               Sign in
             </Link>
             <Link
-              href="/contact"
+              href="/pilot"
               className="hidden md:inline-flex"
               style={{
                 padding: '8px 14px',
@@ -145,7 +145,7 @@ export default function Nav() {
                 border: '1px solid #1f1f1f',
               }}
             >
-              Contact
+              Pilot
             </Link>
 
             <MagneticButton>
