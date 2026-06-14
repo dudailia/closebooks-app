@@ -308,9 +308,9 @@ export default function AutomationTheater() {
             transition={{ duration: 0.65, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
           >
             <p style={{ margin: 0, color: '#A1A1A1', fontSize: 17, lineHeight: 1.7, maxWidth: 620 }}>
-              CloseBooks should look and feel like a senior accounting team, an AI analyst,
-              and a client success manager working in one command center. Every animation shows
-              real product value: intake, categorization, validation, exceptions, export, and delivery.
+              CloseBooks brings intake, categorization, validation, exceptions, export, and
+              client delivery into one guided workflow. AI handles the volume; your firm keeps
+              control over the judgment calls.
             </p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 24 }}>
               <Link href="/demo" style={{ padding: '12px 18px', borderRadius: 12, backgroundColor: '#00C853', color: '#020202', textDecoration: 'none', fontSize: 14, fontWeight: 700, boxShadow: '0 10px 34px rgba(0,200,83,0.28)' }}>

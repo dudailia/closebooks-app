@@ -6,6 +6,7 @@ import { MagneticButton } from '@/components/ui/MagneticButton'
 
 const LINKS = [
   { href: '#features', label: 'Features' },
+  { href: '#why-closebooks', label: 'Platform' },
   { href: '#how', label: 'How it works' },
   { href: '#testimonials', label: 'Firms' },
   { href: '#pricing', label: 'Pricing' },
