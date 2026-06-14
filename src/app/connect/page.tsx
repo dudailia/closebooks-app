@@ -439,7 +439,7 @@ export default function ConnectLandingPage() {
               Simple, usage-based pricing
             </h2>
             <p className="text-sm mt-3" style={{ color: '#6b6560' }}>
-              Start free, scale when you grow. No hidden fees.
+              Start with a trial, then scale API access when your firm is ready.
             </p>
           </div>
 

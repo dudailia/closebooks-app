@@ -319,6 +319,18 @@ function SignupForm() {
             </DarkButton>
           </form>
 
+          <p style={{ marginTop: 14, fontSize: 11, lineHeight: 1.5, textAlign: 'center', color: '#666666' }}>
+            By creating an account, you agree to the{' '}
+            <Link href="/terms" style={{ color: '#00C853', textDecoration: 'none' }}>
+              Terms
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy" style={{ color: '#00C853', textDecoration: 'none' }}>
+              Privacy Policy
+            </Link>
+            .
+          </p>
+
           <p style={{ marginTop: 20, fontSize: 13, textAlign: 'center', color: '#888888' }}>
             Already have an account?{' '}
             <Link href="/login" style={{ color: '#00C853', textDecoration: 'none', fontWeight: 600 }}>

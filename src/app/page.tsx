@@ -1,6 +1,7 @@
 import Nav from '@/components/landing/Nav'
 import Hero from '@/components/landing/Hero'
 import StatBand from '@/components/landing/StatBand'
+import TrustSection from '@/components/landing/TrustSection'
 import AutomationTheater from '@/components/landing/AutomationTheater'
 import AgentOrchestra from '@/components/landing/AgentOrchestra'
 import WhyCloseBooks from '@/components/landing/WhyCloseBooks'
@@ -26,6 +27,7 @@ export default function LandingPage() {
       <main>
         <Hero />
         <StatBand />
+        <TrustSection />
         <AutomationTheater />
         <AgentOrchestra />
         <WhyCloseBooks />
