@@ -5,12 +5,12 @@ import { motion, useInView } from 'framer-motion'
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const ROW1 = [
-  'Northpeak CPA', 'Hansen & Co', 'Meridian Books', 'Ascend Accounting',
-  'Due North', 'Balance Ledger', 'Vertex Partners', 'Summit CPA',
+  'CSV import', 'COA validation', 'Exception review', 'QuickBooks-ready CSV',
+  'Firm rules', 'Client portal', 'Audit trail', 'Stripe billing',
 ]
 const ROW2 = [
-  'Harbor Accounting', 'Crestview CPA', 'Alpine Books', 'Pacific Ledger',
-  'Coastal Close', 'Ridge & Partners', 'Apex Accounting', 'Clearwater CPA',
+  'Confidence scores', 'Human approval', 'AI reasoning', 'Review queue',
+  'Trial access', 'Secure sessions', 'Export preflight', 'Firm workspace',
 ]
 
 const TRUST = [
@@ -275,23 +275,21 @@ export default function StatBand() {
           <VDivider />
 
           <StatItem
-            from={8} to={3}
-            suffix="hrs"
-            label="Time to close one client"
-            sublabel="Down from 3 days"
-            showDownArrow
+            from={0} to={3}
+            suffix=" steps"
+            label="Upload, review, export"
+            sublabel="One guided workflow"
             active={isInView}
           />
 
           <VDivider />
 
           <StatItem
-            from={0} to={2400}
-            prefix="$"
-            label="Monthly savings per firm"
-            sublabel="vs. traditional bookkeeping tools"
+            from={0} to={14}
+            suffix=" days"
+            label="Trial access"
+            sublabel="No card required at signup"
             active={isInView}
-            format={(n) => n.toLocaleString()}
           />
         </motion.div>
       </div>

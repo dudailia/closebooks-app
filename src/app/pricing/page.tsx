@@ -1,5 +1,6 @@
 import PublicShell from '@/components/landing/PublicShell'
 import PricingTiers from '@/components/landing/PricingTiers'
+import PricingFAQ from '@/components/landing/PricingFAQ'
 import { TIERS, type TierId } from '@/lib/landing/tiers'
 
 interface PricingPageProps {
@@ -81,6 +82,26 @@ export default function PricingPage({ searchParams }: PricingPageProps) {
           </p>
         </div>
         <PricingTiers variant="pricing" annualDefault={annualDefault} selectedTierId={selectedPlan} />
+        <div
+          style={{
+            margin: '34px auto 0',
+            maxWidth: 820,
+            padding: '16px 18px',
+            borderRadius: 16,
+            border: '1px solid rgba(255,255,255,0.08)',
+            backgroundColor: 'rgba(255,255,255,0.025)',
+            color: '#A1A1A1',
+            fontSize: 13,
+            lineHeight: 1.6,
+            textAlign: 'center',
+          }}
+        >
+          Billing is handled by Stripe. Questions about client data and AI processing?{' '}
+          <a href="/security" style={{ color: '#00C853', fontWeight: 700 }}>
+            Read the security overview.
+          </a>
+        </div>
+        <PricingFAQ />
       </main>
     </PublicShell>
   )

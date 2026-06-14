@@ -555,7 +555,7 @@ export default function DemoPage() {
           </Link>
           <div className="flex items-center gap-3">
             <span className="text-xs font-medium px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(0,200,83,0.1)', color: '#00C853' }}>Live Demo</span>
-            <Link href="/get-started" className="px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#00C853', color: '#080808' }}>
+            <Link href="/signup" className="px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#00C853', color: '#080808' }}>
               Start Free Trial
             </Link>
           </div>
@@ -567,10 +567,10 @@ export default function DemoPage() {
         {/* Page title */}
         <div className="text-center mb-6 sm:mb-10">
           <h1 className="text-2xl sm:text-3xl mb-2" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#FAFAFA', letterSpacing: '-0.02em' }}>
-            Watch CloseBooks close books — live
+            Watch CloseBooks close books
           </h1>
           <p className="text-sm" style={{ color: '#888888' }}>
-            Real AI. Real transactions. No signup required.
+            Interactive walkthrough with sample data. Create an account to run your firm&apos;s files.
           </p>
         </div>
 

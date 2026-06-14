@@ -1,30 +1,31 @@
 'use client'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { GlowCard } from '@/components/ui/GlowCard'
 
-const QUOTES = [
+const PROOF_CARDS = [
   {
-    quote: "We closed 40 books last month in the time it used to take for 8. The narrative insights alone made every client renew.",
-    name: 'Sarah Hansen',
-    title: 'Managing Partner',
-    firm: 'Hansen & Co CPA',
-    initials: 'SH',
+    title: 'Interactive demo',
+    copy: 'Walk through upload, AI categorization, review, and export with sample data. No account required.',
+    href: '/demo',
+    cta: 'Try the demo',
+    initials: '01',
     color: '#00C853',
   },
   {
-    quote: "It's the first tool that actually learns our rules. After two months the AI agrees with me 98% of the time.",
-    name: 'Marcus Reid',
-    title: 'Senior Accountant',
-    firm: 'Meridian Books',
-    initials: 'MR',
+    title: 'Guided first close',
+    copy: 'Create a firm account, upload a bank CSV, review exceptions, and export your first close package.',
+    href: '/signup',
+    cta: 'Start trial',
+    initials: '02',
     color: '#6B8EFF',
   },
   {
-    quote: "Keyboard-first review is the only reason my juniors don't quit. They flow through 500 transactions without looking up.",
-    name: 'Jordan Okafor',
-    title: 'Founder',
-    firm: 'Ascend Accounting',
-    initials: 'JO',
+    title: 'ROI calculator',
+    copy: 'Estimate what exception-first review could save for your client count, close volume, and team size.',
+    href: '/tools/roi-calculator',
+    cta: 'Calculate ROI',
+    initials: '03',
     color: '#F59E0B',
   },
 ] as const
@@ -91,7 +92,7 @@ export default function Testimonials() {
               fontFamily: 'var(--font-sans)',
             }}
           >
-            Firms running on CloseBooks
+            Product proof
           </p>
           <h2
             style={{
@@ -104,8 +105,8 @@ export default function Testimonials() {
               fontWeight: 400,
             }}
           >
-            The CPAs who tried it once.{' '}
-            <span style={{ color: '#444444', fontStyle: 'italic' }}>Then onboarded every client.</span>
+            See the workflow before you commit.{' '}
+            <span style={{ color: '#444444', fontStyle: 'italic' }}>Then run it on one client.</span>
           </h2>
         </motion.div>
 
@@ -116,9 +117,9 @@ export default function Testimonials() {
             gap: 16,
           }}
         >
-          {QUOTES.map((q, i) => (
+          {PROOF_CARDS.map((card, i) => (
             <motion.figure
-              key={q.name}
+              key={card.title}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-40px' }}
@@ -134,50 +135,32 @@ export default function Testimonials() {
                   height: '100%',
                 }}
               >
-                {/* Quote mark */}
-                <div style={{ marginBottom: 18 }}>
-                  <svg width="28" height="20" viewBox="0 0 28 20" fill="none">
-                    <path
-                      d="M0 20V13.5C0 9.5 1.833 6.167 5.5 3.5L7 5C5.167 6.333 4.167 8 4 10H8V20H0ZM16 20V13.5C16 9.5 17.833 6.167 21.5 3.5L23 5C21.167 6.333 20.167 8 20 10H24V20H16Z"
-                      fill="rgba(0,200,83,0.35)"
-                    />
-                  </svg>
-                </div>
-
-                <blockquote
+                <Avatar initials={card.initials} color={card.color} />
+                <h3
                   style={{
-                    flex: 1,
-                    fontFamily: 'var(--font-display)',
-                    fontStyle: 'italic',
-                    fontSize: 19,
-                    lineHeight: 1.5,
-                    letterSpacing: '-0.015em',
+                    margin: '22px 0 10px',
                     color: '#FAFAFA',
-                    margin: 0,
-                    marginBottom: 28,
+                    fontSize: 24,
+                    letterSpacing: '-0.03em',
                   }}
                 >
-                  &ldquo;{q.quote}&rdquo;
-                </blockquote>
+                  {card.title}
+                </h3>
+                <p style={{ flex: 1, margin: 0, color: '#A1A1A1', fontSize: 14, lineHeight: 1.7 }}>
+                  {card.copy}
+                </p>
 
                 <figcaption
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
+                    display: 'block',
                     paddingTop: 20,
+                    marginTop: 24,
                     borderTop: '1px solid #1f1f1f',
                   }}
                 >
-                  <Avatar initials={q.initials} color={q.color} />
-                  <div>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: '#FAFAFA', margin: 0, fontFamily: 'var(--font-sans)' }}>
-                      {q.name}
-                    </p>
-                    <p style={{ fontSize: 12, color: '#444444', margin: '2px 0 0', fontFamily: 'var(--font-sans)' }}>
-                      {q.title} · {q.firm}
-                    </p>
-                  </div>
+                  <Link href={card.href} style={{ color: card.color, fontSize: 14, fontWeight: 800, textDecoration: 'none' }}>
+                    {card.cta} →
+                  </Link>
                 </figcaption>
               </GlowCard>
             </motion.figure>

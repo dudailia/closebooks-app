@@ -627,8 +627,8 @@ export default function Hero() {
               }}
             >
               CloseBooks learns how your firm categorizes transactions, runs an
-              autonomous close agent, and ships client-ready narratives. One CPA
-              reviews 500 books in the time it used to take to close five.
+              AI-assisted close workflow, and helps your team review exceptions,
+              validate accounts, export to QuickBooks, and send client-ready narratives.
             </motion.p>
 
             {/* CTA row */}

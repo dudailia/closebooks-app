@@ -8,7 +8,6 @@ import {
   TIERS,
   annualTotal,
   resolvePriceId,
-  priceEnvKey,
   type TierId,
   type Tier,
 } from '@/lib/landing/tiers'
@@ -345,6 +344,31 @@ function PricingCta({ tier, annual }: { tier: Tier; annual: boolean }) {
   const priceId = resolvePriceId(tier.id, annual)
   const configured = !!priceId
 
+  if (tier.id === 'enterprise') {
+    return (
+      <Link
+        href="/contact?topic=enterprise"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          padding: '13px 16px',
+          fontSize: 14,
+          fontWeight: 700,
+          borderRadius: 10,
+          color: '#FAFAFA',
+          background: 'rgba(255,255,255,0.06)',
+          border: '1px solid #1f1f1f',
+          textDecoration: 'none',
+          fontFamily: 'var(--font-sans)',
+        }}
+      >
+        Contact Enterprise
+      </Link>
+    )
+  }
+
   async function handleClick() {
     if (!configured) return
     setLoading(true)
@@ -413,9 +437,26 @@ function PricingCta({ tier, annual }: { tier: Tier; annual: boolean }) {
           {loading ? 'Redirecting to Stripe…' : 'Subscribe'}
         </button>
       ) : (
-        <p style={{ fontSize: 11, textAlign: 'center', color: '#444444', marginTop: 4, fontFamily: 'var(--font-sans)' }}>
-          Set {priceEnvKey(tier.id, annual)} in env to enable checkout.
-        </p>
+        <Link
+          href={`/signup?plan=${tier.id}&billing=${annual ? 'annual' : 'monthly'}`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            padding: '13px 16px',
+            fontSize: 14,
+            fontWeight: 600,
+            borderRadius: 10,
+            color: tier.popular ? '#000' : '#FAFAFA',
+            background: tier.popular ? '#00C853' : 'rgba(255,255,255,0.04)',
+            border: tier.popular ? 'none' : '1px solid #1f1f1f',
+            textDecoration: 'none',
+            fontFamily: 'var(--font-sans)',
+          }}
+        >
+          Start trial
+        </Link>
       )}
       {error && (
         <p style={{ marginTop: 8, fontSize: 12, color: '#FF4444', fontFamily: 'var(--font-sans)' }}>{error}</p>
