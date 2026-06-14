@@ -4,6 +4,8 @@ const PUBLIC_PATHS = [
   '/',
   '/pricing',
   '/demo',
+  '/cpa-firms',
+  '/pilot',
   '/get-started',
   '/tools/roi-calculator',
   '/security',
