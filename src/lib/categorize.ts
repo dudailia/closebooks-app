@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { Transaction, ChartOfAccounts } from '@/types'
+import { resolveAgainstCoa } from '@/lib/coaValidation'
 
 const MODEL = 'claude-sonnet-4-6'
 const BATCH_SIZE = 20
@@ -238,17 +239,28 @@ export async function categorizeTransactions(
       }
 
       const rawConf  = Math.min(1, Math.max(0, Number(suggestion.confidence) || 0))
-      const confidence = calibrateConfidence(tx.description, tx.amount, rawConf)
-      const status   = confidence >= AUTO_APPROVE_THRESHOLD ? 'approved' : 'pending'
+      const calibratedConfidence = calibrateConfidence(tx.description, tx.amount, rawConf)
+      const resolved = resolveAgainstCoa(
+        {
+          suggested_category: suggestion.suggested_category,
+          suggested_account_code: suggestion.suggested_account_code,
+          confidence: calibratedConfidence,
+          reasoning: suggestion.reasoning,
+        },
+        tx,
+        chartOfAccounts,
+        AUTO_APPROVE_THRESHOLD
+      )
 
       results.push({
         ...tx,
-        suggested_category:    suggestion.suggested_category,
-        suggested_account_code: suggestion.suggested_account_code,
-        confidence,
-        status,
-        // Carry reasoning through for display in the review UI
-        ...({ reasoning: suggestion.reasoning } as object),
+        suggested_category: resolved.suggested_category,
+        suggested_account_code: resolved.suggested_account_code,
+        confidence: resolved.confidence,
+        status: resolved.status,
+        reasoning: resolved.reasoning,
+        validation_flags: resolved.validationFlags,
+        categorizationSource: 'ai',
       })
     }
 

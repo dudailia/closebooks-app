@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest, isSupabaseEnvConfigured } from '@/lib/supabase/routeAuth'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 
 // ---------------------------------------------------------------------------
 // In-memory store (demo — replace with Supabase in production)
@@ -47,15 +47,8 @@ const keyStore: ApiKey[] = [...DEMO_KEYS]
 // Helpers
 // ---------------------------------------------------------------------------
 
-async function requireUser(request: NextRequest) {
-  const user = await getUserFromRequest(request)
-  if (isSupabaseEnvConfigured() && !user) {
-    return {
-      user: null,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    }
-  }
-  return { user, response: null }
+async function requireApiAccess(request: NextRequest) {
+  return requireRouteAccess(request, { feature: 'api' })
 }
 
 function generateSecureKey(type: 'live' | 'test'): { full: string; masked: string; prefix: string } {
@@ -84,8 +77,8 @@ function generateId(): string {
 // ---------------------------------------------------------------------------
 
 export async function GET(request: NextRequest) {
-  const auth = await requireUser(request)
-  if (auth.response) return auth.response
+  const access = await requireApiAccess(request)
+  if (!access.ok) return access.response
 
   const masked = keyStore.map((key) => ({
     id: key.id,
@@ -105,8 +98,8 @@ export async function GET(request: NextRequest) {
 // ---------------------------------------------------------------------------
 
 export async function POST(request: NextRequest) {
-  const auth = await requireUser(request)
-  if (auth.response) return auth.response
+  const access = await requireApiAccess(request)
+  if (!access.ok) return access.response
 
   let body: { name?: string; scopes?: string[]; type?: 'live' | 'test' }
   try {
@@ -161,8 +154,8 @@ export async function POST(request: NextRequest) {
 // ---------------------------------------------------------------------------
 
 export async function DELETE(request: NextRequest) {
-  const auth = await requireUser(request)
-  if (auth.response) return auth.response
+  const access = await requireApiAccess(request)
+  if (!access.ok) return access.response
 
   let body: { id?: string }
   try {
