@@ -191,40 +191,14 @@ function CategorizingStep({ onNext }: CategorizingStepProps) {
       setPhase('sending')
       await new Promise(r => setTimeout(r, 700))
 
-      // Phase 3: AI Categorizing — call real API
+      // Phase 3: AI Categorizing — deterministic demo data keeps the public demo cost-free.
       setPhase('ai')
 
-      try {
-        const res = await fetch('/api/categorize', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            transactions: DEMO_TRANSACTIONS.map(t => ({ ...t, status: 'pending', suggested_category: '', suggested_account_code: '', confidence: 0 })),
-            chartOfAccounts: DEMO_COA,
-            clientName: DEMO_SUMMARY.clientName,
-          }),
-        })
-
-        if (res.ok) {
-          const data = await res.json()
-          const txs: Transaction[] = data.transactions ?? []
-          // Animate count up as results arrive
-          for (let i = 0; i <= txs.length; i++) {
-            await new Promise(r => setTimeout(r, 60))
-            setCurrent(i)
-          }
-          setCategorized(txs)
-        } else {
-          throw new Error('API failed')
-        }
-      } catch {
-        // Fallback: use pre-categorized demo data
-        for (let i = 0; i <= total; i++) {
-          await new Promise(r => setTimeout(r, 80))
-          setCurrent(i)
-        }
-        setCategorized(DEMO_TRANSACTIONS)
+      for (let i = 0; i <= total; i++) {
+        await new Promise(r => setTimeout(r, 80))
+        setCurrent(i)
       }
+      setCategorized(DEMO_TRANSACTIONS)
 
       setPhase('done')
       await new Promise(r => setTimeout(r, 800))
@@ -432,24 +406,53 @@ function ExportStep({ transactions }: { transactions: Transaction[] }) {
 
   const approved = transactions.filter(t => t.status === 'approved' || t.status === 'edited')
 
+  function csvCell(value: string | number): string {
+    const raw = String(value)
+    return /[",\n]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw
+  }
+
+  function buildDemoCsv(format: 'quickbooks' | 'standard'): string {
+    const rows = approved.map((t) => {
+      const account = t.final_account_code ?? t.suggested_account_code
+      const category = t.final_category ?? t.suggested_category
+      if (format === 'quickbooks') {
+        return [
+          t.date,
+          `${account} - ${category}`,
+          t.description,
+          (t.type === 'debit' ? -t.amount : t.amount).toFixed(2),
+          category,
+          DEMO_SUMMARY.clientName,
+        ]
+      }
+      return [
+        t.date,
+        t.description,
+        category,
+        account,
+        t.type === 'debit' ? t.amount.toFixed(2) : '',
+        t.type === 'credit' ? t.amount.toFixed(2) : '',
+        t.status,
+      ]
+    })
+    const header = format === 'quickbooks'
+      ? ['Date', 'Account', 'Description', 'Amount', 'Category', 'Class']
+      : ['Date', 'Description', 'Category', 'Account Code', 'Debit', 'Credit', 'Status']
+
+    return [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\n')
+  }
+
   async function doExport(format: 'quickbooks' | 'standard') {
     setExporting(true)
     try {
-      const res = await fetch('/api/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactions: approved, clientName: DEMO_SUMMARY.clientName, format }),
-      })
-      if (res.ok) {
-        const blob = await res.blob()
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `sunrise_advisory_march_2026_${format}.csv`
-        a.click()
-        URL.revokeObjectURL(url)
-        setDone(format)
-      }
+      const blob = new Blob([buildDemoCsv(format)], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `sunrise_advisory_march_2026_${format}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+      setDone(format)
     } finally {
       setExporting(false)
     }

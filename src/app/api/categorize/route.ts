@@ -4,7 +4,7 @@ import { categorizeTransactions, type CorrectionHint } from '@/lib/categorize'
 import type { Transaction, ChartOfAccounts } from '@/types'
 import { rateLimit } from '@/lib/rateLimit'
 import { sanitizeForPrompt } from '@/lib/promptSanitize'
-import { getUserFromRequest, isSupabaseEnvConfigured } from '@/lib/supabase/routeAuth'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 
 export const dynamic = 'force-dynamic'
 const bodySchema = z.object({
@@ -15,15 +15,10 @@ const bodySchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
-  const user = await getUserFromRequest(request)
-  if (isSupabaseEnvConfigured() && !user) {
-    return NextResponse.json(
-      { error: 'Sign in to run AI categorization.' },
-      { status: 401 }
-    )
-  }
+  const access = await requireRouteAccess(request)
+  if (!access.ok) return access.response
 
-  const uid = user?.id ?? request.headers.get('x-forwarded-for') ?? 'anon'
+  const uid = access.user?.id ?? request.headers.get('x-forwarded-for') ?? 'anon'
   const rl = rateLimit(`categorize:${uid}`, 10, 1000)
   if (!rl.ok) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } })

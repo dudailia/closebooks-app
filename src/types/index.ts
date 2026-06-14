@@ -20,6 +20,9 @@ export type Transaction = {
   final_category?: string
   final_account_code?: string
   notes?: string
+  reasoning?: string
+  validation_flags?: string[]
+  categorizationSource?: 'ai' | 'firm_rule' | 'manual' | 'copilot'
   splits?: TransactionSplit[]
 }
 
