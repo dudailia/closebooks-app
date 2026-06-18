@@ -567,10 +567,10 @@ export default function DemoPage() {
         {/* Page title */}
         <div className="text-center mb-6 sm:mb-10">
           <h1 className="text-2xl sm:text-3xl mb-2" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#FAFAFA', letterSpacing: '-0.02em' }}>
-            Watch CloseBooks close books
+            Watch CloseBooks close books — live
           </h1>
           <p className="text-sm" style={{ color: '#888888' }}>
-            Interactive walkthrough with sample data. Create an account to run your firm&apos;s files.
+            Real AI. Real transactions. No signup required.
           </p>
         </div>
 
