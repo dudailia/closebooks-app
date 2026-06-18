@@ -420,8 +420,13 @@ export default function TransactionRow({
                     AI Reasoning
                   </label>
                   <p style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                    {(transaction as Transaction & { reasoning?: string }).reasoning ?? 'No reasoning provided.'}
+                    {transaction.reasoning ?? 'No reasoning provided.'}
                   </p>
+                  {transaction.validation_flags && transaction.validation_flags.length > 0 && (
+                    <p style={{ marginTop: 6, fontSize: 12, color: 'var(--warning)', lineHeight: 1.4 }}>
+                      Review required: {transaction.validation_flags.join(', ')}
+                    </p>
+                  )}
                 </div>
               </div>
 

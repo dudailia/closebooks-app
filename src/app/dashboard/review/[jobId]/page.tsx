@@ -1080,6 +1080,7 @@ export default function ReviewPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           transactions: exportable,
+          chartOfAccounts: job.chart_of_accounts,
           clientName: job.client_name,
           format,
         }),
@@ -1087,7 +1088,10 @@ export default function ReviewPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data.error ?? `Export failed (${res.status})`)
+        const firstIssue = Array.isArray(data.issues) && data.issues[0]
+          ? ` First issue: ${data.issues[0].description} — ${data.issues[0].issues?.[0] ?? 'review required'}`
+          : ''
+        throw new Error(`${data.error ?? `Export failed (${res.status})`}${firstIssue}`)
       }
 
       // Parse filename from Content-Disposition

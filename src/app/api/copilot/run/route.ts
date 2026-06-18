@@ -1,6 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import type { CategorizationJob, Transaction, CopilotConfig, CopilotRun } from '@/types'
+import { resolveAgainstCoa } from '@/lib/coaValidation'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 
 const anthropic = new Anthropic()
 
@@ -15,7 +17,10 @@ function extractJson(text: string): string {
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const access = await requireRouteAccess(request, { feature: 'full_ai' })
+  if (!access.ok) return access.response
+
   let body: { job: CategorizationJob; config: CopilotConfig } | null = null
   try {
     body = await request.json()
@@ -53,7 +58,42 @@ export async function POST(request: Request) {
 
     // High confidence + under amount cap → auto-approve
     if (tx.confidence >= threshold && tx.amount <= maxAmount) {
-      return { ...tx, status: 'approved' }
+      const resolved = resolveAgainstCoa(
+        {
+          suggested_category: tx.suggested_category,
+          suggested_account_code: tx.suggested_account_code,
+          confidence: tx.confidence,
+          reasoning: tx.reasoning,
+        },
+        tx,
+        job.chart_of_accounts,
+        threshold
+      )
+
+      if (resolved.status !== 'approved') {
+        return {
+          ...tx,
+          suggested_category: resolved.suggested_category,
+          suggested_account_code: resolved.suggested_account_code,
+          confidence: resolved.confidence,
+          status: resolved.status,
+          reasoning: resolved.reasoning,
+          validation_flags: resolved.validationFlags,
+        }
+      }
+
+      return {
+        ...tx,
+        suggested_category: resolved.suggested_category,
+        suggested_account_code: resolved.suggested_account_code,
+        confidence: resolved.confidence,
+        status: 'approved',
+        final_category: resolved.suggested_category,
+        final_account_code: resolved.suggested_account_code,
+        reasoning: resolved.reasoning,
+        validation_flags: resolved.validationFlags,
+        categorizationSource: 'copilot',
+      }
     }
 
     // Below flag threshold → flag for human

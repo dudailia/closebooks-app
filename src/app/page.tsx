@@ -1,9 +1,14 @@
 import Nav from '@/components/landing/Nav'
 import Hero from '@/components/landing/Hero'
 import StatBand from '@/components/landing/StatBand'
+import TrustSection from '@/components/landing/TrustSection'
+import AutomationTheater from '@/components/landing/AutomationTheater'
+import AgentOrchestra from '@/components/landing/AgentOrchestra'
+import WhyCloseBooks from '@/components/landing/WhyCloseBooks'
 import BentoGrid from '@/components/landing/BentoGrid'
 import HowItWorks from '@/components/landing/HowItWorks'
 import Testimonials from '@/components/landing/Testimonials'
+import PilotOffer from '@/components/landing/PilotOffer'
 import PricingSection from '@/components/landing/PricingSection'
 import CtaBand from '@/components/landing/CtaBand'
 import Footer from '@/components/landing/Footer'
@@ -23,9 +28,14 @@ export default function LandingPage() {
       <main>
         <Hero />
         <StatBand />
+        <TrustSection />
+        <AutomationTheater />
+        <AgentOrchestra />
+        <WhyCloseBooks />
         <BentoGrid />
         <HowItWorks />
         <Testimonials />
+        <PilotOffer />
         <PricingSection />
         <CtaBand />
       </main>

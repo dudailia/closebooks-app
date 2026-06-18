@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import FirmCard from '@/components/FirmCard'
-import { DEMO_FIRMS, INDUSTRIES, type Firm } from '@/lib/directoryData'
+import { DEMO_FIRMS, INDUSTRIES } from '@/lib/directoryData'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Logo
@@ -68,7 +68,7 @@ function TopNav() {
             Pricing
           </Link>
           <Link
-            href="/auth/sign-in"
+            href="/login"
             style={{
               fontSize: '14px',
               fontWeight: 600,

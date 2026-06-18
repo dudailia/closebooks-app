@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { Transaction, ChartOfAccounts } from '@/types'
+import { resolveAgainstCoa } from '@/lib/coaValidation'
 
 const MODEL = 'claude-sonnet-4-6'
 const BATCH_SIZE = 20
@@ -140,13 +141,11 @@ function extractJSON(text: string): ClaudeItem[] {
   const stripped = text.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim()
   const match = stripped.match(/\[[\s\S]*\]/)
   if (!match) {
-    console.error('[categorize] Could not find JSON array in response. Full text:', text)
     throw new Error('No JSON array found in Claude response')
   }
   try {
     return JSON.parse(match[0]) as ClaudeItem[]
   } catch (e) {
-    console.error('[categorize] JSON.parse failed. Attempted to parse:', match[0].slice(0, 300))
     throw new Error(`Failed to parse Claude JSON: ${(e as Error).message}`)
   }
 }
@@ -169,8 +168,6 @@ async function categorizeBatch(
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const prompt = buildUserPrompt(batch, coa, corrections)
-      console.log(`[categorize] Attempt ${attempt}/${MAX_RETRIES} — calling ${MODEL} with ${batch.length} transactions`)
-      console.log('[categorize] User prompt (first 600 chars):\n', prompt.slice(0, 600))
 
       const message = await client.messages.create({
         model: MODEL,
@@ -184,16 +181,11 @@ async function categorizeBatch(
         throw new Error(`Unexpected Claude content type: ${content.type}`)
       }
 
-      console.log('[categorize] Raw Claude response:\n', content.text)
-
       const items = extractJSON(content.text)
-      console.log(`[categorize] Parsed ${items.length} items from Claude`)
-      if (items[0]) console.log('[categorize] First item:', JSON.stringify(items[0]))
 
       return items
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err))
-      console.error(`[categorize] Attempt ${attempt} failed:`, lastError.message)
 
       const isFatal =
         lastError.message.includes('No JSON array') ||
@@ -219,11 +211,6 @@ export async function categorizeTransactions(
   chartOfAccounts: ChartOfAccounts[],
   corrections: CorrectionHint[] = []
 ): Promise<Transaction[]> {
-  console.log(
-    `[categorize] categorizeTransactions called: ${transactions.length} tx, ` +
-    `${chartOfAccounts.length} accounts, ${corrections.length} correction hints`
-  )
-
   if (!transactions.length) return []
   if (!chartOfAccounts.length) throw new Error('Chart of accounts is empty.')
 
@@ -231,57 +218,53 @@ export async function categorizeTransactions(
 
   for (let i = 0; i < transactions.length; i += BATCH_SIZE) {
     const batch = transactions.slice(i, i + BATCH_SIZE)
-    const batchNum = Math.floor(i / BATCH_SIZE) + 1
-    const totalBatches = Math.ceil(transactions.length / BATCH_SIZE)
-
-    console.log(`[categorize] Processing batch ${batchNum}/${totalBatches} (${batch.length} transactions)`)
 
     let items: ClaudeItem[]
     try {
       items = await categorizeBatch(batch, chartOfAccounts, corrections)
-    } catch (err) {
-      console.error(`[categorize] Batch ${batchNum} failed entirely:`, err)
+    } catch {
       for (const tx of batch) results.push({ ...tx, status: 'flagged' })
       continue
     }
 
     const byIndex = new Map(items.map((item) => [item.index, item]))
-    console.log(`[categorize] Index keys returned by Claude:`, Array.from(byIndex.keys()))
 
     for (let j = 0; j < batch.length; j++) {
       const tx = batch[j]
       const suggestion = byIndex.get(j)
 
       if (!suggestion) {
-        console.warn(`[categorize] No result for index ${j} ("${tx.description}") — flagging`)
         results.push({ ...tx, status: 'flagged' })
         continue
       }
 
       const rawConf  = Math.min(1, Math.max(0, Number(suggestion.confidence) || 0))
-      const confidence = calibrateConfidence(tx.description, tx.amount, rawConf)
-      const status   = confidence >= AUTO_APPROVE_THRESHOLD ? 'approved' : 'pending'
-
-      console.log(
-        `[categorize] [${j}] "${tx.description}" → [${suggestion.suggested_account_code}] ` +
-        `"${suggestion.suggested_category}" rawConf=${Math.round(rawConf * 100)}% ` +
-        `calibrated=${Math.round(confidence * 100)}% status=${status}`
+      const calibratedConfidence = calibrateConfidence(tx.description, tx.amount, rawConf)
+      const resolved = resolveAgainstCoa(
+        {
+          suggested_category: suggestion.suggested_category,
+          suggested_account_code: suggestion.suggested_account_code,
+          confidence: calibratedConfidence,
+          reasoning: suggestion.reasoning,
+        },
+        tx,
+        chartOfAccounts,
+        AUTO_APPROVE_THRESHOLD
       )
 
       results.push({
         ...tx,
-        suggested_category:    suggestion.suggested_category,
-        suggested_account_code: suggestion.suggested_account_code,
-        confidence,
-        status,
-        // Carry reasoning through for display in the review UI
-        ...({ reasoning: suggestion.reasoning } as object),
+        suggested_category: resolved.suggested_category,
+        suggested_account_code: resolved.suggested_account_code,
+        confidence: resolved.confidence,
+        status: resolved.status,
+        reasoning: resolved.reasoning,
+        validation_flags: resolved.validationFlags,
+        categorizationSource: 'ai',
       })
     }
 
-    console.log(`[categorize] Batch ${batchNum} done. Running total: ${results.length} results`)
   }
 
-  console.log(`[categorize] All batches complete. Total results: ${results.length}`)
   return results
 }

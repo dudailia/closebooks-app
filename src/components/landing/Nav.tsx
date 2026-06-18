@@ -6,8 +6,10 @@ import { MagneticButton } from '@/components/ui/MagneticButton'
 
 const LINKS = [
   { href: '#features', label: 'Features' },
-  { href: '#how', label: 'How it works' },
-  { href: '#testimonials', label: 'Firms' },
+  { href: '#why-closebooks', label: 'Platform' },
+  { href: '/cpa-firms', label: 'CPA Firms' },
+  { href: '#trust', label: 'Security' },
+  { href: '/demo', label: 'Demo' },
   { href: '#pricing', label: 'Pricing' },
 ]
 
@@ -130,6 +132,21 @@ export default function Nav() {
             >
               Sign in
             </Link>
+            <Link
+              href="/pilot"
+              className="hidden md:inline-flex"
+              style={{
+                padding: '8px 14px',
+                fontSize: 13,
+                fontWeight: 600,
+                color: '#FAFAFA',
+                textDecoration: 'none',
+                borderRadius: 8,
+                border: '1px solid #1f1f1f',
+              }}
+            >
+              Pilot
+            </Link>
 
             <MagneticButton>
               <Link
@@ -158,7 +175,7 @@ export default function Nav() {
                   e.currentTarget.style.background = '#00C853'
                 }}
               >
-                Start free
+                Start 14-day trial
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                   <path d="M2.5 6h7m0 0L6.5 3M9.5 6l-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -280,7 +297,7 @@ export default function Nav() {
                   textDecoration: 'none',
                 }}
               >
-                Start free
+                Start 14-day trial
               </Link>
             </div>
           </motion.div>

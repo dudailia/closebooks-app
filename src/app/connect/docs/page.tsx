@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import CodeBlock from '@/components/CodeBlock'
 
@@ -41,7 +41,7 @@ function DocsNav() {
         </Link>
         <div className="flex items-center gap-2">
           <Link
-            href="/auth/sign-in"
+            href="/login"
             className="text-sm px-3 py-1.5 rounded-lg transition-colors hidden sm:block"
             style={{ color: '#6b6560' }}
             onMouseEnter={(e) => { e.currentTarget.style.color = '#1a1714'; e.currentTarget.style.backgroundColor = '#f0ece4' }}

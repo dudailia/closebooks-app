@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Papa from 'papaparse'
-import type { Transaction } from '@/types'
+import type { ChartOfAccounts, Transaction } from '@/types'
+import { canonicalizeTransactionForExport, validateTransactionsForExport } from '@/lib/exportValidation'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 
 type ExportFormat = 'quickbooks' | 'standard'
 
 interface RequestBody {
   transactions: Transaction[]
+  chartOfAccounts: ChartOfAccounts[]
   clientName: string
   format: ExportFormat
 }
@@ -15,6 +18,7 @@ function isValidBody(body: unknown): body is RequestBody {
   const b = body as Record<string, unknown>
   return (
     Array.isArray(b.transactions) &&
+    Array.isArray(b.chartOfAccounts) &&
     typeof b.clientName === 'string' &&
     b.clientName.trim().length > 0 &&
     (b.format === 'quickbooks' || b.format === 'standard')
@@ -31,8 +35,9 @@ function safeFilename(name: string): string {
 //   Date, Account, Description, Amount, Category, Class
 // Debits are negative amounts on the bank account line.
 // ---------------------------------------------------------------------------
-function buildQuickBooksCSV(transactions: Transaction[], clientName: string): string {
-  const rows = transactions.map((t) => {
+function buildQuickBooksCSV(transactions: Transaction[], clientName: string, chartOfAccounts: ChartOfAccounts[]): string {
+  const rows = transactions.map((transaction) => {
+    const t = canonicalizeTransactionForExport(transaction, chartOfAccounts)
     const category = t.final_category ?? t.suggested_category ?? 'Uncategorized'
     const account  = t.final_account_code
       ? `${t.final_account_code} - ${t.final_category ?? category}`
@@ -86,6 +91,9 @@ function buildStandardCSV(transactions: Transaction[]): string {
 // Route handler
 // ---------------------------------------------------------------------------
 export async function POST(request: NextRequest) {
+  const access = await requireRouteAccess(request)
+  if (!access.ok) return access.response
+
   let body: unknown
   try {
     body = await request.json()
@@ -95,15 +103,30 @@ export async function POST(request: NextRequest) {
 
   if (!isValidBody(body)) {
     return NextResponse.json(
-      { error: 'Request body must include transactions (array), clientName (string), and format ("quickbooks" or "standard").' },
+      { error: 'Request body must include transactions (array), chartOfAccounts (array), clientName (string), and format ("quickbooks" or "standard").' },
       { status: 422 }
     )
   }
 
-  const { transactions, clientName, format } = body
+  const { transactions, chartOfAccounts, clientName, format } = body
 
   if (transactions.length === 0) {
     return NextResponse.json({ error: 'No transactions to export.' }, { status: 422 })
+  }
+
+  if (chartOfAccounts.length === 0) {
+    return NextResponse.json({ error: 'Chart of accounts is required for export validation.' }, { status: 422 })
+  }
+
+  const validation = validateTransactionsForExport(transactions, chartOfAccounts)
+  if (!validation.ok) {
+    return NextResponse.json(
+      {
+        error: 'Resolve export validation issues before downloading accounting output.',
+        issues: validation.issues,
+      },
+      { status: 422 }
+    )
   }
 
   const base      = safeFilename(clientName)
@@ -111,8 +134,8 @@ export async function POST(request: NextRequest) {
   const filename  = `${base}_close_${datestamp}.csv`
 
   const csv = format === 'quickbooks'
-    ? buildQuickBooksCSV(transactions, clientName)
-    : buildStandardCSV(transactions)
+    ? buildQuickBooksCSV(transactions, clientName, chartOfAccounts)
+    : buildStandardCSV(transactions.map((tx) => canonicalizeTransactionForExport(tx, chartOfAccounts)))
 
   return new NextResponse(csv, {
     status: 200,

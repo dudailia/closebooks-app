@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import type { Transaction, ChartOfAccounts } from '@/types'
+import type { Transaction } from '@/types'
 import { DEMO_COA, DEMO_TRANSACTIONS, DEMO_SUMMARY } from '@/lib/demoData'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -191,48 +191,22 @@ function CategorizingStep({ onNext }: CategorizingStepProps) {
       setPhase('sending')
       await new Promise(r => setTimeout(r, 700))
 
-      // Phase 3: AI Categorizing — call real API
+      // Phase 3: AI Categorizing — deterministic demo data keeps the public demo cost-free.
       setPhase('ai')
 
-      try {
-        const res = await fetch('/api/categorize', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            transactions: DEMO_TRANSACTIONS.map(t => ({ ...t, status: 'pending', suggested_category: '', suggested_account_code: '', confidence: 0 })),
-            chartOfAccounts: DEMO_COA,
-            clientName: DEMO_SUMMARY.clientName,
-          }),
-        })
-
-        if (res.ok) {
-          const data = await res.json()
-          const txs: Transaction[] = data.transactions ?? []
-          // Animate count up as results arrive
-          for (let i = 0; i <= txs.length; i++) {
-            await new Promise(r => setTimeout(r, 60))
-            setCurrent(i)
-          }
-          setCategorized(txs)
-        } else {
-          throw new Error('API failed')
-        }
-      } catch {
-        // Fallback: use pre-categorized demo data
-        for (let i = 0; i <= total; i++) {
-          await new Promise(r => setTimeout(r, 80))
-          setCurrent(i)
-        }
-        setCategorized(DEMO_TRANSACTIONS)
+      for (let i = 0; i <= total; i++) {
+        await new Promise(r => setTimeout(r, 80))
+        setCurrent(i)
       }
+      setCategorized(DEMO_TRANSACTIONS)
 
       setPhase('done')
       await new Promise(r => setTimeout(r, 800))
-      onNext(categorized.length ? categorized : DEMO_TRANSACTIONS)
+      onNext(DEMO_TRANSACTIONS)
     }
 
     run()
-  }, [onNext, total, categorized.length])
+  }, [onNext, total])
 
   const steps = [
     { id: 'parsing', label: 'Parsing CSV — 20 transactions found', done: phase !== 'parsing' },
@@ -432,24 +406,53 @@ function ExportStep({ transactions }: { transactions: Transaction[] }) {
 
   const approved = transactions.filter(t => t.status === 'approved' || t.status === 'edited')
 
+  function csvCell(value: string | number): string {
+    const raw = String(value)
+    return /[",\n]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw
+  }
+
+  function buildDemoCsv(format: 'quickbooks' | 'standard'): string {
+    const rows = approved.map((t) => {
+      const account = t.final_account_code ?? t.suggested_account_code
+      const category = t.final_category ?? t.suggested_category
+      if (format === 'quickbooks') {
+        return [
+          t.date,
+          `${account} - ${category}`,
+          t.description,
+          (t.type === 'debit' ? -t.amount : t.amount).toFixed(2),
+          category,
+          DEMO_SUMMARY.clientName,
+        ]
+      }
+      return [
+        t.date,
+        t.description,
+        category,
+        account,
+        t.type === 'debit' ? t.amount.toFixed(2) : '',
+        t.type === 'credit' ? t.amount.toFixed(2) : '',
+        t.status,
+      ]
+    })
+    const header = format === 'quickbooks'
+      ? ['Date', 'Account', 'Description', 'Amount', 'Category', 'Class']
+      : ['Date', 'Description', 'Category', 'Account Code', 'Debit', 'Credit', 'Status']
+
+    return [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\n')
+  }
+
   async function doExport(format: 'quickbooks' | 'standard') {
     setExporting(true)
     try {
-      const res = await fetch('/api/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactions: approved, clientName: DEMO_SUMMARY.clientName, format }),
-      })
-      if (res.ok) {
-        const blob = await res.blob()
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `sunrise_advisory_march_2026_${format}.csv`
-        a.click()
-        URL.revokeObjectURL(url)
-        setDone(format)
-      }
+      const blob = new Blob([buildDemoCsv(format)], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `sunrise_advisory_march_2026_${format}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+      setDone(format)
     } finally {
       setExporting(false)
     }
@@ -552,7 +555,7 @@ export default function DemoPage() {
           </Link>
           <div className="flex items-center gap-3">
             <span className="text-xs font-medium px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(0,200,83,0.1)', color: '#00C853' }}>Live Demo</span>
-            <Link href="/get-started" className="px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#00C853', color: '#080808' }}>
+            <Link href="/signup" className="px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#00C853', color: '#080808' }}>
               Start Free Trial
             </Link>
           </div>
@@ -634,7 +637,7 @@ export default function DemoPage() {
                   <ul className="text-xs space-y-1 mt-3" style={{ color: '#888888' }}>
                     <li>✓ Handles 1 or 10,000 transactions</li>
                     <li>✓ Auto-detects column formats</li>
-                    <li>✓ Encrypted upload — SOC 2 ready</li>
+                    <li>✓ Security-first upload workflow</li>
                   </ul>
                 </div>
               )}

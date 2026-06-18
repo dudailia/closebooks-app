@@ -7,6 +7,10 @@ const COLUMNS = [
     title: 'Product',
     links: [
       { href: '#features', label: 'Features' },
+      { href: '/cpa-firms', label: 'CPA Firms' },
+      { href: '/pilot', label: 'Paid Pilot' },
+      { href: '/implementation', label: 'Implementation' },
+      { href: '/sample-close-package', label: 'Sample Package' },
       { href: '#pricing', label: 'Pricing' },
       { href: '/install', label: 'Install' },
       { href: '/demo', label: 'Demo' },
@@ -15,18 +19,17 @@ const COLUMNS = [
   {
     title: 'Resources',
     links: [
-      { href: '/docs', label: 'Documentation' },
-      { href: '/changelog', label: 'Changelog' },
       { href: '/security', label: 'Security' },
-      { href: '/status', label: 'Status' },
+      { href: '/security/questionnaire', label: 'Security Questionnaire' },
+      { href: '/tools/roi-calculator', label: 'ROI Calculator' },
+      { href: '/connect/docs', label: 'API Docs' },
+      { href: '/compare/floqast', label: 'Compare' },
     ],
   },
   {
     title: 'Company',
     links: [
       { href: '/about', label: 'About' },
-      { href: '/cpa-council', label: 'CPA Council' },
-      { href: '/careers', label: 'Careers' },
       { href: '/contact', label: 'Contact' },
     ],
   },
@@ -103,40 +106,8 @@ export default function Footer() {
               </span>
             </div>
             <p style={{ fontSize: 14, lineHeight: 1.6, color: '#888888', margin: 0, maxWidth: 280, fontFamily: 'var(--font-sans)' }}>
-              The AI co-pilot for month-end close. Built with CPAs, for CPAs.
+              Month-end close software for CPA firms building AI-first workflows.
             </p>
-            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-              {['X', 'LI', 'GH'].map((s) => (
-                <div
-                  key={s}
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 8,
-                    border: '1px solid #1f1f1f',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: '#444444',
-                    cursor: 'pointer',
-                    transition: 'border-color 200ms, color 200ms',
-                    fontFamily: 'var(--font-mono)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(0,200,83,0.3)'
-                    e.currentTarget.style.color = '#00C853'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#1f1f1f'
-                    e.currentTarget.style.color = '#444444'
-                  }}
-                >
-                  {s}
-                </div>
-              ))}
-            </div>
           </div>
 
           {COLUMNS.map((c) => (

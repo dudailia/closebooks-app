@@ -56,8 +56,8 @@ export const TIERS: Tier[] = [
       'Unlimited seats',
       'White-label portal',
       'API access',
-      'Dedicated success manager',
-      'Custom onboarding',
+      'Priority onboarding by request',
+      'Firm setup assistance',
     ],
   },
 ]

@@ -4,7 +4,7 @@ import { categorizeTransactions, type CorrectionHint } from '@/lib/categorize'
 import type { Transaction, ChartOfAccounts } from '@/types'
 import { rateLimit } from '@/lib/rateLimit'
 import { sanitizeForPrompt } from '@/lib/promptSanitize'
-import { getUserFromRequest } from '@/lib/supabase/routeAuth'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 
 export const dynamic = 'force-dynamic'
 const bodySchema = z.object({
@@ -15,15 +15,14 @@ const bodySchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
-  const user = await getUserFromRequest(request)
-  const uid = user?.id ?? request.headers.get('x-forwarded-for') ?? 'anon'
+  const access = await requireRouteAccess(request)
+  if (!access.ok) return access.response
+
+  const uid = access.user?.id ?? request.headers.get('x-forwarded-for') ?? 'anon'
   const rl = rateLimit(`categorize:${uid}`, 10, 1000)
   if (!rl.ok) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } })
   }
-
-  console.log('=== API route /api/categorize HIT ===')
-  console.log('ANTHROPIC_API_KEY exists:', !!process.env.ANTHROPIC_API_KEY)
 
   // Guard here, inside the handler, not at module level
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -48,11 +47,6 @@ export async function POST(request: NextRequest) {
   const { transactions, chartOfAccounts, clientName, corrections = [] } = parsed.data
   const safeClient = sanitizeForPrompt(clientName, 500)
 
-  console.log(
-    `Received: ${transactions.length} transactions, ${chartOfAccounts.length} accounts, ` +
-    `client="${safeClient}", ${corrections.length} correction hints`
-  )
-
   if (transactions.length === 0) {
     return NextResponse.json({ error: 'transactions array is empty.' }, { status: 422 })
   }
@@ -75,8 +69,6 @@ export async function POST(request: NextRequest) {
       pending: categorized.filter((t) => t.status === 'pending').length,
       flagged: categorized.filter((t) => t.status === 'flagged').length,
     }
-
-    console.log('Categorization complete:', summary)
 
     return NextResponse.json({ clientName: safeClient, transactions: categorized, summary }, { status: 200 })
   } catch (err) {

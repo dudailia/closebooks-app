@@ -8,16 +8,17 @@ import {
   TIERS,
   annualTotal,
   resolvePriceId,
-  priceEnvKey,
+  type TierId,
   type Tier,
 } from '@/lib/landing/tiers'
 
 interface Props {
   variant?: 'landing' | 'pricing'
   annualDefault?: boolean
+  selectedTierId?: TierId
 }
 
-export default function PricingTiers({ variant = 'landing', annualDefault = false }: Props) {
+export default function PricingTiers({ variant = 'landing', annualDefault = false, selectedTierId }: Props) {
   const [annual, setAnnual] = useState(annualDefault)
 
   return (
@@ -96,7 +97,13 @@ export default function PricingTiers({ variant = 'landing', annualDefault = fals
             viewport={{ once: true }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: i * 0.08 }}
           >
-            <TierCard key={tier.id} tier={tier} annual={annual} variant={variant} />
+            <TierCard
+              key={tier.id}
+              tier={tier}
+              annual={annual}
+              variant={variant}
+              selected={selectedTierId === tier.id}
+            />
           </motion.div>
         ))}
       </div>
@@ -120,10 +127,12 @@ function TierCard({
   tier,
   annual,
   variant,
+  selected,
 }: {
   tier: Tier
   annual: boolean
   variant: 'landing' | 'pricing'
+  selected: boolean
 }) {
   const display = annual ? annualTotal(tier.monthly) : tier.monthly
   const suffix = annual ? '/yr' : '/mo'
@@ -140,6 +149,10 @@ function TierCard({
           borderColor: 'rgba(0,200,83,0.45)',
           boxShadow: '0 0 48px rgba(0,200,83,0.15), 0 0 0 1px rgba(0,200,83,0.2) inset',
           animation: 'glow-pulse 3s ease-in-out infinite',
+        } : {}),
+        ...(selected ? {
+          borderColor: 'rgba(0,200,83,0.7)',
+          boxShadow: '0 0 0 2px rgba(0,200,83,0.28), 0 0 48px rgba(0,200,83,0.18)',
         } : {}),
       }}
     >
@@ -165,6 +178,21 @@ function TierCard({
 
       {/* Card body */}
       <div style={{ padding: 28, display: 'flex', flexDirection: 'column', flex: 1 }}>
+      {selected && (
+        <p
+          style={{
+            margin: '0 0 12px',
+            color: '#00C853',
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            fontFamily: 'var(--font-sans)',
+          }}
+        >
+          Selected during signup
+        </p>
+      )}
 
       <p
         style={{
@@ -316,6 +344,31 @@ function PricingCta({ tier, annual }: { tier: Tier; annual: boolean }) {
   const priceId = resolvePriceId(tier.id, annual)
   const configured = !!priceId
 
+  if (tier.id === 'enterprise') {
+    return (
+      <Link
+        href="/contact?topic=enterprise"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          padding: '13px 16px',
+          fontSize: 14,
+          fontWeight: 700,
+          borderRadius: 10,
+          color: '#FAFAFA',
+          background: 'rgba(255,255,255,0.06)',
+          border: '1px solid #1f1f1f',
+          textDecoration: 'none',
+          fontFamily: 'var(--font-sans)',
+        }}
+      >
+        Contact Enterprise
+      </Link>
+    )
+  }
+
   async function handleClick() {
     if (!configured) return
     setLoading(true)
@@ -384,9 +437,26 @@ function PricingCta({ tier, annual }: { tier: Tier; annual: boolean }) {
           {loading ? 'Redirecting to Stripe…' : 'Subscribe'}
         </button>
       ) : (
-        <p style={{ fontSize: 11, textAlign: 'center', color: '#444444', marginTop: 4, fontFamily: 'var(--font-sans)' }}>
-          Set {priceEnvKey(tier.id, annual)} in env to enable checkout.
-        </p>
+        <Link
+          href={`/signup?plan=${tier.id}&billing=${annual ? 'annual' : 'monthly'}`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            padding: '13px 16px',
+            fontSize: 14,
+            fontWeight: 600,
+            borderRadius: 10,
+            color: tier.popular ? '#000' : '#FAFAFA',
+            background: tier.popular ? '#00C853' : 'rgba(255,255,255,0.04)',
+            border: tier.popular ? 'none' : '1px solid #1f1f1f',
+            textDecoration: 'none',
+            fontFamily: 'var(--font-sans)',
+          }}
+        >
+          Start trial
+        </Link>
       )}
       {error && (
         <p style={{ marginTop: 8, fontSize: 12, color: '#FF4444', fontFamily: 'var(--font-sans)' }}>{error}</p>
