@@ -47,8 +47,9 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         return
       }
       const data = (await res.json()) as { subscription: SubscriptionState }
-      setSubscription(data.subscription)
-      const t = data.subscription.tier
+      const sub = data.subscription ?? EMPTY_SUBSCRIPTION
+      setSubscription(sub)
+      const t = sub.tier
       if (t === 'starter') activatePlan('starter')
       else if (t === 'professional') activatePlan('growth')
       else if (t === 'enterprise') activatePlan('scale')

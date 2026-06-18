@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 
 export default function DashboardError({
@@ -9,6 +10,10 @@ export default function DashboardError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  useEffect(() => {
+    console.error('[CloseBooks] Dashboard error boundary caught:', error)
+  }, [error])
+
   return (
     <div style={{
       padding: '80px 24px',

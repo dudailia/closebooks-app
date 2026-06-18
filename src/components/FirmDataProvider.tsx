@@ -13,7 +13,9 @@ export default function FirmDataProvider({ children }: { children: React.ReactNo
       setReady(true)
       return
     }
-    void hydrateFirmData().finally(() => setReady(true))
+    void hydrateFirmData()
+      .catch(err => console.error('[CloseBooks] Hydration error:', err))
+      .finally(() => setReady(true))
   }, [])
 
   if (!ready) {
