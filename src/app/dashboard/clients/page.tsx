@@ -393,7 +393,7 @@ export default function ClientsPage() {
   const filtered = clients.filter((c) => {
     const matchesSearch = !search.trim() ||
       c.business_name.toLowerCase().includes(search.toLowerCase()) ||
-      c.contact_email.toLowerCase().includes(search.toLowerCase())
+      (c.contact_email ?? '').toLowerCase().includes(search.toLowerCase())
     const matchesIndustry = industry === 'All' || c.industry === industry
     return matchesSearch && matchesIndustry
   })
