@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 
 // ---------------------------------------------------------------------------
 // In-memory store (demo — replace with Supabase in production)
@@ -46,6 +47,10 @@ const keyStore: ApiKey[] = [...DEMO_KEYS]
 // Helpers
 // ---------------------------------------------------------------------------
 
+async function requireApiAccess(request: NextRequest) {
+  return requireRouteAccess(request, { feature: 'api' })
+}
+
 function generateSecureKey(type: 'live' | 'test'): { full: string; masked: string; prefix: string } {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
   const rand = (len: number) => {
@@ -71,8 +76,20 @@ function generateId(): string {
 // GET /api/connect/keys — list masked keys
 // ---------------------------------------------------------------------------
 
-export async function GET() {
-  const masked = keyStore.map(({ fullKey: _full, ...rest }) => rest)
+export async function GET(request: NextRequest) {
+  const access = await requireApiAccess(request)
+  if (!access.ok) return access.response
+
+  const masked = keyStore.map((key) => ({
+    id: key.id,
+    name: key.name,
+    prefix: key.prefix,
+    maskedKey: key.maskedKey,
+    scopes: key.scopes,
+    createdAt: key.createdAt,
+    lastUsed: key.lastUsed,
+    status: key.status,
+  }))
   return NextResponse.json({ keys: masked })
 }
 
@@ -80,7 +97,10 @@ export async function GET() {
 // POST /api/connect/keys — create new key (returns full key ONCE)
 // ---------------------------------------------------------------------------
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const access = await requireApiAccess(request)
+  if (!access.ok) return access.response
+
   let body: { name?: string; scopes?: string[]; type?: 'live' | 'test' }
   try {
     body = await request.json()
@@ -133,7 +153,10 @@ export async function POST(request: Request) {
 // DELETE /api/connect/keys — revoke a key
 // ---------------------------------------------------------------------------
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
+  const access = await requireApiAccess(request)
+  if (!access.ok) return access.response
+
   let body: { id?: string }
   try {
     body = await request.json()

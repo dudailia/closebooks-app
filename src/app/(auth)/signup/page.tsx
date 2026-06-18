@@ -33,6 +33,12 @@ function SignupForm() {
   const billing = searchParams.get('billing')
   const selectedTier = TIERS.find((t) => t.id === planSlug) ?? null
 
+  const selectedPlanQuery = new URLSearchParams()
+  if (planSlug) selectedPlanQuery.set('plan', planSlug)
+  if (billing) selectedPlanQuery.set('billing', billing)
+  const selectedPlanSearch = selectedPlanQuery.toString()
+  const selectedPricingHref = selectedPlanSearch ? `/pricing?${selectedPlanSearch}` : '/pricing'
+
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -85,12 +91,12 @@ function SignupForm() {
     }
 
     if (data.user) {
-      dbEnsureFirm(firmName || email.split('@')[0], data.user.id).catch(() => {})
+      await dbEnsureFirm(firmName || email.split('@')[0], data.user.id)
     }
 
-    // If a plan was pre-selected, route to /pricing for checkout
+    // If a plan was pre-selected, keep it selected through checkout.
     if (planSlug) {
-      router.push('/pricing')
+      router.push(selectedPricingHref)
     } else {
       router.push('/dashboard')
     }
@@ -312,6 +318,18 @@ function SignupForm() {
               {loading ? 'Creating account…' : 'Create free account'}
             </DarkButton>
           </form>
+
+          <p style={{ marginTop: 14, fontSize: 11, lineHeight: 1.5, textAlign: 'center', color: '#666666' }}>
+            By creating an account, you agree to the{' '}
+            <Link href="/terms" style={{ color: '#00C853', textDecoration: 'none' }}>
+              Terms
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy" style={{ color: '#00C853', textDecoration: 'none' }}>
+              Privacy Policy
+            </Link>
+            .
+          </p>
 
           <p style={{ marginTop: 20, fontSize: 13, textAlign: 'center', color: '#888888' }}>
             Already have an account?{' '}

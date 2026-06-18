@@ -289,7 +289,7 @@ export default function WarrenDemoPage() {
               { value: `${WARREN_TRANSACTIONS.length}`, label: 'transactions processed' },
               { value: `${approved} of ${WARREN_TRANSACTIONS.length}`, label: 'auto-categorized' },
               { value: `~${timeSaved} min`, label: 'of manual work saved' },
-              { value: '99%', label: 'accuracy on known vendors' },
+              { value: 'COA', label: 'validation before export' },
             ].map((s) => (
               <div
                 key={s.label}

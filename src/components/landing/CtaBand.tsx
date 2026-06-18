@@ -129,7 +129,8 @@ export default function CtaBand() {
                 fontFamily: 'var(--font-sans)',
               }}
             >
-              Join the CPA firms ditching ledgers and spreadsheets for an AI close that thinks with them.
+              Start with one client close. Use the 14-day trial to upload, review, export,
+              and decide whether CloseBooks fits your firm.
             </motion.p>
 
             <motion.div
@@ -175,7 +176,7 @@ export default function CtaBand() {
               </MagneticButton>
 
               <Link
-                href="/demo"
+                href="/pilot"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -199,7 +200,7 @@ export default function CtaBand() {
                   e.currentTarget.style.borderColor = '#1f1f1f'
                 }}
               >
-                Book a 20-min demo
+                See paid pilot
               </Link>
             </motion.div>
           </div>

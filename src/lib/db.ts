@@ -21,6 +21,8 @@ import type { CategorizationJob, Client, Transaction } from '@/types'
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
+const AI_REASONING_NOTE_PREFIX = '__cb_ai_reasoning__:'
+
 /** Returns the firm ID for the currently authenticated user, or null. */
 async function getFirmId(): Promise<string | null> {
   try {
@@ -40,6 +42,12 @@ async function getFirmId(): Promise<string | null> {
 }
 
 function mapTxRow(row: Record<string, unknown>): Transaction {
+  const rawNotes = row.notes ? String(row.notes) : undefined
+  const reasoning = rawNotes?.startsWith(AI_REASONING_NOTE_PREFIX)
+    ? rawNotes.slice(AI_REASONING_NOTE_PREFIX.length)
+    : undefined
+  const notes = rawNotes?.startsWith(AI_REASONING_NOTE_PREFIX) ? undefined : rawNotes
+
   return {
     id:                   String(row.id),
     date:                 String(row.date ?? ''),
@@ -53,7 +61,8 @@ function mapTxRow(row: Record<string, unknown>): Transaction {
     status:               (row.status as Transaction['status']) ?? 'pending',
     final_category:       row.final_category ? String(row.final_category) : undefined,
     final_account_code:   row.final_account_code ? String(row.final_account_code) : undefined,
-    notes:                row.notes ? String(row.notes) : undefined,
+    notes,
+    reasoning,
   }
 }
 
@@ -176,7 +185,7 @@ export async function dbSaveJob(job: CategorizationJob): Promise<void> {
       status:               t.status,
       final_category:       t.final_category ?? null,
       final_account_code:   t.final_account_code ?? null,
-      notes:                t.notes ?? null,
+      notes:                t.notes ?? (t.reasoning ? `${AI_REASONING_NOTE_PREFIX}${t.reasoning}` : null),
     }))
 
     // Batch in chunks of 500 to stay within Supabase limits
@@ -260,10 +269,22 @@ export async function dbEnsureFirm(firmName: string, ownerId: string): Promise<v
   try {
     const supabase = createClient()
     if (!supabase) return
-    await supabase.from('firms').upsert(
+    const { data } = await supabase.from('firms').upsert(
       { owner_id: ownerId, name: firmName },
       { onConflict: 'owner_id' }
-    )
+    ).select('id').single()
+
+    if (data?.id) {
+      await supabase.from('firm_usage').upsert(
+        {
+          firm_id: data.id,
+          trial_started_at: new Date().toISOString(),
+          plan_status: 'free',
+          closes_used: 0,
+        },
+        { onConflict: 'firm_id', ignoreDuplicates: true }
+      )
+    }
   } catch {
     // ignore — app works without this
   }

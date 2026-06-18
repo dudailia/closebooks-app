@@ -502,7 +502,7 @@ export default function BentoGrid() {
                 AI that learns your firm
               </h3>
               <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, color: '#888', fontFamily: 'var(--font-sans)', maxWidth: 480 }}>
-                Claude reads your correction patterns and builds firm-specific rules. After two months, accuracy reaches 99% without any manual rule-writing.
+                Claude reads your correction patterns and firm rules so repeat vendors get more consistent every close.
               </p>
               <BeforeAfterVisual />
             </GlowCard>

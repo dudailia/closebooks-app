@@ -191,7 +191,7 @@ function TransactionFeedDemo() {
               }}
             />
             <span style={{ fontSize: 12, color: '#00C853', fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
-              All transactions categorized · 94% confidence
+              COA validated · ready for review
             </span>
           </motion.div>
         )}
@@ -382,7 +382,7 @@ function DashboardMockup() {
       >
         <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 8px rgba(0,200,83,0.8)' }} />
         <span style={{ fontSize: 13, fontWeight: 600, color: '#00C853', fontFamily: 'var(--font-sans)', letterSpacing: '-0.01em' }}>
-          94% accuracy
+          Confidence scored
         </span>
       </motion.div>
 
@@ -581,7 +581,7 @@ export default function Hero() {
                   letterSpacing: '0.01em', fontFamily: 'var(--font-sans)',
                 }}
               >
-                Powered by Claude AI · Now in private beta
+                Powered by Claude AI · Built for CPA firm workflows
               </span>
             </motion.div>
 
@@ -627,8 +627,8 @@ export default function Hero() {
               }}
             >
               CloseBooks learns how your firm categorizes transactions, runs an
-              autonomous close agent, and ships client-ready narratives. One CPA
-              reviews 500 books in the time it used to take to close five.
+              AI-assisted close workflow, and helps your team review exceptions,
+              validate accounts, export to QuickBooks, and send client-ready narratives.
             </motion.p>
 
             {/* CTA row */}
