@@ -264,7 +264,7 @@ function QuickActions({ onPortalClick }: { onPortalClick: () => void }) {
 function JobCard({ job, onDelete }: { job: CategorizationJob; onDelete: (id: string) => void }) {
   const router = useRouter()
   const pct = progressPercent(job)
-  const s = STATUS_STYLE[job.status]
+  const s = STATUS_STYLE[job.status as keyof typeof STATUS_STYLE] ?? STATUS_STYLE['review']
   const pending = job.total_transactions - job.approved - job.flagged
 
   return (
@@ -935,7 +935,7 @@ function WarRoomView({ jobs }: { jobs: CategorizationJob[] }) {
           </thead>
           <tbody>
             {statuses.map((cs, i) => {
-              const s = WAR_ROOM_STYLE[cs.status]
+              const s = WAR_ROOM_STYLE[cs.status as keyof typeof WAR_ROOM_STYLE] ?? WAR_ROOM_STYLE['not_started']
               return (
                 <tr
                   key={cs.clientName}
