@@ -216,7 +216,7 @@ function ClientCard({
   const router = useRouter()
   const jobs = getJobsForClient(client.business_name)
   const lastClose = jobs[0]
-  const style = INDUSTRY_STYLE[client.industry]
+  const style = INDUSTRY_STYLE[client.industry] ?? INDUSTRY_STYLE['Other']
 
   function handleDelete(e: React.MouseEvent) {
     e.stopPropagation()
