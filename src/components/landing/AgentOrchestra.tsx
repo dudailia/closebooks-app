@@ -320,10 +320,10 @@ export default function AgentOrchestra() {
               {AGENTS.map((agent, index) => (
                 <AgentNode key={agent.name} agent={agent} index={index} active={active % AGENTS.length === index} />
               ))}
+            </div>
 
-              <div style={{ position: 'absolute', left: 18, right: 18, bottom: 18, zIndex: 5 }}>
-                <ActivityFeed active={active} />
-              </div>
+            <div style={{ marginTop: 14 }}>
+              <ActivityFeed active={active} />
             </div>
           </motion.div>
         </div>
