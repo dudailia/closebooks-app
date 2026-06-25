@@ -12,20 +12,6 @@ export default function DashboardError({
 }) {
   useEffect(() => {
     console.error('[CloseBooks] Dashboard error boundary caught:', error)
-    // TEMPORARY: forward to server so the real message+stack lands in Vercel logs.
-    try {
-      void fetch('/api/client-errors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        keepalive: true,
-        body: JSON.stringify({
-          source: 'dashboard/error.tsx',
-          message: error?.message ?? null,
-          stack: error?.stack ?? null,
-          digest: error?.digest ?? null,
-        }),
-      })
-    } catch { /* never let the logger throw */ }
   }, [error])
 
   return (

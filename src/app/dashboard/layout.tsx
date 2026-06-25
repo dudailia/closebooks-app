@@ -10,12 +10,10 @@ import UpgradeModal from '@/components/UpgradeModal'
 import SessionPulse from '@/components/SessionPulse'
 import CopilotShortcut from '@/components/CopilotShortcut'
 import AppChatPanelHost from '@/components/ai/AppChatPanelHost'
-import ClientErrorLogger from '@/components/ClientErrorLogger'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ backgroundColor: '#faf8f4', minHeight: '100vh' }}>
-      <ClientErrorLogger />
       <CopilotShortcut />
       <ErrorBoundary>
         <Sidebar />
