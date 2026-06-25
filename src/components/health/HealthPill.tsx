@@ -14,7 +14,7 @@ const BUCKET_COLORS: Record<
 
 export default function HealthPill({ breakdown }: { breakdown: HealthBreakdown }) {
   const [open, setOpen] = useState(false)
-  const c = BUCKET_COLORS[breakdown.bucket]
+  const c = BUCKET_COLORS[breakdown.bucket] ?? BUCKET_COLORS.critical
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
       <button

@@ -62,7 +62,7 @@ export function memoryDeleteClient(id: string): void {
 }
 
 export function memoryGetJobsForClient(businessName: string): CategorizationJob[] {
-  const lower = businessName.toLowerCase()
+  const lower = (businessName ?? '').toLowerCase()
   return _jobs.filter((j) => j.client_name.toLowerCase() === lower)
 }
 
