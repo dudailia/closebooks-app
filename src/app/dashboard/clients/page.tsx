@@ -207,6 +207,7 @@ function ClientCard({
   client,
   onEdit,
   onDelete,
+  health,
 }: {
   client: Client
   onEdit: (c: Client) => void
