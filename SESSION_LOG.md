@@ -1,7 +1,7 @@
 # SESSION_LOG — CloseBooks handoff
 
-**Last updated:** 2026-06-25 · **Branch:** `main` · **HEAD:** `5199c36a`
-**Deploy state:** committed `main` == `origin/main` (pushed/deployed; verified this session via `git log -1` + `git status -sb` — working tree clean). The §4 client-persistence fix is committed & live (`5199c36a`) and **FULLY VERIFIED — all 4 steps (create, refresh-survival, edit-persist, delete-persist) confirmed via direct Supabase queries.** Everything else below is live.
+**Last updated:** 2026-06-25 · **Branch:** `main` · **HEAD:** `a0293d1a` (code) — doc commit follows
+**Deploy state:** committed `main` == `origin/main` (pushed/deployed; verified this session via `git log -1` + `git status -sb`). §4 client-persistence is **FULLY VERIFIED** (all 4 steps confirmed via direct Supabase queries). **§2 (`job.status` normalization) and §3 (health-score unification) are now FIXED & DEPLOYED (`a0293d1a`)** — §3 visually confirmed (pill == card on Sunrise). Remaining work is all non-data: §5 instrumentation removal → §7 Stripe → §8 design. Everything below is live.
 
 > This is a point-in-time handoff, not durable architecture docs (those live in `CLAUDE.md`).
 > A fresh session with zero context can read this top-to-bottom and know exactly where things stand.
@@ -12,10 +12,9 @@
 - **No test suite.** Correctness gate is Vercel build + manual browser check.
 
 ## START HERE — highest-priority unfinished work, in order
-1. **§2 + §3 — `job.status` `'complete'` vs `'completed'` normalization + health-score unification.** Normalize `job.status` in the data layer (`mapJobFromRows`) — the page guards are insurance only — and collapse the two divergent health-score algorithms into the single `scoreClient()` source of truth (the `'complete'` mismatch also silently understates Sunrise's health, so fixing one helps the other).
-2. **§5 — remove the temporary error-logging instrumentation** once prod is confirmed stable.
-3. **§7 — Stripe** needs ~90 min of dashboard config (no code).
-4. **§8 — design work** (landing-animation overlap fix + animation-quality pass) — last.
+1. **§5 — remove the temporary error-logging instrumentation** once prod is confirmed stable.
+2. **§7 — Stripe** needs ~90 min of dashboard config (no code).
+3. **§8 — design work** (landing-animation overlap fix + animation-quality pass) — last.
 
 ---
 
@@ -27,6 +26,8 @@ All confirmed against live data and shipped to `origin/main`.
 | **`business_name` null crash** | `src/lib/memoryData.ts` (`memoryGetJobsForClient`) + `src/app/dashboard/clients/page.tsx` (search filter) | `businessName.toLowerCase()` unguarded; null `business_name` from seeded Supabase rows (cast raw in `hydrateFirmData`, no normalization) threw on every `ClientCard` initial render. Fixed: `(businessName ?? '').toLowerCase()` at the source + `(c.business_name ?? '')` in the filter. | **`be7c94d8`** |
 | **`health` prop destructuring bug** | `src/app/dashboard/clients/page.tsx` (`ClientCard`) | `health` was declared in the prop type and passed at the call site, but **omitted from the destructuring**, so it was a free variable → `ReferenceError: Can't find variable: health`. Was latent; exposed once `be7c94d8` let render proceed past the earlier crash. Fixed: added `health` to the destructure. | **`92a02129`** |
 | **`STATUS_STYLE`/`INDUSTRY_STYLE` crash (client detail)** | `src/app/dashboard/clients/[clientId]/page.tsx` (`CloseCard` line ~259, `ClientDetailPage` line ~383) | `STATUS_STYLE[job.status]` returned `undefined` (seed status `'complete'` not in the `processing/review/completed` map) → `s.bg` threw (`r.bg` minified). Fixed: normalize `'complete'→'completed'` then `?? STATUS_STYLE.review`; and `INDUSTRY_STYLE[client.industry] ?? INDUSTRY_STYLE['Other']`. | **`48adcf5f`** |
+| **§2 — `job.status` `'complete'` vs `'completed'` (durable root fix)** | `src/lib/hydrateMappers.ts` (`mapJobFromRows`) | The raw status was cast straight through, so seed/legacy `'complete'` rows reached the UI un-normalized (the page guards in `606f7698`/`48adcf5f` were insurance only). Fixed at the single read chokepoint: `(row.status === 'complete' ? 'completed' : row.status)`. Also corrects the silent side-effect — `scoreClient`'s on-time signal counts `status === 'completed'`, so Sunrise's 3 jobs are no longer miscounted. Page guards retained as defense-in-depth. | **`a0293d1a`** |
+| **§3 — two divergent health-score algorithms** | `src/app/dashboard/clients/[clientId]/page.tsx` (`HealthScoreCard` + deleted `calcHealthScore`) | The detail page already loaded the canonical `scoreClient()` result into `health` (rendered via `<HealthPill>`), but `<HealthScoreCard>` right below it rendered a **second, divergent** number from a local `calcHealthScore()` — two different scores on one page. Fixed: deleted `calcHealthScore`, fed the existing `HealthBreakdown` into `HealthScoreCard` (signals→factors, bucket→label/color), gated render on `health`. **Visually confirmed:** pill and card now show the same number on Sunrise's detail page. | **`a0293d1a`** |
 
 **Related earlier hardening this session (also deployed):**
 - **`606f7698`** — guarded the same `.bg` Record-lookup class on the **dashboard home** (`src/app/dashboard/page.tsx`: `STATUS_STYLE`, `WAR_ROOM_STYLE`) and the clients-list `INDUSTRY_STYLE`.
@@ -34,20 +35,14 @@ All confirmed against live data and shipped to `origin/main`.
 - **`aa0e5cbb`** — merge of `cursor/revenue-security-hardening-ffa8` (revenue gates, trust pages, demo messaging revert `c2ffc6ff`, and the RLS trigger migration below).
 - Migration **`supabase/migrations/20260424000000_firm_owner_auto_member_trigger.sql`** — auto-inserts the firm owner into `firm_members` on firm creation (required so new signups pass `firm_usage` RLS and the 14-day trial gate). **Applied to the live DB** (confirmed via `information_schema.triggers`).
 
-## 2. KNOWN ROOT CAUSE — NOT YET FIXED: `'complete'` vs `'completed'`
-- The `CategorizationJob['status']` type (`src/types/index.ts`) is `'processing' | 'review' | 'completed'`, and all `STATUS_STYLE` maps key off `'completed'`. **But the live/seed `jobs.status` value is `'complete'`** (confirmed: Sunrise's 3 jobs are all `'complete'`).
-- `mapJobFromRows` (`src/lib/hydrateMappers.ts`) casts the raw status with no validation, so `'complete'` flows straight into the UI.
-- The page-level guards in `606f7698`/`48adcf5f` are **insurance only**. The durable fix is one of:
-  - normalize in `mapJobFromRows` (`status === 'complete' ? 'completed' : status`), **or**
-  - correct the seed rows (`UPDATE jobs SET status='completed' WHERE status='complete'`), **or**
-  - add `'complete'` to the type union + every map.
-- **Side effect still live:** `calcHealthScore` (`[clientId]/page.tsx` line ~127) counts `j.status === 'completed'`, so for `'complete'` jobs the completion factor is silently **0** — Sunrise's health score is understated. Fixing the root normalizes this too.
+## 2. ✅ FIXED & DEPLOYED (`a0293d1a`) — `'complete'` vs `'completed'` normalized at the source
+- Was: `jobs.status` is `'complete'` in seed/live data, but the `CategorizationJob['status']` type + all `STATUS_STYLE` maps key off `'completed'`; `mapJobFromRows` cast it through un-normalized (page guards were insurance only).
+- Fix: normalized once at the read chokepoint in `mapJobFromRows` (`src/lib/hydrateMappers.ts`): `(row.status === 'complete' ? 'completed' : row.status)`. Page guards in `606f7698`/`48adcf5f` retained as defense-in-depth. The completion-counting side-effect (`scoreClient` on-time signal) is corrected as a result — see §3.
 
-## 3. CONFIRMED BUG — NOT YET FIXED: two divergent health-score algorithms
-- **Client detail page** uses a local `calcHealthScore()` (`src/app/dashboard/clients/[clientId]/page.tsx` line ~118): signals = AI-Confidence(40)/Clean-Bookkeeping(30)/Completion(20)/History(10); labels at 85/70/50.
-- **Clients list page + `HealthPill`** use `scoreClient()` (`src/lib/health/scoreClient.ts`, via `POST /api/clients/health`): signals = on-time(30)/anomalies(20)/docs(20)/recon(30); buckets at 90/75/60.
-- → The **same client shows different scores/labels** depending on the page. Not a crash.
-- **Recommended fix:** make `calcHealthScore` delegate to `scoreClient` (single source of truth). Note the return shapes differ (`{score,label,color,factors}` vs `{score,bucket,signals,topReasons}`), so the detail-page card UI needs adapting to `scoreClient`'s output.
+## 3. ✅ FIXED & DEPLOYED (`a0293d1a`) — health-score divergence eliminated
+- Was: the detail page rendered **two** scores for the same client — `<HealthPill>` from the canonical `scoreClient()` (loaded into `health` via `POST /api/clients/health`) and, right below it, `<HealthScoreCard>` from a local `calcHealthScore()` with different signals/weights/thresholds.
+- Fix: deleted `calcHealthScore`; `<HealthScoreCard>` now consumes the same `HealthBreakdown` (signals→factors, bucket→label/color), gated on `health`. Single source of truth (`scoreClient`) everywhere. **Visually confirmed:** pill and card show the same number on Sunrise's detail page.
+- **Behavior note:** the health card now hides if the `/api/clients/health` call fails (matching `<HealthPill>`'s existing `{health && …}` gating), rather than showing a contradictory local number.
 
 ## 4. ✅ FIXED & DEPLOYED — client persistence to Supabase (fully verified)
 > **Status 2026-06-25:** Committed & pushed as **`5199c36a`** ("fix: persist clients to Supabase (was memory-only, lost on refresh)"). Verified this session: `main` == `origin/main`, working tree clean. Approach A: `saveClient`/`deleteClient` → `dbSaveClient`/`dbDeleteClient` at all 4 write sites; handlers made async + `await` + surface failures (blocking `alert` for explicit save/delete, `console.warn` for the review-page background tag-save and the onboarding auto-create); `dbSaveClient`/`dbDeleteClient` now return `boolean` instead of swallowing errors; single-line TODO added on `getFirmId` for the non-owner gap (deliberately NOT fixed). Files: `src/lib/db.ts`, `src/app/dashboard/clients/page.tsx`, `src/app/dashboard/clients/[clientId]/page.tsx`, `src/app/dashboard/review/[jobId]/page.tsx`, `src/app/get-started/page.tsx`.
