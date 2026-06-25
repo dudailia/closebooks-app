@@ -5,7 +5,8 @@ import HealthPill from '@/components/health/HealthPill'
 import type { HealthBreakdown } from '@/lib/health/scoreClient'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { getClient, getJobsForClient, saveClient } from '@/lib/storage'
+import { getClient, getJobsForClient } from '@/lib/storage'
+import { dbSaveClient } from '@/lib/db'
 import { setUploadPrefillClient } from '@/lib/uploadPrefill'
 import ActivityFeed from '@/components/ActivityFeed'
 import { ClientInsightsPanel } from '@/components/InsightsPanel'
@@ -343,12 +344,15 @@ export default function ClientDetailPage() {
     setJobs(getJobsForClient(c.business_name))
   }, [clientId])
 
-  function handleSaveEdit(updated: Client) {
-    saveClient(updated)
+  async function handleSaveEdit(updated: Client) {
+    const persisted = await dbSaveClient(updated)
     setClient(updated)
     // Re-fetch jobs in case name changed
     setJobs(getJobsForClient(updated.business_name))
     setShowEdit(false)
+    if (!persisted) {
+      alert("Couldn't save these changes to the server. They're shown here but may not persist after a refresh — please try again.")
+    }
   }
 
   function handleNewClose() {

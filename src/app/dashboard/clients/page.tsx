@@ -5,7 +5,8 @@ import HealthPill from '@/components/health/HealthPill'
 import type { HealthBreakdown } from '@/lib/health/scoreClient'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { getClients, saveClient, deleteClient, getJobsForClient } from '@/lib/storage'
+import { getClients, getJobsForClient } from '@/lib/storage'
+import { dbSaveClient, dbDeleteClient } from '@/lib/db'
 import { useSubscription } from '@/contexts/SubscriptionContext'
 import { logActivity } from '@/lib/activity'
 import type { Client, ClientIndustry, AccountingSoftware } from '@/types'
@@ -354,17 +355,20 @@ export default function ClientsPage() {
     })()
   }, [clients])
 
-  function handleSave(client: Client) {
+  async function handleSave(client: Client) {
     const isNew = !clients.some((c) => c.id === client.id)
     const maxC = subscription.maxClients
     if (isNew && !subLoading && maxC > 0 && maxC < 999999 && clients.length >= maxC) {
       alert(`You've reached your plan limit of ${maxC} clients. Upgrade to add more.`)
       return
     }
-    saveClient(client)
+    const persisted = await dbSaveClient(client)
     setClients(getClients())
     setShowModal(false)
     setEditing(undefined)
+    if (!persisted) {
+      alert("Couldn't sync this client to the server. It's shown here but may not persist after a refresh — please check your connection and try again.")
+    }
     if (isNew) {
       logActivity({
         type: 'client_created',
@@ -374,10 +378,13 @@ export default function ClientsPage() {
     }
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     const client = clients.find((c) => c.id === id)
-    deleteClient(id)
+    const persisted = await dbDeleteClient(id)
     setClients((prev) => prev.filter((c) => c.id !== id))
+    if (!persisted) {
+      alert("Couldn't remove this client on the server. It's gone locally but may reappear after a refresh — please try again.")
+    }
     if (client) {
       logActivity({
         type: 'client_deleted',

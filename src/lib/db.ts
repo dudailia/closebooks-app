@@ -24,6 +24,7 @@ import type { CategorizationJob, Client, Transaction } from '@/types'
 const AI_REASONING_NOTE_PREFIX = '__cb_ai_reasoning__:'
 
 /** Returns the firm ID for the currently authenticated user, or null. */
+// TODO: resolves firm via firms.owner_id only — non-owner team members won't persist (multi-user is a future problem; solo-owner is the current reality).
 async function getFirmId(): Promise<string | null> {
   try {
     const supabase = createClient()
@@ -232,30 +233,43 @@ export async function dbGetClients(): Promise<Client[]> {
   }
 }
 
-export async function dbSaveClient(client: Client): Promise<void> {
+/**
+ * Persist a client. Writes the in-memory cache synchronously (always), then Supabase.
+ * Returns true when durably persisted — or in demo mode (no Supabase) where memory IS
+ * the system of record. Returns false when Supabase is configured but the write did not
+ * reach it (no firm/session, RLS, or network), so callers can surface a real error.
+ */
+export async function dbSaveClient(client: Client): Promise<boolean> {
   lsSaveClient(client)
   try {
     const supabase = createClient()
-    if (!supabase) return
+    if (!supabase) return true // demo mode: in-memory cache is the system of record
     const firmId = await getFirmId()
-    if (!firmId) return
-    await supabase.from('clients').upsert(
+    if (!firmId) return false  // configured but no firm/session — would be lost on refresh
+    const { error } = await supabase.from('clients').upsert(
       { ...client, firm_id: firmId },
       { onConflict: 'id' }
     )
+    return !error
   } catch {
-    // ignore
+    return false
   }
 }
 
-export async function dbDeleteClient(id: string): Promise<void> {
+/**
+ * Delete a client. Removes from the in-memory cache synchronously, then Supabase.
+ * Returns true when durably persisted (or in demo mode); false when Supabase is
+ * configured but the delete did not reach it, so callers can surface it.
+ */
+export async function dbDeleteClient(id: string): Promise<boolean> {
   lsDeleteClient(id)
   try {
     const supabase = createClient()
-    if (!supabase) return
-    await supabase.from('clients').delete().eq('id', id)
+    if (!supabase) return true // demo mode: in-memory cache is the system of record
+    const { error } = await supabase.from('clients').delete().eq('id', id)
+    return !error
   } catch {
-    // ignore
+    return false
   }
 }
 

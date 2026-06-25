@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { getRecentCorrections } from '@/lib/corrections'
-import { saveJob, saveClient } from '@/lib/storage'
+import { saveJob } from '@/lib/storage'
+import { dbSaveClient } from '@/lib/db'
 import { logActivity } from '@/lib/activity'
 import { notify } from '@/lib/notify'
 import type { ChartOfAccounts, CategorizationJob, Transaction } from '@/types'
@@ -449,7 +450,9 @@ export default function GetStartedPage() {
       saveJob(job)
 
       if (firmName.trim()) {
-        saveClient({
+        // Onboarding can run before the firm row exists; dbSaveClient then returns false
+        // and the client lives in memory until a later save — expected, so we log not alert.
+        const persisted = await dbSaveClient({
           id: `client-${Date.now()}`,
           business_name: clientName,
           industry: 'Professional Services',
@@ -457,6 +460,7 @@ export default function GetStartedPage() {
           accounting_software: (software as 'QuickBooks' | 'Xero' | 'Other') || 'Other',
           created_at: new Date().toISOString(),
         })
+        if (!persisted) console.warn('Onboarding client not yet persisted to Supabase (firm row may not exist yet)')
       }
 
       logActivity({
