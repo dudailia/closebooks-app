@@ -116,50 +116,23 @@ function EditModal({ client, onSave, onClose }: { client: Client; onSave: (c: Cl
 // Health score helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function calcHealthScore(jobs: CategorizationJob[]): { score: number; label: string; color: string; factors: { name: string; points: number; max: number; detail: string }[] } {
-  if (jobs.length === 0) return { score: 0, label: 'No data', color: '#a09a94', factors: [] }
-
-  const allTx      = jobs.flatMap((j) => j.transactions)
-  const approved   = allTx.filter((t) => t.status === 'approved' || t.status === 'edited').length
-  const flagged    = allTx.filter((t) => t.status === 'flagged').length
-  const totalTx    = allTx.length
-  const allConfs   = allTx.filter((t) => t.confidence > 0).map((t) => t.confidence)
-  const avgConf    = allConfs.length > 0 ? allConfs.reduce((a, b) => a + b, 0) / allConfs.length : 0
-  const completedJobs = jobs.filter((j) => j.status === 'completed').length
-
-  // Confidence score: 0–40 points
-  const confPts = Math.round(avgConf * 40)
-
-  // Low flagged ratio: 0–30 points (fewer flags = more points)
-  const flagRatio  = totalTx > 0 ? flagged / totalTx : 0
-  const flagPts    = Math.round(Math.max(0, (1 - flagRatio * 5)) * 30)
-
-  // Completion rate: 0–20 points
-  const compRate   = jobs.length > 0 ? completedJobs / jobs.length : 0
-  const compPts    = Math.round(compRate * 20)
-
-  // History / data richness: 0–10 points
-  const histPts    = Math.min(10, jobs.length * 2)
-
-  const score = Math.min(100, confPts + flagPts + compPts + histPts)
-  const label = score >= 85 ? 'Excellent' : score >= 70 ? 'Good' : score >= 50 ? 'Fair' : 'Needs Attention'
-  const color = score >= 85 ? '#059669' : score >= 70 ? '#2d5a27' : score >= 50 ? '#d97706' : '#dc2626'
-
-  return {
-    score,
-    label,
-    color,
-    factors: [
-      { name: 'AI Confidence',    points: confPts, max: 40, detail: `${Math.round(avgConf * 100)}% avg confidence` },
-      { name: 'Clean Bookkeeping',points: flagPts, max: 30, detail: `${flagged} of ${totalTx} tx flagged` },
-      { name: 'Close Completion', points: compPts, max: 20, detail: `${completedJobs}/${jobs.length} closes complete` },
-      { name: 'History',          points: histPts, max: 10, detail: `${jobs.length} close${jobs.length !== 1 ? 's' : ''} on file` },
-    ],
-  }
+const BUCKET_DISPLAY: Record<HealthBreakdown['bucket'], { label: string; color: string }> = {
+  excellent: { label: 'Excellent', color: '#059669' },
+  good:      { label: 'Good',      color: '#d97706' },
+  attention: { label: 'Attention', color: '#ea580c' },
+  critical:  { label: 'Critical',  color: '#dc2626' },
 }
 
-function HealthScoreCard({ jobs, clientName }: { jobs: CategorizationJob[]; clientName: string }) {
-  const { score, label, color, factors } = calcHealthScore(jobs)
+function HealthScoreCard({ breakdown, jobs, clientName }: { breakdown: HealthBreakdown; jobs: CategorizationJob[]; clientName: string }) {
+  const { score } = breakdown
+  const { label, color } = BUCKET_DISPLAY[breakdown.bucket] ?? BUCKET_DISPLAY.critical
+  const sig = breakdown.signals
+  const factors = [
+    { name: 'On-Time Close',  points: sig.onTime.points,    max: sig.onTime.max,    detail: sig.onTime.note },
+    { name: 'Anomalies',      points: sig.anomalies.points, max: sig.anomalies.max, detail: sig.anomalies.note },
+    { name: 'Documents',      points: sig.docs.points,      max: sig.docs.max,      detail: sig.docs.note },
+    { name: 'Reconciliation', points: sig.recon.points,     max: sig.recon.max,     detail: sig.recon.note },
+  ]
   const r = 36
   const circumference = 2 * Math.PI * r
   const offset = circumference * (1 - score / 100)
@@ -186,8 +159,6 @@ function HealthScoreCard({ jobs, clientName }: { jobs: CategorizationJob[]; clie
     a.click()
     URL.revokeObjectURL(url)
   }
-
-  if (jobs.length === 0) return null
 
   return (
     <div className="rounded-xl border p-5" style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}>
@@ -532,7 +503,7 @@ export default function ClientDetailPage() {
         )}
 
         {/* Health Score */}
-        <HealthScoreCard jobs={jobs} clientName={client.business_name} />
+        {health && <HealthScoreCard breakdown={health} jobs={jobs} clientName={client.business_name} />}
 
         {/* Connected Bank Account */}
         <div>
