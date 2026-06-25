@@ -10,7 +10,7 @@ import NarrativeInsight from '@/components/ai/NarrativeInsight'
 import SendMonthlyReportButton from '@/components/reports/SendMonthlyReportButton'
 import AutoCloseModal from '@/components/ai/AutoCloseModal'
 import { getJob, saveJob, getJobs } from '@/lib/storage'
-import { dbGetJob, dbSaveJob } from '@/lib/db'
+import { dbGetJob, dbSaveJob, dbSaveClient } from '@/lib/db'
 import { detectRecurring } from '@/lib/recurringDetection'
 import { logActivity } from '@/lib/activity'
 import { getQBOConnection, recordQBOSync } from '@/lib/integrations'
@@ -24,7 +24,7 @@ import CloseChat from '@/components/CloseChat'
 import TaxHandoffButton from '@/components/TaxHandoffButton'
 import ClientEmailDraft from '@/components/ClientEmailDraft'
 import BenchmarkPanel from '@/components/BenchmarkPanel'
-import { getClients, saveClient } from '@/lib/storage'
+import { getClients } from '@/lib/storage'
 import { startSession, endSession } from '@/lib/timeTracking'
 import type { QBOConnection } from '@/lib/integrations'
 import type { CategorizationJob, Transaction } from '@/types'
@@ -1639,10 +1639,12 @@ export default function ReviewPage() {
               <BenchmarkPanel
                 job={job}
                 industry={clientIndustry}
-                onIndustryChange={(ind) => {
+                onIndustryChange={async (ind) => {
                   setClientIndustry(ind)
                   const client = getClients().find((c) => c.business_name === job.client_name)
-                  if (client) saveClient({ ...client, industry: ind })
+                  if (client && !(await dbSaveClient({ ...client, industry: ind }))) {
+                    console.warn('Failed to persist client industry change to Supabase')
+                  }
                 }}
               />
             )}

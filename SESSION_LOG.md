@@ -1,7 +1,7 @@
 # SESSION_LOG — CloseBooks handoff
 
 **Last updated:** 2026-06-25 · **Branch:** `main` · **HEAD:** `48adcf5f`
-**Deploy state:** local `main` == `origin/main` == `48adcf5f` — **everything below is pushed and deployed** (Vercel auto-deploys `main`).
+**Deploy state:** committed `main` == `origin/main` == `48adcf5f` (pushed/deployed). **⚠️ The §4 client-persistence fix is now applied in the working tree but NOT committed or pushed** — see §4 and "Uncommitted right now". Everything else below is live.
 
 > This is a point-in-time handoff, not durable architecture docs (those live in `CLAUDE.md`).
 > A fresh session with zero context can read this top-to-bottom and know exactly where things stand.
@@ -12,7 +12,7 @@
 - **No test suite.** Correctness gate is Vercel build + manual browser check.
 
 ## START HERE — highest-priority unfinished work, in order
-1. **§4 — `dbSaveClient` is never called → new clients vanish on refresh.** Core data-integrity bug. Approach audited + approved, diff not yet applied.
+1. ~~**§4 — `dbSaveClient` is never called → new clients vanish on refresh.**~~ ✅ **FIX APPLIED (working tree, uncommitted) 2026-06-25** — Approach A wired at all 4 write sites + error-surfacing hardening + TODO on `getFirmId`. Not yet committed/pushed; not yet build-verified on Vercel. Next: commit → `! git push origin main` → confirm Vercel build → manual F5-persistence check.
 2. **§2 — `'complete'` vs `'completed'` data/type mismatch.** Page guards stop the crashes; the data-layer normalization is the real fix.
 3. **§3 — two divergent health-score algorithms** show different numbers for the same client.
 4. **§5 — remove the temporary error-logging instrumentation** once prod is confirmed stable.
@@ -50,7 +50,8 @@ All confirmed against live data and shipped to `origin/main`.
 - → The **same client shows different scores/labels** depending on the page. Not a crash.
 - **Recommended fix:** make `calcHealthScore` delegate to `scoreClient` (single source of truth). Note the return shapes differ (`{score,label,color,factors}` vs `{score,bucket,signals,topReasons}`), so the detail-page card UI needs adapting to `scoreClient`'s output.
 
-## 4. CRITICAL — NOT YET FIXED: new clients never persist to Supabase
+## 4. ✅ FIX APPLIED (uncommitted) — new clients never persist to Supabase
+> **Status 2026-06-25:** Approach A applied to the working tree (not yet committed/pushed). Changes: `saveClient`/`deleteClient` → `dbSaveClient`/`dbDeleteClient` at all 4 write sites; handlers made async + `await` + surface failures (blocking `alert` for explicit save/delete, `console.warn` for the review-page background tag-save and the onboarding auto-create); `dbSaveClient`/`dbDeleteClient` now return `boolean` instead of swallowing errors; single-line TODO added on `getFirmId` for the non-owner gap (deliberately NOT fixed). Files: `src/lib/db.ts`, `src/app/dashboard/clients/page.tsx`, `src/app/dashboard/clients/[clientId]/page.tsx`, `src/app/dashboard/review/[jobId]/page.tsx`, `src/app/get-started/page.tsx`. Original analysis below retained for context.
 - **`dbSaveClient()` (`src/lib/db.ts:235`) and `dbGetClients()` (`src/lib/db.ts:214`) have ZERO call sites.** The "Add Client" UI (`ClientModal` → `handleSave` → `saveClient` from `src/lib/storage.ts` → `memorySaveClient`) writes **only to the browser tab's in-memory `_clients` array** (`src/lib/memoryData.ts`). These modules are client-side (no `'use server'`; all importers are `'use client'`).
 - **Blast radius:** a created client **survives soft/client-side navigation but vanishes on hard refresh (F5)** — on reload, `FirmDataProvider` runs `hydrateFirmData()` which overwrites `_clients` with the Supabase rows (which never received the new client). It also never appears on another device/browser. *Not* a serverless cold-start issue — it's browser memory.
 - Reads look fine only because `hydrateFirmData` loads Supabase clients into memory on mount. **Only writes are dropped.**
@@ -60,7 +61,10 @@ All confirmed against live data and shipped to `origin/main`.
   2. `src/app/dashboard/clients/[clientId]/page.tsx:345` — `saveClient(updated)` → `dbSaveClient(updated)`.
   3. `src/app/dashboard/review/[jobId]/page.tsx:1645` — `saveClient({...client, industry})` → `dbSaveClient(...)`.
   4. `src/app/get-started/page.tsx:452` — onboarding `saveClient({...})` → `dbSaveClient(...)` (only persists if the firm row already exists at that point).
-  - `dbSaveClient` writes memory synchronously before its first `await`, so `setClients(getClients())` right after still reflects the new client. Recommended hardening: make `handleSave` `await` and surface persist failures (requires un-swallowing the error in `dbSaveClient`).
+  - `dbSaveClient` writes memory synchronously before its first `await`, so `setClients(getClients())` right after still reflects the new client. Recommended hardening: make `handleSave` `await` and surface persist failures (requires un-swallowing the error in `dbSaveClient`). **(Both done in the applied fix above.)**
+
+## Found but not fixed (logged 2026-06-25)
+- **`saveJob` (memory-only) used in onboarding instead of `dbSaveJob` → new jobs may not persist to Supabase.** `src/app/get-started/page.tsx:449` calls `saveJob(job)` (from `@/lib/storage` → `memorySaveJob`, in-memory only) — the **exact same bug class as §4**, but for **jobs** instead of clients. Spotted while wiring the §4 client fix; left untouched (out of §4 scope). Likely blast radius mirrors §4: the job survives soft nav but may vanish on hard refresh **unless** a later `dbSaveJob` (e.g. on the review page) re-persists it — needs confirming. Fix would mirror Approach A: swap `saveJob` → `dbSaveJob` here, and audit any other `saveJob`-from-`@/lib/storage` call sites (e.g. `dashboard/bulk-close/page.tsx`). Its own ticket — do NOT bundle into §4.
 
 ## 5. TEMPORARY — REMOVE ONCE STABLE: client-error instrumentation
 Diagnostic code added to capture the real production error message+stack in Vercel logs. It has caught **3 real bugs** so far (the `health`, `business_name`, and `r.bg` crashes). Still live. To remove:
@@ -98,4 +102,5 @@ Full audit verdict: checkout (`/api/stripe/checkout`), webhook (`/api/stripe/web
 - **Stash note:** `stash@{0}` ("main working tree before branch switch") still holds session-start untracked/modified files that were never restored: `docs/audit/10_demo_path_batch1.md`, `10_demo_path_batch2.md`, `11_demo_path_batch2.md`, `DEMO_SURFACE_DRAFT.md`, `.env.example` (modified), `src/app/(auth)/signup/page.tsx` (modified), `supabase/.temp/cli-latest`, and `PricingTeaser.tsx`. **`CLAUDE.md` was recovered from this stash on 2026-06-25.** Some entries (e.g. `PricingTeaser.tsx`, signup, `.env.example`) may now conflict with committed work — inspect with `git stash show -p stash@{0}` before restoring anything else; do not blindly `stash pop`.
 
 ## Uncommitted right now
-`SESSION_LOG.md` (this file), the recovered `CLAUDE.md`, and `docs/audit/` reports are untracked. Commit them if you want them in history.
+- **§4 client-persistence fix (working tree, not committed):** `src/lib/db.ts`, `src/app/dashboard/clients/page.tsx`, `src/app/dashboard/clients/[clientId]/page.tsx`, `src/app/dashboard/review/[jobId]/page.tsx`, `src/app/get-started/page.tsx`.
+- `SESSION_LOG.md` (this file), the recovered `CLAUDE.md`, and `docs/audit/` reports are untracked. Commit them if you want them in history.
