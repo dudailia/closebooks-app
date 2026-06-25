@@ -1,7 +1,7 @@
 # SESSION_LOG — CloseBooks handoff
 
 **Last updated:** 2026-06-25 · **Branch:** `main` · **HEAD:** `5199c36a`
-**Deploy state:** committed `main` == `origin/main` (pushed/deployed; verified this session via `git log -1` + `git status -sb` — working tree clean). The §4 client-persistence fix is committed & live (`5199c36a`); **create, refresh-survival, and delete-persist are all confirmed via direct Supabase queries.** Sole remaining check: edit-persist (untested — low risk, shares the confirmed `dbSaveClient` path). Everything else below is live.
+**Deploy state:** committed `main` == `origin/main` (pushed/deployed; verified this session via `git log -1` + `git status -sb` — working tree clean). The §4 client-persistence fix is committed & live (`5199c36a`) and **FULLY VERIFIED — all 4 steps (create, refresh-survival, edit-persist, delete-persist) confirmed via direct Supabase queries.** Everything else below is live.
 
 > This is a point-in-time handoff, not durable architecture docs (those live in `CLAUDE.md`).
 > A fresh session with zero context can read this top-to-bottom and know exactly where things stand.
@@ -16,7 +16,6 @@
 2. **§5 — remove the temporary error-logging instrumentation** once prod is confirmed stable.
 3. **§7 — Stripe** needs ~90 min of dashboard config (no code).
 4. **§8 — design work** (landing-animation overlap fix + animation-quality pass) — last.
-5. **§4 cleanup — edit-persist** is the only unverified leg of the client-persistence fix; confirm an edit survives hard refresh when convenient (low risk — shares the confirmed `dbSaveClient` path).
 
 ---
 
@@ -50,13 +49,13 @@ All confirmed against live data and shipped to `origin/main`.
 - → The **same client shows different scores/labels** depending on the page. Not a crash.
 - **Recommended fix:** make `calcHealthScore` delegate to `scoreClient` (single source of truth). Note the return shapes differ (`{score,label,color,factors}` vs `{score,bucket,signals,topReasons}`), so the detail-page card UI needs adapting to `scoreClient`'s output.
 
-## 4. ✅ FIXED & DEPLOYED — client persistence to Supabase (create/refresh/delete verified)
+## 4. ✅ FIXED & DEPLOYED — client persistence to Supabase (fully verified)
 > **Status 2026-06-25:** Committed & pushed as **`5199c36a`** ("fix: persist clients to Supabase (was memory-only, lost on refresh)"). Verified this session: `main` == `origin/main`, working tree clean. Approach A: `saveClient`/`deleteClient` → `dbSaveClient`/`dbDeleteClient` at all 4 write sites; handlers made async + `await` + surface failures (blocking `alert` for explicit save/delete, `console.warn` for the review-page background tag-save and the onboarding auto-create); `dbSaveClient`/`dbDeleteClient` now return `boolean` instead of swallowing errors; single-line TODO added on `getFirmId` for the non-owner gap (deliberately NOT fixed). Files: `src/lib/db.ts`, `src/app/dashboard/clients/page.tsx`, `src/app/dashboard/clients/[clientId]/page.tsx`, `src/app/dashboard/review/[jobId]/page.tsx`, `src/app/get-started/page.tsx`.
 >
-> **Manual verification — 4-step, 3/4 CONFIRMED via direct Supabase queries (not just UI):**
+> **Manual verification — 4-step, 4/4 CONFIRMED via direct Supabase queries (not just UI):**
 > - ✅ **Create + hard-refresh survival: CONFIRMED.** Client "f", id `9c2e49d2-3b9e-4fed-95cd-8b9a95471ccd`, industry "Construction", `created_at` `2026-06-25 18:35:38` — the row exists in `clients`, proving the create path persists to the DB, not just browser memory.
+> - ✅ **Edit-persist: CONFIRMED.** Acme Corp's `industry` changed "Manufacturing" → "Nonprofit" via the UI; a direct query confirms the new value survived a hard refresh — `dbSaveClient` updates persist to Supabase.
 > - ✅ **Delete-persist: CONFIRMED.** After deleting client "f" (same id) + hard refresh, a direct query shows the row is **gone** from the `clients` table — `dbDeleteClient` genuinely deletes from Supabase. (The earlier "still present" reading was a stale/mis-sequenced check, not a real bug.)
-> - ⚠️ **Edit-persist: NOT independently tested.** The only remaining check — low risk, shares the now-confirmed `dbSaveClient` write path. Tracked as START HERE #5.
 >
 > Original analysis below retained for context.
 - **`dbSaveClient()` (`src/lib/db.ts:235`) and `dbGetClients()` (`src/lib/db.ts:214`) have ZERO call sites.** The "Add Client" UI (`ClientModal` → `handleSave` → `saveClient` from `src/lib/storage.ts` → `memorySaveClient`) writes **only to the browser tab's in-memory `_clients` array** (`src/lib/memoryData.ts`). These modules are client-side (no `'use server'`; all importers are `'use client'`).
