@@ -256,7 +256,9 @@ function HealthScoreCard({ jobs, clientName }: { jobs: CategorizationJob[]; clie
 
 function CloseCard({ job }: { job: CategorizationJob }) {
   const router = useRouter()
-  const s = STATUS_STYLE[job.status]
+  // Seeded jobs use 'complete'; the map/type use 'completed'. Normalize, then fall back defensively.
+  const statusKey = ((job.status as string) === 'complete' ? 'completed' : job.status) as keyof typeof STATUS_STYLE
+  const s = STATUS_STYLE[statusKey] ?? STATUS_STYLE.review
   const pct = job.total_transactions > 0
     ? Math.round(((job.approved + job.flagged) / job.total_transactions) * 100)
     : 0
@@ -380,7 +382,7 @@ export default function ClientDetailPage() {
     )
   }
 
-  const industryStyle = INDUSTRY_STYLE[client.industry]
+  const industryStyle = INDUSTRY_STYLE[client.industry] ?? INDUSTRY_STYLE['Other']
 
   // Aggregate stats from jobs
   const totalTx    = jobs.reduce((s, j) => s + j.total_transactions, 0)
