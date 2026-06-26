@@ -74,8 +74,8 @@ export default function TopBar() {
   return (
     <header style={{
       height: 48,
-      backgroundColor: '#ffffff',
-      borderBottom: '1px solid #e8e0d4',
+      backgroundColor: '#080808',
+      borderBottom: '1px solid #1f1f1f',
       display: 'flex',
       alignItems: 'center',
       paddingLeft: 56, // leaves room for mobile hamburger
@@ -86,23 +86,23 @@ export default function TopBar() {
 
       {/* Breadcrumb */}
       <nav style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
-        <Link href="/dashboard" style={{ fontSize: 13, color: '#a09a94', textDecoration: 'none', flexShrink: 0 }}
-          onMouseEnter={e => { e.currentTarget.style.color = '#6b6560' }}
-          onMouseLeave={e => { e.currentTarget.style.color = '#a09a94' }}
+        <Link href="/dashboard" style={{ fontSize: 13, color: '#888888', textDecoration: 'none', flexShrink: 0 }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#FAFAFA' }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#888888' }}
         >
           CloseBooks
         </Link>
         {crumbs.map((crumb, i) => (
           <span key={crumb.href} style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
-            <span style={{ color: '#d4cdc6', fontSize: 13 }}>›</span>
+            <span style={{ color: '#444444', fontSize: 13 }}>›</span>
             {i === crumbs.length - 1 ? (
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1714', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#FAFAFA', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {crumb.label}
               </span>
             ) : (
-              <Link href={crumb.href} style={{ fontSize: 13, color: '#6b6560', textDecoration: 'none', whiteSpace: 'nowrap' }}
-                onMouseEnter={e => { e.currentTarget.style.color = '#1a1714' }}
-                onMouseLeave={e => { e.currentTarget.style.color = '#6b6560' }}
+              <Link href={crumb.href} style={{ fontSize: 13, color: '#888888', textDecoration: 'none', whiteSpace: 'nowrap' }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#FAFAFA' }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#888888' }}
               >
                 {crumb.label}
               </Link>
@@ -123,16 +123,17 @@ export default function TopBar() {
               gap: 6,
               padding: '6px 14px',
               borderRadius: 8,
-              backgroundColor: '#2d5a27',
-              color: '#fff',
+              backgroundColor: '#00C853',
+              color: '#000',
               fontSize: 12,
-              fontWeight: 600,
+              fontWeight: 700,
               textDecoration: 'none',
               flexShrink: 0,
               whiteSpace: 'nowrap',
+              boxShadow: '0 0 16px rgba(0,200,83,0.3)',
             }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#00d95a' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#00C853' }}
           >
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
               <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
