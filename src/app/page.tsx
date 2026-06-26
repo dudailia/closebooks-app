@@ -12,11 +12,14 @@ import PilotOffer from '@/components/landing/PilotOffer'
 import PricingSection from '@/components/landing/PricingSection'
 import CtaBand from '@/components/landing/CtaBand'
 import Footer from '@/components/landing/Footer'
+import PublicMotion from '@/components/landing/motion/PublicMotion'
 
 export default function LandingPage() {
   return (
+    <PublicMotion>
     <div
       data-theme="dark"
+      data-surface="public"
       style={{
         minHeight: '100vh',
         backgroundColor: '#080808',
@@ -41,5 +44,6 @@ export default function LandingPage() {
       </main>
       <Footer />
     </div>
+    </PublicMotion>
   )
 }
