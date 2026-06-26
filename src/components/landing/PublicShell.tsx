@@ -1,10 +1,13 @@
+import PublicMotion from './motion/PublicMotion'
 import Nav from './Nav'
 import Footer from './Footer'
 
 export default function PublicShell({ children }: { children: React.ReactNode }) {
   return (
+    <PublicMotion>
     <div
       data-theme="dark"
+      data-surface="public"
       style={{
         minHeight: '100vh',
         backgroundColor: '#080808',
@@ -21,5 +24,6 @@ export default function PublicShell({ children }: { children: React.ReactNode })
       <div style={{ flex: 1 }}>{children}</div>
       <Footer />
     </div>
+    </PublicMotion>
   )
 }
