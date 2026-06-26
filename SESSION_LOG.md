@@ -1,7 +1,7 @@
 # SESSION_LOG — CloseBooks handoff
 
-**Last updated:** 2026-06-25 · **Branch:** `main` · **HEAD:** `a0293d1a` (code) — doc commit follows
-**Deploy state:** committed `main` == `origin/main` (pushed/deployed; verified this session via `git log -1` + `git status -sb`). §4 client-persistence is **FULLY VERIFIED** (all 4 steps confirmed via direct Supabase queries). **§2 (`job.status` normalization) and §3 (health-score unification) are now FIXED & DEPLOYED (`a0293d1a`)** — §3 visually confirmed (pill == card on Sunrise). Remaining work is all non-data: §5 instrumentation removal → §7 Stripe → §8 design. Everything below is live.
+**Last updated:** 2026-06-26 · **Branch:** `main` · **HEAD:** `d97eea69`
+**Deploy state:** local `main` == `origin/main` == `d97eea69` (pushed/deployed; verified this session via `git log -1` + `git status -sb`, working tree clean). All data-layer bugs (§2/§3/§4) remain FIXED & DEPLOYED. **§5 instrumentation removal is now DONE (`c4445912`).** Design advanced: the AgentOrchestra orbit overlap/clipping bugs are fixed (`772b193f`, `bbedc0e3`), and the **Landing Foundation Pass Increment 0 (motion infra) shipped at `d97eea69`** — but the 14-section rollout is **PAUSED** pending a direction decision (see "Landing Foundation Pass" below). **§7 Stripe is untouched and remains the actual revenue blocker.** Everything below is live.
 
 > This is a point-in-time handoff, not durable architecture docs (those live in `CLAUDE.md`).
 > A fresh session with zero context can read this top-to-bottom and know exactly where things stand.
@@ -12,9 +12,9 @@
 - **No test suite.** Correctness gate is Vercel build + manual browser check.
 
 ## START HERE — highest-priority unfinished work, in order
-1. **§5 — remove the temporary error-logging instrumentation** once prod is confirmed stable.
-2. **§7 — Stripe** needs ~90 min of dashboard config (no code).
-3. **§8 — design work** (landing-animation overlap fix + animation-quality pass) — last.
+1. **§7 — Stripe is the actual revenue blocker.** ~90 min of Stripe Dashboard config (no code); **zero confirmed transactions** to date. Deferred **three times today** in favor of design work — this is the real gate on revenue, not a code problem.
+2. **Hero craft pilot (NEW, not yet started)** — one bounded high-craft pilot on the Hero using the already-shipped motion infra, to decide the site-wide animation direction from evidence. See "Landing Foundation Pass" below.
+3. **Landing Foundation Pass Tasks 1–14 (Nav→Footer) — PAUSED**, not abandoned. Resume (under the original spec or a revised one) only after the Hero pilot settles the "calm precision vs denser/maximalist" question.
 
 ---
 
@@ -67,19 +67,15 @@ All confirmed against live data and shipped to `origin/main`.
 ## Found but not fixed (logged 2026-06-25)
 - **`saveJob` (memory-only) used in onboarding instead of `dbSaveJob` → new jobs may not persist to Supabase.** `src/app/get-started/page.tsx:449` calls `saveJob(job)` (from `@/lib/storage` → `memorySaveJob`, in-memory only) — the **exact same bug class as §4**, but for **jobs** instead of clients. Spotted while wiring the §4 client fix; left untouched (out of §4 scope). Likely blast radius mirrors §4: the job survives soft nav but may vanish on hard refresh **unless** a later `dbSaveJob` (e.g. on the review page) re-persists it — needs confirming. Fix would mirror Approach A: swap `saveJob` → `dbSaveJob` here, and audit any other `saveJob`-from-`@/lib/storage` call sites (e.g. `dashboard/bulk-close/page.tsx`). Its own ticket — do NOT bundle into §4.
 
-## 5. TEMPORARY — REMOVE ONCE STABLE: client-error instrumentation
-Diagnostic code added to capture the real production error message+stack in Vercel logs. It has caught **3 real bugs** so far (the `health`, `business_name`, and `r.bg` crashes). Still live. To remove:
-- Delete `src/app/api/client-errors/route.ts`.
-- Delete `src/components/ClientErrorLogger.tsx` and remove its import + `<ClientErrorLogger />` mount in `src/app/dashboard/layout.tsx`.
-- In `src/app/dashboard/error.tsx`, remove the `fetch('/api/client-errors', …)` POST block inside the `useEffect` (the `console.error` line can stay or go).
-- Added in `be7c94d8`; grep `client-errors` / `ClientErrorLogger` to confirm full removal.
+## 5. ✅ DONE — temporary client-error instrumentation removed (`c4445912`)
+Served its purpose (caught the `health`, `business_name`, and `r.bg` crashes). Fully removed this session: deleted `src/app/api/client-errors/route.ts` and `src/components/ClientErrorLogger.tsx`, dropped the `<ClientErrorLogger />` mount + import from `src/app/dashboard/layout.tsx`, and removed the `fetch('/api/client-errors', …)` block from `src/app/dashboard/error.tsx` (the permanent `console.error` retained). Grep for `client-errors`/`ClientErrorLogger` confirmed zero remaining references. `4 files changed, 74 deletions(-)`.
 
 ## 6. KNOWN BUT DEFERRED: build-error suppression
 - `next.config.mjs`: `typescript.ignoreBuildErrors: true` (line 5) and `eslint.ignoreDuringBuilds: true` (line 9). **This is the reason none of today's type-detectable bugs were caught before deploy** (the `health` free variable, the status-key mismatch, etc.).
 - **Not touched** — flipping `ignoreBuildErrors` to `false` will likely surface a backlog of pre-existing type errors. Do it on a branch first and triage the volume before committing.
 
-## 7. STRIPE: code complete, dashboard config remaining (~90 min, no code)
-Full audit verdict: checkout (`/api/stripe/checkout`), webhook (`/api/stripe/webhook`), portal (`/api/stripe/portal`), and invoices (`/api/stripe/invoices`) are all complete and correct; all Stripe env vars are present in Vercel with correct names. The end-to-end flow charges → webhook → upserts `subscriptions` → middleware grants access. **Gaps are entirely Stripe Dashboard configuration:**
+## 7. STRIPE: code complete, dashboard config remaining (~90 min, no code) — ⚠️ THE ACTUAL REVENUE BLOCKER
+**Status unchanged this session — still ZERO confirmed transactions; deferred 3× today in favor of design work.** Not a code problem; the gate is entirely Stripe Dashboard config. Full audit verdict: checkout (`/api/stripe/checkout`), webhook (`/api/stripe/webhook`), portal (`/api/stripe/portal`), and invoices (`/api/stripe/invoices`) are all complete and correct; all Stripe env vars are present in Vercel with correct names. The end-to-end flow charges → webhook → upserts `subscriptions` → middleware grants access. **Gaps are entirely Stripe Dashboard configuration:**
 1. Register the webhook endpoint (`https://<domain>/api/stripe/webhook`) with events `checkout.session.completed`, `customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`. **Without this, no paying user ever gets access.**
 2. Switch from test keys (`sk_test_*`) to live keys + live price IDs in Vercel.
 3. Activate the Stripe Billing Portal (else "Manage subscription" errors).
@@ -87,9 +83,14 @@ Full audit verdict: checkout (`/api/stripe/checkout`), webhook (`/api/stripe/web
 
 ## 8. DESIGN DECISIONS MADE
 - **Dashboard stays cream/light theme; marketing site stays dark/green. Deliberately NOT unified** — matches B2B SaaS convention (bold marketing, plain trustworthy app UI for dense financial data). Do not "harmonize" these.
-- **Two pending, not-yet-run prompts** (design/animation, lower priority than the data bugs above):
-  - (a) Fix a specific **layout-overlap bug in the "AI agents working in parallel" landing animation** (`src/components/landing/AgentOrchestra.tsx`).
-  - (b) A broader **animation-quality pass** using concrete techniques: spring easing, stagger, scroll-reveal, and `prefers-reduced-motion` support.
+- **(a) Orbit layout bugs — ✅ FIXED & DEPLOYED.** The "AI agents working in parallel" animation (`src/components/landing/AgentOrchestra.tsx`): ActivityFeed moved out of the absolute overlay so it no longer overlaps the orbit nodes (`772b193f`), and the node insets normalized to 16/82 so Categorizer/Messenger no longer clip at the 2-column breakpoint (`bbedc0e3`). Both visually confirmed by the founder.
+- **(b) Animation-quality pass — became the "Landing Foundation Pass" below** (spec'd, planned, Increment 0 shipped, rollout paused).
+
+## LANDING FOUNDATION PASS (design — IN PROGRESS, PAUSED for direction decision)
+Spec: `docs/superpowers/specs/2026-06-26-landing-foundation-design.md` (`76301f34`). Plan: `docs/superpowers/plans/2026-06-26-landing-foundation.md` (`e5edc0c4`). Goal: lift the public landing to Linear/Vercel/Stripe-tier coherence via (1) a motion-token system, (2) a global `prefers-reduced-motion` gate scoped to `[data-surface="public"]`, (3) a strict type scale — across the existing sections, **no cuts/merges** this round. Hard constraints: no `/dashboard` changes; orbit node positions + feed placement frozen; all breakpoints; reduced-motion respected.
+- **✅ Increment 0 (infra) SHIPPED — `d97eea69`.** Added `src/lib/landing/motion.ts` (easing/duration/stagger/distance tokens + `fadeUp`), `src/components/landing/motion/Reveal.tsx` (scroll primitive), `src/lib/landing/usePrefersReducedMotion.ts`, `src/components/landing/motion/PublicMotion.tsx` (client `MotionConfig reducedMotion="user"` wrapper), the 10 type-scale classes + scoped reduced-motion reset in `globals.css`, and `data-surface="public"` on `page.tsx` + `PublicShell`. Invisible to default users (nothing consumes the type classes yet); reduced-motion now neutralizes ambient loops on public surfaces only. **Awaiting founder preview verification.** Local build hangs, so the `PublicMotion` client boundary is unverified until the Vercel build passes — if the deploy build fails, that wrapper is the likely suspect and an easy fix.
+- **⏸ Tasks 1–14 (Nav→Footer) — PAUSED, not abandoned.** Mid-rollout the founder asked whether to pivot from the spec's **"calm precision"** direction to a **denser, more maximalist** animation style. A council review recommended: **don't pivot all 14 sections upfront — run one bounded high-craft pilot on the Hero first** (using the shipped infra), and decide the site-wide question from evidence rather than upfront commitment.
+- **🔜 OPEN ITEM — Hero craft pilot (not started).** Scope: push the Hero's motion/interaction to maximum polish using the existing `motion.ts`/`Reveal`; one signature moment; no jank; **cursor unchanged**. The outcome decides whether Tasks 1–14 proceed under the original spec or get revised. The plan's per-section rollout cadence (Increment 0 done; then one section per commit → Vercel preview → founder sign-off) still stands if/when the rollout resumes.
 
 ## 9. INFRASTRUCTURE STATE
 - **Supabase project ref:** `priftnaxqatppcoenpoc` (was paused earlier in the session, since restored). Schema applied; service-role key present in `.env.local` (pulled from Vercel).
