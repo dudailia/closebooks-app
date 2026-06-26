@@ -147,9 +147,9 @@ function SidebarItem({
         borderRadius: 8,
         textDecoration: 'none',
         position: 'relative',
-        backgroundColor: active ? '#e8f0e6' : 'transparent',
-        borderLeft: active ? '3px solid #2d5a27' : '3px solid transparent',
-        color: active ? '#2d5a27' : '#6b6560',
+        backgroundColor: active ? 'rgba(0,200,83,0.14)' : 'transparent',
+        borderLeft: active ? '3px solid #00C853' : '3px solid transparent',
+        color: active ? '#00C853' : '#888888',
         fontWeight: active ? 600 : 400,
         fontSize: 13,
         transition: 'background-color 0.12s, color 0.12s',
@@ -157,14 +157,14 @@ function SidebarItem({
       }}
       onMouseEnter={e => {
         if (!active) {
-          e.currentTarget.style.backgroundColor = '#f5f0ea'
-          e.currentTarget.style.color = '#1a1714'
+          e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'
+          e.currentTarget.style.color = '#FAFAFA'
         }
       }}
       onMouseLeave={e => {
         if (!active) {
           e.currentTarget.style.backgroundColor = 'transparent'
-          e.currentTarget.style.color = '#6b6560'
+          e.currentTarget.style.color = '#888888'
         }
       }}
     >
@@ -245,7 +245,7 @@ function UserFooter({ user, collapsed }: { user: User | null; collapsed: boolean
           borderRadius: 8,
           textAlign: 'left',
         }}
-        onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#f5f0ea' }}
+        onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)' }}
         onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}
       >
         <span style={{
@@ -270,11 +270,11 @@ function UserFooter({ user, collapsed }: { user: User | null; collapsed: boolean
           transition: 'max-width 0.18s ease, opacity 0.12s ease',
           minWidth: 0,
         }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#1a1714', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#FAFAFA', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {user ? name : 'Sign in'}
           </div>
           {user?.email && (
-            <div style={{ fontSize: 11, color: '#a09a94', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: 11, color: '#666666', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {user.email}
             </div>
           )}
@@ -290,8 +290,8 @@ function UserFooter({ user, collapsed }: { user: User | null; collapsed: boolean
             left: 8,
             right: 8,
             zIndex: 20,
-            backgroundColor: '#fff',
-            border: '1px solid #e8e0d4',
+            backgroundColor: '#0f0f0f',
+            border: '1px solid #1f1f1f',
             borderRadius: 10,
             boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
             overflow: 'hidden',
@@ -299,19 +299,19 @@ function UserFooter({ user, collapsed }: { user: User | null; collapsed: boolean
           }}>
             {user ? (
               <>
-                <div style={{ padding: '10px 14px', borderBottom: '1px solid #f0ebe3' }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#1a1714' }}>{name}</div>
-                  <div style={{ fontSize: 11, color: '#a09a94', marginTop: 1 }}>{user.email}</div>
+                <div style={{ padding: '10px 14px', borderBottom: '1px solid #161616' }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#FAFAFA' }}>{name}</div>
+                  <div style={{ fontSize: 11, color: '#666666', marginTop: 1 }}>{user.email}</div>
                 </div>
                 <button
                   onClick={signOut}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 8,
                     width: '100%', padding: '10px 14px', border: 'none',
-                    background: 'none', cursor: 'pointer', fontSize: 13, color: '#991b1b',
+                    background: 'none', cursor: 'pointer', fontSize: 13, color: '#FF4444',
                     textAlign: 'left',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fef2f2' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,68,68,0.12)' }}
                   onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}
                 >
                   <SignOutIcon /> Sign out
@@ -321,7 +321,7 @@ function UserFooter({ user, collapsed }: { user: User | null; collapsed: boolean
               <Link
                 href="/login"
                 onClick={() => setOpen(false)}
-                style={{ display: 'block', padding: '10px 14px', fontSize: 13, color: '#2d5a27', fontWeight: 600, textDecoration: 'none' }}
+                style={{ display: 'block', padding: '10px 14px', fontSize: 13, color: '#00C853', fontWeight: 600, textDecoration: 'none' }}
               >
                 Sign in →
               </Link>
@@ -380,8 +380,8 @@ export default function Sidebar() {
     <aside style={{
       width: W,
       height: '100vh',
-      backgroundColor: '#ffffff',
-      borderRight: '1px solid #e8e0d4',
+      backgroundColor: '#080808',
+      borderRight: '1px solid #1f1f1f',
       display: 'flex',
       flexDirection: 'column',
       transition: 'width 0.2s ease',
@@ -400,7 +400,7 @@ export default function Sidebar() {
         alignItems: 'center',
         justifyContent: collapsed ? 'center' : 'space-between',
         padding: collapsed ? '14px 0' : '14px 12px 14px 14px',
-        borderBottom: '1px solid #f0ebe3',
+        borderBottom: '1px solid #161616',
         flexShrink: 0,
       }}>
         {/* Logo */}
@@ -411,9 +411,10 @@ export default function Sidebar() {
         >
           <LedgerLogo />
           <span style={{
-            fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
-            fontSize: 16,
-            letterSpacing: '-0.01em',
+            fontFamily: 'var(--font-display), "Instrument Serif", Georgia, serif',
+            fontSize: 17,
+            color: '#FAFAFA',
+            letterSpacing: '-0.02em',
             lineHeight: 1,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -421,8 +422,7 @@ export default function Sidebar() {
             opacity: collapsed ? 0 : 1,
             transition: 'max-width 0.18s ease, opacity 0.12s ease',
           }}>
-            <span style={{ color: '#1a1714' }}>Close</span>
-            <span style={{ color: '#b8734a' }}>Books</span>
+            CloseBooks
           </span>
         </Link>
 
@@ -435,10 +435,10 @@ export default function Sidebar() {
               width: 24, height: 24, borderRadius: 6, border: 'none',
               background: 'none', cursor: 'pointer', display: 'flex',
               alignItems: 'center', justifyContent: 'center',
-              color: '#a09a94', flexShrink: 0,
+              color: '#666666', flexShrink: 0,
             }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#1a1714'; e.currentTarget.style.backgroundColor = '#f5f0ea' }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#a09a94'; e.currentTarget.style.backgroundColor = 'transparent' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#FAFAFA'; e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#666666'; e.currentTarget.style.backgroundColor = 'transparent' }}
           >
             <ChevronLeftIcon />
           </button>
@@ -454,10 +454,10 @@ export default function Sidebar() {
             width: '100%', padding: '8px 0', border: 'none',
             background: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#a09a94', borderBottom: '1px solid #f0ebe3',
+            color: '#666666', borderBottom: '1px solid #161616',
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = '#1a1714'; e.currentTarget.style.backgroundColor = '#f5f0ea' }}
-          onMouseLeave={e => { e.currentTarget.style.color = '#a09a94'; e.currentTarget.style.backgroundColor = 'transparent' }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#FAFAFA'; e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)' }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#666666'; e.currentTarget.style.backgroundColor = 'transparent' }}
         >
           <ChevronRightIcon />
         </button>
@@ -472,7 +472,7 @@ export default function Sidebar() {
                 fontSize: 10,
                 fontWeight: 700,
                 letterSpacing: '0.08em',
-                color: '#a09a94',
+                color: '#666666',
                 textTransform: 'uppercase',
                 padding: '0 4px',
                 marginBottom: 4,
@@ -481,7 +481,7 @@ export default function Sidebar() {
               </div>
             )}
             {section.label && collapsed && (
-              <div style={{ height: 1, backgroundColor: '#f0ebe3', margin: '0 4px 8px' }} />
+              <div style={{ height: 1, backgroundColor: '#161616', margin: '0 4px 8px' }} />
             )}
             {section.items.map(item => (
               <SidebarItem
@@ -497,7 +497,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div style={{
-        borderTop: '1px solid #f0ebe3',
+        borderTop: '1px solid #161616',
         padding: collapsed ? '8px 4px' : '10px',
         flexShrink: 0,
       }}>
@@ -512,16 +512,17 @@ export default function Sidebar() {
             gap: 6,
             padding: collapsed ? '7px 0' : '8px',
             borderRadius: 8,
-            backgroundColor: '#b8734a',
-            color: '#fff',
+            backgroundColor: '#00C853',
+            color: '#000',
             fontSize: 12,
-            fontWeight: 600,
+            fontWeight: 700,
             textDecoration: 'none',
             marginBottom: 8,
-            transition: 'background-color 0.12s',
+            boxShadow: '0 0 16px rgba(0,200,83,0.35)',
+            transition: 'background-color 0.12s, box-shadow 0.12s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#a05e3a' }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#b8734a' }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#00d95a'; e.currentTarget.style.boxShadow = '0 0 24px rgba(0,200,83,0.55)' }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#00C853'; e.currentTarget.style.boxShadow = '0 0 16px rgba(0,200,83,0.35)' }}
         >
           <UpgradeIcon />
           <span style={{
@@ -554,10 +555,10 @@ export default function Sidebar() {
         style={{
           position: 'fixed', top: 12, left: 12, zIndex: 40,
           width: 36, height: 36, borderRadius: 8,
-          border: '1px solid #e8e0d4',
-          backgroundColor: '#fff',
+          border: '1px solid #1f1f1f',
+          backgroundColor: '#0f0f0f',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', color: '#1a1714',
+          cursor: 'pointer', color: '#FAFAFA',
         }}
       >
         <HamburgerIcon />
@@ -567,7 +568,7 @@ export default function Sidebar() {
       {mobileOpen && (
         <>
           <div
-            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 35 }}
+            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)', zIndex: 35 }}
             onClick={() => setMobileOpen(false)}
           />
           <div style={{ position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 40 }}>
@@ -583,12 +584,21 @@ export default function Sidebar() {
 
 function LedgerLogo() {
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
-      <rect x="2" y="1" width="13" height="17" rx="2" stroke="#b8734a" strokeWidth="1.5" fill="none" />
-      <path d="M6 6h5M6 10h5M6 14h3" stroke="#b8734a" strokeWidth="1.3" strokeLinecap="round" />
-      <rect x="13" y="4" width="5" height="13" rx="1.5" fill="#b8734a" opacity="0.15" />
-      <path d="M14 7h3M14 10h3M14 13h2" stroke="#b8734a" strokeWidth="1.1" strokeLinecap="round" opacity="0.6" />
-    </svg>
+    <span style={{
+      width: 26,
+      height: 26,
+      borderRadius: 7,
+      background: '#00C853',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+      boxShadow: '0 0 14px rgba(0,200,83,0.4)',
+    }}>
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+        <path d="M3 13V8M6 13V5M9 13V3M12 13V7" stroke="#000" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    </span>
   )
 }
 function HomeIcon() { return <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 7l6-5 6 5v7a1 1 0 01-1 1H3a1 1 0 01-1-1V7z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" fill="none"/><path d="M6 14V9h4v5" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg> }
