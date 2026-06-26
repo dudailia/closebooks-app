@@ -1,8 +1,10 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { motion, AnimatePresence, useInView } from 'framer-motion'
+import { motion, useMotionValue, useMotionValueEvent, animate } from 'framer-motion'
 import { MagneticButton } from '@/components/ui/MagneticButton'
+import { ease, duration as dur, distance } from '@/lib/landing/motion'
+import { usePrefersReducedMotion } from '@/lib/landing/usePrefersReducedMotion'
 
 // ─── Transaction data ────────────────────────────────────────────────────────
 
@@ -14,40 +16,85 @@ const TRANSACTIONS = [
   { id: 5, monogram: 'QK', color: '#0D9488', name: 'QuickBooks',    amount: '-$299.00',   category: 'Accounting Software'   },
 ] as const
 
-// ─── Typewriter badge ────────────────────────────────────────────────────────
+// ─── ONE conducted timeline — the single source of truth ──────────────────────
+//
+// Every Hero beat derives from this map, in seconds from a single t=0 (mount),
+// played entirely on framer-motion's rAF clock. There are NO wall-clock timers
+// (setInterval/setTimeout) anywhere in this file, so independent beats cannot
+// drift apart. The climax `LOCK` is computed once; the headline underline and
+// the final transaction row's checkmark BOTH read that exact value — they are
+// the same instant by construction, not two numbers tuned to coincide.
+const HERO = {
+  // left column intro ladder
+  badge: 0.0,
+  h1:    0.08,
+  sub:   0.20,
+  cta:   0.32,
+  trust: 0.42,
+  // right column mockup card entrance
+  card:  0.30,
+  // transaction feed
+  feedStart: 0.85, // first row begins once the card has settled
+  rowGap:    0.28, // start-to-start gap between rows
+  typeDur:   0.34, // category badge "types" over this window
+  lockGap:   0.40, // a row appearing → its checkmark locking in
+} as const
 
-function TypewriterText({ text, delayMs }: { text: string; delayMs: number }) {
-  const [chars, setChars] = useState(0)
+const ROW_COUNT = TRANSACTIONS.length
+const rowStart = (i: number) => HERO.feedStart + i * HERO.rowGap
+const rowLock  = (i: number) => rowStart(i) + HERO.lockGap
+
+// The climax: the last row locks. The underline draws on this exact beat.
+const LOCK = rowLock(ROW_COUNT - 1)
+// The settle: status flips to "ready", success banner + final stat land, card breathes.
+const REST = LOCK + 0.18
+
+// Shared entrance for the left column + card. Reduced-motion → mount in final
+// state with no animation. Otherwise a single expo-out fade-up off the tokens.
+function entrance(delay: number, reduced: boolean, dist: number = distance.md) {
+  return {
+    initial: reduced ? (false as const) : { opacity: 0, y: dist },
+    animate: { opacity: 1, y: 0 },
+    transition: reduced ? { duration: 0 } : { duration: dur.slow, ease: ease.out, delay },
+  }
+}
+
+// ─── Typewriter badge (framer-driven, single rAF clock) ───────────────────────
+
+function TypewriterText({ text, startAt, reduced }: { text: string; startAt: number; reduced: boolean }) {
+  const count = useMotionValue(0)
+  const [chars, setChars] = useState(reduced ? text.length : 0)
+
+  useMotionValueEvent(count, 'change', (v) => {
+    const n = Math.round(v)
+    setChars((prev) => (prev === n ? prev : n))
+  })
 
   useEffect(() => {
+    if (reduced) { setChars(text.length); return }
+    count.set(0)
     setChars(0)
-    const start = setTimeout(() => {
-      const iv = setInterval(() => {
-        setChars(c => {
-          if (c >= text.length) { clearInterval(iv); return c }
-          return c + 1
-        })
-      }, 32)
-      return () => clearInterval(iv)
-    }, delayMs)
-    return () => clearTimeout(start)
-  }, [text, delayMs])
+    // Plays on framer's rAF clock with the same t=0 as every other beat — the
+    // category resolves precisely as this row's checkmark locks (rowLock).
+    const controls = animate(count, text.length, {
+      duration: HERO.typeDur,
+      ease: 'linear',
+      delay: startAt,
+    })
+    return () => controls.stop()
+  }, [text, startAt, reduced, count])
 
   return <>{text.slice(0, chars)}</>
 }
 
 // ─── Single transaction row ──────────────────────────────────────────────────
 
-function TxRow({ tx, index }: { tx: typeof TRANSACTIONS[number]; index: number }) {
-  const rowDelay      = index * 0.15
-  const checkDelay    = rowDelay + 0.55
-  const badgeDelayMs  = (rowDelay + 0.45) * 1000
-
+function TxRow({ tx, index, reduced }: { tx: typeof TRANSACTIONS[number]; index: number; reduced: boolean }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={reduced ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: rowDelay, duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+      transition={reduced ? { duration: 0 } : { delay: rowStart(index), duration: 0.38, ease: ease.out }}
       style={{
         display: 'grid',
         gridTemplateColumns: '30px 1fr auto auto auto',
@@ -107,14 +154,15 @@ function TxRow({ tx, index }: { tx: typeof TRANSACTIONS[number]; index: number }
           display: 'inline-block', minWidth: 70,
         }}
       >
-        <TypewriterText text={tx.category} delayMs={badgeDelayMs} />
+        <TypewriterText text={tx.category} startAt={rowStart(index) + 0.05} reduced={reduced} />
       </span>
 
-      {/* Checkmark */}
+      {/* Checkmark — locks in on this row's `rowLock` beat. The final row's
+          checkmark and the headline underline share the same `LOCK` value. */}
       <motion.div
-        initial={{ scale: 0, opacity: 0 }}
+        initial={reduced ? false : { scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: checkDelay, type: 'spring', stiffness: 480, damping: 16 }}
+        transition={reduced ? { duration: 0 } : { delay: rowLock(index), type: 'spring', stiffness: 480, damping: 16 }}
         style={{
           width: 20, height: 20, borderRadius: '50%',
           backgroundColor: 'rgba(0,200,83,0.12)',
@@ -131,90 +179,82 @@ function TxRow({ tx, index }: { tx: typeof TRANSACTIONS[number]; index: number }
   )
 }
 
-// ─── Looping transaction feed ─────────────────────────────────────────────────
-
-// Fixed-height container: rows key on cycleKey so old rows unmount instantly
-// (no exit animation = no collapse), new rows animate in fresh from initial state.
-function TransactionFeedDemo() {
-  const [cycleKey,    setCycleKey]    = useState(0)
-  const [showSuccess, setShowSuccess] = useState(false)
-
-  useEffect(() => {
-    setShowSuccess(false)
-    // Show success bar after all rows have typed in
-    const allDoneMs = TRANSACTIONS.length * 520 + 600
-    const t1 = setTimeout(() => setShowSuccess(true), allDoneMs)
-    // Loop seamlessly: just bump cycleKey (old rows unmount instantly)
-    const t2 = setTimeout(() => setCycleKey(k => k + 1), allDoneMs + 1800)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [cycleKey])
-
+// ─── Transaction feed — resolve & rest (no loop) ──────────────────────────────
+//
+// Pure presentation. Rows reveal once on the conducted timeline; the success
+// banner appears when `resolved` flips (at REST, owned by DashboardMockup) and
+// stays. Fixed minHeight keeps the card from ever collapsing → no layout shift.
+function TransactionFeedDemo({ resolved, reduced }: { resolved: boolean; reduced: boolean }) {
   return (
-    // minHeight locks the card height — impossible to collapse
     <div style={{ minHeight: TRANSACTIONS.length * 46 + 56, position: 'relative' }}>
       {TRANSACTIONS.map((tx, i) => (
-        // key includes cycleKey → instant unmount+remount on cycle reset
-        <motion.div
-          key={`${cycleKey}-${tx.id}`}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.13, duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <TxRow tx={tx} index={i} />
-        </motion.div>
+        <TxRow key={tx.id} tx={tx} index={i} reduced={reduced} />
       ))}
 
-      <AnimatePresence>
-        {showSuccess && (
+      {resolved && (
+        <motion.div
+          initial={reduced ? false : { y: 8, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={reduced ? { duration: 0 } : { duration: 0.4, ease: ease.out }}
+          style={{
+            marginTop: 10,
+            padding: '8px 12px',
+            borderRadius: 8,
+            backgroundColor: 'rgba(0,200,83,0.07)',
+            border: '1px solid rgba(0,200,83,0.18)',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}
+        >
           <motion.div
-            key={`success-${cycleKey}`}
-            initial={{ y: 8, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.2 } }}
-            transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+            animate={reduced ? undefined : { opacity: [0.4, 1, 0.4] }}
+            transition={reduced ? undefined : { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
             style={{
-              marginTop: 10,
-              padding: '8px 12px',
-              borderRadius: 8,
-              backgroundColor: 'rgba(0,200,83,0.07)',
-              border: '1px solid rgba(0,200,83,0.18)',
-              display: 'flex', alignItems: 'center', gap: 8,
+              width: 6, height: 6, borderRadius: '50%',
+              backgroundColor: '#00C853', flexShrink: 0,
+              opacity: reduced ? 1 : undefined,
+              boxShadow: '0 0 0 3px rgba(0,200,83,0.2)',
             }}
-          >
-            <motion.div
-              animate={{ opacity: [0.4, 1, 0.4] }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-              style={{
-                width: 6, height: 6, borderRadius: '50%',
-                backgroundColor: '#00C853', flexShrink: 0,
-                boxShadow: '0 0 0 3px rgba(0,200,83,0.2)',
-              }}
-            />
-            <span style={{ fontSize: 12, color: '#00C853', fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
-              COA validated · ready for review
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          />
+          <span style={{ fontSize: 12, color: '#00C853', fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
+            COA validated · ready for review
+          </span>
+        </motion.div>
+      )}
     </div>
   )
 }
 
 // ─── Browser chrome mockup card ───────────────────────────────────────────────
 
-function DashboardMockup() {
+function DashboardMockup({ reduced }: { reduced: boolean }) {
+  // The single derived "settle" beat. Scheduled on framer's rAF clock at REST
+  // (= LOCK + a beat), so it stays in lockstep with the conducted entrance —
+  // not a wall-clock setTimeout that could drift from the framer animations.
+  const [resolved, setResolved] = useState(reduced)
+
+  useEffect(() => {
+    if (reduced) { setResolved(true); return }
+    setResolved(false)
+    const controls = animate(0, 1, {
+      duration: 0.001,
+      delay: REST,
+      onComplete: () => setResolved(true),
+    })
+    return () => controls.stop()
+  }, [reduced])
+
   return (
     /* Outer: entrance animation */
     <motion.div
-      initial={{ opacity: 0, y: 40 }}
+      initial={reduced ? false : { opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+      transition={reduced ? { duration: 0 } : { duration: 0.9, ease: ease.out, delay: HERO.card }}
       style={{ position: 'relative' }}
     >
-      {/* Inner: continuous float — no rotation */}
+      {/* Inner: continuous float — begins only after the sequence settles (REST) */}
       <motion.div
-        animate={{ y: [0, -12, 0] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
+        animate={reduced ? undefined : { y: [0, -12, 0] }}
+        transition={reduced ? undefined : { duration: 5, repeat: Infinity, ease: 'easeInOut', delay: REST }}
         style={{ position: 'relative' }}
       >
       {/* Wide soft glow */}
@@ -303,23 +343,44 @@ function DashboardMockup() {
               <span style={{ fontSize: 13, fontWeight: 600, color: '#FAFAFA', fontFamily: 'var(--font-sans)' }}>
                 Live categorization
               </span>
-              <div
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  padding: '3px 8px', borderRadius: 999,
-                  background: 'rgba(0,200,83,0.08)',
-                  border: '1px solid rgba(0,200,83,0.15)',
-                }}
-              >
-                <motion.div
-                  animate={{ opacity: [0.4, 1, 0.4] }}
-                  transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                  style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#00C853' }}
-                />
-                <span style={{ fontSize: 10, color: '#00C853', fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
-                  Processing…
-                </span>
-              </div>
+
+              {/* Status pill — flips from "Processing…" to a calm "Ready for
+                  review" on the settle beat (REST). The pulse stops; it rests. */}
+              {resolved ? (
+                <div
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    padding: '3px 8px', borderRadius: 999,
+                    background: 'rgba(0,200,83,0.12)',
+                    border: '1px solid rgba(0,200,83,0.3)',
+                  }}
+                >
+                  <svg width="9" height="7" viewBox="0 0 10 8" fill="none">
+                    <path d="M1 4l2.5 2.5L9 1" stroke="#00C853" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span style={{ fontSize: 10, color: '#00C853', fontFamily: 'var(--font-sans)', fontWeight: 600 }}>
+                    Ready for review
+                  </span>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    padding: '3px 8px', borderRadius: 999,
+                    background: 'rgba(0,200,83,0.08)',
+                    border: '1px solid rgba(0,200,83,0.15)',
+                  }}
+                >
+                  <motion.div
+                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                    style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#00C853' }}
+                  />
+                  <span style={{ fontSize: 10, color: '#00C853', fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
+                    Processing…
+                  </span>
+                </div>
+              )}
             </div>
             <p style={{ margin: '4px 0 0', fontSize: 11, color: '#444444', fontFamily: 'var(--font-sans)' }}>
               32 transactions · April 2025
@@ -355,15 +416,16 @@ function DashboardMockup() {
           </div>
 
           {/* Animated transaction rows */}
-          <TransactionFeedDemo />
+          <TransactionFeedDemo resolved={resolved} reduced={reduced} />
         </div>
       </div>
 
-      {/* Floating stat pills — offset stagger for organic feel */}
+      {/* Floating stat pills — land on the conducted beats: "Confidence scored"
+          as the rows lock (LOCK), "3 hrs to close" on the final settle (REST). */}
       <motion.div
-        initial={{ opacity: 0, x: -10 }}
+        initial={reduced ? false : { opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 1.2, duration: 0.6 }}
+        transition={reduced ? { duration: 0 } : { delay: LOCK, duration: 0.5, ease: ease.out }}
         style={{
           position: 'absolute',
           bottom: -18,
@@ -387,9 +449,9 @@ function DashboardMockup() {
       </motion.div>
 
       <motion.div
-        initial={{ opacity: 0, x: 10 }}
+        initial={reduced ? false : { opacity: 0, x: 10 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 1.4, duration: 0.6 }}
+        transition={reduced ? { duration: 0 } : { delay: REST, duration: 0.5, ease: ease.out }}
         style={{
           position: 'absolute',
           bottom: -26,
@@ -418,13 +480,13 @@ function DashboardMockup() {
 }
 
 // ─── Animated underline on "autopilot" ───────────────────────────────────────
-
-function AnimatedUnderlineWord({ children }: { children: React.ReactNode }) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const isInView = useInView(ref, { once: true, margin: '-80px' })
-
+//
+// Mount-driven (the Hero is above the fold on load), drawing on the shared
+// `LOCK` beat — the exact instant the final transaction row's checkmark locks.
+// One constant, one rAF clock: the word and the proof land on the same downbeat.
+function AnimatedUnderlineWord({ children, reduced }: { children: React.ReactNode; reduced: boolean }) {
   return (
-    <span ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
+    <span style={{ position: 'relative', display: 'inline-block' }}>
       {children}
       <svg
         aria-hidden
@@ -446,9 +508,9 @@ function AnimatedUnderlineWord({ children }: { children: React.ReactNode }) {
           strokeWidth="2.5"
           fill="none"
           strokeLinecap="round"
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={isInView ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.35 }}
+          initial={reduced ? false : { pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: 1 }}
+          transition={reduced ? { duration: 0 } : { duration: 0.7, ease: ease.out, delay: LOCK }}
         />
       </svg>
     </span>
@@ -474,19 +536,11 @@ function GreenDot() {
   )
 }
 
-// ─── Entrance animation variants ─────────────────────────────────────────────
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  show: (d: number) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: d },
-  }),
-}
-
 // ─── Main Hero ────────────────────────────────────────────────────────────────
 
 export default function Hero() {
+  const reduced = usePrefersReducedMotion()
+
   return (
     <section
       style={{
@@ -548,10 +602,7 @@ export default function Hero() {
 
             {/* Badge */}
             <motion.div
-              custom={0}
-              initial="hidden"
-              animate="show"
-              variants={fadeUp}
+              {...entrance(HERO.badge, reduced)}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -565,13 +616,14 @@ export default function Hero() {
               }}
             >
               <motion.span
-                animate={{ opacity: [0.3, 1, 0.3] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                animate={reduced ? undefined : { opacity: [0.3, 1, 0.3] }}
+                transition={reduced ? undefined : { duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
                 style={{
                   width: 6, height: 6, borderRadius: '50%',
                   backgroundColor: '#00C853',
                   boxShadow: '0 0 0 3px rgba(0,200,83,0.2)',
                   flexShrink: 0,
+                  opacity: reduced ? 1 : undefined,
                   display: 'inline-block',
                 }}
               />
@@ -587,10 +639,7 @@ export default function Hero() {
 
             {/* Headline */}
             <motion.h1
-              custom={0.1}
-              initial="hidden"
-              animate="show"
-              variants={fadeUp}
+              {...entrance(HERO.h1, reduced)}
               style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: 'clamp(48px, 7vw, 72px)',
@@ -605,16 +654,13 @@ export default function Hero() {
               Month-end close,
               <br />
               on{' '}
-              <AnimatedUnderlineWord>autopilot</AnimatedUnderlineWord>
+              <AnimatedUnderlineWord reduced={reduced}>autopilot</AnimatedUnderlineWord>
               .
             </motion.h1>
 
             {/* Subheadline */}
             <motion.p
-              custom={0.2}
-              initial="hidden"
-              animate="show"
-              variants={fadeUp}
+              {...entrance(HERO.sub, reduced)}
               style={{
                 fontSize: 18,
                 lineHeight: 1.7,
@@ -633,10 +679,7 @@ export default function Hero() {
 
             {/* CTA row */}
             <motion.div
-              custom={0.3}
-              initial="hidden"
-              animate="show"
-              variants={fadeUp}
+              {...entrance(HERO.cta, reduced)}
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
@@ -711,10 +754,7 @@ export default function Hero() {
 
             {/* Trust line */}
             <motion.p
-              custom={0.4}
-              initial="hidden"
-              animate="show"
-              variants={fadeUp}
+              {...entrance(HERO.trust, reduced)}
               style={{
                 fontSize: 13,
                 color: '#444444',
@@ -748,7 +788,7 @@ export default function Hero() {
             }}
           >
             <div style={{ width: '100%', maxWidth: 520 }}>
-              <DashboardMockup />
+              <DashboardMockup reduced={reduced} />
             </div>
           </div>
         </div>
