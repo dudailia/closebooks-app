@@ -6,11 +6,11 @@ import { motion } from 'framer-motion'
 
 const AGENTS = [
   { name: 'Parser', role: 'Reads statements', color: '#38BDF8', x: 50, y: 7 },
-  { name: 'Categorizer', role: 'Maps vendors', color: '#00C853', x: 88, y: 28 },
+  { name: 'Categorizer', role: 'Maps vendors', color: '#00C853', x: 82, y: 28 },
   { name: 'Validator', role: 'Checks the COA', color: '#F59E0B', x: 82, y: 74 },
   { name: 'Reconciler', role: 'Finds exceptions', color: '#A855F7', x: 50, y: 92 },
   { name: 'Exporter', role: 'Prepares QBO', color: '#22C55E', x: 16, y: 74 },
-  { name: 'Messenger', role: 'Drafts client notes', color: '#FB7185', x: 12, y: 28 },
+  { name: 'Messenger', role: 'Drafts client notes', color: '#FB7185', x: 16, y: 28 },
 ] as const
 
 const ACTIVITY = [
