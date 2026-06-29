@@ -1,10 +1,41 @@
 'use client'
 
+import { useRef } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { motion, useInView } from 'framer-motion'
 import { TRUST_PILLARS } from '@/lib/landing/trustClaims'
+import { ease, duration as dur, distance, stagger } from '@/lib/landing/motion'
+import { usePrefersReducedMotion } from '@/lib/landing/usePrefersReducedMotion'
+
+// ─── One conducted timeline — the single source of truth for this section ─────
+//
+// Delays in seconds from a single in-view trigger (t=0). The heading lockup
+// resolves as a tight ladder, then the four pillars deal in off one shared
+// stagger origin — not five independent whileInView observers. Every element
+// reads this map + the same `isInView`, so the section assembles as one gesture.
+const TL = {
+  eyebrow:    0,
+  headline:   0.08,
+  line:       0.16,
+  link:       0.24,
+  cardsStart: 0.34,
+} as const
+
+const cardDelay = (i: number) => TL.cardsStart + i * stagger.base
 
 export default function TrustSection() {
+  const reduced = usePrefersReducedMotion()
+  const ref = useRef<HTMLDivElement>(null)
+  const isInView = useInView(ref, { once: true, margin: '-80px' })
+
+  // Shared entrance: reduced-motion → mount in final state; otherwise a single
+  // expo-out fade-up off the tokens, conducted by the one shared trigger + delay.
+  const reveal = (delay: number, dist: number = distance.md) => ({
+    initial: reduced ? (false as const) : { opacity: 0, y: dist },
+    animate: (isInView || reduced) ? { opacity: 1, y: 0 } : { opacity: 0, y: dist },
+    transition: reduced ? { duration: 0 } : { duration: dur.base, ease: ease.out, delay },
+  })
+
   return (
     <section
       id="trust"
@@ -19,36 +50,41 @@ export default function TrustSection() {
       <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 20% 10%, rgba(0,200,83,0.10), transparent 34%)' }} />
 
       <div style={{ maxWidth: 1220, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '0.85fr 1.15fr', gap: 42, alignItems: 'start' }} className="trust-grid">
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.45 }}
-            transition={{ duration: 0.58, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <p style={{ margin: 0, color: '#00C853', fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 800 }}>
+        <div ref={ref} style={{ display: 'grid', gridTemplateColumns: '0.85fr 1.15fr', gap: 42, alignItems: 'start' }} className="trust-grid">
+          {/* ── LEFT — heading lockup ladder ── */}
+          <div>
+            <motion.p
+              {...reveal(TL.eyebrow)}
+              style={{ margin: 0, color: '#00C853', fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 800 }}
+            >
               Client-data ready
-            </p>
-            <h2 style={{ margin: '14px 0 0', color: '#FAFAFA', fontFamily: 'var(--font-display)', fontSize: 'clamp(38px, 5.4vw, 66px)', lineHeight: 0.98, letterSpacing: '-0.055em', fontWeight: 400 }}>
+            </motion.p>
+            <motion.h2
+              {...reveal(TL.headline)}
+              style={{ margin: '14px 0 0', color: '#FAFAFA', fontFamily: 'var(--font-display)', fontSize: 'clamp(38px, 5.4vw, 66px)', lineHeight: 0.98, letterSpacing: '-0.055em', fontWeight: 400 }}
+            >
               Security and control CPAs expect.
-            </h2>
-            <p style={{ margin: '20px 0 0', color: '#A1A1A1', fontSize: 16, lineHeight: 1.7, maxWidth: 560 }}>
+            </motion.h2>
+            <motion.p
+              {...reveal(TL.line)}
+              style={{ margin: '20px 0 0', color: '#A1A1A1', fontSize: 16, lineHeight: 1.7, maxWidth: 560 }}
+            >
               CloseBooks is built around review-first accounting workflows, firm-scoped access,
               transparent AI processing, and billing infrastructure that firms already trust.
-            </p>
-            <Link href="/security" style={{ display: 'inline-flex', marginTop: 24, color: '#00C853', fontWeight: 800, textDecoration: 'none', fontSize: 14 }}>
-              Read the security overview →
-            </Link>
-          </motion.div>
+            </motion.p>
+            <motion.div {...reveal(TL.link)} style={{ display: 'inline-flex', marginTop: 24 }}>
+              <Link href="/security" style={{ display: 'inline-flex', color: '#00C853', fontWeight: 800, textDecoration: 'none', fontSize: 14 }}>
+                Read the security overview →
+              </Link>
+            </motion.div>
+          </div>
 
+          {/* ── RIGHT — four pillars dealing in off one shared stagger ── */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14 }} className="trust-card-grid">
             {TRUST_PILLARS.map((pillar, index) => (
               <motion.div
                 key={pillar.title}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ delay: index * 0.07, duration: 0.44 }}
+                {...reveal(cardDelay(index), distance.sm)}
                 style={{
                   minHeight: 166,
                   padding: 20,
