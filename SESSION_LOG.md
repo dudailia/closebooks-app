@@ -1,6 +1,6 @@
 # SESSION_LOG — CloseBooks handoff
 
-**Last updated:** 2026-06-26 · **Branch:** `main` · **HEAD:** `d97eea69`
+**Last updated:** 2026-06-29 · **Branch:** `main` · **HEAD:** `d97eea69`
 **Deploy state:** local `main` == `origin/main` == `d97eea69` (pushed/deployed; verified this session via `git log -1` + `git status -sb`, working tree clean). All data-layer bugs (§2/§3/§4) remain FIXED & DEPLOYED. **§5 instrumentation removal is now DONE (`c4445912`).** Design advanced: the AgentOrchestra orbit overlap/clipping bugs are fixed (`772b193f`, `bbedc0e3`), and the **Landing Foundation Pass Increment 0 (motion infra) shipped at `d97eea69`** — but the 14-section rollout is **PAUSED** pending a direction decision (see "Landing Foundation Pass" below). **§7 Stripe is untouched and remains the actual revenue blocker.** Everything below is live.
 
 > This is a point-in-time handoff, not durable architecture docs (those live in `CLAUDE.md`).
@@ -82,7 +82,7 @@ Served its purpose (caught the `health`, `business_name`, and `r.bg` crashes). F
 4. Remove the visible internal webhook-config hint on `src/app/dashboard/subscription/page.tsx`.
 
 ## 8. DESIGN DECISIONS MADE
-- **Dashboard stays cream/light theme; marketing site stays dark/green. Deliberately NOT unified** — matches B2B SaaS convention (bold marketing, plain trustworthy app UI for dense financial data). Do not "harmonize" these.
+- **Dashboard chrome is now dark/green; content surfaces stay light — a deliberate, reviewed HYBRID (the earlier "stays fully light, never harmonize" rule is REFINED, not reversed).** The prior decision read: *"Dashboard stays cream/light; marketing site stays dark/green; deliberately NOT unified — do not harmonize."* That has been **refined, not abandoned**, and is now settled: the dashboard **chrome only** — `src/components/Sidebar.tsx` and `src/components/TopBar.tsx` — adopts the dark/green palette for **brand continuity** with the marketing site, while **all content surfaces (transaction tables, cards, data panels) remain light** for **financial-data readability** (the original rationale stands: plain, high-contrast, trustworthy UI for dense numbers). This dark-chrome / light-content split was **deliberate, reviewed on a live preview, and approved by the founder**, then shipped via `aa3b2e36` ("feat(dashboard): dark chrome to match the new landing design"; design doc: `docs/superpowers/specs/2026-06-26-dashboard-new-design-design.md`). **Future sessions: treat this as a settled, intentional hybrid — NOT an unresolved light-vs-dark conflict.** Do not revert the chrome to cream, and do not darken the content surfaces.
 - **(a) Orbit layout bugs — ✅ FIXED & DEPLOYED.** The "AI agents working in parallel" animation (`src/components/landing/AgentOrchestra.tsx`): ActivityFeed moved out of the absolute overlay so it no longer overlaps the orbit nodes (`772b193f`), and the node insets normalized to 16/82 so Categorizer/Messenger no longer clip at the 2-column breakpoint (`bbedc0e3`). Both visually confirmed by the founder.
 - **(b) Animation-quality pass — became the "Landing Foundation Pass" below** (spec'd, planned, Increment 0 shipped, rollout paused).
 
