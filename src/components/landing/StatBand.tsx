@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { motion, useInView } from 'framer-motion'
+import { motion, useInView, useMotionValue, useTransform, animate } from 'framer-motion'
+import { ease, duration as dur } from '@/lib/landing/motion'
+import { usePrefersReducedMotion } from '@/lib/landing/usePrefersReducedMotion'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -20,27 +22,11 @@ const TRUST = [
   { icon: '🔁', label: 'QuickBooks-ready exports' },
 ]
 
-// ─── Eased count-up ───────────────────────────────────────────────────────────
-
-function useCountUp(from: number, to: number, durationSecs: number, active: boolean) {
-  const [value, setValue] = useState(from)
-  useEffect(() => {
-    if (!active) return
-    const t0 = performance.now()
-    let rafId: number
-    function tick(now: number) {
-      const progress = Math.min((now - t0) / (durationSecs * 1000), 1)
-      const eased = 1 - Math.pow(1 - progress, 4) // ease-out quart
-      setValue(Math.round(from + (to - from) * eased))
-      if (progress < 1) rafId = requestAnimationFrame(tick)
-    }
-    rafId = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(rafId)
-  }, [active, from, to, durationSecs])
-  return value
-}
-
 // ─── Marquee row ──────────────────────────────────────────────────────────────
+//
+// Ambient/looping by design (spec D6: default ambient motion left as-is, made
+// reduced-motion-aware only — the scoped [data-surface="public"] reduced-motion
+// CSS block freezes these keyframes). Not the section's signature moment.
 
 function MarqueeRow({ firms, reverse, duration }: { firms: string[]; reverse?: boolean; duration: number }) {
   // Duplicate so the seamless -50% loop works
@@ -91,6 +77,11 @@ function MarqueeRow({ firms, reverse, duration }: { firms: string[]; reverse?: b
 }
 
 // ─── Single metric ────────────────────────────────────────────────────────────
+//
+// The number is rendered as a MotionValue child (derived from the shared
+// `progress`), so the count-up triggers zero per-frame React re-renders. Its
+// width is reserved to the final digit count so the value can't reflow as it
+// grows. The suffix is the single confirming accent — it arrives on `landed`.
 
 interface StatProps {
   from: number
@@ -100,13 +91,14 @@ interface StatProps {
   label: string
   sublabel: string
   showDownArrow?: boolean
-  active: boolean
-  format?: (n: number) => string
+  progress: import('framer-motion').MotionValue<number>
+  landed: boolean
+  reduced: boolean
 }
 
-function StatItem({ from, to, prefix, suffix, label, sublabel, showDownArrow, active, format }: StatProps) {
-  const value = useCountUp(from, to, 1.5, active)
-  const display = format ? format(value) : String(value)
+function StatItem({ from, to, prefix, suffix, label, sublabel, showDownArrow, progress, landed, reduced }: StatProps) {
+  const text = useTransform(progress, (p) => String(Math.round(from + (to - from) * p)))
+  const digits = String(to).length
 
   return (
     <div style={{ textAlign: 'center', padding: '0 32px' }}>
@@ -134,7 +126,7 @@ function StatItem({ from, to, prefix, suffix, label, sublabel, showDownArrow, ac
             {prefix}
           </span>
         )}
-        <span
+        <motion.span
           style={{
             fontFamily: 'var(--font-display)',
             fontSize: 'clamp(56px, 7vw, 80px)',
@@ -142,12 +134,18 @@ function StatItem({ from, to, prefix, suffix, label, sublabel, showDownArrow, ac
             color: '#FAFAFA',
             letterSpacing: '-0.045em',
             fontVariantNumeric: 'tabular-nums',
+            display: 'inline-block',
+            minWidth: `${digits}ch`,
+            textAlign: 'center',
           }}
         >
-          {display}
-        </span>
+          {text}
+        </motion.span>
         {suffix && (
-          <span
+          <motion.span
+            initial={reduced ? false : { opacity: 0, y: 6 }}
+            animate={(landed || reduced) ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+            transition={reduced ? { duration: 0 } : { duration: dur.fast, ease: ease.out }}
             style={{
               fontFamily: 'var(--font-sans)',
               fontSize: 'clamp(18px, 2vw, 24px)',
@@ -158,7 +156,7 @@ function StatItem({ from, to, prefix, suffix, label, sublabel, showDownArrow, ac
             }}
           >
             {suffix}
-          </span>
+          </motion.span>
         )}
       </div>
 
@@ -209,11 +207,83 @@ function VDivider() {
   )
 }
 
+// ─── Three hero metrics — one conducted count-up ──────────────────────────────
+//
+// A single `progress` MotionValue is the sole source of truth for timing. All
+// three figures read from it (via useTransform), so they rise as one gesture
+// and land on the same beat — like the Hero's underline and final row both
+// reading LOCK. On completion, `landed` flips once and every suffix arrives
+// together as the single confirming accent. Then it rests — no loop.
+
+function Metrics({ reduced }: { reduced: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const isInView = useInView(ref, { once: true, margin: '-80px' })
+  const progress = useMotionValue(reduced ? 1 : 0)
+  const [landed, setLanded] = useState(reduced)
+
+  useEffect(() => {
+    if (reduced) { progress.set(1); setLanded(true); return }
+    if (!isInView) return
+    setLanded(false)
+    progress.set(0)
+    const controls = animate(progress, 1, {
+      duration: 1.5,
+      ease: ease.out,
+      delay: 0.15,
+      onComplete: () => setLanded(true),
+    })
+    return () => controls.stop()
+  }, [isInView, reduced, progress])
+
+  return (
+    <div ref={ref} style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px' }}>
+      <motion.div
+        initial={reduced ? false : { opacity: 0, y: 24 }}
+        animate={(isInView || reduced) ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+        transition={reduced ? { duration: 0 } : { duration: dur.slow, ease: ease.out }}
+        className="stats-row"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <StatItem
+          from={0} to={85}
+          suffix="%"
+          label="Auto-approval threshold"
+          sublabel="Lower confidence stays in review"
+          progress={progress} landed={landed} reduced={reduced}
+        />
+
+        <VDivider />
+
+        <StatItem
+          from={0} to={3}
+          suffix=" steps"
+          label="Upload, review, export"
+          sublabel="One guided workflow"
+          progress={progress} landed={landed} reduced={reduced}
+        />
+
+        <VDivider />
+
+        <StatItem
+          from={0} to={14}
+          suffix=" days"
+          label="Trial access"
+          sublabel="No card required at signup"
+          progress={progress} landed={landed} reduced={reduced}
+        />
+      </motion.div>
+    </div>
+  )
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export default function StatBand() {
-  const metricsRef = useRef<HTMLDivElement>(null)
-  const isInView   = useInView(metricsRef, { once: true, margin: '-80px' })
+  const reduced = usePrefersReducedMotion()
 
   return (
     <section
@@ -252,47 +322,7 @@ export default function StatBand() {
       </div>
 
       {/* ════ PART 2 — Three hero metrics ════ */}
-      <div ref={metricsRef} style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-          className="stats-row"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <StatItem
-            from={0} to={85}
-            suffix="%"
-            label="Auto-approval threshold"
-            sublabel="Lower confidence stays in review"
-            active={isInView}
-          />
-
-          <VDivider />
-
-          <StatItem
-            from={0} to={3}
-            suffix=" steps"
-            label="Upload, review, export"
-            sublabel="One guided workflow"
-            active={isInView}
-          />
-
-          <VDivider />
-
-          <StatItem
-            from={0} to={14}
-            suffix=" days"
-            label="Trial access"
-            sublabel="No card required at signup"
-            active={isInView}
-          />
-        </motion.div>
-      </div>
+      <Metrics reduced={reduced} />
 
       {/* ════ PART 3 — Trust badges ════ */}
       <div style={{ maxWidth: 1200, margin: '56px auto 0', padding: '0 28px' }}>
