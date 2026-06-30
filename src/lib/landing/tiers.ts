@@ -62,18 +62,29 @@ export const TIERS: Tier[] = [
   },
 ]
 
-export function priceEnvKey(tier: TierId, annual: boolean): string {
-  const a = annual ? 'YEAR' : 'MONTH'
-  const map: Record<TierId, string> = {
-    starter: `NEXT_PUBLIC_STRIPE_PRICE_STARTER_${a}`,
-    professional: `NEXT_PUBLIC_STRIPE_PRICE_PRO_${a}`,
-    enterprise: `NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE_${a}`,
-  }
-  return map[tier]
+// Price-id env vars must be referenced as LITERAL `process.env.NEXT_PUBLIC_*`
+// expressions. Next.js only inlines statically-written NEXT_PUBLIC_* vars into
+// the client bundle; a computed `process.env[key]` resolves to undefined in the
+// browser (that dynamic lookup is what broke the pricing CTA — it rendered the
+// signup-link fallback after hydration). Keep these static.
+const PRICE_ENV: Record<TierId, { month: string | undefined; year: string | undefined }> = {
+  starter: {
+    month: process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTH,
+    year:  process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER_YEAR,
+  },
+  professional: {
+    month: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTH,
+    year:  process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_YEAR,
+  },
+  enterprise: {
+    month: process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE_MONTH,
+    year:  process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE_YEAR,
+  },
 }
 
 export function resolvePriceId(tier: TierId, annual: boolean): string | undefined {
-  const v = process.env[priceEnvKey(tier, annual) as keyof NodeJS.ProcessEnv]
+  const v = PRICE_ENV[tier][annual ? 'year' : 'month']
+  // Unchanged: missing, empty, or a `your_…` placeholder all count as unconfigured.
   return typeof v === 'string' && v && !v.startsWith('your_') ? v : undefined
 }
 
