@@ -4,10 +4,14 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import type { Transaction } from '@/types'
 import { DEMO_COA, DEMO_TRANSACTIONS, DEMO_SUMMARY } from '@/lib/demoData'
+import { parseDemoCsv, DEMO_MAX_ROWS } from '@/lib/demo/parseDemoCsv'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type DemoStep = 'upload' | 'categorizing' | 'review' | 'export'
+
+// Raw, uncategorized rows handed from the upload step to the categorizing step.
+interface DemoInput { transactions: Transaction[]; isSample: boolean; truncated: boolean }
 
 interface StepInfo { id: DemoStep; label: string; desc: string }
 
@@ -40,29 +44,12 @@ const SAMPLE_CSV = `Date,Description,Amount,Type
 2026-03-08,"UBER *TRIP 800-592-8996",34.50,debit
 2026-03-05,"ACH DEBIT 021000089 MISC PMT",1850.00,debit`
 
-// ─── Animated counter ─────────────────────────────────────────────────────────
-
-function useCount(target: number, running: boolean) {
-  const [val, setVal] = useState(0)
-  useEffect(() => {
-    if (!running) { setVal(0); return }
-    let current = 0
-    const step = Math.ceil(target / 40)
-    const t = setInterval(() => {
-      current = Math.min(current + step, target)
-      setVal(current)
-      if (current >= target) clearInterval(t)
-    }, 40)
-    return () => clearInterval(t)
-  }, [target, running])
-  return val
-}
-
 // ─── Step 1: Upload ───────────────────────────────────────────────────────────
 
-function UploadStep({ onNext }: { onNext: () => void }) {
+function UploadStep({ onStart }: { onStart: (input: DemoInput) => void }) {
   const [dragging, setDragging] = useState(false)
   const [fileName, setFileName] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const [downloading, setDownloading] = useState(false)
 
   function downloadSample() {
@@ -77,16 +64,46 @@ function UploadStep({ onNext }: { onNext: () => void }) {
     setTimeout(() => setDownloading(false), 1000)
   }
 
+  // Categorize the bundled sample through the same real-AI path as an upload.
+  function useSample() {
+    const { transactions } = parseDemoCsv(SAMPLE_CSV)
+    onStart({ transactions, isSample: true, truncated: false })
+  }
+
+  // Parse the user's own CSV client-side; if it isn't usable, keep them on this
+  // step with a clear message instead of silently substituting the sample.
+  async function ingest(file: File) {
+    setError(null)
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setError('Please choose a .csv file, or use the sample below.')
+      return
+    }
+    let text = ''
+    try {
+      text = await file.text()
+    } catch {
+      setError("We couldn't read that file. Try the sample below.")
+      return
+    }
+    const result = parseDemoCsv(text)
+    if (!result.ok) {
+      setError("We couldn't find Description and Amount columns in that CSV. Download the sample to see the expected format, or use sample data below.")
+      return
+    }
+    setFileName(file.name)
+    setTimeout(() => onStart({ transactions: result.transactions, isSample: false, truncated: result.truncated }), 500)
+  }
+
   function handleDrop(e: React.DragEvent) {
     e.preventDefault()
     setDragging(false)
     const file = e.dataTransfer.files[0]
-    if (file?.name.endsWith('.csv')) { setFileName(file.name); setTimeout(onNext, 600) }
+    if (file) void ingest(file)
   }
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (file) { setFileName(file.name); setTimeout(onNext, 600) }
+    if (file) void ingest(file)
   }
 
   return (
@@ -100,7 +117,7 @@ function UploadStep({ onNext }: { onNext: () => void }) {
           Upload your bank statement
         </h2>
         <p className="text-sm" style={{ color: '#888888' }}>
-          CloseBooks reads any CSV export from Chase, Bank of America, Wells Fargo, and more.
+          CloseBooks reads any CSV export from Chase, Bank of America, Wells Fargo, and more. The demo categorizes up to {DEMO_MAX_ROWS} rows with real AI.
         </p>
       </div>
 
@@ -137,7 +154,7 @@ function UploadStep({ onNext }: { onNext: () => void }) {
           <div className="space-y-2">
             <div className="text-3xl">✓</div>
             <p className="font-semibold text-sm" style={{ color: '#00C853' }}>{fileName}</p>
-            <p className="text-xs" style={{ color: '#888888' }}>Uploading…</p>
+            <p className="text-xs" style={{ color: '#888888' }}>Reading…</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -148,14 +165,18 @@ function UploadStep({ onNext }: { onNext: () => void }) {
         )}
       </label>
 
+      {error && (
+        <p className="text-xs text-center" style={{ color: '#dc6b6b' }}>{error}</p>
+      )}
+
       <div className="text-center">
         <span className="text-xs" style={{ color: '#444444' }}>or</span>
         <button
-          onClick={onNext}
+          onClick={useSample}
           className="block mx-auto mt-2 text-sm font-medium underline"
           style={{ color: '#b8734a' }}
         >
-          Skip upload — use sample data to see a live demo →
+          Skip upload — categorize sample data with real AI →
         </button>
       </div>
     </div>
@@ -165,56 +186,83 @@ function UploadStep({ onNext }: { onNext: () => void }) {
 // ─── Step 2: Categorizing ─────────────────────────────────────────────────────
 
 interface CategorizingStepProps {
-  onNext: (txs: Transaction[]) => void
+  input: DemoInput
+  onDone: (txs: Transaction[], notice: string | null) => void
 }
 
-function CategorizingStep({ onNext }: CategorizingStepProps) {
-  const [phase, setPhase] = useState<'parsing' | 'sending' | 'ai' | 'done'>('parsing')
-  const [current, setCurrent] = useState(0)
-  const total = DEMO_TRANSACTIONS.length
-  const [categorized, setCategorized] = useState<Transaction[]>([])
+function CategorizingStep({ input, onDone }: CategorizingStepProps) {
+  const [phase, setPhase] = useState<'sending' | 'categorizing' | 'done'>('sending')
   const called = useRef(false)
-
-  const isAiPhase = phase === 'ai' || phase === 'done'
-  const count = useCount(current, isAiPhase)
+  const total = input.transactions.length
 
   useEffect(() => {
     if (called.current) return
     called.current = true
+    let cancelled = false
 
     async function run() {
-      // Phase 1: Parse
-      setPhase('parsing')
-      await new Promise(r => setTimeout(r, 900))
-
-      // Phase 2: Sending to AI
       setPhase('sending')
-      await new Promise(r => setTimeout(r, 700))
 
-      // Phase 3: AI Categorizing — deterministic demo data keeps the public demo cost-free.
-      setPhase('ai')
-
-      for (let i = 0; i <= total; i++) {
-        await new Promise(r => setTimeout(r, 80))
-        setCurrent(i)
+      let categorized: Transaction[] | null = null
+      let live = false
+      try {
+        const res = await fetch('/api/demo/categorize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transactions: input.transactions.map((t) => ({
+              date: t.date,
+              description: t.description,
+              amount: t.amount,
+              type: t.type,
+            })),
+          }),
+        })
+        if (!cancelled) setPhase('categorizing')
+        if (res.ok) {
+          const data = await res.json()
+          // The route returns {mode:'live'} only when the model actually ran;
+          // {mode:'fallback'} (rate-limited / daily cap / not configured / error)
+          // and any non-2xx fall through to the deterministic path below.
+          if (data?.mode === 'live' && Array.isArray(data.transactions)) {
+            categorized = data.transactions as Transaction[]
+            live = true
+          }
+        }
+      } catch {
+        /* network error → deterministic fallback below */
       }
-      setCategorized(DEMO_TRANSACTIONS)
+
+      if (cancelled) return
+
+      let notice: string | null = null
+      if (!live) {
+        // Live AI unavailable. Show the bundled sample — and if the visitor
+        // uploaded their own file, say so plainly rather than passing the
+        // sample off as their data.
+        categorized = DEMO_TRANSACTIONS
+        notice = input.isSample
+          ? null
+          : 'Live AI categorization is at capacity right now, so this shows our sample data — not your uploaded file. Try again shortly to run your own.'
+      } else if (input.truncated) {
+        notice = `Showing the first ${total} transactions — the public demo caps each run at ${DEMO_MAX_ROWS}.`
+      }
 
       setPhase('done')
-      await new Promise(r => setTimeout(r, 800))
-      onNext(DEMO_TRANSACTIONS)
+      await new Promise((r) => setTimeout(r, 600))
+      if (!cancelled) onDone(categorized ?? DEMO_TRANSACTIONS, notice)
     }
 
-    run()
-  }, [onNext, total])
+    void run()
+    return () => { cancelled = true }
+  }, [input, total, onDone])
+
+  const inProgress = phase !== 'done'
 
   const steps = [
-    { id: 'parsing', label: 'Parsing CSV — 20 transactions found', done: phase !== 'parsing' },
-    { id: 'sending', label: 'Sending to CloseBooks AI engine', done: phase === 'ai' || phase === 'done' },
-    { id: 'ai',      label: `Categorizing against ${DEMO_COA.length} accounts…`, done: phase === 'done' },
+    { id: 'sending', label: `Uploading ${total} transactions`, done: phase !== 'sending' },
+    { id: 'categorizing', label: `Categorizing against ${DEMO_COA.length} accounts with real AI…`, done: phase === 'done' },
   ]
-
-  const autoApproved = categorized.filter(t => t.confidence >= 0.85).length
 
   return (
     <div className="space-y-6 text-center">
@@ -227,27 +275,27 @@ function CategorizingStep({ onNext }: CategorizingStepProps) {
           CloseBooks AI is categorizing your transactions
         </h2>
         <p className="text-sm" style={{ color: '#888888' }}>
-          Every transaction is matched to your chart of accounts with a confidence score
+          Running real AI against your chart of accounts — this takes a few seconds.
         </p>
       </div>
 
-      {/* Progress ring */}
+      {/* Indeterminate spinner ring while the real request is in flight */}
       <div className="flex justify-center py-4">
         <div className="relative w-32 h-32">
-          <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+          <svg className={`w-full h-full -rotate-90 ${inProgress ? 'animate-spin' : ''}`} viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="42" fill="none" stroke="#1f1f1f" strokeWidth="8" />
             <circle
               cx="50" cy="50" r="42" fill="none"
               stroke="#00C853" strokeWidth="8"
               strokeLinecap="round"
               strokeDasharray={`${2 * Math.PI * 42}`}
-              strokeDashoffset={`${2 * Math.PI * 42 * (1 - (isAiPhase ? count / total : 0))}`}
-              style={{ transition: 'stroke-dashoffset 0.1s ease' }}
+              strokeDashoffset={`${2 * Math.PI * 42 * (inProgress ? 0.7 : 0)}`}
+              style={{ transition: 'stroke-dashoffset 0.4s ease' }}
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-2xl font-bold tabular-nums" style={{ color: '#FAFAFA' }}>
-              {isAiPhase ? count : 0}
+              {phase === 'done' ? total : '…'}
             </span>
             <span className="text-xs" style={{ color: '#888888' }}>of {total}</span>
           </div>
@@ -257,7 +305,7 @@ function CategorizingStep({ onNext }: CategorizingStepProps) {
       {/* Step list */}
       <div className="space-y-2 text-left max-w-sm mx-auto">
         {steps.map((s, i) => {
-          const isActive = (i === 0 && phase === 'parsing') || (i === 1 && phase === 'sending') || (i === 2 && (phase === 'ai' || phase === 'done'))
+          const isActive = (i === 0 && phase === 'sending') || (i === 1 && phase === 'categorizing')
           return (
             <div key={s.id} className="flex items-center gap-3">
               <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
@@ -275,7 +323,7 @@ function CategorizingStep({ onNext }: CategorizingStepProps) {
       {phase === 'done' && (
         <div className="rounded-xl border p-4 text-center" style={{ borderColor: 'rgba(0,200,83,0.3)', backgroundColor: 'rgba(0,200,83,0.1)' }}>
           <p className="font-semibold text-sm" style={{ color: '#00C853' }}>
-            ✓ {total} transactions categorized · {autoApproved} auto-approved
+            ✓ {total} transactions categorized
           </p>
         </div>
       )}
@@ -534,7 +582,9 @@ function ExportStep({ transactions }: { transactions: Transaction[] }) {
 
 export default function DemoPage() {
   const [step, setStep] = useState<DemoStep>('upload')
+  const [input, setInput] = useState<DemoInput | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>(DEMO_TRANSACTIONS)
+  const [notice, setNotice] = useState<string | null>(null)
 
   function goTo(s: DemoStep) { setStep(s) }
 
@@ -570,7 +620,7 @@ export default function DemoPage() {
             Watch CloseBooks close books — live
           </h1>
           <p className="text-sm" style={{ color: '#888888' }}>
-            Real AI. Real transactions. No signup required.
+            Real AI categorization on sample data — no signup.
           </p>
         </div>
 
@@ -605,16 +655,29 @@ export default function DemoPage() {
           })}
         </div>
 
+        {/* Honest fallback / truncation notice (review + export steps) */}
+        {notice && (step === 'review' || step === 'export') && (
+          <div
+            className="mb-6 rounded-xl border px-4 py-3 text-sm"
+            style={{ borderColor: 'rgba(184,115,74,0.3)', backgroundColor: 'rgba(184,115,74,0.08)', color: '#d8a373' }}
+          >
+            {notice}
+          </div>
+        )}
+
         {/* Two-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
 
           {/* Left: Interactive step */}
           <div className="rounded-2xl border p-4 sm:p-6 lg:p-8" style={{ borderColor: '#1f1f1f', backgroundColor: '#0f0f0f' }}>
             {step === 'upload' && (
-              <UploadStep onNext={() => goTo('categorizing')} />
+              <UploadStep onStart={(inp) => { setNotice(null); setInput(inp); goTo('categorizing') }} />
             )}
-            {step === 'categorizing' && (
-              <CategorizingStep onNext={(txs) => { setTransactions(txs); goTo('review') }} />
+            {step === 'categorizing' && input && (
+              <CategorizingStep
+                input={input}
+                onDone={(txs, note) => { setTransactions(txs); setNotice(note); goTo('review') }}
+              />
             )}
             {step === 'review' && (
               <ReviewStep transactions={transactions} onNext={(txs) => { setTransactions(txs); goTo('export') }} />
@@ -688,17 +751,6 @@ export default function DemoPage() {
               <p className="text-xs mt-2" style={{ color: '#888888' }}>
                 At 50 clients/month, CloseBooks saves your firm <strong style={{ color: '#FAFAFA' }}>~83 hours</strong> every month.
               </p>
-            </div>
-
-            {/* Testimonial */}
-            <div className="rounded-2xl border p-5" style={{ borderColor: '#1f1f1f', backgroundColor: '#0f0f0f' }}>
-              <div className="flex gap-1 mb-2">
-                {[...Array(5)].map((_, i) => <span key={i} style={{ color: '#f59e0b' }}>★</span>)}
-              </div>
-              <p className="text-sm italic" style={{ color: '#FAFAFA' }}>
-                &ldquo;We closed 18 clients in the time it used to take us to close 6. CloseBooks paid for itself in the first week.&rdquo;
-              </p>
-              <p className="text-xs mt-2 font-medium" style={{ color: '#888888' }}>— Sarah K., CPA, 12-person firm</p>
             </div>
 
             {/* More features */}
