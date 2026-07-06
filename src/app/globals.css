@@ -129,6 +129,41 @@
   /* Motion — easing; emphasized matches motion.ts ease.out */
   --ease-standard:   ease;
   --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* -------------------------------------------------------------------------
+     Semantic color tokens — foundation layer (PR 3)
+     Additive aliases only. No consumers migrated. Brand color unification is
+     a future product decision — both greens coexist intentionally for now.
+  ------------------------------------------------------------------------- */
+
+  /* Brand — marketing vs product greens (see docs/design-system/semantic-color-tokens.md) */
+  --color-brand-primary:  var(--color-accent);       /* #00C853 — neon; marketing, chrome, focus */
+  --color-brand-product:  #2d5a27;                   /* forest; dashboard CTAs (hardcoded today) */
+  --color-brand-muted:    var(--color-accent-light); /* #e8f0e6 — soft green tint backgrounds */
+
+  /* Actions — interactive controls on cream surfaces */
+  --color-action-primary:  #2d5a27;                   /* dominant dashboard button fill */
+  --color-action-hover:    #245020;                   /* connect/page forest hover */
+  --color-action-disabled: var(--color-warm);         /* #e8e0d4 — neutral disabled fill */
+
+  /* Surfaces — semantic aliases (canvas + raised); --surface-overlay pre-defined above */
+  --surface-canvas: var(--surface-base);              /* #faf8f4 page background */
+  --surface-raised: var(--surface-card);              /* #ffffff cards, panels */
+
+  /* Text — --text-primary and --text-secondary pre-defined above */
+  --text-muted:   var(--text-tertiary);               /* #a09a94 captions, hints */
+  --text-inverse: #ffffff;                            /* text on action/brand fills */
+
+  /* Borders — --border-strong pre-defined above */
+  --border-default: var(--color-border);              /* #e0dbd4 standard border */
+
+  /* Status — matches .badge-* in @layer components */
+  --color-success-bg: #dcfce7;
+  --color-success-fg: #166534;
+  --color-warning-bg: #fef9c3;
+  --color-warning-fg: #854d0e;
+  --color-danger-bg:  #fee2e2;
+  --color-danger-fg:  var(--danger);                  /* #991b1b */
 }
 
 [data-theme="dark"] {
