@@ -140,6 +140,22 @@ Waves (each wave = multiple small PRs):
 | PR | Date | Branch | Concern | Files | Build | Status | Notes |
 |---|---|---|---|---|---|---|---|
 | 1 | 2026-07-06 | `cursor/design-system-foundation-docs-5b0e` | Docs foundation | 4 | n/a | **Open** | Baseline metrics captured; no code changes |
+| 2 | 2026-07-06 | `cursor/design-system-semantic-tokens-5b0e` | Semantic foundation tokens | 2 | pass | **Open** | Additive tokens in globals.css; no consumers |
+
+---
+
+## Token inventory (PR 2)
+
+Added to `:root` in `src/app/globals.css`. **Zero consumers** — values documented for future adoption.
+
+| Category | Tokens |
+|---|---|
+| Spacing | `--space-1` (4px) … `--space-16` (64px) |
+| Radius | `--radius-sm` (6px), `--radius-md` (10px), `--radius-lg` (16px), `--radius-full` |
+| Shadow | `--shadow-sm`, `--shadow-md`, `--shadow-lg`, `--shadow-overlay` |
+| Z-index | `--z-dropdown` (100), `--z-sticky` (200), `--z-overlay` (300), `--z-modal` (400), `--z-toast` (500), `--z-max` (600) |
+| Typography | `--font-family-*`, `--font-size-xs` … `--font-size-4xl`, `--line-height-*`, `--font-weight-*` |
+| Motion | `--duration-fast` (180ms), `--duration-base` (300ms), `--duration-slow` (500ms), `--ease-standard`, `--ease-emphasized` |
 
 ---
 
@@ -197,6 +213,6 @@ Highest complexity or already best-in-class:
 
 ---
 
-## Next PR (after PR 1 merges)
+## Next PR (after PR 2 merges)
 
-**PR 2 proposal:** Add spacing, radius, z-index, and shadow tokens to `globals.css` as aliases to current dominant values. One file (+ migration log update). No visual change. Awaiting approval before implementation.
+**PR 3 proposal:** Add role-based color aliases (`--color-brand`, `--color-action`) and overlay/border consolidation tokens. `globals.css` only. No visual change. Awaiting approval.
