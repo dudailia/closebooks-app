@@ -9,6 +9,7 @@ Program documentation for the incremental design-system migration. **No runtime 
 | [Design Token Strategy](./design-token-strategy.md) | How tokens are structured, adopted, and enforced |
 | [Color Architecture](./color-architecture.md) | Current dual-green state, usage map, migration considerations |
 | [Semantic Color Tokens](./semantic-color-tokens.md) | PR 3 color token reference (source values, meaning, migration notes) |
+| [Button](./button.md) | Button primitive API, tokens, accessibility |
 | [Migration Roadmap](./migration-roadmap.md) | Phased plan, PR log, baseline metrics |
 
 ## Governing rules
