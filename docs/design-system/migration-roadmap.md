@@ -141,6 +141,7 @@ Waves (each wave = multiple small PRs):
 |---|---|---|---|---|---|---|---|
 | 1 | 2026-07-06 | `cursor/design-system-foundation-docs-5b0e` | Docs foundation | 4 | n/a | **Open** | Baseline metrics captured; no code changes |
 | 2 | 2026-07-06 | `cursor/design-system-semantic-tokens-5b0e` | Semantic foundation tokens | 2 | pass | **Open** | Additive tokens in globals.css; no consumers |
+| 3 | 2026-07-06 | `cursor/design-system-color-tokens-5b0e` | Semantic color tokens | 3 | pass | **Open** | Brand/action/surface/text/border/status aliases; no consumers |
 
 ---
 
@@ -156,6 +157,19 @@ Added to `:root` in `src/app/globals.css`. **Zero consumers** — values documen
 | Z-index | `--z-dropdown` (100), `--z-sticky` (200), `--z-overlay` (300), `--z-modal` (400), `--z-toast` (500), `--z-max` (600) |
 | Typography | `--font-family-*`, `--font-size-xs` … `--font-size-4xl`, `--line-height-*`, `--font-weight-*` |
 | Motion | `--duration-fast` (180ms), `--duration-base` (300ms), `--duration-slow` (500ms), `--ease-standard`, `--ease-emphasized` |
+
+### PR 3 — Semantic color tokens
+
+See [semantic-color-tokens.md](./semantic-color-tokens.md) for full reference.
+
+| Category | Tokens added |
+|---|---|
+| Brand | `--color-brand-primary`, `--color-brand-product`, `--color-brand-muted` |
+| Actions | `--color-action-primary`, `--color-action-hover`, `--color-action-disabled` |
+| Surfaces | `--surface-canvas`, `--surface-raised` (+ `--surface-overlay` pre-existing) |
+| Text | `--text-muted`, `--text-inverse` (+ `--text-primary`, `--text-secondary` pre-existing) |
+| Borders | `--border-default` (+ `--border-strong` pre-existing) |
+| Status | `--color-success-bg/fg`, `--color-warning-bg/fg`, `--color-danger-bg/fg` |
 
 ---
 
@@ -213,6 +227,6 @@ Highest complexity or already best-in-class:
 
 ---
 
-## Next PR (after PR 2 merges)
+## Next PR (after PR 3 merges)
 
-**PR 3 proposal:** Add role-based color aliases (`--color-brand`, `--color-action`) and overlay/border consolidation tokens. `globals.css` only. No visual change. Awaiting approval.
+**PR 4 proposal:** Expand global `prefers-reduced-motion` beyond `[data-surface="public"]`. `globals.css` only. Awaiting approval.
