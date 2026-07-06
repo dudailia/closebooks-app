@@ -7,7 +7,7 @@ const MODULES = [
     num: 1,
     title: 'AI Transaction Categorization',
     hours: 2,
-    desc: 'Master how CloseBooks AI works under the hood. Learn to review, validate, and override AI categorizations with confidence. Understand the 85-95% accuracy guarantee and how to handle edge cases.',
+    desc: 'Master how CloseBooks AI works under the hood. Learn to review, validate, and override AI categorizations with confidence. Understand confidence scoring, validation rules, and how to handle edge cases.',
     topics: ['How transformer models classify transactions', 'Reading confidence scores and flags', 'Handling ambiguous and split transactions', 'Building custom rules and overrides'],
   },
   {
