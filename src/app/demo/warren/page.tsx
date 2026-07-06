@@ -485,13 +485,12 @@ export default function WarrenDemoPage() {
           </div>
         </section>
 
-        {/* ── Testimonial-style callout ───────────────────────────────────── */}
+        {/* ── Early access note (no fabricated quotes) ───────────────────── */}
         <section>
           <div
             className="rounded-2xl p-8 relative overflow-hidden"
             style={{ backgroundColor: '#0f0f0f', color: '#FAFAFA', border: '1px solid #1f1f1f' }}
           >
-            {/* Decorative grain */}
             <div
               className="absolute inset-0 opacity-5 pointer-events-none"
               style={{
@@ -500,23 +499,33 @@ export default function WarrenDemoPage() {
             />
             <div className="relative z-10 max-w-2xl">
               <p
-                className="text-2xl sm:text-3xl leading-snug mb-6"
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: '#00C853',
+                  marginBottom: 12,
+                }}
+              >
+                Early access
+              </p>
+              <p
+                className="text-2xl sm:text-3xl leading-snug mb-4"
                 style={{ fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif', letterSpacing: '-0.02em' }}
               >
-                "Month-end close used to take half a day. With CloseBooks it's under 20 minutes."
+                We don&apos;t publish customer quotes without permission.
               </p>
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm"
-                  style={{ backgroundColor: '#b8734a' }}
-                >
-                  S
-                </div>
-                <div>
-                  <p className="text-sm font-medium" style={{ color: '#FAFAFA' }}>Sarah M.</p>
-                  <p className="text-xs" style={{ color: '#8a8078' }}>Solo CPA · 18 monthly bookkeeping clients</p>
-                </div>
-              </div>
+              <p className="text-sm leading-relaxed mb-6" style={{ color: '#888888' }}>
+                CloseBooks is onboarding pilot CPA firms. Try the interactive demo with sample data, or start a trial and run the workflow on your own files.
+              </p>
+              <Link
+                href="/demo"
+                className="inline-flex items-center text-sm font-semibold"
+                style={{ color: '#00C853', textDecoration: 'none' }}
+              >
+                Try the interactive demo →
+              </Link>
             </div>
           </div>
         </section>

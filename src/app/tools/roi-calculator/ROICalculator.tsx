@@ -448,7 +448,7 @@ export default function ROICalculator() {
         </div>
       </section>
 
-      {/* Social proof */}
+      {/* Early access — we do not publish customer quotes without permission */}
       <section
         style={{
           backgroundColor: '#0f0f0f',
@@ -461,13 +461,35 @@ export default function ROICalculator() {
             style={{
               fontSize: '13px',
               fontWeight: 600,
-              color: '#888888',
+              color: '#00C853',
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              marginBottom: '40px',
+              marginBottom: '16px',
             }}
           >
-            Trusted by CPA firms using CloseBooks
+            Early access
+          </p>
+          <h2
+            style={{
+              fontSize: 'clamp(24px, 4vw, 32px)',
+              fontWeight: 600,
+              color: '#FAFAFA',
+              margin: '0 0 12px',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            No customer quotes yet — verify the workflow yourself
+          </h2>
+          <p
+            style={{
+              fontSize: '15px',
+              color: '#888888',
+              margin: '0 auto 40px',
+              maxWidth: 560,
+              lineHeight: 1.6,
+            }}
+          >
+            CloseBooks is onboarding pilot CPA firms. We only publish testimonials with written permission. Use these tools to evaluate fit on your own data and volume.
           </p>
           <div
             style={{
@@ -477,12 +499,27 @@ export default function ROICalculator() {
             }}
           >
             {[
-              { quote: 'Saves me 15+ hours per month on close', name: 'John M., CPA' },
-              { quote: 'ROI was obvious in the first week', name: 'Sarah K., Tax Advisory' },
-              { quote: 'My clients love the clean reports', name: 'David R., Bookkeeping Firm' },
-            ].map(({ quote, name }) => (
+              {
+                title: 'Interactive demo',
+                copy: 'Upload a CSV or use sample data — walk through categorize, review, and export.',
+                href: '/demo',
+                cta: 'Try the demo',
+              },
+              {
+                title: 'Sample close package',
+                copy: 'Preview export checks, exception lists, and client-ready output before you commit.',
+                href: '/sample-close-package',
+                cta: 'View sample',
+              },
+              {
+                title: 'Start free trial',
+                copy: '14 days on your firm workspace — no credit card required at signup.',
+                href: '/signup',
+                cta: 'Create account',
+              },
+            ].map(({ title, copy, href, cta }) => (
               <div
-                key={name}
+                key={title}
                 style={{
                   backgroundColor: '#080808',
                   border: '1px solid #1f1f1f',
@@ -491,20 +528,15 @@ export default function ROICalculator() {
                   textAlign: 'left',
                 }}
               >
-                <p
-                  style={{
-                    fontSize: '15px',
-                    color: '#FAFAFA',
-                    fontStyle: 'italic',
-                    margin: '0 0 12px',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  &ldquo;{quote}&rdquo;
+                <p style={{ fontSize: '15px', fontWeight: 600, color: '#FAFAFA', margin: '0 0 8px' }}>
+                  {title}
                 </p>
-                <p style={{ fontSize: '13px', color: '#888888', margin: 0, fontWeight: 600 }}>
-                  — {name}
+                <p style={{ fontSize: '14px', color: '#888888', margin: '0 0 16px', lineHeight: 1.55 }}>
+                  {copy}
                 </p>
+                <Link href={href} style={{ fontSize: '14px', fontWeight: 700, color: '#00C853', textDecoration: 'none' }}>
+                  {cta} →
+                </Link>
               </div>
             ))}
           </div>
