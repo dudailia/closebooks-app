@@ -142,6 +142,19 @@ Waves (each wave = multiple small PRs):
 | 1 | 2026-07-06 | `cursor/design-system-foundation-docs-5b0e` | Docs foundation | 4 | n/a | **Open** | Baseline metrics captured; no code changes |
 | 2 | 2026-07-06 | `cursor/design-system-semantic-tokens-5b0e` | Semantic foundation tokens | 2 | pass | **Open** | Additive tokens in globals.css; no consumers |
 | 3 | 2026-07-06 | `cursor/design-system-color-tokens-5b0e` | Semantic color tokens | 3 | pass | **Open** | Brand/action/surface/text/border/status aliases; no consumers |
+| 4 | 2026-07-06 | `cursor/design-system-reduced-motion-5b0e` | Global reduced-motion policy | 2 | pass | **Open** | `prefers-reduced-motion` now applies app-wide via globals.css |
+
+---
+
+## PR 4 — Global reduced motion
+
+| Item | Detail |
+|---|---|
+| Goal | Expand `prefers-reduced-motion` from `[data-surface="public"]` only to all surfaces |
+| Files | `src/app/globals.css`, `docs/design-system/migration-roadmap.md` |
+| CSS coverage | `.page-enter`, `.page-content`, `.animate-*`, `.cb-skeleton`, `.confidence-fill`, `.step-line`, `html` smooth scroll, inline transitions |
+| Not covered | Framer Motion, `setInterval` carousels (JS-driven — future component PRs) |
+| Normal motion | Unchanged when user does not prefer reduced motion |
 
 ---
 
@@ -227,6 +240,6 @@ Highest complexity or already best-in-class:
 
 ---
 
-## Next PR (after PR 3 merges)
+## Next PR (after PR 4 merges)
 
-**PR 4 proposal:** Expand global `prefers-reduced-motion` beyond `[data-surface="public"]`. `globals.css` only. Awaiting approval.
+**PR 5 proposal:** Add `src/design-system/tokens/index.ts` — JS re-exports of CSS custom properties for inline-style migrations. No consumers. Awaiting approval.
