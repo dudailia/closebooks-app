@@ -135,6 +135,22 @@ Motion
 
 ---
 
+## Motion accessibility (PR 4)
+
+Global `@media (prefers-reduced-motion: reduce)` in `globals.css` applies to **all surfaces** (marketing, dashboard, review, portal).
+
+| Covered (CSS) | Not covered (JS) |
+|---|---|
+| `.page-enter`, `.page-content`, `.animate-*` | Framer Motion (`motion.ts`, landing sections) |
+| `.cb-skeleton` shimmer | `setInterval` carousels |
+| `.confidence-fill`, `.step-line` transitions | React state-driven animations |
+| `html { scroll-behavior: smooth }` | Inline `onMouseEnter` style mutations |
+| Universal `transition-*` / `animation-*` via `*` selector | |
+
+Normal motion is unchanged when the user does **not** prefer reduced motion.
+
+---
+
 ## PR checklist (every migration PR)
 
 - [ ] `npm run build` passes
