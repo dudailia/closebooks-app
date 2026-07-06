@@ -65,7 +65,7 @@ function Avatar({ initials, color }: { initials: string; color: string }) {
 
 export default function Testimonials() {
   return (
-    <section id="testimonials" style={{ padding: '60px 0 120px', position: 'relative' }}>
+    <section id="product-proof" style={{ padding: '60px 0 120px', position: 'relative' }}>
       <div
         aria-hidden
         style={{

@@ -1,6 +1,5 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 const MODULES = [
@@ -31,33 +30,6 @@ const MODULES = [
     hours: 2,
     desc: 'Use Radar, Inbox, and Advisory tools to turn your CloseBooks data into client retention and revenue. Learn how top CloseBooks advisors are adding $50K-$200K in advisory revenue annually.',
     topics: ['Setting up Radar alerts for proactive client outreach', 'Using the AI Advisory memo generator', 'Building an advisory service menu', 'Measuring and communicating your value to clients'],
-  },
-]
-
-const TESTIMONIALS = [
-  {
-    name: 'Jennifer Walsh, CPA',
-    firm: 'Walsh & Partners, Portland OR',
-    initials: 'JW',
-    color: '#2d5a27',
-    quote: 'I completed the certification in one weekend. The Tax Strategy module alone was worth it — I immediately identified a $94K opportunity for my largest client. Best 8 CPE hours I\'ve spent in years.',
-    score: '96%',
-  },
-  {
-    name: 'Marcus Thompson, CPA, MBA',
-    firm: 'Thompson Advisory Group, Denver CO',
-    initials: 'MT',
-    color: '#b8734a',
-    quote: 'The NASBA approval matters to my state. I was skeptical about online CPE for software training, but this is genuinely rigorous. The knowledge checks are real — not just click-through.',
-    score: '91%',
-  },
-  {
-    name: 'Aisha Okonkwo, CPA',
-    firm: 'Solo practice, Houston TX',
-    initials: 'AO',
-    color: '#1e40af',
-    quote: 'As a solo CPA with 8 clients, the certification helped me use CloseBooks 3x more effectively. I got my time-to-close from 4 days to 6 hours. The ROI was immediate.',
-    score: '88%',
   },
 ]
 
@@ -107,15 +79,6 @@ function BadgeAnimation() {
 }
 
 export default function CertificationPage() {
-  const [counter, setCounter] = useState(1200)
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCounter(prev => prev < 1247 ? prev + 1 : prev)
-    }, 50)
-    return () => clearInterval(interval)
-  }, [])
-
   return (
     <div style={{ backgroundColor: '#faf8f4', minHeight: '100vh' }}>
 
@@ -160,7 +123,7 @@ export default function CertificationPage() {
               Start Certification →
             </Link>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
-              <span style={{ color: '#fff', fontWeight: 700 }}>{counter.toLocaleString()} CPAs</span> certified
+              Early access — advisor stories publish with permission only
             </div>
           </div>
         </div>
@@ -230,42 +193,38 @@ export default function CertificationPage() {
           </div>
         </div>
 
-        {/* Social proof counter */}
+        {/* Program facts — no fabricated enrollment counts */}
         <div style={{ textAlign: 'center', marginBottom: 80 }}>
           <div style={{ display: 'inline-block', backgroundColor: '#fff', border: '1px solid #e8e0d4', borderRadius: 16, padding: '24px 48px' }}>
-            <div style={{ fontSize: 48, fontWeight: 800, color: '#1a1714' }}>{counter.toLocaleString()}</div>
-            <div style={{ fontSize: 15, color: '#6b6560' }}>CPAs have earned the CloseBooks Certified Advisor credential</div>
-            <div style={{ marginTop: 12, display: 'flex', gap: 16, justifyContent: 'center' }}>
-              {['NASBA Approved', '8 CPE Credits', 'Recognized by AICPA Members'].map(tag => (
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1714', marginBottom: 8 }}>CloseBooks Certified Advisor</div>
+            <div style={{ fontSize: 15, color: '#6b6560', maxWidth: 420, lineHeight: 1.6 }}>
+              Certification is available to subscribers and non-subscribers. We do not publish enrollment totals or advisor quotes until participants opt in.
+            </div>
+            <div style={{ marginTop: 12, display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {['NASBA Approved', '8 CPE Credits', 'Knowledge checks required'].map(tag => (
                 <span key={tag} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 10, backgroundColor: '#f0fdf4', color: '#2d5a27', fontWeight: 600 }}>{tag}</span>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Testimonials */}
+        {/* Early access — customer quotes coming with permission */}
         <div>
           <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <h2 style={{ fontSize: 30, fontWeight: 800, color: '#1a1714' }}>What Certified Advisors Say</h2>
+            <h2 style={{ fontSize: 30, fontWeight: 800, color: '#1a1714' }}>Advisor stories coming soon</h2>
+            <p style={{ fontSize: 15, color: '#6b6560', marginTop: 10, maxWidth: 520, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
+              We&apos;re onboarding pilot firms now. Certified advisor testimonials will appear here only with written permission.
+            </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
-            {TESTIMONIALS.map((t, i) => (
-              <div key={i} style={{ backgroundColor: '#fff', border: '1px solid #e8e0d4', borderRadius: 14, padding: 28 }}>
-                <div style={{ fontSize: 24, color: '#b8734a', marginBottom: 12 }}>&ldquo;</div>
-                <p style={{ fontSize: 14, color: '#1a1714', lineHeight: 1.7, marginBottom: 20 }}>{t.quote}</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 42, height: 42, borderRadius: '50%', backgroundColor: t.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>{t.initials}</span>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1714' }}>{t.name}</div>
-                    <div style={{ fontSize: 11, color: '#6b6560' }}>{t.firm}</div>
-                  </div>
-                  <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#2d5a27' }}>{t.score}</div>
-                    <div style={{ fontSize: 10, color: '#a09a94' }}>avg score</div>
-                  </div>
-                </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+            {[
+              { title: '4 modules', copy: '2 CPE hours each — categorization, close workflow, tax strategy, and client success.' },
+              { title: 'Knowledge checks', copy: 'Advance by passing module quizzes — not click-through completion.' },
+              { title: 'Included for subscribers', copy: 'Free with any CloseBooks plan, or $299 one-time for non-subscribers.' },
+            ].map((item) => (
+              <div key={item.title} style={{ backgroundColor: '#fff', border: '1px solid #e8e0d4', borderRadius: 14, padding: 28, textAlign: 'left' }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1714', marginBottom: 8 }}>{item.title}</div>
+                <p style={{ fontSize: 14, color: '#6b6560', lineHeight: 1.7, margin: 0 }}>{item.copy}</p>
               </div>
             ))}
           </div>
@@ -276,7 +235,7 @@ export default function CertificationPage() {
       {/* CTA Footer */}
       <div style={{ backgroundColor: '#1a1714', padding: '60px 32px', textAlign: 'center' }}>
         <h2 style={{ fontSize: 32, fontWeight: 800, color: '#fff', marginBottom: 12 }}>Ready to get certified?</h2>
-        <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.6)', marginBottom: 28 }}>Join 1,247 CPAs who have already earned the credential.</p>
+        <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.6)', marginBottom: 28 }}>Start the curriculum in your dashboard — included with your plan or available as a one-time purchase.</p>
         <Link
           href="/dashboard/certification"
           style={{ display: 'inline-block', padding: '14px 40px', borderRadius: 10, backgroundColor: '#b8734a', color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}
