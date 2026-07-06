@@ -48,6 +48,87 @@
   --font-dm-sans:  var(--font-inter),    'Inter',            system-ui, sans-serif;
   --font-dm-mono:  var(--font-jetbrains),'JetBrains Mono',   monospace;
   --font-dm-serif: var(--font-display),  'Instrument Serif', Georgia, serif;
+
+  /* -------------------------------------------------------------------------
+     Semantic design tokens — foundation layer (PR 2)
+     Additive only. No consumers migrated yet. Values match dominant patterns
+     in the codebase so future adoption does not shift computed styles.
+  ------------------------------------------------------------------------- */
+
+  /* Spacing — 4px grid (--space-1 = 4px … --space-16 = 64px) */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  28px;
+  --space-8:  32px;
+  --space-9:  36px;
+  --space-10: 40px;
+  --space-11: 44px;
+  --space-12: 48px;
+  --space-13: 52px;
+  --space-14: 56px;
+  --space-15: 60px;
+  --space-16: 64px;
+
+  /* Radius — maps to dominant control / surface / pill values */
+  --radius-sm:   6px;    /* compact controls, tags */
+  --radius-md:   10px;   /* inputs, buttons (DarkFormPrimitives) */
+  --radius-lg:   16px;   /* cards, modals */
+  --radius-full: 9999px; /* pills, avatars, scrollbar thumbs */
+
+  /* Shadow / elevation — matches .surface-raised and common modal depth */
+  --shadow-sm:       0 1px 3px rgba(26, 23, 20, 0.06);
+  --shadow-md:       0 4px 16px rgba(26, 23, 20, 0.08);
+  --shadow-lg:       0 8px 32px rgba(26, 23, 20, 0.12);
+  --shadow-overlay:  0 16px 48px rgba(26, 23, 20, 0.18);
+
+  /* Z-index contract — canonical stacking order (replaces ad-hoc 50–9999) */
+  --z-dropdown: 100;
+  --z-sticky:   200;
+  --z-overlay:  300;
+  --z-modal:    400;
+  --z-toast:    500;
+  --z-max:      600;
+
+  /* Typography — families (alias existing stacks) */
+  --font-family-sans:    var(--font-sans);
+  --font-family-display: var(--font-display);
+  --font-family-mono:    var(--font-mono);
+
+  /* Typography — size scale (body default = 15px per base reset) */
+  --font-size-xs:   11px;
+  --font-size-sm:   13px;
+  --font-size-base: 15px;
+  --font-size-md:   16px;
+  --font-size-lg:   18px;
+  --font-size-xl:   22px;
+  --font-size-2xl:  28px;
+  --font-size-3xl:  36px;
+  --font-size-4xl:  48px;
+
+  /* Typography — line heights */
+  --line-height-tight:   1.1;
+  --line-height-snug:    1.3;
+  --line-height-normal:  1.6;
+  --line-height-relaxed: 1.7;
+
+  /* Typography — weights */
+  --font-weight-normal:   400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  /* Motion — durations align with fadeUp (0.18s) and landing motion.ts tiers */
+  --duration-fast: 180ms;
+  --duration-base: 300ms;
+  --duration-slow: 500ms;
+
+  /* Motion — easing; emphasized matches motion.ts ease.out */
+  --ease-standard:   ease;
+  --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 [data-theme="dark"] {
