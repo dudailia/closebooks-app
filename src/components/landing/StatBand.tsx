@@ -16,10 +16,40 @@ const ROW2 = [
 ]
 
 const TRUST = [
-  { icon: '🔒', label: 'Security-first controls' },
-  { icon: '🤖', label: 'Powered by Claude AI' },
-  { icon: '⚡', label: 'Human review built in' },
-  { icon: '🔁', label: 'QuickBooks-ready exports' },
+  {
+    label: 'Security-first controls',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+        <rect x="3" y="6" width="8" height="6" rx="1" stroke="#00C853" strokeWidth="1.2" />
+        <path d="M4.5 6V4.5a2.5 2.5 0 015 0V6" stroke="#00C853" strokeWidth="1.2" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Powered by Claude AI',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+        <path d="M7 2l1 2.5 2.5.4-1.8 1.7.4 2.5L7 8.2 4.9 9.1l.4-2.5L3.5 4.9 6 4.5 7 2z" stroke="#00C853" strokeWidth="1.1" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Human review built in',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+        <path d="M2 7.5l3 3 7-7" stroke="#00C853" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    label: 'QuickBooks-ready exports',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+        <path d="M10 3H4v8h6V3z" stroke="#00C853" strokeWidth="1.1" />
+        <path d="M5 5.5h4M5 7.5h3" stroke="#00C853" strokeWidth="1.1" strokeLinecap="round" />
+      </svg>
+    ),
+  },
 ]
 
 // ─── Marquee row ──────────────────────────────────────────────────────────────
@@ -28,9 +58,9 @@ const TRUST = [
 // reduced-motion-aware only — the scoped [data-surface="public"] reduced-motion
 // CSS block freezes these keyframes). Not the section's signature moment.
 
-function MarqueeRow({ firms, reverse, duration }: { firms: string[]; reverse?: boolean; duration: number }) {
+function MarqueeRow({ items, reverse, duration }: { items: string[]; reverse?: boolean; duration: number }) {
   // Duplicate so the seamless -50% loop works
-  const doubled = [...firms, ...firms]
+  const doubled = [...items, ...items]
   return (
     <div
       style={{
@@ -49,26 +79,40 @@ function MarqueeRow({ firms, reverse, duration }: { firms: string[]; reverse?: b
           transform: 'translateZ(0)',
         }}
       >
-        {doubled.map((firm, i) => (
+        {doubled.map((item, i) => (
           <span
             key={i}
             style={{
               display: 'inline-flex',
               marginRight: 10,
               alignItems: 'center',
-              padding: '5px 14px',
-              borderRadius: 999,
-              backgroundColor: '#0f0f0f',
-              border: '1px solid #1a1a1a',
+              gap: 7,
+              padding: '5px 12px 5px 10px',
+              borderRadius: 8,
+              backgroundColor: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.08)',
               whiteSpace: 'nowrap',
-              fontSize: 13,
-              color: '#555555',
+              fontSize: 12,
+              fontWeight: 500,
+              color: '#888888',
               fontFamily: 'var(--font-sans)',
-              letterSpacing: '-0.01em',
+              letterSpacing: '0.01em',
+              textTransform: 'uppercase',
               userSelect: 'none',
             }}
           >
-            {firm}
+            <span
+              aria-hidden
+              style={{
+                width: 5,
+                height: 5,
+                borderRadius: '50%',
+                backgroundColor: '#00C853',
+                flexShrink: 0,
+                opacity: 0.7,
+              }}
+            />
+            {item}
           </span>
         ))}
       </div>
@@ -315,10 +359,36 @@ export default function StatBand() {
         }
       `}</style>
 
-      {/* ════ PART 1 — Logo marquee ════ */}
+      {/* ════ PART 1 — Product capabilities (not customer logos) ════ */}
+      <div style={{ maxWidth: 1200, margin: '0 auto 28px', padding: '0 28px', textAlign: 'center' }}>
+        <p
+          style={{
+            margin: 0,
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: '#00C853',
+            fontFamily: 'var(--font-sans)',
+          }}
+        >
+          Capabilities
+        </p>
+        <p
+          style={{
+            margin: '8px 0 0',
+            fontSize: 13,
+            color: '#666666',
+            fontFamily: 'var(--font-sans)',
+            letterSpacing: '-0.01em',
+          }}
+        >
+          Built into every plan — not a customer list
+        </p>
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 72 }}>
-        <MarqueeRow firms={ROW1} duration={30} />
-        <MarqueeRow firms={ROW2} reverse duration={24} />
+        <MarqueeRow items={ROW1} duration={30} />
+        <MarqueeRow items={ROW2} reverse duration={24} />
       </div>
 
       {/* ════ PART 2 — Three hero metrics ════ */}
@@ -342,13 +412,7 @@ export default function StatBand() {
               key={item.label}
               style={{ display: 'flex', alignItems: 'center', gap: 8 }}
             >
-              <span
-                style={{
-                  fontSize: 14,
-                  filter: 'grayscale(0.4) brightness(0.65)',
-                  lineHeight: 1,
-                }}
-              >
+              <span style={{ display: 'flex', alignItems: 'center', lineHeight: 1, flexShrink: 0 }}>
                 {item.icon}
               </span>
               <span
