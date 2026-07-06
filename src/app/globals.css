@@ -679,15 +679,32 @@ button,
 [data-surface="public"] .t-caption { font-family: var(--font-sans); font-size: 13px; line-height: 1.45; font-weight: 500; }
 [data-surface="public"] .t-data    { font-family: var(--font-mono); letter-spacing: -0.02em; font-weight: 500; font-variant-numeric: tabular-nums; }
 
-/* Reduced-motion — public surfaces only (dashboard + review page untouched) */
+/* ---------------------------------------------------------------------------
+   Reduced motion — global accessibility policy (PR 4)
+   Applies to all surfaces: marketing, auth, dashboard, review, portal.
+   Normal motion is unchanged when the user does not prefer reduced motion.
+
+   Covers CSS-driven motion only:
+   - Utility classes (.page-enter, .animate-*, .page-content)
+   - Component layer (.confidence-fill, .step-line, .cb-skeleton)
+   - html scroll-behavior: smooth
+   - Inline transition/animation styles (via universal selector)
+
+   Does NOT cover JS-driven motion (Framer Motion, setInterval carousels).
+   Component migration for those is a future PR.
+--------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
-  [data-surface="public"],
-  [data-surface="public"] *,
-  [data-surface="public"] *::before,
-  [data-surface="public"] *::after {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0.001ms !important;
     transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
+    transition-delay: 0.001ms !important;
   }
 }
