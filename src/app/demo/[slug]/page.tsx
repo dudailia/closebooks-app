@@ -133,8 +133,7 @@ export default function PersonalizedDemoPage({
             Hi {companyName.split(' ')[0]}, here&apos;s what CloseBooks can do for {companyName}.
           </h1>
           <p className="text-lg max-w-xl" style={{ color: '#6b6560', lineHeight: 1.6 }}>
-            Every transaction below was categorized by AI in under 60 seconds.
-            High-confidence items are auto-approved. Low-confidence items are flagged for your review.
+            Sample transactions below show AI-assisted categories with confidence scores. Your team approves before export.
           </p>
 
           {/* Stats */}
@@ -274,8 +273,8 @@ export default function PersonalizedDemoPage({
               },
               {
                 n: '02',
-                title: 'AI categorizes in 60 seconds',
-                body: 'CloseBooks reads every line, maps it to your chart of accounts, and auto-approves high-confidence items.',
+                title: 'AI suggests categories',
+                body: 'CloseBooks reads each line, maps it to your chart of accounts, and flags low-confidence items for your review.',
               },
               {
                 n: '03',
@@ -315,7 +314,7 @@ export default function PersonalizedDemoPage({
                 Ready to try it with {companyName}&apos;s data?
               </h2>
               <p className="text-sm" style={{ color: '#4a6b46' }}>
-                Upload your own bank statement and see results in 60 seconds. Free, no credit card required.
+                Upload your own bank statement and try AI-assisted categorization. Free trial — no credit card required.
               </p>
             </div>
             <div className="shrink-0 space-y-2">

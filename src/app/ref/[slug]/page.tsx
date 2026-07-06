@@ -16,16 +16,16 @@ export default function ReferralLandingPage({ params }: Props) {
   const firmName = params.slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 
   const stats = [
-    { value: '72%', label: 'of transactions auto-categorized on average' },
-    { value: '3.5 hrs', label: 'saved per client per month' },
-    { value: '85%+', label: 'confidence threshold for auto-approval' },
+    { value: 'AI-assisted', label: 'categorization with confidence scores' },
+    { value: 'Human review', label: 'before every export' },
+    { value: '85%+', label: 'confidence threshold for suggested auto-approval' },
   ]
 
   const features = [
     {
       icon: '🤖',
       title: 'AI categorization in minutes',
-      desc: 'Upload a bank statement and watch the AI categorize every transaction — with confidence scores and reasoning.',
+      desc: 'Upload a bank statement and get AI-suggested categories for every transaction — with confidence scores, reasoning, and your review before export.',
     },
     {
       icon: '📊',

@@ -42,13 +42,13 @@ const STEPS = [
   },
   {
     num: '02',
-    title: 'Watch AI do the work',
-    body: "Claude reads each transaction, applies your firm's learned rules, and returns a confidence-scored category. Lower-confidence items are flagged for your 60-second review.",
+    title: 'AI suggests, you approve',
+    body: "Claude reads each transaction, applies your firm's learned rules, and returns a confidence-scored category. Lower-confidence items are flagged for your review.",
   },
   {
     num: '03',
     title: 'Review. Approve. Done.',
-    body: 'You only see what needs human judgment — usually 3–5 transactions out of hundreds. One click approves the close and generates your client narrative.',
+    body: 'You only see what needs human judgment — exceptions and low-confidence rows. One click approves the close and generates your client narrative.',
   },
 ]
 

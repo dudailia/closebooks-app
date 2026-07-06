@@ -210,15 +210,15 @@ export default function AgentOrchestra() {
             transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
           >
             <p style={{ margin: 0, color: activeAgent.color, fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 800 }}>
-              AI agents working in parallel
+              Specialized workflow stages
             </p>
             <h2 style={{ margin: '16px 0 0', color: '#FAFAFA', fontFamily: 'var(--font-display)', fontSize: 'clamp(40px, 5.8vw, 70px)', lineHeight: 0.98, letterSpacing: '-0.055em', fontWeight: 400 }}>
-              Not software. A close team that never sleeps.
+              One workflow for parsing, categorization, review, and export.
             </h2>
             <p style={{ margin: '22px 0 0', color: '#A1A1A1', fontSize: 16, lineHeight: 1.7, maxWidth: 560 }}>
-              CloseBooks coordinates specialized AI agents for parsing, categorization,
+              CloseBooks coordinates parsing, categorization,
               validation, review, export, and client communication, so your team can manage
-              every close from one beautiful workflow.
+              every close from one guided workflow.
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10, marginTop: 28 }}>
