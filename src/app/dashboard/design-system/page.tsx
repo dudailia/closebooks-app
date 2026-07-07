@@ -1,6 +1,7 @@
 'use client'
 
 import ButtonGallery from '@/components/ui/ButtonGallery'
+import CardGallery from '@/components/ui/CardGallery'
 import InputGallery from '@/components/ui/InputGallery'
 
 export default function DesignSystemPage() {
@@ -81,6 +82,21 @@ export default function DesignSystemPage() {
             Input system
           </h2>
           <InputGallery />
+        </section>
+
+        <section>
+          <h2
+            style={{
+              margin: '0 0 var(--space-6)',
+              fontSize: 'var(--font-size-xl)',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Card system
+          </h2>
+          <CardGallery />
         </section>
       </div>
     </div>
