@@ -10,7 +10,7 @@
 
 | Prop | Type | Default | Description |
 |---|---|---|---|
-| `variant` | `primary` \| `secondary` \| `ghost` \| `danger` | `primary` | Visual style |
+| `variant` | `primary` \| `secondary` \| `ghost` \| `danger` \| `brand` \| `brand-ghost` | `primary` | Visual style |
 | `size` | `sm` \| `md` \| `lg` | `md` | Padding and type scale |
 | `loading` | `boolean` | `false` | Shows spinner; disables interaction |
 | `fullWidth` | `boolean` | `false` | `width: 100%` |
@@ -28,6 +28,12 @@ Extends native `<button>` attributes. Supports `forwardRef`.
 | `secondary` | `--surface-raised` | `--text-primary` | `--border-default` | `--surface-elevated` |
 | `ghost` | transparent | `--text-secondary` | transparent | `--surface-elevated` |
 | `danger` | `--color-danger-fg` | `--text-inverse` | transparent | `brightness(0.92)` |
+| `brand` | gradient `--color-brand-primary` → `--color-accent-dark` | `#00110A` | none | lift + glow |
+| `brand-ghost` | `rgba(255,255,255,0.04)` | `--text-primary` (dark) | `--border-strong` | brighter fill |
+
+### Auth surfaces (`brand` / `brand-ghost`)
+
+Match legacy `DarkButton` on `PublicShell` / `[data-theme="dark"]`. Use `style={{ padding: '12px 18px', fontSize: 14, borderRadius: 10 }}` for pixel parity until a dedicated `size="auth"` is added.
 
 ---
 
@@ -60,6 +66,7 @@ Extends native `<button>` attributes. Supports `forwardRef`.
 | Outlined actions | `secondary` | Replaces white + border cards |
 | Tertiary / cancel | `ghost` | |
 | Delete / destructive | `danger` | |
-| Auth dark forms | Future `brand` variant or theme wrapper | `DarkButton` not migrated in PR 5 |
+| Auth dark forms | `brand` / `brand-ghost` | Migrated: `login/page.tsx` (PR 6) |
 
-First consumer migration (PR 6+): `(auth)/login/page.tsx`.
+First consumer migration (PR 6): `(auth)/login/page.tsx` ✓  
+Next: `(auth)/signup/page.tsx`.

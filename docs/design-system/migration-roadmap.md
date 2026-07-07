@@ -144,6 +144,7 @@ Waves (each wave = multiple small PRs):
 | 3 | 2026-07-06 | `cursor/design-system-color-tokens-5b0e` | Semantic color tokens | 3 | pass | **Open** | Brand/action/surface/text/border/status aliases; no consumers |
 | 4 | 2026-07-06 | `cursor/design-system-reduced-motion-5b0e` | Global reduced-motion policy | 2 | pass | **Open** | `prefers-reduced-motion` now applies app-wide via globals.css |
 | 5 | 2026-07-06 | `cursor/design-system-button-primitive-5b0e` | Button primitive + gallery | 5 | pass | **Open** | `Button.tsx`; gallery at `/dashboard/design-system` |
+| 6 | 2026-07-07 | `cursor/design-system-login-button-5b0e` | Login → Button migration | 3 | pass | **Open** | `brand` + `brand-ghost` variants; pixel parity |
 
 ---
 
@@ -241,6 +242,6 @@ Highest complexity or already best-in-class:
 
 ---
 
-## Next PR (after PR 5 merges)
+## Next PR (after PR 6 merges)
 
-**PR 6 proposal:** Migrate `(auth)/login/page.tsx` to `Button` + `Input` primitives. One page. Pixel parity. Awaiting approval.
+**PR 7 proposal:** Migrate `(auth)/signup/page.tsx` to `Button` with pixel parity. Awaiting approval.
