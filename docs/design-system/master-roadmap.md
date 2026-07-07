@@ -154,7 +154,7 @@ Flows                  ← multi-page journeys (signup → onboard → first clo
 
 | Primitive | Purpose | Dependencies | Status | Priority |
 |---|---|---|---|---|
-| **Badge** | Status pills, counts, tags | Color status tokens | — 8+ duplicate systems; `TransactionRow` pill is reference | P0 |
+| **Badge** | Status pills, counts, tags | Color status tokens | ✓ PR 10 — gallery only | P0 |
 | **Avatar** | User/client/firm initials or image | Tokens | — not implemented | P2 |
 | **Icon** | Consistent SVG icon set (replace emoji) | Tokens | — emoji throughout portal/demo | P1 |
 | **Card** | Grouped content surface | Surface, shadow, radius tokens | ✓ PR 8 — gallery only | P0 |
@@ -305,13 +305,14 @@ Every shell must expose:
 | A7 | Input system primitives + gallery | ✓ / in flight |
 | A8 | Card system primitives + gallery | ✓ / in flight |
 | A9 | Dialog system primitives + gallery | ✓ / in flight |
+| A10 | Badge primitive + gallery | ✓ / in flight |
 
 #### Wave B — Primitives P0 (blocking everything else)
 
 One primitive per PR. Gallery entry required before any consumer PR.
 
 1. ~~`Input` + `Label` + `Field`~~ ✓ PR 7
-2. `Badge` (from `TransactionRow` StatusPill)
+2. ~~`Badge`~~ ✓ PR 10
 3. ~~`Card`~~ ✓ PR 8
 4. ~~`Dialog`~~ ✓ PR 9
 5. `PageContainer`
