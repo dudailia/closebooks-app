@@ -285,6 +285,19 @@
     box-shadow: 0 0 0 3px var(--danger-soft);
   }
 
+  /* Card system — interactive / link / button focus */
+  .cb-card:focus {
+    outline: none;
+  }
+
+  .cb-card[data-variant="interactive"]:focus-visible,
+  a.cb-card:focus-visible,
+  button.cb-card:focus-visible {
+    outline: none;
+    border-color: var(--color-brand-product);
+    box-shadow: 0 0 0 3px var(--ring-soft);
+  }
+
   /* Scrollbar — subtle and on-palette */
   ::-webkit-scrollbar {
     width: 6px;
