@@ -180,8 +180,8 @@ Flows                  ← multi-page journeys (signup → onboard → first clo
 | Primitive | Purpose | Dependencies | Status | Priority |
 |---|---|---|---|---|
 | **Table** | Accessible data table primitives | Typography, Badge, tokens | — `TransactionTable` is reference (Phase 4) | P0 |
-| **PageHeader** | Title + description + actions row | Typography, Button | — reimplemented 50+ times | P0 |
-| **PageContainer** | Max-width + horizontal padding contract | Spacing tokens | — 6+ max-width values in use | P0 |
+| **PageHeader** | Title + description + actions row | Typography, Button | ✓ PR 11 — gallery only | P0 |
+| **PageContainer** | Max-width + horizontal padding contract | Spacing tokens | ✓ PR 11 — gallery only | P0 |
 
 ---
 
@@ -203,7 +203,7 @@ Business-neutral assemblies. Built **only** from primitives. Each ships with gal
 | **FilterBar** | Filter chips + search + sort | Button, Badge, DropdownMenu | — clients, vault, inbox inline | P1 |
 | **DataGridToolbar** | Bulk actions + selection count + filters | Button, Badge, FilterBar | — `BulkActionBar` partial | P1 |
 | **ReviewPanel** | Side panel for detail inspection | Drawer, Card, Field | — review history drawer pattern | P2 |
-| **EmptyState** | Zero-data illustration + CTA | Card, Button, Icon | — 40+ bespoke empty blocks | P1 |
+| **EmptyState** | Zero-data illustration + CTA | Card, Button, Icon | ✓ PR 11 — gallery only | P1 |
 | **ErrorState** | Recoverable error display | Card, Button | — `ErrorBoundary` partial | P2 |
 | **ConfirmDialog** | Delete/destructive confirmation | Dialog, Button | — inline in `TransactionTable` | P1 |
 
@@ -306,6 +306,7 @@ Every shell must expose:
 | A8 | Card system primitives + gallery | ✓ / in flight |
 | A9 | Dialog system primitives + gallery | ✓ / in flight |
 | A10 | Badge primitive + gallery | ✓ / in flight |
+| A11 | Layout primitives + gallery | ✓ / in flight |
 
 #### Wave B — Primitives P0 (blocking everything else)
 
@@ -315,8 +316,7 @@ One primitive per PR. Gallery entry required before any consumer PR.
 2. ~~`Badge`~~ ✓ PR 10
 3. ~~`Card`~~ ✓ PR 8
 4. ~~`Dialog`~~ ✓ PR 9
-5. `PageContainer`
-6. `PageHeader`
+5. ~~`PageContainer` + `PageHeader` + layout helpers~~ ✓ PR 11
 7. `Toast` (from `ActionToast`)
 8. `Table` primitives only (`Table`, `TableHead`, `TableRow`, `TableCell`) — not full DataTable
 

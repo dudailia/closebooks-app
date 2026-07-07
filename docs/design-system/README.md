@@ -20,6 +20,7 @@ Program documentation for the incremental design-system migration. **No runtime 
 | [Card system](./card.md) | Card, CardHeader, CardBody, CardFooter, StatCard, SectionCard |
 | [Dialog system](./dialog.md) | Dialog, Drawer, ConfirmationDialog, Modal*, Overlay, FocusTrap, Portal |
 | [Badge](./badge.md) | Badge primitive API, variants, accessibility |
+| [Layout](./layout.md) | PageContainer, PageHeader, PageSection, PageActions, PageGrid, EmptyState |
 | [Adoption Audit](./adoption-audit.md) | Duplication analysis, conversion path ranking |
 
 ## Governing rules
@@ -59,7 +60,7 @@ src/design-system/
 |---|---|
 | Phase 0 — Documentation foundation | **Complete** |
 | Phase 1 — Foundation tokens | **In progress** (PRs 2–4) |
-| Phase 2 — Primitive components | **In progress** (Button–Badge PR 5–10) |
+| Phase 2 — Primitive components | **In progress** (Button–Layout PR 5–11) |
 | Phase 3 — Application migration | Not started |
 | Phase 4 — Visual polish & enforcement | Not started |
 
