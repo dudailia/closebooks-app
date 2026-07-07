@@ -157,7 +157,7 @@ Flows                  ← multi-page journeys (signup → onboard → first clo
 | **Badge** | Status pills, counts, tags | Color status tokens | — 8+ duplicate systems; `TransactionRow` pill is reference | P0 |
 | **Avatar** | User/client/firm initials or image | Tokens | — not implemented | P2 |
 | **Icon** | Consistent SVG icon set (replace emoji) | Tokens | — emoji throughout portal/demo | P1 |
-| **Card** | Grouped content surface | Surface, shadow, radius tokens | — `.surface-raised`, `DarkCard`, inline `#fff` | P0 |
+| **Card** | Grouped content surface | Surface, shadow, radius tokens | ✓ PR 8 — gallery only | P0 |
 | **Spinner** | Inline loading indicator | Motion tokens | — `animate-spin` ad hoc | P1 |
 | **Skeleton** | Placeholder loading shapes | Motion tokens | ◐ `Skeleton.tsx` + `.cb-skeleton` dual system | P1 |
 | **Toast** | Ephemeral notifications | Dialog z-index, motion | — 3 independent implementations | P1 |
@@ -303,6 +303,7 @@ Every shell must expose:
 | A5 | Button primitive + gallery | ✓ |
 | A6 | Login → Button | ✓ / in flight |
 | A7 | Input system primitives + gallery | ✓ / in flight |
+| A8 | Card system primitives + gallery | ✓ / in flight |
 
 #### Wave B — Primitives P0 (blocking everything else)
 
@@ -310,7 +311,7 @@ One primitive per PR. Gallery entry required before any consumer PR.
 
 1. ~~`Input` + `Label` + `Field`~~ ✓ PR 7
 2. `Badge` (from `TransactionRow` StatusPill)
-3. `Card` (from `.surface-raised`)
+3. ~~`Card`~~ ✓ PR 8
 4. `Dialog` (from `OnboardingModal`)
 5. `PageContainer`
 6. `PageHeader`
