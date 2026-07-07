@@ -145,6 +145,7 @@ Waves (each wave = multiple small PRs):
 | 4 | 2026-07-06 | `cursor/design-system-reduced-motion-5b0e` | Global reduced-motion policy | 2 | pass | **Open** | `prefers-reduced-motion` now applies app-wide via globals.css |
 | 5 | 2026-07-06 | `cursor/design-system-button-primitive-5b0e` | Button primitive + gallery | 5 | pass | **Open** | `Button.tsx`; gallery at `/dashboard/design-system` |
 | 6 | 2026-07-07 | `cursor/design-system-login-button-5b0e` | Login → Button migration | 3 | pass | **Open** | `brand` + `brand-ghost` variants; pixel parity |
+| 7 | 2026-07-07 | `cursor/design-system-input-primitive-5b0e` | Input system primitives + gallery | 14 | pass | **Open** | Input, Textarea, Select, Label, Field, HelperText, ErrorMessage; `.cb-input` focus CSS |
 
 ---
 
@@ -242,6 +243,6 @@ Highest complexity or already best-in-class:
 
 ---
 
-## Next PR (after PR 6 merges)
+## Next PR (after PR 7 merges)
 
-**PR 7 proposal:** Migrate `(auth)/signup/page.tsx` to `Button` with pixel parity. Awaiting approval.
+**PR 8 proposal:** Migrate `(auth)/signup/page.tsx` to `Button` + `Input` with pixel parity. Awaiting approval.
