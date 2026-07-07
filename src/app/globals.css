@@ -298,6 +298,27 @@
     box-shadow: 0 0 0 3px var(--ring-soft);
   }
 
+  /* Dialog system — enter animations (respects prefers-reduced-motion globally) */
+  .cb-modal-overlay {
+    animation: cbModalFadeIn var(--duration-fast) var(--ease-standard) both;
+  }
+
+  .cb-modal-panel {
+    animation: cbModalEnter var(--duration-fast) var(--ease-emphasized) both;
+  }
+
+  .cb-drawer-panel[data-side="right"] {
+    animation: cbDrawerEnterRight var(--duration-base) var(--ease-emphasized) both;
+  }
+
+  .cb-drawer-panel[data-side="left"] {
+    animation: cbDrawerEnterLeft var(--duration-base) var(--ease-emphasized) both;
+  }
+
+  .cb-drawer-panel[data-side="bottom"] {
+    animation: cbDrawerEnterBottom var(--duration-base) var(--ease-emphasized) both;
+  }
+
   /* Scrollbar — subtle and on-palette */
   ::-webkit-scrollbar {
     width: 6px;
@@ -478,6 +499,31 @@
 
 @keyframes fadeSlideIn {
   from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cbModalFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes cbModalEnter {
+  from { opacity: 0; transform: translateY(var(--space-2)) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes cbDrawerEnterRight {
+  from { opacity: 0; transform: translateX(var(--space-8)); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes cbDrawerEnterLeft {
+  from { opacity: 0; transform: translateX(calc(-1 * var(--space-8))); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes cbDrawerEnterBottom {
+  from { opacity: 0; transform: translateY(var(--space-8)); }
   to   { opacity: 1; transform: translateY(0); }
 }
 

@@ -43,3 +43,32 @@ export { default as SectionCard } from '@/components/ui/SectionCard'
 export type { SectionCardProps } from '@/components/ui/SectionCard'
 
 export type { CardVariant, CardPadding } from '@/components/ui/cardStyles'
+
+export { default as Portal } from '@/components/ui/Portal'
+export type { PortalProps } from '@/components/ui/Portal'
+
+export { default as Overlay } from '@/components/ui/Overlay'
+export type { OverlayProps } from '@/components/ui/Overlay'
+
+export { default as FocusTrap } from '@/components/ui/FocusTrap'
+export type { FocusTrapProps } from '@/components/ui/FocusTrap'
+
+export { default as ModalHeader } from '@/components/ui/ModalHeader'
+export type { ModalHeaderProps } from '@/components/ui/ModalHeader'
+
+export { default as ModalBody } from '@/components/ui/ModalBody'
+export type { ModalBodyProps } from '@/components/ui/ModalBody'
+
+export { default as ModalFooter } from '@/components/ui/ModalFooter'
+export type { ModalFooterProps } from '@/components/ui/ModalFooter'
+
+export { default as Dialog } from '@/components/ui/Dialog'
+export type { DialogProps } from '@/components/ui/Dialog'
+
+export { default as Drawer } from '@/components/ui/Drawer'
+export type { DrawerProps } from '@/components/ui/Drawer'
+
+export { default as ConfirmationDialog } from '@/components/ui/ConfirmationDialog'
+export type { ConfirmationDialogProps } from '@/components/ui/ConfirmationDialog'
+
+export type { DialogSize, DrawerSide, DrawerSize } from '@/components/ui/dialogStyles'
