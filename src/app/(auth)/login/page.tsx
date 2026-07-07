@@ -5,15 +5,18 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient, supabaseConfigured } from '@/lib/supabase/client'
 import PublicShell from '@/components/landing/PublicShell'
+import Button from '@/components/ui/Button'
 import {
   DarkCard,
   DarkInput,
   DarkLabel,
-  DarkButton,
   DarkDivider,
   DarkError,
   GoogleIcon,
 } from '@/components/landing/DarkFormPrimitives'
+
+/** Matches legacy DarkButton dimensions for pixel parity on auth surfaces. */
+const authButtonSize = { padding: '12px 18px', fontSize: 14, borderRadius: 10 } as const
 
 function LoginForm() {
   const router = useRouter()
@@ -132,10 +135,16 @@ function LoginForm() {
             </div>
           )}
 
-          <DarkButton variant="ghost" block onClick={handleGoogle} disabled={googleLoading || loading}>
+          <Button
+            variant="brand-ghost"
+            fullWidth
+            style={authButtonSize}
+            onClick={handleGoogle}
+            disabled={googleLoading || loading}
+          >
             <GoogleIcon />
             {googleLoading ? 'Redirecting…' : 'Continue with Google'}
-          </DarkButton>
+          </Button>
 
           <DarkDivider label="or" />
 
@@ -176,9 +185,15 @@ function LoginForm() {
               />
             </div>
 
-            <DarkButton type="submit" block disabled={loading || googleLoading}>
+            <Button
+              type="submit"
+              variant="brand"
+              fullWidth
+              style={authButtonSize}
+              disabled={loading || googleLoading}
+            >
               {loading ? 'Signing in…' : 'Sign in'}
-            </DarkButton>
+            </Button>
           </form>
 
           <p style={{ marginTop: 20, fontSize: 13, textAlign: 'center', color: '#888888' }}>
