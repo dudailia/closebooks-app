@@ -17,6 +17,7 @@ Program documentation for the incremental design-system migration. **No runtime 
 | [Semantic Color Tokens](./semantic-color-tokens.md) | PR 3 color token reference |
 | [Button](./button.md) | Button primitive API, tokens, accessibility |
 | [Input system](./input.md) | Input, Textarea, Select, Label, Field, HelperText, ErrorMessage |
+| [Card system](./card.md) | Card, CardHeader, CardBody, CardFooter, StatCard, SectionCard |
 | [Adoption Audit](./adoption-audit.md) | Duplication analysis, conversion path ranking |
 
 ## Governing rules
@@ -56,7 +57,7 @@ src/design-system/
 |---|---|
 | Phase 0 — Documentation foundation | **Complete** |
 | Phase 1 — Foundation tokens | **In progress** (PRs 2–4) |
-| Phase 2 — Primitive components | **In progress** (Button PR 5–6; Input system PR 7) |
+| Phase 2 — Primitive components | **In progress** (Button PR 5–6; Input PR 7; Card PR 8) |
 | Phase 3 — Application migration | Not started |
 | Phase 4 — Visual polish & enforcement | Not started |
 
