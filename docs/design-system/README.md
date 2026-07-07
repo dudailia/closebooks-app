@@ -2,15 +2,22 @@
 
 Program documentation for the incremental design-system migration. **No runtime code lives here** — this folder is the contract for how tokens, colors, and components will be unified over time.
 
+## Start here
+
+**[Master Roadmap](./master-roadmap.md)** — single source of truth for architecture, primitive inventory, shells, governance, and migration order. Every design-system PR must reference it.
+
 ## Documents
 
 | Document | Purpose |
 |---|---|
+| **[Master Roadmap](./master-roadmap.md)** | Architecture, primitives, composites, shells, governance, future vision |
+| [Migration Roadmap](./migration-roadmap.md) | PR log, baseline metrics, wave tracking |
 | [Design Token Strategy](./design-token-strategy.md) | How tokens are structured, adopted, and enforced |
 | [Color Architecture](./color-architecture.md) | Current dual-green state, usage map, migration considerations |
-| [Semantic Color Tokens](./semantic-color-tokens.md) | PR 3 color token reference (source values, meaning, migration notes) |
+| [Semantic Color Tokens](./semantic-color-tokens.md) | PR 3 color token reference |
 | [Button](./button.md) | Button primitive API, tokens, accessibility |
-| [Migration Roadmap](./migration-roadmap.md) | Phased plan, PR log, baseline metrics |
+| [Input system](./input.md) | Input, Textarea, Select, Label, Field, HelperText, ErrorMessage |
+| [Adoption Audit](./adoption-audit.md) | Duplication analysis, conversion path ranking |
 
 ## Governing rules
 
@@ -47,8 +54,10 @@ src/design-system/
 
 | Phase | Status |
 |---|---|
-| Phase 0 — Documentation foundation | **In progress** (PR 1) |
-| Phase 1 — Foundation tokens | Not started |
-| Phase 2 — Primitive components | Not started |
+| Phase 0 — Documentation foundation | **Complete** |
+| Phase 1 — Foundation tokens | **In progress** (PRs 2–4) |
+| Phase 2 — Primitive components | **In progress** (Button PR 5–6; Input system PR 7) |
 | Phase 3 — Application migration | Not started |
 | Phase 4 — Visual polish & enforcement | Not started |
+
+See [master-roadmap.md](./master-roadmap.md) for full architecture and migration waves A–G.
