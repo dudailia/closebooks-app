@@ -262,6 +262,29 @@
     border-radius: 4px;
   }
 
+  /* Input system — keyboard focus replaces global outline with field ring */
+  .cb-input:focus {
+    outline: none;
+  }
+
+  .cb-input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--ring-soft);
+  }
+
+  .cb-input[data-tone="default"]:not([data-invalid="true"]):focus-visible {
+    border-color: var(--color-brand-product);
+  }
+
+  .cb-input[data-tone="brand"]:not([data-invalid="true"]):focus-visible {
+    border-color: var(--ring-focus);
+  }
+
+  .cb-input[data-invalid="true"]:focus-visible {
+    border-color: var(--color-danger-fg);
+    box-shadow: 0 0 0 3px var(--danger-soft);
+  }
+
   /* Scrollbar — subtle and on-palette */
   ::-webkit-scrollbar {
     width: 6px;

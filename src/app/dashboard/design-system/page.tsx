@@ -1,6 +1,7 @@
 'use client'
 
 import ButtonGallery from '@/components/ui/ButtonGallery'
+import InputGallery from '@/components/ui/InputGallery'
 
 export default function DesignSystemPage() {
   return (
@@ -34,7 +35,7 @@ export default function DesignSystemPage() {
             letterSpacing: '-0.025em',
           }}
         >
-          Design System — Button
+          Design System
         </h1>
         <p
           style={{
@@ -46,11 +47,42 @@ export default function DesignSystemPage() {
           }}
         >
           Primitive gallery for manual QA. All styles read from CSS custom properties in{' '}
-          <code>globals.css</code>. No production pages consume this component yet.
+          <code>globals.css</code>. No production pages consume these components yet (except login Button
+          migration).
         </p>
       </header>
 
-      <ButtonGallery />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-10)' }}>
+        <section>
+          <h2
+            style={{
+              margin: '0 0 var(--space-6)',
+              fontSize: 'var(--font-size-xl)',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Button
+          </h2>
+          <ButtonGallery />
+        </section>
+
+        <section>
+          <h2
+            style={{
+              margin: '0 0 var(--space-6)',
+              fontSize: 'var(--font-size-xl)',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Input system
+          </h2>
+          <InputGallery />
+        </section>
+      </div>
     </div>
   )
 }
