@@ -76,3 +76,23 @@ export type { DialogSize, DrawerSide, DrawerSize } from '@/components/ui/dialogS
 export { default as Badge } from '@/components/ui/Badge'
 export type { BadgeProps } from '@/components/ui/Badge'
 export type { BadgeVariant, BadgeAppearance } from '@/components/ui/badgeStyles'
+
+export { default as PageContainer } from '@/components/ui/PageContainer'
+export type { PageContainerProps } from '@/components/ui/PageContainer'
+
+export { default as PageHeader } from '@/components/ui/PageHeader'
+export type { PageHeaderProps } from '@/components/ui/PageHeader'
+
+export { default as PageSection } from '@/components/ui/PageSection'
+export type { PageSectionProps } from '@/components/ui/PageSection'
+
+export { default as PageActions } from '@/components/ui/PageActions'
+export type { PageActionsProps } from '@/components/ui/PageActions'
+
+export { default as PageGrid } from '@/components/ui/PageGrid'
+export type { PageGridProps } from '@/components/ui/PageGrid'
+
+export { default as EmptyState } from '@/components/ui/EmptyState'
+export type { EmptyStateProps } from '@/components/ui/EmptyState'
+
+export type { PageWidth, LayoutGap, PageActionsAlign } from '@/components/ui/layoutStyles'

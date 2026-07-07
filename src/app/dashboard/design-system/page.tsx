@@ -5,6 +5,7 @@ import ButtonGallery from '@/components/ui/ButtonGallery'
 import CardGallery from '@/components/ui/CardGallery'
 import DialogGallery from '@/components/ui/DialogGallery'
 import InputGallery from '@/components/ui/InputGallery'
+import LayoutGallery from '@/components/ui/LayoutGallery'
 
 export default function DesignSystemPage() {
   return (
@@ -129,6 +130,21 @@ export default function DesignSystemPage() {
             Badge
           </h2>
           <BadgeGallery />
+        </section>
+
+        <section>
+          <h2
+            style={{
+              margin: '0 0 var(--space-6)',
+              fontSize: 'var(--font-size-xl)',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Layout system
+          </h2>
+          <LayoutGallery />
         </section>
       </div>
     </div>
