@@ -147,6 +147,7 @@ Waves (each wave = multiple small PRs):
 | 6 | 2026-07-07 | `cursor/design-system-login-button-5b0e` | Login → Button migration | 3 | pass | **Open** | `brand` + `brand-ghost` variants; pixel parity |
 | 7 | 2026-07-07 | `cursor/design-system-input-primitive-5b0e` | Input system primitives + gallery | 14 | pass | **Open** | Input, Textarea, Select, Label, Field, HelperText, ErrorMessage; `.cb-input` focus CSS |
 | 8 | 2026-07-07 | `cursor/design-system-card-primitive-5b0e` | Card system primitives + gallery | 12 | pass | **Open** | Card, CardHeader, CardBody, CardFooter, StatCard, SectionCard; `.cb-card` focus CSS |
+| 9 | 2026-07-07 | `cursor/design-system-dialog-primitive-5b0e` | Dialog system primitives + gallery | 16 | pass | **Open** | Dialog, Drawer, ConfirmationDialog, Portal, Overlay, FocusTrap; stack + scroll lock |
 
 ---
 
@@ -244,6 +245,6 @@ Highest complexity or already best-in-class:
 
 ---
 
-## Next PR (after PR 8 merges)
+## Next PR (after PR 9 merges)
 
-**PR 9 proposal:** Migrate `(auth)/signup/page.tsx` to `Button` + `Input` with pixel parity. Awaiting approval.
+**PR 10 proposal:** Migrate `(auth)/signup/page.tsx` to `Button` + `Input` with pixel parity. Awaiting approval.
