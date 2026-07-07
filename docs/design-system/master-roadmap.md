@@ -166,7 +166,7 @@ Flows                  ← multi-page journeys (signup → onboard → first clo
 
 | Primitive | Purpose | Dependencies | Status | Priority |
 |---|---|---|---|---|
-| **Dialog** | Modal: focus trap, scrim, close | Z-index tokens, motion | — 49 modal files; `OnboardingModal` is reference | P0 |
+| **Dialog** | Modal: focus trap, scrim, close | Z-index tokens, motion | ✓ PR 9 — gallery only | P0 |
 | **Drawer** | Side panel overlay | Dialog, z-index | — `HistoryDrawer` is reference | P1 |
 | **Popover** | Anchored floating content | Z-index, Button | — `InlineCategoryPicker`, `HealthPill` | P1 |
 | **Tooltip** | Hover/focus supplementary text | Popover, a11y | — not implemented | P2 |
@@ -304,6 +304,7 @@ Every shell must expose:
 | A6 | Login → Button | ✓ / in flight |
 | A7 | Input system primitives + gallery | ✓ / in flight |
 | A8 | Card system primitives + gallery | ✓ / in flight |
+| A9 | Dialog system primitives + gallery | ✓ / in flight |
 
 #### Wave B — Primitives P0 (blocking everything else)
 
@@ -312,7 +313,7 @@ One primitive per PR. Gallery entry required before any consumer PR.
 1. ~~`Input` + `Label` + `Field`~~ ✓ PR 7
 2. `Badge` (from `TransactionRow` StatusPill)
 3. ~~`Card`~~ ✓ PR 8
-4. `Dialog` (from `OnboardingModal`)
+4. ~~`Dialog`~~ ✓ PR 9
 5. `PageContainer`
 6. `PageHeader`
 7. `Toast` (from `ActionToast`)
