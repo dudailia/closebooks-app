@@ -1,5 +1,6 @@
 'use client'
 
+import BadgeGallery from '@/components/ui/BadgeGallery'
 import ButtonGallery from '@/components/ui/ButtonGallery'
 import CardGallery from '@/components/ui/CardGallery'
 import DialogGallery from '@/components/ui/DialogGallery'
@@ -113,6 +114,21 @@ export default function DesignSystemPage() {
             Dialog system
           </h2>
           <DialogGallery />
+        </section>
+
+        <section>
+          <h2
+            style={{
+              margin: '0 0 var(--space-6)',
+              fontSize: 'var(--font-size-xl)',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Badge
+          </h2>
+          <BadgeGallery />
         </section>
       </div>
     </div>

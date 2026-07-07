@@ -164,6 +164,10 @@
   --color-warning-fg: #854d0e;
   --color-danger-bg:  #fee2e2;
   --color-danger-fg:  var(--danger);                  /* #991b1b */
+  --color-info-bg:    #dbeafe;
+  --color-info-fg:    #1e40af;
+  --color-neutral-bg: var(--surface-elevated);
+  --color-neutral-fg: var(--text-secondary);
 }
 
 [data-theme="dark"] {

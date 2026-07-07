@@ -72,3 +72,7 @@ export { default as ConfirmationDialog } from '@/components/ui/ConfirmationDialo
 export type { ConfirmationDialogProps } from '@/components/ui/ConfirmationDialog'
 
 export type { DialogSize, DrawerSide, DrawerSize } from '@/components/ui/dialogStyles'
+
+export { default as Badge } from '@/components/ui/Badge'
+export type { BadgeProps } from '@/components/ui/Badge'
+export type { BadgeVariant, BadgeAppearance } from '@/components/ui/badgeStyles'
