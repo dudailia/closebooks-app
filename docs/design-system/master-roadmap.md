@@ -381,6 +381,8 @@ One page per PR. Pixel parity required.
 
 ## 8. Governance
 
+> **Full operational checklists and rules:** [engineering-governance.md](./engineering-governance.md) — PR, migration, review, accessibility, visual consistency, primitive lifecycle, token usage, Definition of Done.
+
 ### Mandatory rules (effective immediately for new code)
 
 | Rule | Enforcement |

@@ -6,11 +6,14 @@ Program documentation for the incremental design-system migration. **No runtime 
 
 **[Master Roadmap](./master-roadmap.md)** — single source of truth for architecture, primitive inventory, shells, governance, and migration order. Every design-system PR must reference it.
 
+**[Engineering Governance](./engineering-governance.md)** — operational contract: PR/migration/review checklists, accessibility and visual consistency gates, primitive lifecycle rules, token usage, and Definition of Done.
+
 ## Documents
 
 | Document | Purpose |
 |---|---|
 | **[Master Roadmap](./master-roadmap.md)** | Architecture, primitives, composites, shells, governance, future vision |
+| **[Engineering Governance](./engineering-governance.md)** | PR/migration/review checklists, a11y, visual consistency, primitive lifecycle, token rules, Definition of Done |
 | [Migration Roadmap](./migration-roadmap.md) | PR log, baseline metrics, wave tracking |
 | [Design Token Strategy](./design-token-strategy.md) | How tokens are structured, adopted, and enforced |
 | [Color Architecture](./color-architecture.md) | Current dual-green state, usage map, migration considerations |
@@ -25,7 +28,7 @@ Program documentation for the incremental design-system migration. **No runtime 
 
 ## Governing rules
 
-Every migration PR must follow these constraints:
+Every migration PR must follow the constraints in **[Engineering Governance](./engineering-governance.md)**. Summary:
 
 1. **One PR = one logical concern** — never mix tokens + components + page migrations.
 2. **Preserve behavior** — no functional regressions.
