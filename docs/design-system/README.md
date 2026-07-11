@@ -14,6 +14,7 @@ Program documentation for the incremental design-system migration. **No runtime 
 |---|---|
 | **[Master Roadmap](./master-roadmap.md)** | Architecture, primitives, composites, shells, governance, future vision |
 | **[Engineering Governance](./engineering-governance.md)** | PR/migration/review checklists, a11y, visual consistency, primitive lifecycle, token rules, Definition of Done |
+| **[Health Audit (2026-07-11)](./health-audit-2026-07-11.md)** | Baseline comparison, maturity score, duplication metrics, Phase 2 recommendations |
 | [Migration Roadmap](./migration-roadmap.md) | PR log, baseline metrics, wave tracking |
 | [Design Token Strategy](./design-token-strategy.md) | How tokens are structured, adopted, and enforced |
 | [Color Architecture](./color-architecture.md) | Current dual-green state, usage map, migration considerations |
