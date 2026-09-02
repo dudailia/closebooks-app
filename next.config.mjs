@@ -1,12 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
-    // Allow production builds to succeed even with TS errors
-    ignoreBuildErrors: true,
+    // Type errors fail the build. Do not set this back to true — every
+    // type-detectable bug that reached production got there this way.
+    ignoreBuildErrors: false,
   },
   eslint: {
-    // Allow production builds to succeed even with ESLint warnings
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   async headers() {
     const origin = process.env.NEXT_PUBLIC_APP_URL

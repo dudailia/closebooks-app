@@ -434,7 +434,7 @@ export default function BillingPage() {
                     <div className="flex items-center gap-2 shrink-0">
                       {letter.status === 'draft' && (
                         <button
-                          onClick={() => updateEngagementLetterStatus(letter.id, 'sent') || reload()}
+                          onClick={() => { updateEngagementLetterStatus(letter.id, 'sent'); reload() }}
                           className="text-xs px-2.5 py-1.5 rounded-lg border font-medium"
                           style={{ borderColor: '#b8734a', color: '#b8734a' }}
                           onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9' }}

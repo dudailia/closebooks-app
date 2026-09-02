@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, steps } from 'framer-motion'
 import { GlowCard } from '@/components/ui/GlowCard'
 
 // ─── Card 1: Before/After toggle ─────────────────────────────────────────────
@@ -285,7 +285,7 @@ function NarrativePreview() {
           <div style={{ flex: `0 0 ${lines[0].w}%`, height: 8, borderRadius: 4, background: '#2a2a2a' }} />
           <motion.div
             animate={{ opacity: [1, 0, 1] }}
-            transition={{ duration: 1, repeat: Infinity, ease: 'steps(1)' }}
+            transition={{ duration: 1, repeat: Infinity, ease: steps(1) }}
             style={{ width: 2, height: 11, background: '#00C853', borderRadius: 1, flexShrink: 0 }}
           />
         </div>

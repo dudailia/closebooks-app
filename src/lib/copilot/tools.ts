@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Tool } from '@anthropic-ai/sdk/resources/messages'
 import type {
@@ -475,30 +476,79 @@ async function execFindAnomalies(
   return { anomalies: anomalies.sort((a, b) => b.zScore - a.zScore).slice(0, 20) }
 }
 
+// ─── WRITE tool payload validation ────────────────────────────────────────────
+// `input` here is model-generated tool-call JSON, not trusted data. It used to be
+// cast straight to the payload type, so a malformed tool call surfaced as a
+// confusing crash deep in rendering (e.g. `p.lines.reduce` on undefined). Parse it.
+
+const journalEntrySchema = z.object({
+  memo: z.string(),
+  date: z.string(),
+  lines: z.array(
+    z.object({
+      account: z.string(),
+      code: z.string(),
+      debit: z.number().optional(),
+      credit: z.number().optional(),
+    })
+  ),
+})
+
+const recategorizeSchema = z.object({
+  transactionIds: z.array(z.string()),
+  newCategory: z.string(),
+  newAccountCode: z.string(),
+  reason: z.string(),
+})
+
+const flagSchema = z.object({
+  transactionIds: z.array(z.string()),
+  reason: z.string(),
+})
+
+const clientEmailSchema = z.object({
+  subject: z.string(),
+  body: z.string(),
+  relatedTransactionIds: z.array(z.string()).optional(),
+})
+
+const documentRequestSchema = z.object({
+  items: z.array(z.string()),
+  dueDate: z.string().nullish(),
+})
+
+function parsePayload<T>(schema: { safeParse: (v: unknown) => { success: boolean; data?: T; error?: unknown } }, input: unknown, tool: string): T {
+  const result = schema.safeParse(input)
+  if (!result.success || result.data === undefined) {
+    throw new Error(`Malformed arguments for write tool "${tool}"`)
+  }
+  return result.data
+}
+
 // ─── WRITE tool: build ActionCard ─────────────────────────────────────────────
 
 export function buildActionCard(name: string, input: Record<string, unknown>): ActionCard {
   const id = crypto.randomUUID()
   switch (name) {
     case 'draft_journal_entry': {
-      const p = input as JournalEntryPayload
+      const p: JournalEntryPayload = parsePayload(journalEntrySchema, input, name)
       const total = p.lines.reduce((s, l) => s + (l.debit ?? 0), 0)
       return { id, type: 'journal_entry', status: 'pending', title: `Journal Entry: ${p.memo}`, summary: `${p.lines.length} lines · $${total.toFixed(2)} · ${p.date}`, payload: p }
     }
     case 'draft_recategorize': {
-      const p = input as RecategorizePayload
+      const p: RecategorizePayload = parsePayload(recategorizeSchema, input, name)
       return { id, type: 'recategorize', status: 'pending', title: `Recategorize to ${p.newCategory}`, summary: `${p.transactionIds.length} transaction${p.transactionIds.length !== 1 ? 's' : ''} · ${p.reason}`, payload: p }
     }
     case 'draft_flag': {
-      const p = input as FlagPayload
+      const p: FlagPayload = parsePayload(flagSchema, input, name)
       return { id, type: 'flag', status: 'pending', title: 'Flag for Review', summary: `${p.transactionIds.length} transaction${p.transactionIds.length !== 1 ? 's' : ''} · ${p.reason}`, payload: p }
     }
     case 'draft_client_email': {
-      const p = input as ClientEmailPayload
+      const p = parsePayload(clientEmailSchema, input, name)
       return { id, type: 'client_email', status: 'pending', title: `Email: ${p.subject}`, summary: p.body.substring(0, 100) + (p.body.length > 100 ? '…' : ''), payload: { ...p, relatedTransactionIds: (p.relatedTransactionIds ?? []) as string[] } }
     }
     case 'draft_document_request': {
-      const p = input as DocumentRequestPayload
+      const p = parsePayload(documentRequestSchema, input, name)
       return { id, type: 'document_request', status: 'pending', title: 'Document Request', summary: `${p.items.length} item${p.items.length !== 1 ? 's' : ''}${p.dueDate ? ` · due ${p.dueDate}` : ''}`, payload: { ...p, dueDate: p.dueDate ?? null } }
     }
     default:

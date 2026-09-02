@@ -70,9 +70,9 @@ export default function CopilotPanel({ job, onTransactionsUpdated, jobId }: Prop
 
       // Log to audit trail
       logAuditEvent(jobId, {
-        action:    'bulk_approved',
+        action:    'tx_bulk_approved',
         actor:     'Copilot',
-        metadata:  {
+        details:   {
           autoApproved:   data.autoApproved,
           flagged:        data.flagged,
           leftPending:    data.leftPending,

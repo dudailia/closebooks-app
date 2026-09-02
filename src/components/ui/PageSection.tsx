@@ -2,7 +2,7 @@
 
 import type { HTMLAttributes, ReactNode } from 'react'
 
-export interface PageSectionProps extends HTMLAttributes<HTMLElement> {
+export interface PageSectionProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   title?: ReactNode
   description?: ReactNode
   actions?: ReactNode

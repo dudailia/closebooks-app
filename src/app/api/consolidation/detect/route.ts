@@ -78,7 +78,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const clientIds = memberList.map((m) => m.client_id);
     const memberNames: Record<string, string> = {};
     for (const m of memberList) {
-      memberNames[m.client_id] = (Array.isArray(m.clients) ? m.clients[0]?.business_name : (m.clients as any)?.business_name) ?? m.client_id;
+      memberNames[m.client_id] = (Array.isArray(m.clients) ? m.clients[0]?.business_name : (m.clients as { business_name?: string } | null)?.business_name) ?? m.client_id;
     }
 
     // Get transactions for each member client via jobs

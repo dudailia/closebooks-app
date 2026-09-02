@@ -252,7 +252,7 @@ export default function AgentPage() {
     if (!client.agentEnabled) {
       setModalClientId(id)
     } else {
-      const prefs = loadAgentPrefs()
+      const prefs = getAgentPrefs()
       prefs[client.name] = { enabled: false }
       saveAgentPrefs(prefs)
       setClients(prev => prev.map(c => c.id === id ? { ...c, agentEnabled: false, nextRun: '—' } : c))
@@ -263,7 +263,7 @@ export default function AgentPage() {
     if (!modalClientId) return
     const client = clients.find(c => c.id === modalClientId)
     if (!client) return
-    const prefs = loadAgentPrefs()
+    const prefs = getAgentPrefs()
     prefs[client.name] = { enabled: true, lastRun: client.lastRun }
     saveAgentPrefs(prefs)
     setClients(prev => prev.map(c =>

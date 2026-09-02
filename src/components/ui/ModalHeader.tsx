@@ -3,7 +3,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react'
 import Button from '@/components/ui/Button'
 
-export interface ModalHeaderProps extends HTMLAttributes<HTMLDivElement> {
+export interface ModalHeaderProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
   title?: ReactNode
   description?: ReactNode
   eyebrow?: ReactNode

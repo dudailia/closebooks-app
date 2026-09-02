@@ -12,7 +12,8 @@ import {
 
 export const dynamic = 'force-dynamic'
 
-export const GRACE_DAYS = 7
+// Local to this route: a route module may only export handlers and route config.
+const GRACE_DAYS = 7
 const APP_TRIAL_DAYS = 14
 
 function getSupabaseService() {

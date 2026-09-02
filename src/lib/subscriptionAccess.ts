@@ -10,6 +10,10 @@ export interface SubscriptionRow {
   status: string | null
   plan_slug: string | null
   stripe_subscription_id?: string | null
+  // Written by the Stripe webhook upsert; previously absent from this type,
+  // which is why /api/subscription could not read them without a type error.
+  stripe_customer_id?: string | null
+  billing_interval?: string | null
   current_period_end?: string | null
   trial_end?: string | null
   cancel_at_period_end?: boolean | null

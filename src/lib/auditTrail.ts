@@ -6,6 +6,8 @@ export type AuditActionType =
   | 'tx_flagged'
   | 'tx_category_changed'
   | 'tx_note_added'
+  // Copilot bulk approval — a distinct action from a single tx_approved.
+  | 'tx_bulk_approved'
   | 'job_exported'
   | 'job_completed'
   | 'job_created'
@@ -83,6 +85,8 @@ export function formatAuditEvent(e: AuditEvent): string {
       return `Approved: ${e.txDescription ?? 'transaction'}`
     case 'tx_flagged':
       return `Flagged: ${e.txDescription ?? 'transaction'}`
+    case 'tx_bulk_approved':
+      return 'Bulk approved transactions'
     default:
       return e.action
   }

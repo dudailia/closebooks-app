@@ -83,7 +83,7 @@ export async function GET(
       id: m.id,
       group_id: m.group_id,
       client_id: m.client_id,
-      client_name: (Array.isArray(m.clients) ? m.clients[0]?.business_name : (m.clients as any)?.business_name) ?? undefined,
+      client_name: (Array.isArray(m.clients) ? m.clients[0]?.business_name : (m.clients as { business_name?: string } | null)?.business_name) ?? undefined,
       ownership_percentage: m.ownership_percentage,
       relationship_type: m.relationship_type,
     }));

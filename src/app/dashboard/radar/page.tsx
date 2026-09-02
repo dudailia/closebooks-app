@@ -56,7 +56,7 @@ export default function RadarPage() {
   useEffect(() => {
     try {
       setIsLoading(true)
-      let rows: RadarClient[] = []
+      const rows: RadarClient[] = []
 
       if (typeof window !== 'undefined') {
         try {

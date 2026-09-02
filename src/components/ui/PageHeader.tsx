@@ -2,7 +2,7 @@
 
 import type { HTMLAttributes, ReactNode } from 'react'
 
-export interface PageHeaderProps extends HTMLAttributes<HTMLElement> {
+export interface PageHeaderProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   title: ReactNode
   description?: ReactNode
   eyebrow?: ReactNode

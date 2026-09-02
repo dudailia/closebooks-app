@@ -33,7 +33,7 @@ export function useModalEffects({
       if (!isTopModal(modalId)) return
       event.preventDefault()
       event.stopPropagation()
-      onOpenChange(false)
+      onOpenChange?.(false)
     }
 
     document.addEventListener('keydown', handleKeyDown, true)

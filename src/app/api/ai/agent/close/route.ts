@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { getAnthropic, AI_MODELS, costOfUsage } from '@/lib/ai/anthropic'
 import { agentCloseSystemPrompt } from '@/lib/ai/systemPrompts'
-import { sseResponse } from '@/lib/ai/sse'
+import { sseResponse, type SseEvent } from '@/lib/ai/sse'
 import type { Transaction, CategorizationJob } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -23,7 +23,7 @@ const STAGES: Array<{ id: string; label: string }> = [
 ]
 
 async function narrateStage(
-  send: (e: Record<string, unknown>) => void,
+  send: (e: SseEvent) => void,
   stageId: string,
   clientName: string,
   prompt: string

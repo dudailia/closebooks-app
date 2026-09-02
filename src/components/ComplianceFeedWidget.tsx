@@ -24,7 +24,7 @@ export default function ComplianceFeedWidget() {
         </Link>
       </div>
 
-      <div className="divide-y" style={{ divideColor: '#f5f0ea' }}>
+      <div className="divide-y" style={{ borderColor: '#f5f0ea' }}>
         {alerts.slice(0, 3).map(alert => {
           const color = alert.severity === 'critical' ? '#dc2626' : alert.severity === 'important' ? '#d97706' : '#3b82f6'
           return (

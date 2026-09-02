@@ -1,36 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
+import {
+  type AgentException,
+  getExceptions,
+  setExceptions,
+} from '@/lib/agent/exceptionStore'
 
-// ─── In-process exception store ───────────────────────────────────────────────
-// Populated by the autopilot/start-close route when exceptions are detected.
-// In production this would be a Supabase table.
-
-interface AgentException {
-  id: string
-  transactionId?: string
-  description: string
-  date: string
-  amount: number
-  agentSuggestion: string
-  suggestedAccount: string
-  confidence: number
-  reasoning: string
-  clientId: string
-  resolvedAt?: string
-  resolution?: string
-}
-
-const exceptionStore = new Map<string, AgentException[]>()
-
-export function storeExceptions(clientId: string, exceptions: AgentException[]) {
-  exceptionStore.set(clientId, exceptions)
-}
+// A Next.js route module may only export HTTP handlers and route config, so the
+// exception store and its writer live in @/lib/agent/exceptionStore.
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const clientId = searchParams.get('clientId') ?? ''
 
   // Return stored exceptions for this client if they exist
-  const stored = exceptionStore.get(clientId)
+  const stored = getExceptions(clientId)
   if (stored && stored.length > 0) {
     return NextResponse.json({ exceptions: stored, clientId, fromRealData: true })
   }
@@ -87,11 +70,11 @@ export async function POST(request: NextRequest) {
   }
 
   const { clientId, exceptionId, resolution } = body
-  const exceptions = exceptionStore.get(clientId) ?? []
+  const exceptions = getExceptions(clientId)
   const idx = exceptions.findIndex(e => e.id === exceptionId)
   if (idx !== -1) {
     exceptions[idx] = { ...exceptions[idx], resolvedAt: new Date().toISOString(), resolution }
-    exceptionStore.set(clientId, exceptions)
+    setExceptions(clientId, exceptions)
   }
 
   return NextResponse.json({ success: true })

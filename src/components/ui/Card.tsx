@@ -33,6 +33,10 @@ export type CardProps = CardBaseProps &
     | (ButtonHTMLAttributes<HTMLButtonElement> & { href?: never })
   )
 
+type CardElement = HTMLDivElement | HTMLAnchorElement | HTMLButtonElement
+type CardMouseHandler = (e: MouseEvent<CardElement>) => void
+type CardFocusHandler = (e: FocusEvent<CardElement>) => void
+
 export const Card = forwardRef<HTMLDivElement | HTMLAnchorElement | HTMLButtonElement, CardProps>(
   function Card(
     {
@@ -67,19 +71,19 @@ export const Card = forwardRef<HTMLDivElement | HTMLAnchorElement | HTMLButtonEl
         if (isInteractiveVariant(variant) || 'href' in rest || rest.onClick) {
           interactiveHoverStyle(e.currentTarget)
         }
-        onMouseEnter?.(e as MouseEvent<HTMLDivElement>)
+        (onMouseEnter as CardMouseHandler | undefined)?.(e)
       },
       onMouseLeave: (e: MouseEvent<HTMLDivElement | HTMLAnchorElement | HTMLButtonElement>) => {
         if (isInteractiveVariant(variant) || 'href' in rest || rest.onClick) {
           resetInteractiveStyle(e.currentTarget, variant)
         }
-        onMouseLeave?.(e as MouseEvent<HTMLDivElement>)
+        (onMouseLeave as CardMouseHandler | undefined)?.(e)
       },
       onFocus: (e: FocusEvent<HTMLDivElement | HTMLAnchorElement | HTMLButtonElement>) => {
-        onFocus?.(e as FocusEvent<HTMLDivElement>)
+        (onFocus as CardFocusHandler | undefined)?.(e)
       },
       onBlur: (e: FocusEvent<HTMLDivElement | HTMLAnchorElement | HTMLButtonElement>) => {
-        onBlur?.(e as FocusEvent<HTMLDivElement>)
+        (onBlur as CardFocusHandler | undefined)?.(e)
       },
     }
 

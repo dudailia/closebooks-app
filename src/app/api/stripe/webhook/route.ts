@@ -30,9 +30,37 @@ function tierFromPriceId(priceId: string | undefined): string | null {
   return null
 }
 
+/**
+ * Stripe moved two fields in recent API versions: `current_period_end` now lives
+ * on the subscription *item* rather than the subscription, and `Invoice.subscription`
+ * moved under `parent.subscription_details`. The SDK types reflect the new shape,
+ * but a webhook payload carries whichever shape the API version that produced the
+ * event used — so read both rather than assuming one.
+ */
+function subscriptionPeriodEnd(sub: Stripe.Subscription): number | null {
+  const legacy = (sub as unknown as { current_period_end?: number }).current_period_end
+  if (typeof legacy === 'number') return legacy
+  const item = sub.items?.data?.[0] as { current_period_end?: number } | undefined
+  return typeof item?.current_period_end === 'number' ? item.current_period_end : null
+}
+
+function invoiceSubscriptionId(inv: Stripe.Invoice): string | null {
+  const direct = (inv as unknown as { subscription?: string | { id: string } | null }).subscription
+  if (typeof direct === 'string') return direct
+  if (direct && typeof direct === 'object') return direct.id
+  const nested = (
+    inv as unknown as {
+      parent?: { subscription_details?: { subscription?: string | { id: string } | null } }
+    }
+  ).parent?.subscription_details?.subscription
+  if (typeof nested === 'string') return nested
+  if (nested && typeof nested === 'object') return nested.id
+  return null
+}
+
 async function upsertFromStripeSubscription(
   stripe: Stripe,
-  supabase: ReturnType<typeof createSupabaseClient>,
+  supabase: NonNullable<ReturnType<typeof getSupabase>>,
   sub: Stripe.Subscription
 ) {
   const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id
@@ -55,16 +83,15 @@ async function upsertFromStripeSubscription(
       ? String(cust.email).toLowerCase()
       : null
 
-  let firmId: string | null =
+  const firmId: string | null =
     typeof sub.metadata?.firm_id === 'string' && sub.metadata.firm_id.length > 0
       ? sub.metadata.firm_id
       : null
 
   const status = sub.status
   const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null
-  const currentPeriodEnd = sub.current_period_end
-    ? new Date(sub.current_period_end * 1000).toISOString()
-    : null
+  const periodEndUnix = subscriptionPeriodEnd(sub)
+  const currentPeriodEnd = periodEndUnix ? new Date(periodEndUnix * 1000).toISOString() : null
 
   let paymentFailedAt: string | null = null
   let gracePeriodEnd: string | null = null
@@ -172,7 +199,7 @@ export async function POST(request: NextRequest) {
 
       case 'invoice.payment_failed': {
         const inv = event.data.object as Stripe.Invoice
-        const subId = typeof inv.subscription === 'string' ? inv.subscription : inv.subscription?.id
+        const subId = invoiceSubscriptionId(inv)
         if (subId) {
           await supabase
             .from('subscriptions')
@@ -189,7 +216,7 @@ export async function POST(request: NextRequest) {
 
       case 'invoice.paid': {
         const inv = event.data.object as Stripe.Invoice
-        const subId = typeof inv.subscription === 'string' ? inv.subscription : inv.subscription?.id
+        const subId = invoiceSubscriptionId(inv)
         if (subId) {
           await supabase
             .from('subscriptions')

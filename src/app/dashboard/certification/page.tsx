@@ -148,7 +148,7 @@ function ModuleCard({ module }: { module: typeof MODULES[number] }) {
     complete: { label: '✓ Complete', bg: '#dcfce7', color: '#2d5a27' },
     'in-progress': { label: 'In Progress', bg: '#fef3c7', color: '#92400e' },
     locked: { label: 'Locked', bg: '#f1f5f9', color: '#64748b' },
-  }[module.status]
+  }[module.status] ?? { label: 'Unknown', bg: '#f1f5f9', color: '#64748b' }
 
   return (
     <div style={{

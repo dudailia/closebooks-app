@@ -16,7 +16,8 @@ interface VoiceCall {
 
 const historyStore: VoiceCall[] = []
 
-export function addToHistory(call: Omit<VoiceCall, 'id'>) {
+// Local to this route: a route module may only export handlers and route config.
+function addToHistory(call: Omit<VoiceCall, 'id'>) {
   const bytes = new Uint8Array(4)
   crypto.getRandomValues(bytes)
   const id = 'c' + Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')

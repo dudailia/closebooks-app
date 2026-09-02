@@ -4,7 +4,7 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from 'react'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 
-export interface EmptyStateProps extends HTMLAttributes<HTMLDivElement> {
+export interface EmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
   icon?: ReactNode
   title: ReactNode
   description?: ReactNode
