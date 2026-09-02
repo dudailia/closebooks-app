@@ -6,14 +6,14 @@ import type { InboxStatus } from '@/lib/inbox/types'
 
 export const dynamic = 'force-dynamic'
 
-async function getFirmId(supabase: ReturnType<typeof createClient>, userId: string): Promise<string | null> {
+async function getFirmId(supabase: Awaited<ReturnType<typeof createClient>>, userId: string): Promise<string | null> {
   if (!supabase) return null
   const { data } = await supabase.from('firms').select('id').eq('owner_id', userId).maybeSingle()
   return data?.id ?? null
 }
 
 export async function GET(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   if (!supabase) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   if (!supabase) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

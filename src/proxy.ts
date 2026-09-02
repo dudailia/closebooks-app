@@ -47,7 +47,7 @@ function applySecurityHeaders(res: NextResponse): void {
   Object.entries(h).forEach(([k, v]) => res.headers.set(k, v))
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Rate limit portal routes

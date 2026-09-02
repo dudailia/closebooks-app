@@ -4,10 +4,11 @@ import { validateToken } from '@/lib/portal/auth'
 import { getActionItems } from '@/lib/portal/storage'
 import ActionChecklist from '@/components/portal/ActionChecklist'
 
-interface Props { params: { token: string } }
+interface Props { params: Promise<{ token: string }> }
 
-export default async function ActionsPage({ params }: Props) {
-  const headersList = headers()
+export default async function ActionsPage(props: Props) {
+  const params = await props.params;
+  const headersList = await headers()
   const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? undefined
   const session = await validateToken(params.token, ip)
   if (!session) redirect('/portal/invalid')

@@ -4,14 +4,15 @@ import PublicShell from '@/components/landing/PublicShell'
 import { getUseCase, USE_CASE_SLUGS } from '@/lib/landing/useCases'
 
 interface UseCasePageProps {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 export function generateStaticParams() {
   return USE_CASE_SLUGS.map((slug) => ({ slug }))
 }
 
-export function generateMetadata({ params }: UseCasePageProps) {
+export async function generateMetadata(props: UseCasePageProps) {
+  const params = await props.params;
   const useCase = getUseCase(params.slug)
   if (!useCase) return {}
   return {
@@ -20,7 +21,8 @@ export function generateMetadata({ params }: UseCasePageProps) {
   }
 }
 
-export default function UseCasePage({ params }: UseCasePageProps) {
+export default async function UseCasePage(props: UseCasePageProps) {
+  const params = await props.params;
   const useCase = getUseCase(params.slug)
   if (!useCase) notFound()
 
