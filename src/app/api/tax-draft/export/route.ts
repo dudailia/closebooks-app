@@ -138,8 +138,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'returnId and format are required' }, { status: 400 })
     }
 
-    // For demo: always use Smith Construction data
+    // NOTE: this route does not yet read a real return. Whatever `returnId` is
+    // passed, it exports the same fixed Smith Construction sample. The response
+    // headers below advertise that, so a caller cannot mistake the file for the
+    // requested client's actual tax data.
     const data = SMITH_CONSTRUCTION_RETURN
+    const isSampleData = true
 
     let content: string
     let contentType: string
@@ -165,12 +169,19 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Invalid format. Use: drake, lacerte, pdf' }, { status: 400 })
     }
 
+    if (isSampleData) {
+      filename = `SAMPLE_${filename}`
+    }
+
     return new NextResponse(content, {
       status: 200,
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `attachment; filename="${filename}"`,
         'Cache-Control': 'no-store',
+        // Machine-readable disclosure: this is not the requested client's data.
+        'X-CloseBooks-Sample-Data': 'true',
+        'X-CloseBooks-Requested-Return-Id': String(returnId),
       },
     })
   } catch (err) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import NetworkInsightCardEnhanced from '@/components/NetworkInsightCardEnhanced'
+import DemoDataNotice from '@/components/DemoDataNotice'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -203,6 +204,9 @@ export default function InsightsPage() {
       )}
 
       <main style={{ maxWidth: 860, margin: '0 auto', padding: '32px 16px 64px' }}>
+        <DemoDataNotice style={{ marginBottom: 20 }}>
+          Illustrative data. CloseBooks does not yet aggregate data across firms — the peer benchmarks, firm counts and sample sizes on this page are a fixed reference dataset, not measurements from other CloseBooks customers.
+        </DemoDataNotice>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
           <div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import DemoDataNotice from '@/components/DemoDataNotice'
 
 interface Props {
   returnId: string
@@ -63,9 +64,15 @@ export default function ExportModal({ returnId, clientName, formType, taxYear, o
       })
       if (!res.ok) throw new Error('Export failed')
 
+      // The export route does not yet resolve a real return — it returns a fixed
+      // sample and flags that in this header. Keep the marker on the downloaded
+      // file so a sample can never be mistaken for the client's actual return.
+      const isSample = res.headers.get('X-CloseBooks-Sample-Data') === 'true'
       const blob = await res.blob()
       const ext = FORMATS.find((f) => f.id === format)?.extension ?? '.txt'
-      const filename = `${clientName.replace(/\s+/g, '_')}_${formType}_${taxYear}${ext}`
+      const filename = isSample
+        ? `SAMPLE_${formType}_${taxYear}${ext}`
+        : `${clientName.replace(/\s+/g, '_')}_${formType}_${taxYear}${ext}`
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -113,6 +120,11 @@ export default function ExportModal({ returnId, clientName, formType, taxYear, o
 
         {/* Format cards */}
         <div className="p-6" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <DemoDataNotice style={{ marginBottom: 4 }}>
+            Sample export. This does not yet read {clientName}&apos;s return — every
+            format below exports the same fixed sample return, and the downloaded
+            file is prefixed <code>SAMPLE_</code>. Do not file or send it to a client.
+          </DemoDataNotice>
           {FORMATS.map((fmt) => {
             const isExporting = exporting === fmt.id
             const isDone = exported.includes(fmt.id)

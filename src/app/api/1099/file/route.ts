@@ -34,12 +34,19 @@ function validateFiling(data: FilingRequest): string[] {
   return errors
 }
 
-function generateConfirmationNumber(): string {
-  const timestamp = Date.now().toString(36).toUpperCase()
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase()
-  return `IRS-${timestamp}-${random}`
-}
-
+/**
+ * Validates a 1099 payload. It does NOT file anything.
+ *
+ * CloseBooks has no IRS e-file integration and is not an IRS-authorized
+ * e-file provider. This endpoint previously returned a fabricated confirmation
+ * number and `status: 'ACCEPTED'`, which told users a legal filing had been
+ * submitted when nothing left the server. It now validates the payload and
+ * returns 501 so the caller cannot mistake validation for filing.
+ *
+ * If e-filing is implemented later, it goes through an authorized transmitter
+ * (IRS FIRE / IRIS or a provider such as Track1099 or Tax1099) and this route
+ * returns a real transmitter receipt — never a locally generated one.
+ */
 export async function POST(req: Request) {
   try {
     const body: FilingRequest = await req.json()
@@ -52,27 +59,26 @@ export async function POST(req: Request) {
       )
     }
 
-    // Simulate IRS e-filing processing delay context
-    const confirmationNumber = generateConfirmationNumber()
-    const filedAt = new Date().toISOString()
-    const expectedProcessing = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
-
-    const receipt = {
-      confirmationNumber,
-      filedAt,
-      expectedProcessingDate: expectedProcessing,
-      formType: body.formType,
-      taxYear: body.taxYear,
-      recipientName: body.recipientName,
-      recipientTin: body.recipientTin.replace(/(\d{2})(\d{3})(\d{4})/, '**-***$3'),
-      amount: body.amount,
-      payerName: body.payerName,
-      status: 'ACCEPTED',
-      irsTrackingId: `EFILE-${Math.floor(Math.random() * 9000000 + 1000000)}`,
-      message: `Your ${body.formType} for ${body.recipientName} has been successfully submitted to the IRS. Confirmation: ${confirmationNumber}`,
-    }
-
-    return NextResponse.json({ success: true, receipt })
+    return NextResponse.json(
+      {
+        success: false,
+        notImplemented: true,
+        error: 'E-filing is not implemented.',
+        message:
+          `The ${body.formType} for ${body.recipientName} passed validation but was NOT filed. ` +
+          'CloseBooks has no IRS e-file integration and is not an IRS-authorized e-file provider. ' +
+          'Export the validated data and file through an authorized transmitter.',
+        validated: {
+          formType: body.formType,
+          taxYear: body.taxYear,
+          recipientName: body.recipientName,
+          recipientTin: body.recipientTin.replace(/(\d{2})(\d{3})(\d{4})/, '**-***$3'),
+          amount: body.amount,
+          payerName: body.payerName,
+        },
+      },
+      { status: 501 }
+    )
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     return NextResponse.json({ success: false, error: message }, { status: 500 })

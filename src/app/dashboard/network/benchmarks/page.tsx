@@ -9,6 +9,7 @@ import {
 } from '@/lib/network/benchmarkData'
 import type { CategorizationJob } from '@/types'
 import { getJobs } from '@/lib/storage'
+import DemoDataNotice from '@/components/DemoDataNotice'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -119,6 +120,9 @@ export default function BenchmarksPage() {
     <div style={{ minHeight: '100vh', backgroundColor: '#faf8f4' }}>
 
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 16px 64px' }}>
+        <DemoDataNotice style={{ marginBottom: 20 }}>
+          Illustrative data. CloseBooks does not yet aggregate data across firms — the peer benchmarks, firm counts and sample sizes on this page are a fixed reference dataset, not measurements from other CloseBooks customers.
+        </DemoDataNotice>
         {/* Header */}
         <div style={{ marginBottom: 28 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>

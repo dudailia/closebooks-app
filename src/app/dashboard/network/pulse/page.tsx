@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import PulseResultChart from '@/components/PulseResultChart'
 import { queryNetwork, type NetworkQueryResult } from '@/lib/network/queryEngine'
+import DemoDataNotice from '@/components/DemoDataNotice'
 
 // ─── Suggested queries ────────────────────────────────────────────────────────
 
@@ -271,6 +272,9 @@ export default function PulsePage() {
     <div style={{ minHeight: '100vh', backgroundColor: '#faf8f4' }}>
 
       <main style={{ maxWidth: 800, margin: '0 auto', padding: '32px 16px 64px' }}>
+        <DemoDataNotice style={{ marginBottom: 20 }}>
+          Illustrative data. CloseBooks does not yet aggregate data across firms — the peer benchmarks, firm counts and sample sizes on this page are a fixed reference dataset, not measurements from other CloseBooks customers.
+        </DemoDataNotice>
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>

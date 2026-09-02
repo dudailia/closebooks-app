@@ -30,9 +30,18 @@ export async function POST(req: NextRequest) {
   const fromEmail   = process.env.POSTMARK_FROM_EMAIL ?? `docs@inbox.closebooks.app`
 
   if (!serverToken) {
-    // Dev mode: pretend it worked
-    console.log('[send-request] Postmark not configured — simulating send to', toEmail)
-    return NextResponse.json({ ok: true, simulated: true })
+    // Do NOT report success here. The caller shows the user "request sent", and
+    // POSTMARK_SERVER_TOKEN is unset in production — so returning ok:true told
+    // firms their client had been emailed when no mail was ever dispatched.
+    console.warn('[send-request] POSTMARK_SERVER_TOKEN not set — refusing to report a send')
+    return NextResponse.json(
+      {
+        ok: false,
+        error: 'Email delivery is not configured. No message was sent.',
+        code: 'EMAIL_NOT_CONFIGURED',
+      },
+      { status: 503 }
+    )
   }
 
   const settings = loadFirmSettings()

@@ -58,6 +58,7 @@ export default function InboxSetupPage() {
   const [testSending, setTestSending] = useState(false)
   const [testSent, setTestSent]       = useState(false)
   const [testEmail, setTestEmail]     = useState('')
+  const [testError, setTestError]     = useState('')
   const [webhookUrl, setWebhookUrl]   = useState('https://closebooks.app/api/inbox/webhook')
 
   useEffect(() => {
@@ -83,8 +84,10 @@ export default function InboxSetupPage() {
   async function handleSendTest() {
     if (!testEmail) return
     setTestSending(true)
+    setTestError('')
     try {
-      await fetch('/api/inbox/send-request', {
+      // Only claim "sent" if the server actually dispatched the message.
+      const res = await fetch('/api/inbox/send-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -96,8 +99,15 @@ export default function InboxSetupPage() {
           requestId: 'test-001',
         }),
       })
-      setTestSent(true)
-      setTimeout(() => setTestSent(false), 4000)
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.ok) {
+        setTestSent(true)
+        setTimeout(() => setTestSent(false), 4000)
+      } else {
+        setTestError(data.error || `Send failed (${res.status}). No message was sent.`)
+      }
+    } catch {
+      setTestError('Network error — no message was sent.')
     } finally {
       setTestSending(false)
     }
@@ -335,6 +345,15 @@ Your documents will be automatically extracted and matched to your account.`}</C
               {testSent ? '✓ Sent!' : testSending ? 'Sending…' : 'Send Test →'}
             </button>
           </div>
+          {testError && (
+            <div style={{
+              marginTop: 12, padding: '10px 14px', borderRadius: 8,
+              backgroundColor: '#fef2f2', border: '1px solid #fecaca',
+              color: '#991b1b', fontSize: 12.5, lineHeight: 1.5,
+            }}>
+              {testError}
+            </div>
+          )}
         </div>
 
       </main>

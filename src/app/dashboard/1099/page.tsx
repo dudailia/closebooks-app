@@ -48,7 +48,7 @@ const DEMO_RECIPIENTS: Recipient[] = [
 const STATUS_CONFIG: Record<Status, { label: string; bg: string; text: string }> = {
   'ready':     { label: 'Ready',     bg: '#dcfce7', text: '#15803d' },
   'needs-tin': { label: 'Needs TIN', bg: '#fef9c3', text: '#854d0e' },
-  'filed':     { label: 'Filed',     bg: '#dbeafe', text: '#1d4ed8' },
+  'filed':     { label: 'Prepared',  bg: '#dbeafe', text: '#1d4ed8' },
   'error':     { label: 'Error',     bg: '#fee2e2', text: '#991b1b' },
 }
 
@@ -228,15 +228,17 @@ function FileConfirmModal({
           </svg>
         </div>
         <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1a1714', marginBottom: '8px' }}>
-          Confirm IRS Filing
+          Mark forms as prepared
         </h3>
         <p style={{ fontSize: '14px', color: '#6b6560', marginBottom: '16px' }}>
-          You are about to file{' '}
+          You are about to mark{' '}
           <strong style={{ color: '#1a1714' }}>{recipients.length} form{recipients.length !== 1 ? 's' : ''}</strong>{' '}
-          with the IRS reporting a total of{' '}
-          <strong style={{ color: '#1a1714' }}>{fmt(total)}</strong> in nonemployee compensation.
+          totalling <strong style={{ color: '#1a1714' }}>{fmt(total)}</strong> as prepared.
           <br /><br />
-          This is a legal filing. Submitting false or incorrect information may result in penalties.
+          <strong style={{ color: '#92400e' }}>This does not file anything with the IRS.</strong>{' '}
+          CloseBooks is not an IRS-authorized e-file provider and does not transmit forms.
+          It only tracks which forms you have prepared; you must still submit them through
+          an authorized transmitter or the IRS IRIS portal.
         </p>
         <div
           style={{
@@ -266,7 +268,7 @@ function FileConfirmModal({
               border: 'none', cursor: 'pointer',
             }}
           >
-            File with IRS
+            Mark as prepared
           </button>
         </div>
       </div>
@@ -351,7 +353,7 @@ export default function Filing1099Page() {
     { id: 'MISC',        label: '1099-MISC' },
     { id: 'K',           label: '1099-K' },
     { id: 'needs-review', label: `Needs Review (${stats.review})` },
-    { id: 'filed',       label: `Filed (${stats.filed})` },
+    { id: 'filed',       label: `Prepared (${stats.filed})` },
   ]
 
   return (
@@ -368,7 +370,7 @@ export default function Filing1099Page() {
             1099 Filing
           </h1>
           <p style={{ fontSize: '14px', color: '#6b6560', marginTop: '4px' }}>
-            Manage and e-file 1099 forms with the IRS
+            Prepare and validate 1099 forms. CloseBooks does not transmit to the IRS.
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -423,7 +425,7 @@ export default function Filing1099Page() {
           { label: 'Total Recipients', value: stats.total, color: '#1a1714' },
           { label: 'Ready to File',    value: stats.ready, color: '#2d5a27' },
           { label: 'Needs Review',     value: stats.review, color: '#854d0e' },
-          { label: 'Filed',            value: stats.filed, color: '#1d4ed8' },
+          { label: 'Prepared',         value: stats.filed, color: '#1d4ed8' },
         ].map((stat) => (
           <div
             key={stat.label}
@@ -505,7 +507,7 @@ export default function Filing1099Page() {
               backgroundColor: '#2d5a27', color: '#ffffff', border: 'none', cursor: 'pointer',
             }}
           >
-            File Selected
+            Mark as prepared
           </button>
           <button
             style={{

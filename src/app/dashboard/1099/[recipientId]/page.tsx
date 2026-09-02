@@ -78,17 +78,18 @@ const PAYER: Payer1099 = {
   phone: '(512) 555-0100',
 }
 
-// ─── TIN Verify button ────────────────────────────────────────────────────────
+// ─── TIN format check ─────────────────────────────────────────────────────────
+// This is a LOCAL FORMAT CHECK ONLY. It does not contact the IRS.
+// Real TIN matching requires the IRS TIN Matching Program (e-Services), which
+// CloseBooks is not enrolled in. Labels must never imply the TIN was verified
+// against IRS records.
 
 function TinVerifyButton({ tin }: { tin: string }) {
   const [state, setState] = useState<'idle' | 'checking' | 'verified' | 'failed'>('idle')
 
   function verify() {
     if (!tin || state === 'checking' || state === 'verified') return
-    setState('checking')
-    setTimeout(() => {
-      setState(tin.replace(/\D/g, '').length === 9 ? 'verified' : 'failed')
-    }, 1500)
+    setState(tin.replace(/\D/g, '').length === 9 ? 'verified' : 'failed')
   }
 
   return (
@@ -122,7 +123,7 @@ function TinVerifyButton({ tin }: { tin: string }) {
         </svg>
       )}
       {state === 'failed' && '✗ '}
-      {state === 'idle' ? 'Verify TIN' : state === 'checking' ? 'Checking…' : state === 'verified' ? 'TIN Verified' : 'TIN Not Found'}
+      {state === 'idle' ? 'Check TIN format' : state === 'checking' ? 'Checking…' : state === 'verified' ? 'Format OK (not IRS-verified)' : 'Invalid format'}
     </button>
   )
 }
@@ -165,8 +166,11 @@ function FilingModal({
       const data = await res.json()
       if (data.success) {
         onFiled(data.receipt.confirmationNumber)
+      } else if (data.notImplemented) {
+        // Validation passed but nothing was filed — say so, don't imply success.
+        setError(data.message || 'E-filing is not implemented. Nothing was filed.')
       } else {
-        setError(data.errors?.join(', ') || data.error || 'Filing failed')
+        setError(data.errors?.join(', ') || data.error || 'Validation failed')
       }
     } catch {
       setError('Network error — please try again')
@@ -188,14 +192,25 @@ function FilingModal({
       <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '460px' }}>
         <div style={{ fontSize: '24px', textAlign: 'center', marginBottom: '16px' }}>📋</div>
         <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1a1714', textAlign: 'center', marginBottom: '8px' }}>
-          Confirm IRS Filing
+          Validate filing data
         </h3>
-        <p style={{ fontSize: '14px', color: '#6b6560', textAlign: 'center', marginBottom: '20px', lineHeight: 1.6 }}>
-          You are about to file a <strong style={{ color: '#1a1714' }}>{recipient.formType}</strong> for{' '}
+        <p style={{ fontSize: '14px', color: '#6b6560', textAlign: 'center', marginBottom: '16px', lineHeight: 1.6 }}>
+          Check the <strong style={{ color: '#1a1714' }}>{recipient.formType}</strong> for{' '}
           <strong style={{ color: '#1a1714' }}>{recipient.name}</strong> reporting{' '}
-          <strong style={{ color: '#1a1714' }}>{fmt(recipient.amount)}</strong>.{' '}
-          This is a legal filing with the IRS. Confirm?
+          <strong style={{ color: '#1a1714' }}>{fmt(recipient.amount)}</strong> against the IRS
+          field requirements.
         </p>
+        <div
+          style={{
+            padding: '10px 14px', borderRadius: '8px', backgroundColor: '#fffbeb',
+            border: '1px solid #fcd34d', color: '#92400e', fontSize: '13px',
+            lineHeight: 1.5, marginBottom: '20px',
+          }}
+        >
+          <strong>This does not file anything.</strong> CloseBooks has no IRS e-file
+          integration and is not an IRS-authorized e-file provider. You must submit the
+          form through an authorized transmitter.
+        </div>
         {error && (
           <div style={{ padding: '10px 14px', borderRadius: '8px', backgroundColor: '#fef2f2', color: '#991b1b', fontSize: '13px', marginBottom: '16px' }}>
             {error}
@@ -222,7 +237,7 @@ function FilingModal({
               border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >
-            {loading ? 'Filing with IRS…' : 'File with IRS'}
+            {loading ? 'Validating…' : 'Validate'}
           </button>
         </div>
       </div>
@@ -327,30 +342,33 @@ export default function Recipient1099Page() {
                 border: 'none', cursor: data.status === 'needs-tin' ? 'not-allowed' : 'pointer',
               }}
             >
-              File with IRS
+              Validate filing data
             </button>
           )}
         </div>
       </div>
 
-      {/* Confirmation banner */}
-      {confirmNum && (
-        <div
-          style={{
-            backgroundColor: '#f0fdf4', border: '1px solid #86efac',
-            borderRadius: '10px', padding: '14px 18px', marginBottom: '24px',
-            display: 'flex', alignItems: 'center', gap: '12px',
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" /><polyline points="20 6 9 17 4 12" />
-          </svg>
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#15803d' }}>Filed Successfully</div>
-            <div style={{ fontSize: '13px', color: '#166534' }}>IRS Confirmation: <strong>{confirmNum}</strong></div>
+      {/* E-filing availability notice. CloseBooks does not transmit to the IRS. */}
+      <div
+        style={{
+          backgroundColor: '#fffbeb', border: '1px solid #fcd34d',
+          borderRadius: '10px', padding: '14px 18px', marginBottom: '24px',
+          display: 'flex', alignItems: 'flex-start', gap: '12px',
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+          <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+        <div>
+          <div style={{ fontSize: '14px', fontWeight: 700, color: '#92400e' }}>E-filing is not available in CloseBooks</div>
+          <div style={{ fontSize: '13px', color: '#92400e', lineHeight: 1.5 }}>
+            CloseBooks can prepare and validate 1099 data, but it is not an IRS-authorized
+            e-file provider and does not transmit forms. Download the form and submit it
+            through an authorized transmitter or the IRS IRIS portal.
           </div>
         </div>
-      )}
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '24px' }}>
         {/* Left: Form preview + editable fields */}
