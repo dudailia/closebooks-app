@@ -20,15 +20,27 @@ node_modules/
 # misc
 .DS_Store
 *.pem
+*.key
+*.p12
+*.p8
+*.mobileprovision
 .expo/
+
+# jupyter / anaconda scratch — not part of the app
+.ipynb_checkpoints/
+.virtual_documents/
+anaconda_projects/
+Untitled*.ipynb
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
+# local env files — ignore every .env variant, keep the checked-in template
+.env
+.env.*
+!.env.example
 
 # vercel
 .vercel
