@@ -64,7 +64,7 @@ function UploadStep({ onStart }: { onStart: (input: DemoInput) => void }) {
     setTimeout(() => setDownloading(false), 1000)
   }
 
-  // Categorize the bundled sample through the same real-AI path as an upload.
+  // Categorize the bundled sample through the same AI-assisted API path as an upload.
   function useSample() {
     const { transactions } = parseDemoCsv(SAMPLE_CSV)
     onStart({ transactions, isSample: true, truncated: false })
@@ -117,7 +117,7 @@ function UploadStep({ onStart }: { onStart: (input: DemoInput) => void }) {
           Upload your bank statement
         </h2>
         <p className="text-sm" style={{ color: '#888888' }}>
-          CloseBooks reads any CSV export from Chase, Bank of America, Wells Fargo, and more. The demo categorizes up to {DEMO_MAX_ROWS} rows with real AI.
+          CloseBooks reads any CSV export from Chase, Bank of America, Wells Fargo, and more. The demo categorizes up to {DEMO_MAX_ROWS} rows with AI-assisted suggestions when the model is available.
         </p>
       </div>
 
@@ -176,7 +176,7 @@ function UploadStep({ onStart }: { onStart: (input: DemoInput) => void }) {
           className="block mx-auto mt-2 text-sm font-medium underline"
           style={{ color: '#b8734a' }}
         >
-          Skip upload — categorize sample data with real AI →
+          Skip upload — try AI-assisted categorization on sample data →
         </button>
       </div>
     </div>
@@ -237,13 +237,13 @@ function CategorizingStep({ input, onDone }: CategorizingStepProps) {
 
       let notice: string | null = null
       if (!live) {
-        // Live AI unavailable. Show the bundled sample — and if the visitor
+        // Model unavailable. Show the bundled sample — and if the visitor
         // uploaded their own file, say so plainly rather than passing the
         // sample off as their data.
         categorized = DEMO_TRANSACTIONS
         notice = input.isSample
           ? null
-          : 'Live AI categorization is at capacity right now, so this shows our sample data — not your uploaded file. Try again shortly to run your own.'
+          : 'AI-assisted categorization is at capacity right now, so this shows our sample data — not your uploaded file. Try again shortly to run your own.'
       } else if (input.truncated) {
         notice = `Showing the first ${total} transactions — the public demo caps each run at ${DEMO_MAX_ROWS}.`
       }
@@ -261,7 +261,7 @@ function CategorizingStep({ input, onDone }: CategorizingStepProps) {
 
   const steps = [
     { id: 'sending', label: `Uploading ${total} transactions`, done: phase !== 'sending' },
-    { id: 'categorizing', label: `Categorizing against ${DEMO_COA.length} accounts with real AI…`, done: phase === 'done' },
+    { id: 'categorizing', label: `Categorizing with AI-assisted suggestions…`, done: phase === 'done' },
   ]
 
   return (
@@ -275,7 +275,7 @@ function CategorizingStep({ input, onDone }: CategorizingStepProps) {
           CloseBooks AI is categorizing your transactions
         </h2>
         <p className="text-sm" style={{ color: '#888888' }}>
-          Running real AI against your chart of accounts — this takes a few seconds.
+          Running intelligent categorization against your chart of accounts — this takes a few seconds.
         </p>
       </div>
 
@@ -604,7 +604,7 @@ export default function DemoPage() {
             </span>
           </Link>
           <div className="flex items-center gap-3">
-            <span className="text-xs font-medium px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(0,200,83,0.1)', color: '#00C853' }}>Live Demo</span>
+            <span className="text-xs font-medium px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(0,200,83,0.1)', color: '#00C853' }}>Interactive demo</span>
             <Link href="/signup" className="px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: '#00C853', color: '#080808' }}>
               Start Free Trial
             </Link>
@@ -617,10 +617,10 @@ export default function DemoPage() {
         {/* Page title */}
         <div className="text-center mb-6 sm:mb-10">
           <h1 className="text-2xl sm:text-3xl mb-2" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#FAFAFA', letterSpacing: '-0.02em' }}>
-            Watch CloseBooks close books — live
+            Try the CloseBooks close workflow
           </h1>
           <p className="text-sm" style={{ color: '#888888' }}>
-            Real AI categorization on sample data — no signup.
+            AI-assisted categorization on sample data when available — human review before export.
           </p>
         </div>
 
@@ -707,11 +707,10 @@ export default function DemoPage() {
               {step === 'categorizing' && (
                 <div className="space-y-2">
                   <p className="text-sm" style={{ color: '#FAFAFA' }}><strong>CloseBooks AI</strong> reads every transaction description and maps it to the right account — with a confidence score.</p>
-                  <p className="text-sm" style={{ color: '#888888' }}>Payroll, rent, SaaS subscriptions, client payments — recognized instantly.</p>
+                  <p className="text-sm" style={{ color: '#888888' }}>Payroll, rent, SaaS subscriptions, and client payments — suggested with confidence scores.</p>
                   <ul className="text-xs space-y-1 mt-3" style={{ color: '#888888' }}>
-                    <li>✓ Learns your firm&apos;s past corrections</li>
-                    <li>✓ 85–95% auto-approval rate</li>
-                    <li>✓ Under 60 seconds for 500 transactions</li>
+                    <li>✓ Confidence scores on every suggestion</li>
+                    <li>✓ Low-confidence items stay in your review queue</li>
                   </ul>
                 </div>
               )}
@@ -749,7 +748,11 @@ export default function DemoPage() {
                 <span className="text-sm pb-1" style={{ color: '#888888' }}>vs manual review</span>
               </div>
               <p className="text-xs mt-2" style={{ color: '#888888' }}>
-                At 50 clients/month, CloseBooks saves your firm <strong style={{ color: '#FAFAFA' }}>~83 hours</strong> every month.
+                Use the{' '}
+                <Link href="/tools/roi-calculator" style={{ color: '#00C853', textDecoration: 'none', fontWeight: 600 }}>
+                  ROI calculator
+                </Link>{' '}
+                to estimate time saved for your firm size and client volume.
               </p>
             </div>
 
@@ -757,10 +760,10 @@ export default function DemoPage() {
             <div className="rounded-2xl border p-5 space-y-3" style={{ borderColor: '#1f1f1f', backgroundColor: '#0f0f0f' }}>
               <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#b8734a' }}>Also included in every plan</p>
               {[
-                { icon: '🤖', text: 'Autopilot — fully automated close with zero manual input' },
-                { icon: '📊', text: 'Advisory memos — AI-written client summaries in seconds' },
-                { icon: '🛡️', text: 'Audit defense — IRS response packages built in minutes' },
-                { icon: '📋', text: 'TaxDraft — complete tax return preparation from close data' },
+                { icon: '🤖', text: 'Autopilot — guided close pipeline with exception review' },
+                { icon: '📊', text: 'Advisory memos — AI-drafted client summaries for your review' },
+                { icon: '🛡️', text: 'Audit defense — draft response letters for CPA review (beta)' },
+                { icon: '📋', text: 'TaxDraft — tax prep workspace from close data (beta)' },
                 { icon: '🔗', text: 'Client portal — branded financials your clients can see live' },
               ].map(f => (
                 <div key={f.icon} className="flex items-start gap-2.5">

@@ -242,13 +242,7 @@ const PRICING = [
 ]
 
 // ---------------------------------------------------------------------------
-// Trusted by
-// ---------------------------------------------------------------------------
-
-const TRUSTED = ['Bill.com', 'Ramp', 'Mercury', 'Brex']
-
-// ---------------------------------------------------------------------------
-// Code example tabs
+// Page
 // ---------------------------------------------------------------------------
 
 type ExTab = 'financials' | 'transactions' | 'health'
@@ -313,18 +307,14 @@ export default function ConnectLandingPage() {
           </Link>
         </div>
 
-        {/* Trusted by */}
-        <div className="mt-16 flex items-center justify-center gap-2 flex-wrap">
-          <span className="text-xs mr-2" style={{ color: '#6b6560' }}>Trusted by teams at</span>
-          {TRUSTED.map((name) => (
-            <span
-              key={name}
-              className="text-sm font-semibold px-3 py-1 rounded-lg"
-              style={{ backgroundColor: '#ffffff', color: '#1a1714', border: '1px solid #e8e0d4' }}
-            >
-              {name}
-            </span>
-          ))}
+        {/* Early access — no third-party customer claims */}
+        <div className="mt-16 text-center" style={{ maxWidth: 520, margin: '64px auto 0' }}>
+          <p className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ color: '#00C853' }}>
+            Early access
+          </p>
+          <p className="text-sm" style={{ color: '#6b6560', lineHeight: 1.6 }}>
+            CloseBooks API is in early access. We don&apos;t list integration partners as customers until those relationships are public. See the docs for available endpoints today.
+          </p>
         </div>
       </section>
 

@@ -524,10 +524,10 @@ export default function BentoGrid() {
                 </svg>
               </FeatureIcon>
               <h3 style={{ margin: 0, marginBottom: 8, fontSize: 20, fontWeight: 600, color: '#FAFAFA', fontFamily: 'var(--font-sans)', letterSpacing: '-0.025em' }}>
-                Autonomous close agent
+                Guided close workflow
               </h3>
               <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, color: '#888', fontFamily: 'var(--font-sans)' }}>
-                Upload the bank statement. CloseBooks handles the rest.
+                Upload the bank statement. AI suggests categories; your team approves exceptions.
               </p>
               <ProgressTracker />
             </GlowCard>

@@ -321,7 +321,7 @@ function AssembledLabel() {
           backgroundColor: '#00C853',
         }}
       />
-      Real-time AI categorization
+      AI-assisted categorization
     </div>
   )
 }

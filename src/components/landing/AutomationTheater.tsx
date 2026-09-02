@@ -166,7 +166,7 @@ function AutomationConsole({ active }: { active: number }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 18 }}>
           <div>
             <p style={{ margin: 0, color: '#00C853', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 700 }}>
-              Autonomous close live
+              Guided close workflow
             </p>
             <h3 style={{ margin: '6px 0 0', color: '#FAFAFA', fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 400, letterSpacing: '-0.035em' }}>
               {activeStage.title}
@@ -289,7 +289,7 @@ export default function AutomationTheater() {
               transition={{ duration: 0.5 }}
               style={{ margin: 0, color: '#00C853', fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 700 }}
             >
-              Automation that feels impossible
+              Workflow automation, human judgment preserved
             </motion.p>
             <motion.h2
               initial={{ opacity: 0, y: 18 }}
@@ -298,7 +298,7 @@ export default function AutomationTheater() {
               transition={{ duration: 0.65, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
               style={{ margin: '16px 0 0', color: '#FAFAFA', fontFamily: 'var(--font-display)', fontSize: 'clamp(42px, 6vw, 74px)', lineHeight: 0.96, letterSpacing: '-0.055em', fontWeight: 400 }}
             >
-              The close runs while your firm watches.
+              AI handles volume; your firm reviews exceptions before export.
             </motion.h2>
           </div>
           <motion.div

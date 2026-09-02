@@ -279,8 +279,8 @@ export default function WarrenDemoPage() {
             Hi Warren — here's what month-end close looks like with AI.
           </h1>
           <p className="text-lg max-w-xl" style={{ color: '#888888', lineHeight: 1.6 }}>
-            Upload your bank statement. CloseBooks categorizes every transaction in 60 seconds,
-            flags the ones that need your eyes, and exports clean data straight to QuickBooks.
+            Upload your bank statement. CloseBooks suggests categories with confidence scores,
+            flags items that need your review, and exports clean data to QuickBooks after approval.
           </p>
 
           {/* Stat strip */}
@@ -440,8 +440,8 @@ export default function WarrenDemoPage() {
                     <path d="M9 12l2 2 4-4" stroke="#b8734a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 ),
-                title: 'AI categorizes in 60 seconds',
-                body: 'CloseBooks reads every transaction and maps it to your chart of accounts. High-confidence items are auto-approved. Uncertain ones are flagged.',
+                title: 'AI-assisted categorization',
+                body: 'CloseBooks reads every transaction and maps it to your chart of accounts. High-confidence suggestions are queued for review; uncertain ones are flagged.',
               },
               {
                 step: '03',
@@ -451,7 +451,7 @@ export default function WarrenDemoPage() {
                   </svg>
                 ),
                 title: 'Review, approve, export',
-                body: 'Scan the flagged ones, make edits, then export a clean QuickBooks CSV. The AI learns from your corrections every month.',
+                body: 'Scan the flagged ones, make edits, then export a clean QuickBooks CSV. Firm rules can apply to future closes.',
               },
             ].map(({ step, icon, title, body }) => (
               <div
@@ -485,13 +485,12 @@ export default function WarrenDemoPage() {
           </div>
         </section>
 
-        {/* ── Testimonial-style callout ───────────────────────────────────── */}
+        {/* ── Early access note (no fabricated quotes) ───────────────────── */}
         <section>
           <div
             className="rounded-2xl p-8 relative overflow-hidden"
             style={{ backgroundColor: '#0f0f0f', color: '#FAFAFA', border: '1px solid #1f1f1f' }}
           >
-            {/* Decorative grain */}
             <div
               className="absolute inset-0 opacity-5 pointer-events-none"
               style={{
@@ -500,23 +499,33 @@ export default function WarrenDemoPage() {
             />
             <div className="relative z-10 max-w-2xl">
               <p
-                className="text-2xl sm:text-3xl leading-snug mb-6"
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: '#00C853',
+                  marginBottom: 12,
+                }}
+              >
+                Early access
+              </p>
+              <p
+                className="text-2xl sm:text-3xl leading-snug mb-4"
                 style={{ fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif', letterSpacing: '-0.02em' }}
               >
-                "Month-end close used to take half a day. With CloseBooks it's under 20 minutes."
+                We don&apos;t publish customer quotes without permission.
               </p>
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm"
-                  style={{ backgroundColor: '#b8734a' }}
-                >
-                  S
-                </div>
-                <div>
-                  <p className="text-sm font-medium" style={{ color: '#FAFAFA' }}>Sarah M.</p>
-                  <p className="text-xs" style={{ color: '#8a8078' }}>Solo CPA · 18 monthly bookkeeping clients</p>
-                </div>
-              </div>
+              <p className="text-sm leading-relaxed mb-6" style={{ color: '#888888' }}>
+                CloseBooks is onboarding pilot CPA firms. Try the interactive demo with sample data, or start a trial and run the workflow on your own files.
+              </p>
+              <Link
+                href="/demo"
+                className="inline-flex items-center text-sm font-semibold"
+                style={{ color: '#00C853', textDecoration: 'none' }}
+              >
+                Try the interactive demo →
+              </Link>
             </div>
           </div>
         </section>
@@ -544,18 +553,18 @@ export default function WarrenDemoPage() {
                 backgroundColor: '#4ade80',
                 animation: 'pulse-dot 2s infinite',
               }} />
-              LIVE DEMO — CLICK TO WATCH IN REAL TIME
+              INTERACTIVE DEMO — WALK THROUGH THE WORKFLOW
             </div>
             <h2 style={{
               fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
               fontSize: 28, fontWeight: 400, color: '#fff', letterSpacing: '-0.02em',
               maxWidth: 500,
             }}>
-              Watch CloseBooks close these books right now
+              See a sample close pipeline run
             </h2>
             <p style={{ color: '#9ca3af', fontSize: 14, maxWidth: 440 }}>
-              847 transactions. 4 minutes. Zero human intervention.
-              Click below to see the live terminal as it runs.
+              Walk through categorization, exception review, and export. Your team approves categories before anything leaves CloseBooks.
+              Click below to open the sample workflow.
             </p>
             <Link
               href="/dashboard/autopilot/smith-2024/run"
@@ -597,7 +606,7 @@ export default function WarrenDemoPage() {
                 Ready to try it with your own data?
               </h2>
               <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>
-                Upload any bank statement CSV and see CloseBooks categorize your real transactions in 60 seconds.
+                Upload any bank statement CSV and try AI-assisted categorization on your own file.
                 Free to try — no credit card, no sales call.
               </p>
             </div>
@@ -624,7 +633,7 @@ export default function WarrenDemoPage() {
                 Upload your bank statement
               </Link>
               <p className="text-xs" style={{ color: '#888888' }}>
-                Works with any CSV · Results in 60 seconds
+                Works with any CSV · Human review before export
               </p>
             </div>
           </div>
