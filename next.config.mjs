@@ -5,9 +5,8 @@ const nextConfig = {
     // type-detectable bug that reached production got there this way.
     ignoreBuildErrors: false,
   },
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
+  // Next 16 removed the `eslint` config key; linting runs via `npm run lint`
+  // (eslint.config.mjs) and in CI, not as part of `next build`.
   async headers() {
     const origin = process.env.NEXT_PUBLIC_APP_URL
     const acao = origin ? origin.replace(/\/$/, '') : null

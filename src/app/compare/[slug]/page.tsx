@@ -4,14 +4,15 @@ import PublicShell from '@/components/landing/PublicShell'
 import { COMPARISON_SLUGS, getComparison } from '@/lib/landing/comparisons'
 
 interface ComparePageProps {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 export function generateStaticParams() {
   return COMPARISON_SLUGS.map((slug) => ({ slug }))
 }
 
-export function generateMetadata({ params }: ComparePageProps) {
+export async function generateMetadata(props: ComparePageProps) {
+  const params = await props.params;
   const comparison = getComparison(params.slug)
   if (!comparison) return {}
   return {
@@ -20,7 +21,8 @@ export function generateMetadata({ params }: ComparePageProps) {
   }
 }
 
-export default function ComparePage({ params }: ComparePageProps) {
+export default async function ComparePage(props: ComparePageProps) {
+  const params = await props.params;
   const comparison = getComparison(params.slug)
   if (!comparison) notFound()
 

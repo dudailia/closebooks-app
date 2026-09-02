@@ -6,10 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint ."
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.82.0",
+    "@anthropic-ai/sdk": "^0.123.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.0.7",
@@ -20,12 +20,12 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.14.0",
-    "next": "14.2.35",
+    "next": "16.3.4",
     "papaparse": "^5.5.3",
     "pdf-parse": "^2.4.5",
     "plaid": "^42.1.0",
-    "react": "^18",
-    "react-dom": "^18",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "react-markdown": "^10.1.0",
     "react-plaid-link": "^4.1.1",
     "remark-gfm": "^4.0.1",
@@ -37,12 +37,16 @@
   "devDependencies": {
     "@types/node": "^20",
     "@types/papaparse": "^5.5.2",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.35",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "eslint": "10.9.1",
+    "eslint-config-next": "16.3.4",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
+  },
+  "overrides": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5"
   }
 }

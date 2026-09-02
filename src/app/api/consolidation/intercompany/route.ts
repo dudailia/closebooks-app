@@ -6,7 +6,7 @@ import { IntercompanyTransaction } from '@/lib/consolidation/types';
 export const dynamic = 'force-dynamic';
 
 async function verifyGroupFirmAccess(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   groupId: string,
   firmId: string
 ): Promise<boolean> {
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'groupId is required' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     if (!supabase) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
 
     const { data: firm, error: firmError } = await supabase
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'amount is required' }, { status: 400 });
     if (!body.period) return NextResponse.json({ error: 'period is required' }, { status: 400 });
 
-    const supabase = createClient();
+    const supabase = await createClient();
     if (!supabase) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
 
     const { data: firm, error: firmError } = await supabase
@@ -164,7 +164,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'eliminated is required' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     if (!supabase) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
 
     const { data: firm, error: firmError } = await supabase

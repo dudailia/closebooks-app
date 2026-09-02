@@ -51,7 +51,8 @@ function simulateProgress(runId: string): {
   }
 }
 
-export async function GET(request: Request, { params }: { params: { runId: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ runId: string }> }) {
+  const params = await props.params;
   const { runId } = params
 
   if (!runId) {

@@ -5,8 +5,9 @@ import { getInboxEmailById, updateEmailStatus } from '@/lib/inbox/inboxStore'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createClient()
+export async function GET(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient()
   if (!supabase) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -23,8 +24,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   return NextResponse.json({ email })
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createClient()
+export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient()
   if (!supabase) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
