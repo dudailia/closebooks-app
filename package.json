@@ -20,7 +20,7 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.14.0",
-    "next": "14.2.35",
+    "next": "15.5.21",
     "papaparse": "^5.5.3",
     "pdf-parse": "^2.4.5",
     "plaid": "^42.1.0",
