@@ -9,7 +9,7 @@ import { DEMO_TRANSACTIONS, DEMO_COA } from '@/lib/demoData'
 function slugToName(slug: string): string {
   return slug
     .replace(/[-_]+/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -57,11 +57,12 @@ function StatusChip({ status }: { status: Status }) {
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function PersonalizedDemoPage({
-  params,
-}: {
-  params: { slug: string }
-}) {
+export default async function PersonalizedDemoPage(
+  props: {
+    params: Promise<{ slug: string }>
+  }
+) {
+  const params = await props.params;
   const companyName = slugToName(params.slug)
   const preview = DEMO_TRANSACTIONS.slice(0, 8)
   const approved = DEMO_TRANSACTIONS.filter((t) => t.status === 'approved' || t.status === 'edited').length

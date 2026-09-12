@@ -12,7 +12,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     if (!supabase) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
 
     // Get firm for this user
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'name is required' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     if (!supabase) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
 
     const { data: firm, error: firmError } = await supabase

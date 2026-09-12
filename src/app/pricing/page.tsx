@@ -4,14 +4,15 @@ import PricingFAQ from '@/components/landing/PricingFAQ'
 import { TIERS, type TierId } from '@/lib/landing/tiers'
 
 interface PricingPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     required?: string
     plan?: string
     billing?: string
-  }
+  }>
 }
 
-export default function PricingPage({ searchParams }: PricingPageProps) {
+export default async function PricingPage(props: PricingPageProps) {
+  const searchParams = await props.searchParams;
   const required = searchParams?.required === '1'
   const selectedPlan = TIERS.some((tier) => tier.id === searchParams?.plan)
     ? (searchParams?.plan as TierId)

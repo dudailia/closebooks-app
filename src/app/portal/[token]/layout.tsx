@@ -5,11 +5,17 @@ import PortalShell from '@/components/portal/PortalShell'
 
 interface Props {
   children: React.ReactNode
-  params: { token: string }
+  params: Promise<{ token: string }>
 }
 
-export default async function PortalLayout({ children, params }: Props) {
-  const headersList = headers()
+export default async function PortalLayout(props: Props) {
+  const params = await props.params;
+
+  const {
+    children
+  } = props;
+
+  const headersList = await headers()
   const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? undefined
   const ua = headersList.get('user-agent') ?? undefined
 

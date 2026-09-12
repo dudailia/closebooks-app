@@ -16,10 +16,8 @@ function getSupabase() {
 
 const DEMO_TOKEN = 'demo'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { clientToken: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ clientToken: string }> }) {
+  const params = await props.params;
   const { clientToken } = params
 
   if (!clientToken) {

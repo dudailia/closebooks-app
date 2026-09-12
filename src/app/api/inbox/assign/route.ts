@@ -4,7 +4,7 @@ import { getUserFromRequest } from '@/lib/supabase/routeAuth'
 import { assignEmailToClient } from '@/lib/inbox/inboxStore'
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   if (!supabase) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

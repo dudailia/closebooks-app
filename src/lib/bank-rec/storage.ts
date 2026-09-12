@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import type { BankStatement, BankStatementLine, Reconciliation, ReconciliationItem, ParsedStatement } from './types'
 
 export async function createStatement(firmId: string, clientId: string, parsed: ParsedStatement): Promise<BankStatement> {
-  const sb = createClient()
+  const sb = await createClient()
   if (!sb) throw new Error('Supabase not configured')
 
   const { data: stmt, error: e1 } = await sb
@@ -38,7 +38,7 @@ export async function createStatement(firmId: string, clientId: string, parsed: 
 }
 
 export async function getStatement(id: string): Promise<BankStatement | null> {
-  const sb = createClient()
+  const sb = await createClient()
   if (!sb) return null
   const { data } = await sb
     .from('bank_statements')
@@ -49,7 +49,7 @@ export async function getStatement(id: string): Promise<BankStatement | null> {
 }
 
 export async function getStatements(clientId: string): Promise<BankStatement[]> {
-  const sb = createClient()
+  const sb = await createClient()
   if (!sb) return []
   const { data } = await sb
     .from('bank_statements')
@@ -65,7 +65,7 @@ export async function updateLineMatch(
   confidence: number | null,
   status: BankStatementLine['status'],
 ): Promise<void> {
-  const sb = createClient()
+  const sb = await createClient()
   if (!sb) throw new Error('Supabase not configured')
   const { error } = await sb
     .from('bank_statement_lines')
@@ -82,7 +82,7 @@ export async function createReconciliation(
   bankBalance: number,
   bookBalance: number,
 ): Promise<Reconciliation> {
-  const sb = createClient()
+  const sb = await createClient()
   if (!sb) throw new Error('Supabase not configured')
   const { data, error } = await sb
     .from('reconciliations')
@@ -103,7 +103,7 @@ export async function createReconciliation(
 }
 
 export async function getReconciliations(clientId: string): Promise<Reconciliation[]> {
-  const sb = createClient()
+  const sb = await createClient()
   if (!sb) return []
   const { data } = await sb
     .from('reconciliations')
@@ -114,7 +114,7 @@ export async function getReconciliations(clientId: string): Promise<Reconciliati
 }
 
 export async function getReconciliation(id: string): Promise<Reconciliation | null> {
-  const sb = createClient()
+  const sb = await createClient()
   if (!sb) return null
   const { data } = await sb
     .from('reconciliations')
@@ -128,7 +128,7 @@ export async function updateReconciliation(
   id: string,
   updates: Partial<Omit<Reconciliation, 'id' | 'firm_id' | 'client_id' | 'created_at' | 'items'>>,
 ): Promise<void> {
-  const sb = createClient()
+  const sb = await createClient()
   if (!sb) throw new Error('Supabase not configured')
   const { error } = await sb.from('reconciliations').update(updates).eq('id', id)
   if (error) throw new Error(error.message)
@@ -140,7 +140,7 @@ export async function addRecItem(
   description: string,
   amount: number,
 ): Promise<ReconciliationItem> {
-  const sb = createClient()
+  const sb = await createClient()
   if (!sb) throw new Error('Supabase not configured')
   const { data, error } = await sb
     .from('reconciliation_items')
@@ -152,7 +152,7 @@ export async function addRecItem(
 }
 
 export async function deleteRecItem(id: string): Promise<void> {
-  const sb = createClient()
+  const sb = await createClient()
   if (!sb) throw new Error('Supabase not configured')
   const { error } = await sb.from('reconciliation_items').delete().eq('id', id)
   if (error) throw new Error(error.message)

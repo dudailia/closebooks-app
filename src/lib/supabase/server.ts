@@ -9,11 +9,14 @@ export const supabaseConfigured =
   !!SUPABASE_URL && !SUPABASE_URL.startsWith('your_') &&
   !!SUPABASE_ANON && !SUPABASE_ANON.startsWith('your_')
 
-/** Returns a Supabase server client, or null if env vars aren't set. */
-export function createClient() {
+/**
+ * Returns a Supabase server client, or null if env vars aren't set.
+ * Async since Next 15: `cookies()` returns a Promise.
+ */
+export async function createClient() {
   if (!supabaseConfigured) return null
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
 
   return createServerClient(SUPABASE_URL, SUPABASE_ANON, {
     cookieOptions: supabaseCookieOptions,

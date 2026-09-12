@@ -3,7 +3,7 @@ import { headers } from 'next/headers'
 import { validateToken } from '@/lib/portal/auth'
 import { getActionItems, getMessages, getDocuments, getServiceClient } from '@/lib/portal/storage'
 
-interface Props { params: { token: string } }
+interface Props { params: Promise<{ token: string }> }
 
 function formatMoney(n: number) {
   if (Math.abs(n) >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
@@ -21,8 +21,9 @@ function timeAgo(iso: string) {
   return `${Math.floor(hrs / 24)}d ago`
 }
 
-export default async function PortalDashboard({ params }: Props) {
-  const headersList = headers()
+export default async function PortalDashboard(props: Props) {
+  const params = await props.params;
+  const headersList = await headers()
   const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? undefined
   const session = await validateToken(params.token, ip)
   if (!session) redirect('/portal/invalid')

@@ -13,7 +13,7 @@ import type { Reconciliation, ReconciliationItem } from '@/lib/bank-rec/types'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
-  const sb = createClient()
+  const sb = await createClient()
   if (!sb) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const sb = createClient()
+  const sb = await createClient()
   if (!sb) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const sb = createClient()
+  const sb = await createClient()
   if (!sb) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

@@ -361,7 +361,7 @@ function slugify(name: string): string {
     .replace(/^-+|-+$/g, '') || 'my-firm'
 }
 
-function ClientPortalSection({ sectionRef }: { sectionRef: React.RefObject<HTMLDivElement> }) {
+function ClientPortalSection({ sectionRef }: { sectionRef: React.RefObject<HTMLDivElement | null> }) {
   const [firmName, setFirmName]   = useState('')
   const [copied, setCopied]       = useState(false)
   const [generated, setGenerated] = useState<string | null>(null)

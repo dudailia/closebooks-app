@@ -1,10 +1,11 @@
 import Link from 'next/link'
 
 interface Props {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
-export async function generateMetadata({ params }: Props) {
+export async function generateMetadata(props: Props) {
+  const params = await props.params;
   const firmName = params.slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
   return {
     title: `${firmName} invites you to try CloseBooks`,
@@ -12,7 +13,8 @@ export async function generateMetadata({ params }: Props) {
   }
 }
 
-export default function ReferralLandingPage({ params }: Props) {
+export default async function ReferralLandingPage(props: Props) {
+  const params = await props.params;
   const firmName = params.slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 
   const stats = [

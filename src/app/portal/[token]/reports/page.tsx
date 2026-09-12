@@ -3,7 +3,7 @@ import { headers } from 'next/headers'
 import { validateToken } from '@/lib/portal/auth'
 import { getServiceClient } from '@/lib/portal/storage'
 
-interface Props { params: { token: string } }
+interface Props { params: Promise<{ token: string }> }
 
 function formatPeriod(period: string): string {
   const parts = period.split('-')
@@ -16,8 +16,9 @@ function formatPeriod(period: string): string {
   return period
 }
 
-export default async function ReportsPage({ params }: Props) {
-  const headersList = headers()
+export default async function ReportsPage(props: Props) {
+  const params = await props.params;
+  const headersList = await headers()
   const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? undefined
   const session = await validateToken(params.token, ip)
   if (!session) redirect('/portal/invalid')

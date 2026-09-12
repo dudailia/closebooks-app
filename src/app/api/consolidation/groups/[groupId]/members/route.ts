@@ -10,14 +10,14 @@ async function verifyGroupAccess(
   groupId: string
 ): Promise<
   | { error: NextResponse }
-  | { supabase: NonNullable<ReturnType<typeof createClient>> }
+  | { supabase: NonNullable<Awaited<ReturnType<typeof createClient>>> }
 > {
   const user = await getUserFromRequest(req);
   if (!user) {
     return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   if (!supabase) return { error: NextResponse.json({ error: 'Supabase not configured' }, { status: 503 }) };
 
   const { data: firm, error: firmError } = await supabase
@@ -44,10 +44,8 @@ async function verifyGroupAccess(
   return { supabase };
 }
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { groupId: string } }
-): Promise<NextResponse> {
+export async function GET(req: NextRequest, props: { params: Promise<{ groupId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const resolved = await verifyGroupAccess(req, params.groupId);
     if ('error' in resolved) return resolved.error;
@@ -95,10 +93,8 @@ export async function GET(
   }
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { groupId: string } }
-): Promise<NextResponse> {
+export async function POST(req: NextRequest, props: { params: Promise<{ groupId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const resolved = await verifyGroupAccess(req, params.groupId);
     if ('error' in resolved) return resolved.error;
@@ -136,10 +132,8 @@ export async function POST(
   }
 }
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { groupId: string } }
-): Promise<NextResponse> {
+export async function DELETE(req: NextRequest, props: { params: Promise<{ groupId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const resolved = await verifyGroupAccess(req, params.groupId);
     if ('error' in resolved) return resolved.error;

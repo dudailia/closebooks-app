@@ -12,7 +12,7 @@ import type { User } from '@supabase/supabase-js'
 interface NavItem {
   href: string
   label: string
-  icon: () => React.ReactElement
+  icon: () => React.ReactElement<any>
   exact?: boolean
   badge?: number
   badgeColor?: string

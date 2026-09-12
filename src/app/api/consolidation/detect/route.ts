@@ -21,7 +21,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const period = body.period ?? new Date().toISOString().slice(0, 7); // e.g. "2026-04"
 
-    const supabase = createClient();
+    const supabase = await createClient();
     if (!supabase) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
 
     // Verify firm ownership

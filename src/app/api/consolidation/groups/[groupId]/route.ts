@@ -10,14 +10,14 @@ async function resolveGroupAndFirm(
   groupId: string
 ): Promise<
   | { error: NextResponse }
-  | { supabase: NonNullable<ReturnType<typeof createClient>>; group: Record<string, unknown> }
+  | { supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>; group: Record<string, unknown> }
 > {
   const user = await getUserFromRequest(req);
   if (!user) {
     return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   if (!supabase) return { error: NextResponse.json({ error: 'Supabase not configured' }, { status: 503 }) };
 
   const { data: firm, error: firmError } = await supabase
@@ -44,10 +44,8 @@ async function resolveGroupAndFirm(
   return { supabase, group };
 }
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { groupId: string } }
-): Promise<NextResponse> {
+export async function GET(req: NextRequest, props: { params: Promise<{ groupId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const resolved = await resolveGroupAndFirm(req, params.groupId);
     if ('error' in resolved) return resolved.error;
@@ -100,10 +98,8 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { groupId: string } }
-): Promise<NextResponse> {
+export async function PUT(req: NextRequest, props: { params: Promise<{ groupId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const resolved = await resolveGroupAndFirm(req, params.groupId);
     if ('error' in resolved) return resolved.error;
@@ -144,10 +140,8 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { groupId: string } }
-): Promise<NextResponse> {
+export async function DELETE(req: NextRequest, props: { params: Promise<{ groupId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const resolved = await resolveGroupAndFirm(req, params.groupId);
     if ('error' in resolved) return resolved.error;
