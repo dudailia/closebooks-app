@@ -280,34 +280,48 @@ export async function dbDeleteClient(id: string): Promise<boolean> {
  * No-op if the user already has a firm — normally the on_auth_user_created
  * trigger (20260925000000) creates it, so this is only a fallback.
  */
-export async function dbEnsureFirm(firmName: string, ownerId: string): Promise<void> {
+export async function dbEnsureFirm(
+  firmName: string,
+  ownerId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const fail = (error: string) => {
+    console.error('[dbEnsureFirm]', error)
+    return { ok: false, error }
+  }
+
   try {
     const supabase = createClient()
-    if (!supabase) return
-    const { data: existing } = await supabase
+    if (!supabase) return fail('Supabase is not configured.')
+
+    const { data: existing, error: lookupError } = await supabase
       .from('firms')
       .select('id')
       .eq('owner_id', ownerId)
       .maybeSingle()
-    if (existing?.id) return
+    if (lookupError) return fail(`Firm lookup failed: ${lookupError.message}`)
+    if (existing?.id) return { ok: true }
 
-    const { data } = await supabase.from('firms').upsert(
+    const { data, error: firmError } = await supabase.from('firms').upsert(
       { owner_id: ownerId, name: firmName },
       { onConflict: 'owner_id' }
     ).select('id').single()
-
-    if (data?.id) {
-      await supabase.from('firm_usage').upsert(
-        {
-          firm_id: data.id,
-          trial_started_at: new Date().toISOString(),
-          plan_status: 'free',
-          closes_used: 0,
-        },
-        { onConflict: 'firm_id', ignoreDuplicates: true }
-      )
+    if (firmError || !data?.id) {
+      return fail(`Firm creation failed: ${firmError?.message ?? 'no firm id returned'}`)
     }
-  } catch {
-    // ignore — app works without this
+
+    const { error: usageError } = await supabase.from('firm_usage').upsert(
+      {
+        firm_id: data.id,
+        trial_started_at: new Date().toISOString(),
+        plan_status: 'free',
+        closes_used: 0,
+      },
+      { onConflict: 'firm_id', ignoreDuplicates: true }
+    )
+    if (usageError) return fail(`Trial setup failed: ${usageError.message}`)
+
+    return { ok: true }
+  } catch (err) {
+    return fail(err instanceof Error ? err.message : String(err))
   }
 }
