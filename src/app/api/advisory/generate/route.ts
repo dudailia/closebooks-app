@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import Anthropic from '@anthropic-ai/sdk'
 import type { CategorizationJob, Client } from '@/types'
 import type { AdvisoryMemo, AdvisorySection } from '@/types/advisory'
@@ -173,6 +174,9 @@ function buildFallbackMemo(
 // ─── Route ────────────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  const access = await requireRouteAccess(request)
+  if (!access.ok) return access.response
+
   let body: {
     job: CategorizationJob
     previousJobs?: CategorizationJob[]

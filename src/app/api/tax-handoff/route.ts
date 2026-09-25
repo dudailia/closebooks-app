@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import Anthropic from '@anthropic-ai/sdk'
 import { buildTaxHandoffData } from '@/lib/taxAnalysis'
 import type { CategorizationJob } from '@/types'
@@ -18,7 +19,10 @@ function escHtml(s: string): string {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const access = await requireRouteAccess(request)
+  if (!access.ok) return access.response
+
   let body: { jobs: CategorizationJob[]; taxYear: number; firmSettings?: FirmSettings }
   try {
     body = await request.json()

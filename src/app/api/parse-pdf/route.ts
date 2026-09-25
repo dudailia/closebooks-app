@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import Anthropic from '@anthropic-ai/sdk'
 import type { Transaction } from '@/types'
 
@@ -22,7 +23,10 @@ function normaliseDate(raw: string): string {
   return raw
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const access = await requireRouteAccess(request)
+  if (!access.ok) return access.response
+
   let base64: string
   try {
     const body = await request.json()

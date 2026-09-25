@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import Anthropic from '@anthropic-ai/sdk'
 import type { RegulatoryAlert } from '@/types/compliance'
 
@@ -31,6 +32,9 @@ function letterToHtml(text: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  const access = await requireRouteAccess(req)
+  if (!access.ok) return access.response
+
   const body: RequestBody = await req.json()
   const { alert, clientName, firmName, tone } = body
 

@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import Anthropic from '@anthropic-ai/sdk'
 import type { CategorizationJob } from '@/types'
 import type { FirmSettings } from '@/lib/firmSettings'
@@ -59,7 +60,10 @@ ${flaggedItems.length > 0 ? `Items needing client clarification:\n${flaggedItems
 ${momNote}`
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const access = await requireRouteAccess(request)
+  if (!access.ok) return access.response
+
   let body: {
     job: CategorizationJob
     previousJob?: CategorizationJob | null

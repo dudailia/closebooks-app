@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import Anthropic from '@anthropic-ai/sdk'
 import type { Transaction } from '@/types'
 
@@ -78,7 +79,10 @@ function computeMetrics(transactions: Transaction[], cashBalance: number) {
 // POST /api/radar/snapshot
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function POST(request: Request): Promise<NextResponse> {
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  const access = await requireRouteAccess(request)
+  if (!access.ok) return access.response
+
   let body: SnapshotRequest
   try {
     body = (await request.json()) as SnapshotRequest

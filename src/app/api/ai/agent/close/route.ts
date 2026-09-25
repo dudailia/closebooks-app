@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import { getAnthropic, AI_MODELS, costOfUsage } from '@/lib/ai/anthropic'
 import { agentCloseSystemPrompt } from '@/lib/ai/systemPrompts'
 import { sseResponse, type SseEvent } from '@/lib/ai/sse'
@@ -45,6 +46,9 @@ async function narrateStage(
 }
 
 export async function POST(req: NextRequest) {
+  const access = await requireRouteAccess(req)
+  if (!access.ok) return access.response
+
   let body: Body
   try {
     body = await req.json()
