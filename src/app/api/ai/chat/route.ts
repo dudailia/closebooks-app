@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import { getAnthropic, AI_MODELS } from '@/lib/ai/anthropic'
 import { AI_TOOLS } from '@/lib/ai/tools'
@@ -14,6 +15,9 @@ interface Body {
 }
 
 export async function POST(req: NextRequest) {
+  const access = await requireRouteAccess(req)
+  if (!access.ok) return access.response
+
   let body: Body
   try {
     body = await req.json()

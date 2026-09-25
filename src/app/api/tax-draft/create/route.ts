@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import { randomUUID } from 'crypto'
 import Anthropic from '@anthropic-ai/sdk'
 import { buildReturnFromTransactions } from '@/lib/tax-draft/returnBuilder'
@@ -11,6 +12,9 @@ import type { CategorizationJob } from '@/types'
 const returnStore = new Map<string, object>()
 
 export async function POST(req: NextRequest) {
+  const access = await requireRouteAccess(req)
+  if (!access.ok) return access.response
+
   try {
     const body = await req.json() as {
       clientId?: string

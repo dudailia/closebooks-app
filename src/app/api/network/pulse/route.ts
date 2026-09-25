@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import Anthropic from '@anthropic-ai/sdk'
 
 const anthropic = new Anthropic()
@@ -19,6 +20,9 @@ function extractJson(text: string): string {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const access = await requireRouteAccess(req)
+  if (!access.ok) return access.response
+
   try {
     const { query, firmIndustry } = await req.json() as { query: string; firmIndustry?: string }
 

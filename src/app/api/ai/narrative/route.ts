@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import { getAnthropic, AI_MODELS } from '@/lib/ai/anthropic'
 import { narrativeSystemPrompt, type NarrativePromptContext } from '@/lib/ai/systemPrompts'
 import { sseResponse } from '@/lib/ai/sse'
@@ -10,6 +11,9 @@ interface Body {
 }
 
 export async function POST(req: NextRequest) {
+  const access = await requireRouteAccess(req)
+  if (!access.ok) return access.response
+
   let body: Body
   try {
     body = await req.json()

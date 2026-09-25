@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import Anthropic from '@anthropic-ai/sdk'
 import type { CategorizationJob, Client } from '@/types'
 import { buildClientAdvisoryReport, type AdvisoryAlert } from '@/lib/advisoryEngine'
@@ -37,6 +38,9 @@ function toCashFlowAlert(clientName: string, alert: AdvisoryAlert): CashFlowAler
 }
 
 export async function POST(request: NextRequest) {
+  const access = await requireRouteAccess(request)
+  if (!access.ok) return access.response
+
   let body: { jobs: CategorizationJob[]; clientName: string; client?: Client | null; useAI?: boolean }
   try {
     body = await request.json()

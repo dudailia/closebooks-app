@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import Anthropic from '@anthropic-ai/sdk'
 
 const anthropic = new Anthropic()
@@ -15,7 +16,10 @@ interface AnalyzeRequest {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const access = await requireRouteAccess(req)
+  if (!access.ok) return access.response
+
   try {
     const body: AnalyzeRequest = await req.json()
     const { auditType, taxYear, issuesRaised, clientData } = body

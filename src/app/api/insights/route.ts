@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import Anthropic from '@anthropic-ai/sdk'
 
 const anthropic = new Anthropic()
@@ -31,7 +32,10 @@ function extractJson(text: string): string {
 //   { mode: 'trends', clientName: string, months: { label: string, totalDebits: number, totalCredits: number, categories: Record<string, number>, txCount: number }[] }
 // ---------------------------------------------------------------------------
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const access = await requireRouteAccess(request)
+  if (!access.ok) return access.response
+
   let body: Record<string, unknown>
   try {
     body = await request.json()
