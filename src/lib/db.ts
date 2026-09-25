@@ -276,13 +276,21 @@ export async function dbDeleteClient(id: string): Promise<boolean> {
 // ─── Firm ────────────────────────────────────────────────────────────────────
 
 /**
- * Create or update the firm record for a user after signup.
- * Uses upsert on owner_id so it's safe to call multiple times.
+ * Create the firm record for a user after signup.
+ * No-op if the user already has a firm — normally the on_auth_user_created
+ * trigger (20260925000000) creates it, so this is only a fallback.
  */
 export async function dbEnsureFirm(firmName: string, ownerId: string): Promise<void> {
   try {
     const supabase = createClient()
     if (!supabase) return
+    const { data: existing } = await supabase
+      .from('firms')
+      .select('id')
+      .eq('owner_id', ownerId)
+      .maybeSingle()
+    if (existing?.id) return
+
     const { data } = await supabase.from('firms').upsert(
       { owner_id: ownerId, name: firmName },
       { onConflict: 'owner_id' }
