@@ -12,6 +12,7 @@ import { logActivity } from '@/lib/activity'
 import { canStartClose, recordCloseUsed, getTrialStatus } from '@/lib/freeTrial'
 import { startSession, endSession } from '@/lib/timeTracking'
 import { consumeUploadPrefillClient } from '@/lib/uploadPrefill'
+import { FEATURES } from '@/lib/features'
 import type { Transaction, ChartOfAccounts, CategorizationJob } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -463,32 +464,34 @@ export default function UploadPage() {
         {step === 2 && (
           <StepCard title="Bank Statement">
             {/* Source toggle */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-              <button
-                onClick={() => setPlaidMode(false)}
-                style={{
-                  flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 13, fontWeight: 600,
-                  cursor: 'pointer', border: '1.5px solid',
-                  background: !plaidMode ? '#1a1714' : 'white',
-                  color: !plaidMode ? 'white' : '#6b6560',
-                  borderColor: !plaidMode ? '#1a1714' : '#e8e0d4',
-                }}
-              >
-                Upload CSV / PDF
-              </button>
-              <button
-                onClick={() => setPlaidMode(true)}
-                style={{
-                  flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 13, fontWeight: 600,
-                  cursor: 'pointer', border: '1.5px solid',
-                  background: plaidMode ? '#2d5a27' : 'white',
-                  color: plaidMode ? 'white' : '#6b6560',
-                  borderColor: plaidMode ? '#2d5a27' : '#e8e0d4',
-                }}
-              >
-                🏦 Pull from Bank
-              </button>
-            </div>
+            {FEATURES.clientBankConnection && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+                <button
+                  onClick={() => setPlaidMode(false)}
+                  style={{
+                    flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                    cursor: 'pointer', border: '1.5px solid',
+                    background: !plaidMode ? '#1a1714' : 'white',
+                    color: !plaidMode ? 'white' : '#6b6560',
+                    borderColor: !plaidMode ? '#1a1714' : '#e8e0d4',
+                  }}
+                >
+                  Upload CSV / PDF
+                </button>
+                <button
+                  onClick={() => setPlaidMode(true)}
+                  style={{
+                    flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                    cursor: 'pointer', border: '1.5px solid',
+                    background: plaidMode ? '#2d5a27' : 'white',
+                    color: plaidMode ? 'white' : '#6b6560',
+                    borderColor: plaidMode ? '#2d5a27' : '#e8e0d4',
+                  }}
+                >
+                  🏦 Pull from Bank
+                </button>
+              </div>
+            )}
 
             {plaidMode ? (
               <div style={{ padding: 24, background: '#f8fdf6', border: '1px solid #d1fae5', borderRadius: 12, textAlign: 'center' }}>

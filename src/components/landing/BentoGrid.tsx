@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence, steps } from 'framer-motion'
+import { motion, steps } from 'framer-motion'
 import { GlowCard } from '@/components/ui/GlowCard'
 
 // ─── Card 1: Before/After toggle ─────────────────────────────────────────────
@@ -118,7 +118,7 @@ const STEPS = [
   { emoji: '🔍', label: 'Parsing transactions'  },
   { emoji: '🧠', label: 'AI categorization'     },
   { emoji: '⚠️',  label: 'Exceptions flagged'   },
-  { emoji: '📋', label: 'Narrative generated'   },
+  { emoji: '📋', label: 'Ready to export'       },
 ]
 
 function ProgressTracker() {
@@ -220,9 +220,9 @@ function ProgressTracker() {
 
 function RuleBlock() {
   const rules = [
-    { vendor: '"Amazon AWS"', cat: '"Cloud Infrastructure"', hits: 47 },
-    { vendor: '"Notion Labs"',  cat: '"Software"',           hits: 31 },
-    { vendor: '"DoorDash*"',    cat: '"Meals"',              hits: 22 },
+    { vendor: '"Amazon AWS"', cat: '"Cloud Infrastructure"' },
+    { vendor: '"Notion Labs"',  cat: '"Software"'           },
+    { vendor: '"DoorDash*"',    cat: '"Meals"'              },
   ]
   return (
     <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -250,7 +250,7 @@ function RuleBlock() {
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#00C853' }}>→</span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#69B6FF' }}>{r.cat}</span>
             </div>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#333' }}>{r.hits}× applied</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#333' }}>auto-applied</span>
           </div>
         </motion.div>
       ))}
@@ -258,9 +258,9 @@ function RuleBlock() {
   )
 }
 
-// ─── Card 4: Narrative preview ────────────────────────────────────────────────
+// ─── Card 4: Close report preview ─────────────────────────────────────────────
 
-function NarrativePreview() {
+function ReportPreview() {
   const lines = [
     { w: 92, bright: true },
     { w: 78, bright: false },
@@ -293,9 +293,9 @@ function NarrativePreview() {
           <div key={i} style={{ height: 8, width: `${l.w}%`, borderRadius: 4, background: '#1a1a1a', marginBottom: i < lines.length - 2 ? 7 : 0 }} />
         ))}
         <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #141414', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 10, color: '#444', fontFamily: 'var(--font-sans)' }}>April 2025 report</span>
+          <span style={{ fontSize: 10, color: '#444', fontFamily: 'var(--font-sans)' }}>Close report · April 2025</span>
           <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: 'rgba(0,200,83,0.1)', border: '1px solid rgba(0,200,83,0.2)', color: '#00C853', fontFamily: 'var(--font-sans)' }}>
-            AI ✦
+            PDF
           </span>
         </div>
       </div>
@@ -343,7 +343,7 @@ function ClientGrid() {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <p style={{ margin: 0, fontSize: 11, color: '#444', fontFamily: 'var(--font-sans)' }}>
-          +491 more firms
+          Your client list
         </p>
         <div style={{ display: 'flex', gap: -4 }}>
           {CLIENTS.slice(0, 4).map((c, i) => (
@@ -461,7 +461,7 @@ export default function BentoGrid() {
             }}
           >
             <StaggerWords
-              text="Everything a month-end close needs."
+              text="The core of a month-end close."
               style={{ color: '#FAFAFA' }}
             />
           </h2>
@@ -477,7 +477,7 @@ export default function BentoGrid() {
               color: '#333333',
             }}
           >
-            <StaggerWords text="Nothing it doesn't." />
+            <StaggerWords text="Upload, review, export." />
           </h2>
         </div>
 
@@ -502,7 +502,7 @@ export default function BentoGrid() {
                 AI that learns your firm
               </h3>
               <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, color: '#888', fontFamily: 'var(--font-sans)', maxWidth: 480 }}>
-                Claude reads your correction patterns and firm rules so repeat vendors get more consistent every close.
+                Recent corrections are passed to Claude as hints when it categorizes, and saved vendor rules are applied on top of its suggestions.
               </p>
               <BeforeAfterVisual />
             </GlowCard>
@@ -552,13 +552,13 @@ export default function BentoGrid() {
                 Rules engine
               </h3>
               <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#888', fontFamily: 'var(--font-sans)' }}>
-                Teach it once. CloseBooks applies your firm's rules to every future transaction, automatically.
+                Save a correction as a vendor rule. It&apos;s applied automatically to matching pending rows when you open a close.
               </p>
               <RuleBlock />
             </GlowCard>
           </motion.div>
 
-          {/* ─ CARD 4: Small — Narratives ─ */}
+          {/* ─ CARD 4: Small — Close report ─ */}
           <motion.div
             className="bento-card-small"
             initial={{ scale: 0.96, opacity: 0, y: 14 }}
@@ -574,12 +574,12 @@ export default function BentoGrid() {
                 </svg>
               </FeatureIcon>
               <h3 style={{ margin: 0, marginBottom: 8, fontSize: 17, fontWeight: 600, color: '#FAFAFA', fontFamily: 'var(--font-sans)', letterSpacing: '-0.02em' }}>
-                Auto-generated narratives
+                Printable close report
               </h3>
               <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#888', fontFamily: 'var(--font-sans)' }}>
-                Ship client-ready month-end summaries without writing a single word.
+                Open a summary of the close in the browser, then print it or Save as PDF.
               </p>
-              <NarrativePreview />
+              <ReportPreview />
             </GlowCard>
           </motion.div>
 
@@ -601,10 +601,10 @@ export default function BentoGrid() {
                 </svg>
               </FeatureIcon>
               <h3 style={{ margin: 0, marginBottom: 8, fontSize: 17, fontWeight: 600, color: '#FAFAFA', fontFamily: 'var(--font-sans)', letterSpacing: '-0.02em' }}>
-                500 clients, one dashboard
+                Every client, one workspace
               </h3>
               <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: '#888', fontFamily: 'var(--font-sans)' }}>
-                Manage your entire book of business from a single workspace.
+                Each client keeps its own chart of accounts and close history inside your firm workspace.
               </p>
               <ClientGrid />
             </GlowCard>

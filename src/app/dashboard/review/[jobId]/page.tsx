@@ -26,6 +26,7 @@ import ClientEmailDraft from '@/components/ClientEmailDraft'
 import BenchmarkPanel from '@/components/BenchmarkPanel'
 import { getClients } from '@/lib/storage'
 import { FEATURES } from '@/lib/features'
+import { formatStatementPeriod } from '@/lib/statementPeriod'
 import { startSession, endSession } from '@/lib/timeTracking'
 import type { QBOConnection } from '@/lib/integrations'
 import type { CategorizationJob, Transaction } from '@/types'
@@ -104,8 +105,11 @@ interface ExportDropdownProps {
   approvedCount: number
 }
 
+const EXPORT_MENU_WIDTH = 256 // w-64
+
 function ExportDropdown({ onExport, loading, approvedCount }: ExportDropdownProps) {
   const [open, setOpen] = useState(false)
+  const [alignLeft, setAlignLeft] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   // Close on outside click
@@ -120,6 +124,18 @@ function ExportDropdown({ onExport, loading, approvedCount }: ExportDropdownProp
   function pick(format: ExportFormat) {
     setOpen(false)
     onExport(format)
+  }
+
+  // When the header actions wrap to the left edge, a right-aligned menu would
+  // spill under the sidebar (the content wrapper clips overflow-x). Open it
+  // towards whichever side has room.
+  function toggle() {
+    if (!open && ref.current) {
+      const button = ref.current.getBoundingClientRect()
+      const bound = ref.current.closest('.dashboard-content-wrapper')?.getBoundingClientRect().left ?? 0
+      setAlignLeft(button.right - EXPORT_MENU_WIDTH < bound)
+    }
+    setOpen((v) => !v)
   }
 
   const formats: { key: ExportFormat; label: string; sub: string }[] = [
@@ -138,7 +154,7 @@ function ExportDropdown({ onExport, loading, approvedCount }: ExportDropdownProp
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         disabled={loading}
         className="flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50"
         style={{
@@ -165,7 +181,7 @@ function ExportDropdown({ onExport, loading, approvedCount }: ExportDropdownProp
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1.5 w-64 rounded-xl border shadow-lg py-1.5 z-30"
+          className={`absolute ${alignLeft ? 'left-0' : 'right-0'} top-full mt-1.5 w-64 rounded-xl border shadow-lg py-1.5 z-30`}
           style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
         >
           {approvedCount === 0 ? (
@@ -376,7 +392,7 @@ function ReviewSummary({ transactions, onExport, onReport, exporting, reporting 
               <path d="M2 11h10" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           )}
-          {exporting ? 'Exporting…' : 'Export to QuickBooks'}
+          {exporting ? 'Exporting…' : 'Download QuickBooks CSV'}
         </button>
 
         <button
@@ -1038,7 +1054,7 @@ export default function ReviewPage() {
         clientName: job.client_name,
         clientIndustry: clientIndustry ?? undefined,
         jobId: job.id,
-        jobMonth: new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        jobMonth: formatStatementPeriod(job.transactions) ?? new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
         transactions: job.transactions,
         overdueCount: 0,
       },
@@ -1314,6 +1330,7 @@ export default function ReviewPage() {
   }
 
   const pending      = job.total_transactions - job.approved - job.flagged
+  const statementPeriod = formatStatementPeriod(job.transactions)
   const approvedCount = job.transactions.filter((t) => t.status === 'approved' || t.status === 'edited').length
   const pct = job.total_transactions > 0
     ? Math.round(((job.approved + job.flagged) / job.total_transactions) * 100)
@@ -1355,7 +1372,7 @@ export default function ReviewPage() {
               style={{
                 fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
                 fontSize: '1.6rem',
-                color: '#1a1714',
+                color: 'var(--text-primary)',
                 letterSpacing: '-0.02em',
                 lineHeight: 1.2,
               }}
@@ -1363,7 +1380,7 @@ export default function ReviewPage() {
               {job.client_name}
             </h1>
             <p className="text-xs mt-1" style={{ color: '#a09a94' }}>
-              {new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              {statementPeriod ?? `Uploaded ${new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
               {' · '}
               <span
                 className="font-medium"
@@ -1494,7 +1511,7 @@ export default function ReviewPage() {
           <StatPill label="Approved" value={job.approved}           color="#059669" />
           <StatPill label="Pending"  value={pending}                color="#d97706" />
           <StatPill label="Flagged"  value={job.flagged}            color="#ef4444" />
-          {(job.auto_categorized ?? 0) > 0 && (() => {
+          {FEATURES.savingsEstimates && (job.auto_categorized ?? 0) > 0 && (() => {
             const roi = calcROI(job)
             return (
               <>
@@ -1549,7 +1566,7 @@ export default function ReviewPage() {
           <NarrativeInsight
             clientName={job.client_name}
             clientIndustry={clientIndustry ?? undefined}
-            period={new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            period={statementPeriod ?? new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             transactions={job.transactions}
             priorTransactions={allClientJobs.find((j) => j.id !== job.id && j.created_at < job.created_at)?.transactions ?? null}
             onHighlight={(ids) => setChatHighlightIds(ids)}

@@ -61,25 +61,25 @@ function IllustrationExport() {
 const STEPS = [
   {
     title: 'Welcome to CloseBooks',
-    body: 'Close your clients\u2019 books 50% faster with AI. Here\u2019s how it works in 3 simple steps.',
+    body: 'Here\u2019s how a close works in 3 steps.',
     illustration: null,
     isWelcome: true,
   },
   {
     title: 'Upload a bank statement',
-    body: 'Upload your client\u2019s bank statement as a CSV file. We support all major bank formats.',
+    body: 'Upload your client\u2019s bank statement as a CSV or PDF.',
     illustration: <IllustrationUpload />,
     isWelcome: false,
   },
   {
     title: 'AI categorizes everything',
-    body: 'Our AI maps every transaction to your client\u2019s Chart of Accounts with 85\u201395% accuracy. You review only the exceptions.',
+    body: 'AI suggests a category from your client\u2019s Chart of Accounts for every transaction, with a confidence score. You approve, flag, or recategorise.',
     illustration: <IllustrationAI />,
     isWelcome: false,
   },
   {
     title: 'Export and done',
-    body: 'Approve the categorizations, export to QuickBooks or Xero, and you\u2019re done. What used to take days now takes hours.',
+    body: 'Once reviewed, download a QuickBooks-format or standard CSV, or generate a close report.',
     illustration: <IllustrationExport />,
     isWelcome: false,
   },

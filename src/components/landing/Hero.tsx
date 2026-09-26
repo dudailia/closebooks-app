@@ -341,7 +341,7 @@ function DashboardMockup({ reduced }: { reduced: boolean }) {
           <div style={{ marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: '#FAFAFA', fontFamily: 'var(--font-sans)' }}>
-                Live categorization
+                AI categorization
               </span>
 
               {/* Status pill — flips from "Processing…" to a calm "Ready for
@@ -383,7 +383,7 @@ function DashboardMockup({ reduced }: { reduced: boolean }) {
               )}
             </div>
             <p style={{ margin: '4px 0 0', fontSize: 11, color: '#444444', fontFamily: 'var(--font-sans)' }}>
-              32 transactions · April 2025
+              Sample data · April 2025
             </p>
           </div>
 
@@ -420,8 +420,8 @@ function DashboardMockup({ reduced }: { reduced: boolean }) {
         </div>
       </div>
 
-      {/* Floating stat pills — land on the conducted beats: "Confidence scored"
-          as the rows lock (LOCK), "3 hrs to close" on the final settle (REST). */}
+      {/* Floating pills — land on the conducted beats: "Confidence scored"
+          as the rows lock (LOCK), "QuickBooks-ready CSV" on the final settle (REST). */}
       <motion.div
         initial={reduced ? false : { opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -470,7 +470,7 @@ function DashboardMockup({ reduced }: { reduced: boolean }) {
       >
         <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 8px rgba(0,200,83,0.8)' }} />
         <span style={{ fontSize: 13, fontWeight: 600, color: '#00C853', fontFamily: 'var(--font-sans)', letterSpacing: '-0.01em' }}>
-          3 hrs to close
+          QuickBooks-ready CSV
         </span>
       </motion.div>
 
@@ -479,7 +479,7 @@ function DashboardMockup({ reduced }: { reduced: boolean }) {
   )
 }
 
-// ─── Animated underline on "autopilot" ───────────────────────────────────────
+// ─── Animated underline on "AI-assisted" ─────────────────────────────────────
 //
 // Mount-driven (the Hero is above the fold on load), drawing on the shared
 // `LOCK` beat — the exact instant the final transaction row's checkmark locks.
@@ -653,8 +653,7 @@ export default function Hero() {
             >
               Month-end close,
               <br />
-              on{' '}
-              <AnimatedUnderlineWord reduced={reduced}>autopilot</AnimatedUnderlineWord>
+              <AnimatedUnderlineWord reduced={reduced}>AI-assisted</AnimatedUnderlineWord>
               .
             </motion.h1>
 
@@ -672,9 +671,9 @@ export default function Hero() {
                 letterSpacing: '-0.01em',
               }}
             >
-              CloseBooks learns how your firm categorizes transactions, runs an
-              AI-assisted close workflow, and helps your team review exceptions,
-              validate accounts, export to QuickBooks, and send client-ready narratives.
+              Upload a CSV or PDF bank statement. Claude suggests an account from the
+              client&apos;s chart for every transaction, your team reviews the low-confidence
+              ones, and you download a QuickBooks-ready CSV.
             </motion.p>
 
             {/* CTA row */}
@@ -716,7 +715,7 @@ export default function Hero() {
                     e.currentTarget.style.boxShadow = '0 6px 28px rgba(0,200,83,0.35)'
                   }}
                 >
-                  Start closing smarter
+                  Start 14-day trial
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path d="M3 7h8m0 0L7.5 3.5M11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -771,7 +770,7 @@ export default function Hero() {
               <GreenDot />
               14-day trial
               <GreenDot />
-              Set up in under 2 minutes
+              CSV or PDF bank statements
             </motion.p>
           </div>
 

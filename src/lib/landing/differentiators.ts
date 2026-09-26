@@ -1,22 +1,24 @@
 export const PLATFORM_PILLARS = [
   {
-    title: 'Close-native AI',
-    copy: 'Built around monthly close workflows, not generic bookkeeping chat or a checklist with AI bolted on.',
+    title: 'Built for the monthly close',
+    copy: 'One path per client: upload a bank statement, categorize against their chart of accounts, review, export.',
   },
   {
     title: 'Trust before export',
-    copy: 'COA validation, confidence scores, and exception queues keep CPAs in control before files leave the system.',
+    copy: 'COA validation, confidence scores, and an exception queue keep CPAs in control before files leave the system.',
   },
   {
     title: 'Firm memory',
-    copy: 'Rules and corrections compound across repeat vendors so every client close gets more consistent.',
+    copy: 'Save a correction as a vendor rule and it is applied to matching rows on later closes. Recent corrections are also passed to the AI as hints.',
   },
   {
-    title: 'Client delivery layer',
-    copy: 'Exports, narratives, portal workflows, and action lists move the work from review to client-ready package.',
+    title: 'Export and report',
+    copy: 'Download a QuickBooks-ready CSV or a standard CSV, and print a close report for the period (Save as PDF).',
   },
 ] as const
 
+// Not rendered on the landing page (competitive positioning is not verifiable
+// from the product). Kept for reference.
 export const COMPARISON_ROWS = [
   {
     category: 'Checklist close tools',
@@ -50,7 +52,7 @@ export const ADD_ON_MODULES = [
   {
     name: 'Exception Inbox',
     tier: 'Review layer',
-    copy: 'Routes only the judgment calls to your team.',
+    copy: 'Low-confidence and COA-flagged rows wait for your team.',
     accent: '#A855F7',
   },
   {
@@ -60,21 +62,9 @@ export const ADD_ON_MODULES = [
     accent: '#00C853',
   },
   {
-    name: 'Close Package',
+    name: 'Close Report',
     tier: 'Delivery layer',
-    copy: 'Combines CSV export, narrative, and action list.',
+    copy: 'Printable summary of the close, next to the CSV export.',
     accent: '#38BDF8',
-  },
-  {
-    name: 'Client Portal',
-    tier: 'Collaboration layer',
-    copy: 'Collects documents, messages, and open requests.',
-    accent: '#FB7185',
-  },
-  {
-    name: 'Connect API',
-    tier: 'Enterprise layer',
-    copy: 'Lets larger firms connect CloseBooks to their stack.',
-    accent: '#22C55E',
   },
 ] as const

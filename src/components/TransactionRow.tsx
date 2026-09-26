@@ -447,7 +447,7 @@ export default function TransactionRow({
                   onClick={handleFlag}
                   style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: '1px solid var(--danger)', backgroundColor: 'var(--surface-card)', color: 'var(--danger)', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                   onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--danger-soft)' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fff' }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--surface-card)' }}
                 >
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
                     <path d="M3 1.5v9M3 1.5h6l-1.5 3 1.5 3H3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -459,7 +459,7 @@ export default function TransactionRow({
                     onClick={() => onSplit(transaction.id)}
                     style={{ padding: '8px 14px', borderRadius: 10, border: '1px solid var(--border-subtle)', backgroundColor: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                     onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--surface-base)' }}
-                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fff' }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--surface-card)' }}
                     title="Split into multiple categories (S)"
                   >
                     <svg width="11" height="11" viewBox="0 0 12 12" fill="none">

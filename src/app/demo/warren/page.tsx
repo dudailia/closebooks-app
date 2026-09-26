@@ -403,7 +403,7 @@ export default function WarrenDemoPage() {
           </div>
 
           <p className="mt-3 text-xs text-center" style={{ color: '#444444' }}>
-            On the real app you can approve, flag, edit categories, and export to QuickBooks in one click.
+            On the real app you can approve, flag, edit categories, and download a QuickBooks-ready CSV.
           </p>
         </section>
 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { PILOT_DELIVERABLES, PILOT_METRICS, PILOT_STEPS } from '@/lib/landing/pilot'
+import { PILOT_DELIVERABLES, PILOT_STEPS } from '@/lib/landing/pilot'
 
 interface PilotOfferProps {
   compact?: boolean
@@ -45,18 +45,9 @@ export default function PilotOffer({ compact = false }: PilotOfferProps) {
                 Prove CloseBooks on real client work.
               </h2>
               <p style={{ margin: '20px 0 0', color: '#A1A1A1', fontSize: 16, lineHeight: 1.7 }}>
-                A paid pilot is the fastest path for serious firms: configure real clients, run the
-                review workflow, export a close package, then decide if the subscription should expand.
+                In a paid pilot we set up real clients with your team, run the review workflow,
+                export the CSVs, then decide together whether a subscription makes sense.
               </p>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10, marginTop: 26 }}>
-                {PILOT_METRICS.map(([value, label]) => (
-                  <div key={value} style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '13px 12px', backgroundColor: 'rgba(0,0,0,0.24)' }}>
-                    <p style={{ margin: 0, color: '#FAFAFA', fontSize: 21, fontFamily: 'var(--font-mono)', letterSpacing: '-0.03em' }}>{value}</p>
-                    <p style={{ margin: '5px 0 0', color: '#777', fontSize: 11, lineHeight: 1.35 }}>{label}</p>
-                  </div>
-                ))}
-              </div>
 
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 28 }}>
                 <Link href="/pilot" style={{ padding: '13px 18px', borderRadius: 12, backgroundColor: '#00C853', color: '#030303', textDecoration: 'none', fontSize: 14, fontWeight: 800, boxShadow: '0 12px 38px rgba(0,200,83,0.28)' }}>

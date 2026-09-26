@@ -6,31 +6,31 @@ import { motion } from 'framer-motion'
 
 const STAGES = [
   {
-    eyebrow: 'Inbox',
-    title: 'Client docs arrive',
-    copy: 'Statements, receipts, and questions land in one close queue.',
-    metric: '12 files captured',
+    eyebrow: 'Upload',
+    title: 'Statement goes in',
+    copy: 'Upload a CSV or PDF bank statement for a client, alongside their chart of accounts.',
+    metric: 'CSV · PDF',
     accent: '#38BDF8',
   },
   {
     eyebrow: 'AI close',
-    title: 'Transactions classify themselves',
-    copy: 'CloseBooks maps vendors to accounts, applies rules, and flags uncertainty.',
-    metric: '428 rows analyzed',
+    title: 'AI suggests accounts',
+    copy: 'Claude maps each transaction to the client chart, your saved rules are applied, and uncertainty is flagged.',
+    metric: 'Confidence scored',
     accent: '#00C853',
   },
   {
     eyebrow: 'Trust layer',
     title: 'COA validation catches mistakes',
     copy: 'Suggestions must resolve to the client chart before export is allowed.',
-    metric: '7 exceptions isolated',
+    metric: 'Exceptions flagged',
     accent: '#F59E0B',
   },
   {
     eyebrow: 'Delivery',
-    title: 'Exports and narrative go out',
-    copy: 'QuickBooks-ready files and client-ready close notes are prepared together.',
-    metric: 'Close package ready',
+    title: 'Export and report',
+    copy: 'Download a QuickBooks-ready or standard CSV, and print a close report for the period.',
+    metric: 'Ready to download',
     accent: '#A855F7',
   },
 ] as const
@@ -190,7 +190,7 @@ function AutomationConsole({ active }: { active: number }) {
         <div className="automation-console-grid" style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.25fr 0.9fr', gap: 14 }}>
           <div style={{ border: '1px solid #1f1f1f', borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.025)', padding: 14 }}>
             <p style={{ margin: 0, color: '#666', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', fontWeight: 700 }}>Client intake</p>
-            {['bank_statement.pdf', 'receipts.zip', 'payroll.csv'].map((file, index) => (
+            {['bank_statement.pdf', 'checking_march.csv', 'chart_of_accounts.csv'].map((file, index) => (
               <motion.div
                 key={file}
                 animate={{ x: active === 0 ? [0, 6, 0] : 0, borderColor: active === 0 && index === active % 3 ? 'rgba(56,189,248,0.45)' : '#1f1f1f' }}
@@ -223,7 +223,7 @@ function AutomationConsole({ active }: { active: number }) {
 
           <div style={{ border: '1px solid #1f1f1f', borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.025)', padding: 14 }}>
             <p style={{ margin: 0, color: '#666', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', fontWeight: 700 }}>Output</p>
-            {['QBO export', 'Client narrative', 'Exception list'].map((item, index) => (
+            {['QuickBooks CSV', 'Standard CSV', 'Close report'].map((item, index) => (
               <motion.div
                 key={item}
                 animate={{ opacity: active >= 3 ? 1 : 0.45, scale: active >= 3 ? 1 : 0.98 }}
@@ -308,8 +308,8 @@ export default function AutomationTheater() {
             transition={{ duration: 0.65, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
           >
             <p style={{ margin: 0, color: '#A1A1A1', fontSize: 17, lineHeight: 1.7, maxWidth: 620 }}>
-              CloseBooks brings intake, categorization, validation, exceptions, export, and
-              client delivery into one guided workflow. AI handles the volume; your firm keeps
+              CloseBooks puts statement upload, categorization, chart-of-accounts validation,
+              exception review, and export into one guided workflow. AI proposes; your firm keeps
               control over the judgment calls.
             </p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 24 }}>

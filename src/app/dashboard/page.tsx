@@ -88,11 +88,12 @@ function SummaryStats({ jobs }: { jobs: CategorizationJob[] }) {
       sub: 'est. at 2 min/tx',
       color: timeSavedMin > 0 ? '#2d5a27' : '#a09a94',
       icon: <ClockIcon />,
+      visible: FEATURES.savingsEstimates,
     },
-  ]
+  ].filter((s) => s.visible !== false)
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div className={`grid grid-cols-2 ${stats.length > 3 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3`}>
       {stats.map((s) => (
         <div
           key={s.label}
@@ -606,7 +607,7 @@ export default function DashboardPage() {
         ) : null}
 
         {/* Cumulative ROI strip */}
-        {mounted && jobs.length > 0 && (() => {
+        {FEATURES.savingsEstimates && mounted && jobs.length > 0 && (() => {
           const roi = calcCumulativeROI(jobs)
           if (roi.hoursSaved < 0.1) return null
           const autoPct = roi.totalTx > 0 ? Math.round((roi.autoApproved / roi.totalTx) * 100) : 0
@@ -830,35 +831,46 @@ function FirmIntelligenceCard({ stats }: { stats: CorrectionStats }) {
           <div>
             <p className="text-sm font-semibold" style={{ color: '#1a1714' }}>Firm Intelligence</p>
             <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>
-              AI is learning your firm&apos;s preferences
+              Category corrections from your reviews
             </p>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-2xl font-bold tabular-nums" style={{ color: '#2d5a27' }}>
-            {estimatedAccuracy}%
-          </p>
-          <p className="text-xs mt-0.5" style={{ color: '#6b6560' }}>est. accuracy</p>
-        </div>
+        {FEATURES.estimatedAccuracy ? (
+          <div className="text-right">
+            <p className="text-2xl font-bold tabular-nums" style={{ color: '#2d5a27' }}>
+              {estimatedAccuracy}%
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: '#6b6560' }}>est. accuracy</p>
+          </div>
+        ) : (
+          <div className="text-right">
+            <p className="text-2xl font-bold tabular-nums" style={{ color: '#2d5a27' }}>
+              {totalCorrections}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: '#6b6560' }}>correction{totalCorrections !== 1 ? 's' : ''} saved</p>
+          </div>
+        )}
       </div>
 
       {/* Accuracy bar */}
-      <div>
-        <div className="flex justify-between text-xs mb-1.5" style={{ color: '#a09a94' }}>
-          <span>Model calibration</span>
-          <span>{totalCorrections} correction{totalCorrections !== 1 ? 's' : ''} applied</span>
+      {FEATURES.estimatedAccuracy && (
+        <div>
+          <div className="flex justify-between text-xs mb-1.5" style={{ color: '#a09a94' }}>
+            <span>Model calibration</span>
+            <span>{totalCorrections} correction{totalCorrections !== 1 ? 's' : ''} applied</span>
+          </div>
+          <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece4' }}>
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${barWidth}%`, backgroundColor: '#2d5a27' }}
+            />
+          </div>
+          <div className="flex justify-between text-xs mt-1" style={{ color: '#c4bdb8' }}>
+            <span>Baseline 82%</span>
+            <span>Target 97%</span>
+          </div>
         </div>
-        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece4' }}>
-          <div
-            className="h-full rounded-full transition-all duration-700"
-            style={{ width: `${barWidth}%`, backgroundColor: '#2d5a27' }}
-          />
-        </div>
-        <div className="flex justify-between text-xs mt-1" style={{ color: '#c4bdb8' }}>
-          <span>Baseline 82%</span>
-          <span>Target 97%</span>
-        </div>
-      </div>
+      )}
 
       {topCorrectedFrom.length > 0 && (
         <div>
@@ -881,7 +893,7 @@ function FirmIntelligenceCard({ stats }: { stats: CorrectionStats }) {
       )}
 
       <p className="text-xs" style={{ color: '#a09a94' }}>
-        Every correction trains the AI to match your firm&apos;s categorization style. The more you use CloseBooks, the less you&apos;ll need to correct.
+        Your 10 most recent corrections are sent as examples with each new categorization request.
       </p>
     </div>
   )

@@ -172,7 +172,7 @@ function TierCard({
             flexShrink: 0,
           }}
         >
-          ✦ Most popular
+          ✦ Recommended
         </div>
       )}
 

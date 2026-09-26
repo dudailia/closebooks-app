@@ -19,7 +19,7 @@ export interface FirmSettings {
 
 const DEFAULTS: FirmSettings = {
   firmName: '',
-  firmTagline: 'Certified Public Accountants',
+  firmTagline: '',
   accentColor: '#2d5a27',
   preparedBy: '',
   inboxSlug: '',

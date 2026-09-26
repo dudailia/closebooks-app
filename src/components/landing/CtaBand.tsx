@@ -101,7 +101,7 @@ export default function CtaBand() {
                 fontWeight: 400,
               }}
             >
-              Close faster.{' '}
+              Run one close.{' '}
               <span
                 style={{
                   fontStyle: 'italic',
@@ -111,7 +111,7 @@ export default function CtaBand() {
                   WebkitTextFillColor: 'transparent',
                 }}
               >
-                Close better.
+                Judge the output.
               </span>
             </motion.h2>
 

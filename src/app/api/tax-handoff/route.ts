@@ -172,7 +172,6 @@ Open items: ${data.openItems.join('; ') || 'None'}
     <div class="header-bar">
       <div>
         <div class="firm-name">${escHtml(firm.firmName || 'CloseBooks')}</div>
-        ${firm.firmTagline ? `<div style="font-size:9pt;opacity:0.8;margin-top:2px">${escHtml(firm.firmTagline)}</div>` : ''}
       </div>
       <div class="header-right">
         <strong>TAX PREP HANDOFF PACKAGE</strong><br/>

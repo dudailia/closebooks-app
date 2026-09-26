@@ -52,6 +52,15 @@ export const FEATURES = {
   aiChatPanel:          show, // floating "Ask CloseBooks AI" button + panel
   copilotShortcut:      show, // global ⌘K → /dashboard/clients/[id]/copilot
 
+  // Unmeasured figures (fixed-rate estimates, not measurements)
+  savingsEstimates:     show, // every hours-/$-saved figure: home "AI Savings" strip + "Time Saved" card, client "Time Saved", review ROI line
+  estimatedAccuracy:    show, // home Firm Intelligence "est. accuracy" % and baseline/target bar (formula of correction count)
+
+  // Client page
+  clientBankConnection: show, // Plaid "Bank Account" widget (+ the upload page's "Pull from Bank" toggle that points to it)
+  clientAiInsights:     show, // "AI Trends & Insights" panel
+  clientHealthExport:   show, // "Export Report" button on the health-score card
+
   // Dashboard home
   homePortalLink:       show, // "Client Portal Link" quick action
   homeClientPortal:     show, // "Client Upload Portal" section
