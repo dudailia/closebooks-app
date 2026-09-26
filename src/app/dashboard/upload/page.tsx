@@ -520,7 +520,7 @@ export default function UploadPage() {
                     <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.3" />
                     <path d="M7 6v4M7 4.5v.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
                   </svg>
-                  <span>PDF bank statements are supported — AI will extract transactions automatically. This may take 10–20 seconds.</span>
+                  <span>PDF bank statements are supported — AI extracts the transactions, so a PDF takes longer to read than a CSV.</span>
                 </div>
                 <FileUpload
                   onContinue={(parsed) => {

@@ -9,6 +9,7 @@ import { getClients, getJobsForClient } from '@/lib/storage'
 import { dbSaveClient, dbDeleteClient } from '@/lib/db'
 import { useSubscription } from '@/contexts/SubscriptionContext'
 import { logActivity } from '@/lib/activity'
+import { FEATURES } from '@/lib/features'
 import type { Client, ClientIndustry, AccountingSoftware } from '@/types'
 import { SkeletonBlock, SkeletonTable, StatsSkeleton } from '@/components/Skeleton'
 
@@ -299,7 +300,7 @@ function ClientCard({
             </span>
           </span>
         )}
-        {health && (
+        {FEATURES.clientHealthScore && health && (
           <span onClick={(e) => e.stopPropagation()}>
             <HealthPill breakdown={health} />
           </span>
@@ -335,7 +336,7 @@ export default function ClientsPage() {
   }, [])
 
   useEffect(() => {
-    if (clients.length === 0) return
+    if (clients.length === 0 || !FEATURES.clientHealthScore) return
     const payload = {
       clients: clients.map((c) => ({
         clientName: c.business_name,

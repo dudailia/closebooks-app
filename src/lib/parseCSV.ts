@@ -56,29 +56,56 @@ function parseAmount(raw: string): number | null {
   return isParens ? -Math.abs(value) : value
 }
 
+// Day/month order for purely numeric dates (03/04/2026). Decided once per file
+// so every row is read the same way.
+type DayOrder = 'mdy' | 'dmy'
+
+const NUMERIC_DATE = /^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2}|\d{4})$/
+
+/**
+ * A first part above 12 can only be a day (DD/MM); a second part above 12 can
+ * only be a day (MM/DD). If every date in the file is ambiguous, assume the US
+ * bank-export convention, MM/DD.
+ */
+function detectDayOrder(rawDates: string[]): DayOrder {
+  for (const raw of rawDates) {
+    const m = NUMERIC_DATE.exec(raw.trim())
+    if (!m) continue
+    if (Number(m[1]) > 12) return 'dmy'
+    if (Number(m[2]) > 12) return 'mdy'
+  }
+  return 'mdy'
+}
+
+/** YYYY-MM-DD from parts, or null if that calendar date doesn't exist. */
+function isoFromParts(y: number, m: number, d: number): string | null {
+  if (y < 100) y += 2000
+  const probe = new Date(Date.UTC(y, m - 1, d))
+  if (probe.getUTCFullYear() !== y || probe.getUTCMonth() !== m - 1 || probe.getUTCDate() !== d) return null
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+}
+
+/** The calendar date the runtime parsed, read in local time (toISOString would shift it by the UTC offset). */
+function isoFromLocalDate(date: Date): string | null {
+  return isoFromParts(date.getFullYear(), date.getMonth() + 1, date.getDate())
+}
+
 /**
  * Best-effort date normalisation — returns an ISO date string (YYYY-MM-DD)
  * or the original string if we cannot parse it.
  */
-function normaliseDate(raw: string): string {
+function normaliseDate(raw: string, dayOrder: DayOrder): string {
   const s = raw.trim()
   if (!s) return s
 
   // Already ISO
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10)
 
-  // DD/MM/YYYY or DD-MM-YYYY
-  const dmy = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/)
-  if (dmy) {
-    const [, d, m, y] = dmy
-    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
-  }
-
-  // MM/DD/YYYY  (ambiguous — assumed US format when day > 12 in the month slot)
-  const mdy = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/)
-  if (mdy) {
-    const [, m, d, y] = mdy
-    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
+  // MM/DD/YYYY or DD/MM/YYYY (also - or . separators, 2-digit years)
+  const numeric = NUMERIC_DATE.exec(s)
+  if (numeric) {
+    const a = Number(numeric[1]), b = Number(numeric[2]), y = Number(numeric[3])
+    return (dayOrder === 'mdy' ? isoFromParts(y, a, b) : isoFromParts(y, b, a)) ?? s
   }
 
   // DD Mon YYYY  e.g. "01 Jan 2024" or "1-Jan-2024"
@@ -86,7 +113,7 @@ function normaliseDate(raw: string): string {
   if (dMonY) {
     const [, d, mon, y] = dMonY
     const date = new Date(`${mon} ${d} ${y}`)
-    if (!isNaN(date.getTime())) return date.toISOString().slice(0, 10)
+    if (!isNaN(date.getTime())) return isoFromLocalDate(date) ?? s
   }
 
   // Mon DD YYYY  e.g. "Jan 01 2024"
@@ -94,12 +121,12 @@ function normaliseDate(raw: string): string {
   if (monDY) {
     const [, mon, d, y] = monDY
     const date = new Date(`${mon} ${d} ${y}`)
-    if (!isNaN(date.getTime())) return date.toISOString().slice(0, 10)
+    if (!isNaN(date.getTime())) return isoFromLocalDate(date) ?? s
   }
 
   // Last resort: hand to Date constructor
   const fallback = new Date(s)
-  if (!isNaN(fallback.getTime())) return fallback.toISOString().slice(0, 10)
+  if (!isNaN(fallback.getTime())) return isoFromLocalDate(fallback) ?? s
 
   return s // give back original if nothing worked
 }
@@ -172,6 +199,8 @@ export function parseTransactionCSV(csvContent: string): ParseCSVResult {
     return idx !== undefined ? (row[idx] ?? '').trim() : ''
   }
 
+  const dayOrder = detectDayOrder(dataRows.map((row) => cell(row, colDate)))
+
   // --- Step 3: process each data row ----------------------------------------
   // Sign convention: positive number = credit (money in), negative = debit (money out).
   // We trust the sign in the CSV exactly as written. No auto-detection, no flipping.
@@ -215,7 +244,7 @@ export function parseTransactionCSV(csvContent: string): ParseCSVResult {
     }
 
     const description = rawDesc || '(no description)'
-    const date = normaliseDate(rawDate)
+    const date = normaliseDate(rawDate, dayOrder)
 
     transactions.push({
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,

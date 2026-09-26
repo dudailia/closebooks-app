@@ -316,7 +316,7 @@ const CLIENTS = [
 function ClientGrid() {
   return (
     <div style={{ marginTop: 18 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7, marginBottom: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 52px)', gap: 10, marginBottom: 12 }}>
         {CLIENTS.map((c, i) => (
           <motion.div
             key={c.init}
@@ -404,7 +404,8 @@ export default function BentoGrid() {
 
   return (
     <section id="features" style={{ padding: '120px 0 100px', position: 'relative' }}>
-      <style jsx>{`
+      {/* global: the span classes sit on motion.div, which styled-jsx doesn't scope */}
+      <style jsx global>{`
         .bento-grid {
           display: grid;
           grid-template-columns: repeat(12, 1fr);

@@ -1,3 +1,5 @@
+import { FEATURES, isDashboardRouteVisible } from '@/lib/features'
+
 export type TierId = 'starter' | 'professional' | 'enterprise'
 
 export interface Tier {
@@ -10,6 +12,9 @@ export interface Tier {
   features: string[]
   popular?: boolean
 }
+
+// Bullets for features hidden in the demo build (src/lib/features.ts) drop out with them.
+const when = (visible: boolean, label: string): string[] => (visible ? [label] : [])
 
 export const TIERS: Tier[] = [
   {
@@ -39,8 +44,8 @@ export const TIERS: Tier[] = [
       'Up to 50 clients',
       '5 seats',
       'Full AI + rules engine',
-      'Autonomous close agent',
-      'Narrative insights',
+      ...when(FEATURES.reviewAutoClose, 'Autonomous close agent'),
+      ...when(FEATURES.reviewNarrative, 'Narrative insights'),
       'Priority support',
     ],
   },
@@ -54,8 +59,8 @@ export const TIERS: Tier[] = [
     features: [
       'Unlimited clients',
       'Unlimited seats',
-      'White-label portal',
-      'API access',
+      ...when(isDashboardRouteVisible('/dashboard/whitelabel'), 'White-label portal'),
+      ...when(isDashboardRouteVisible('/dashboard/developers'), 'API access'),
       'Priority onboarding by request',
       'Firm setup assistance',
     ],

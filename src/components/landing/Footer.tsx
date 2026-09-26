@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { FEATURES } from '@/lib/features'
 
 const COLUMNS = [
   {
@@ -21,9 +22,9 @@ const COLUMNS = [
     links: [
       { href: '/security', label: 'Security' },
       { href: '/security/questionnaire', label: 'Security Questionnaire' },
-      { href: '/tools/roi-calculator', label: 'ROI Calculator' },
-      { href: '/connect/docs', label: 'API Docs' },
-      { href: '/compare/floqast', label: 'Compare' },
+      ...(FEATURES.publicRoiCalculator ? [{ href: '/tools/roi-calculator', label: 'ROI Calculator' }] : []),
+      ...(FEATURES.publicApiDocs ? [{ href: '/connect/docs', label: 'API Docs' }] : []),
+      ...(FEATURES.publicCompare ? [{ href: '/compare/floqast', label: 'Compare' }] : []),
     ],
   },
   {

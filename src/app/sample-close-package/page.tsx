@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import PublicShell from '@/components/landing/PublicShell'
+import { FEATURES } from '@/lib/features'
 
 const SAMPLE_ROWS = [
   ['AWS', 'Cloud Infrastructure', '$412.09', 'Validated'],
@@ -36,8 +37,8 @@ export default function SampleClosePackagePage() {
               </h1>
               <p style={{ margin: '22px 0 0', color: '#A1A1A1', fontSize: 18, lineHeight: 1.7 }}>
                 This sample illustrates the CloseBooks output: validated rows, exceptions,
-                export checks, and a client-ready narrative. Use it to understand the review model
-                before running your own client files.
+                {FEATURES.reviewNarrative ? ' export checks, and a client-ready narrative.' : ' and export checks.'}{' '}
+                Use it to understand the review model before running your own client files.
               </p>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 28 }}>
                 <Link href="/demo" style={{ padding: '13px 18px', borderRadius: 12, backgroundColor: '#00C853', color: '#030303', textDecoration: 'none', fontSize: 14, fontWeight: 800 }}>
@@ -73,16 +74,18 @@ export default function SampleClosePackagePage() {
           <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginTop: 44 }}>
             <Panel title="Export checks" items={CHECKS} />
             <Panel title="Exception list" items={EXCEPTIONS} accent="#F59E0B" />
-            <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, padding: 24, backgroundColor: 'rgba(255,255,255,0.025)' }}>
-              <p style={{ margin: 0, color: '#00C853', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 800 }}>
-                Client narrative
-              </p>
-              <p style={{ margin: '14px 0 0', color: '#A1A1A1', fontSize: 14, lineHeight: 1.7 }}>
-                March expenses were led by payroll and cloud infrastructure. Three transactions remain
-                in review pending client context. Once resolved, the QuickBooks-ready export can be
-                delivered with the reviewed close summary.
-              </p>
-            </div>
+            {FEATURES.reviewNarrative && (
+              <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, padding: 24, backgroundColor: 'rgba(255,255,255,0.025)' }}>
+                <p style={{ margin: 0, color: '#00C853', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 800 }}>
+                  Client narrative
+                </p>
+                <p style={{ margin: '14px 0 0', color: '#A1A1A1', fontSize: 14, lineHeight: 1.7 }}>
+                  March expenses were led by payroll and cloud infrastructure. Three transactions remain
+                  in review pending client context. Once resolved, the QuickBooks-ready export can be
+                  delivered with the reviewed close summary.
+                </p>
+              </div>
+            )}
           </section>
         </div>
       </main>

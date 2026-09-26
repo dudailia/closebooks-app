@@ -93,6 +93,8 @@ export default function Nav() {
                 key={l.href}
                 href={l.href}
                 style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
                   fontSize: 14,
                   fontWeight: 400,
                   color: '#888888',
@@ -113,6 +115,7 @@ export default function Nav() {
               href="/login"
               className="hidden md:inline-flex"
               style={{
+                alignItems: 'center',
                 padding: '8px 14px',
                 fontSize: 13,
                 fontWeight: 500,
@@ -136,6 +139,7 @@ export default function Nav() {
               href="/pilot"
               className="hidden md:inline-flex"
               style={{
+                alignItems: 'center',
                 padding: '8px 14px',
                 fontSize: 13,
                 fontWeight: 600,

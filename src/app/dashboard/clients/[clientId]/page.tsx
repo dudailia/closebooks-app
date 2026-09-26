@@ -13,6 +13,7 @@ import { ClientInsightsPanel } from '@/components/InsightsPanel'
 import type { Client, ClientIndustry, AccountingSoftware, CategorizationJob } from '@/types'
 import ConnectedAccounts from '@/components/plaid/ConnectedAccounts'
 import { FEATURES, isDashboardRouteVisible } from '@/lib/features'
+import { formatStatementPeriod } from '@/lib/statementPeriod'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -249,7 +250,7 @@ function CloseCard({ job }: { job: CategorizationJob }) {
       <div className="flex items-center justify-between gap-3 mb-3">
         <div>
           <p className="text-sm font-medium" style={{ color: '#1a1714' }}>
-            {new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            {formatStatementPeriod(job.transactions) ?? new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
           <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>
             {job.total_transactions} transactions
@@ -295,7 +296,7 @@ export default function ClientDetailPage() {
   const [health,   setHealth]   = useState<HealthBreakdown | null>(null)
 
   useEffect(() => {
-    if (!client) return
+    if (!client || !FEATURES.clientHealthScore) return
     const payload = { clients: [{ clientName: client.business_name, jobs }] }
     void (async () => {
       try {

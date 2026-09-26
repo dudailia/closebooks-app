@@ -60,6 +60,7 @@ export const FEATURES = {
   clientBankConnection: show, // Plaid "Bank Account" widget (+ the upload page's "Pull from Bank" toggle that points to it)
   clientAiInsights:     show, // "AI Trends & Insights" panel
   clientHealthExport:   show, // "Export Report" button on the health-score card
+  clientHealthScore:    show, // health score card + pills: half its points come from hidden features (doc requests, bank rec)
 
   // Dashboard home
   homePortalLink:       show, // "Client Portal Link" quick action
@@ -82,6 +83,11 @@ export const FEATURES = {
   reviewAiInsights:     show, // AI Insights under the transaction table
   reviewCloseChat:      show, // floating "Ask" chat on the review page
   reviewShareModal:     show, // "Share your win" modal after Mark as Complete
+
+  // Public site — footer links to pages outside the demo audit
+  publicRoiCalculator:  show, // /tools/roi-calculator: savings estimates from fixed assumptions
+  publicApiDocs:        show, // /connect/docs: documents an API that is mostly not implemented
+  publicCompare:        show, // /compare/[slug]: competitor claims
 
   // Review page — tabs
   reviewAnomaliesTab:   show,

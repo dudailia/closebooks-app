@@ -109,6 +109,11 @@ export default function CtaBand() {
                   backgroundClip: 'text',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
+                  // Italic glyphs overhang their box; without this the last letter
+                  // on each wrapped line is clipped by background-clip: text.
+                  paddingRight: '0.12em',
+                  boxDecorationBreak: 'clone',
+                  WebkitBoxDecorationBreak: 'clone',
                 }}
               >
                 Judge the output.

@@ -29,8 +29,8 @@ export default function TrialBanner() {
         </div>
         <Link
           href="/pricing?required=1"
-          className="shrink-0 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
-          style={{ backgroundColor: '#fff', color: '#7f1d1d' }}
+          className="shrink-0 inline-flex items-center px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
+          style={{ backgroundColor: '#fff', color: '#7f1d1d', minHeight: 32 }}
           onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fee2e2' }}
           onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fff' }}
         >
@@ -50,12 +50,12 @@ export default function TrialBanner() {
         </div>
         <Link
           href="/dashboard/upload"
-          className="shrink-0 px-3 py-1 rounded-lg text-xs font-semibold text-white transition-all"
-          style={{ backgroundColor: '#2d5a27' }}
+          className="shrink-0 inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold text-white transition-all"
+          style={{ backgroundColor: '#2d5a27', minHeight: 28 }}
           onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1e3d1a' }}
           onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2d5a27' }}
         >
-          Start your first close
+          Start a close
         </Link>
       </div>
     )
@@ -83,8 +83,8 @@ export default function TrialBanner() {
       {isLow && (
         <Link
           href="/pricing?required=1"
-          className="shrink-0 px-3 py-1 rounded-lg text-xs font-semibold transition-all"
-          style={{ backgroundColor: '#b8734a', color: '#fff' }}
+          className="shrink-0 inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold transition-all"
+          style={{ backgroundColor: '#b8734a', color: '#fff', minHeight: 28 }}
           onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#a0643d' }}
           onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#b8734a' }}
         >

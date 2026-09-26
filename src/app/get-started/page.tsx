@@ -7,6 +7,7 @@ import { saveJob } from '@/lib/storage'
 import { dbSaveClient } from '@/lib/db'
 import { logActivity } from '@/lib/activity'
 import { notify } from '@/lib/notify'
+import { parseTransactionCSV } from '@/lib/parseCSV'
 import type { ChartOfAccounts, CategorizationJob, Transaction } from '@/types'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -133,7 +134,7 @@ const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
 const LOADING_PHASES = [
   'Matching merchant descriptions...',
   'Applying your chart of accounts...',
-  'Detecting recurring transactions...',
+  'Validating account codes...',
   'Calculating confidence scores...',
   'Almost done...',
 ]
@@ -142,32 +143,10 @@ const LOADING_PHASES = [
 // CSV parser
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Same parser as the in-app upload (quoted fields, debit/credit columns, date formats).
 function parseCSV(text: string): RawTransaction[] {
-  const lines = text.trim().split('\n')
-  const header = lines[0].toLowerCase().split(',').map((h) => h.trim().replace(/"/g, ''))
-  return lines
-    .slice(1)
-    .map((line) => {
-      const cols = line.split(',').map((c) => c.trim().replace(/"/g, ''))
-      const dateIdx = header.findIndex((h) => h.includes('date'))
-      const descIdx = header.findIndex(
-        (h) => h.includes('desc') || h.includes('memo') || h.includes('narrat')
-      )
-      const amtIdx = header.findIndex((h) => h.includes('amount') || h.includes('amt'))
-      const typeIdx = header.findIndex(
-        (h) => h.includes('type') || h.includes('debit') || h.includes('credit')
-      )
-      return {
-        date: cols[dateIdx] || '',
-        description: cols[descIdx] || '',
-        amount: Math.abs(parseFloat(cols[amtIdx]) || 0),
-        type: (cols[typeIdx]?.toLowerCase().includes('credit')
-          ? 'credit'
-          : parseFloat(cols[amtIdx]) >= 0
-          ? 'credit'
-          : 'debit') as 'debit' | 'credit',
-      }
-    })
+  return parseTransactionCSV(text)
+    .transactions.map(({ date, description, amount, type }) => ({ date, description, amount, type }))
     .filter((t) => t.amount > 0 && t.description)
 }
 

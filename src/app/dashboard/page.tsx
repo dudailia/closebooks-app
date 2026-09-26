@@ -13,6 +13,7 @@ import { calcCumulativeROI, fmtHours } from '@/lib/roiCalc'
 import { getClientCloseStatuses } from '@/lib/clientStatus'
 import { getCorrectionStats } from '@/lib/corrections'
 import { FEATURES } from '@/lib/features'
+import { formatStatementPeriod } from '@/lib/statementPeriod'
 import type { CategorizationJob } from '@/types'
 import type { QBOConnection } from '@/lib/integrations'
 import type { ClientCloseStatus, CloseStatus } from '@/lib/clientStatus'
@@ -300,7 +301,7 @@ function JobCard({ job, onDelete }: { job: CategorizationJob; onDelete: (id: str
               {s.label}
             </span>
           </div>
-          <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>{formatDate(job.created_at)}</p>
+          <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>{formatStatementPeriod(job.transactions) ?? formatDate(job.created_at)}</p>
         </div>
 
         <button
