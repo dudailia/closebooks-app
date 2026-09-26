@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import type { Transaction, ChartOfAccounts } from '@/types'
 import { saveCorrection } from '@/lib/corrections'
 import { getAlternativeSuggestions } from '@/lib/categorySuggestions'
+import { approveTransaction, recategorizeTransaction } from '@/lib/review/approve'
 import type { AuditCallback, AuditEvent } from '@/lib/auditTrail'
 import { formatAuditEvent, fmtAuditTs } from '@/lib/auditTrail'
 
@@ -129,7 +130,7 @@ export default function TransactionRow({
 
   function handleApprove() {
     onAudit?.({ action: 'tx_approved', txId: transaction.id, txDescription: transaction.description, details: { category: transaction.final_category ?? transaction.suggested_category ?? '' } })
-    onChange({ ...transaction, status: 'approved', final_category: transaction.suggested_category, final_account_code: transaction.suggested_account_code, notes: notes || undefined })
+    onChange({ ...approveTransaction(transaction), notes: notes || undefined })
     setExpanded(false)
   }
 
@@ -152,7 +153,7 @@ export default function TransactionRow({
       }
       onCategoryRuleCandidate?.(transaction, code, toName)
     }
-    onChange({ ...transaction, status: 'edited', categorizationSource: 'manual', final_account_code: code, final_category: account?.name ?? code })
+    onChange(recategorizeTransaction(transaction, code, chartOfAccounts))
   }
 
   function handleNotesBlur() {

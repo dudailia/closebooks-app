@@ -64,8 +64,10 @@ The bank side is chosen from the chart of accounts, in this order:
 3. otherwise the first **asset** account named "cash" or "bank".
 
 If none match, there is no bank account and nothing posts. The account used
-appears in the CSV's first line (`# Bank account: 1000 Checking Account`) and
-in the report, so a reviewer can see the assumption.
+appears in the CSV's last column, **Bank Account** (`1000 Checking Account` on
+every row), and in the report, so a reviewer can see the assumption. The CSV
+has no comment or footer lines: row 1 is the header, and QuickBooks reads the
+first row as the header.
 
 ## Exceptions (no entry)
 

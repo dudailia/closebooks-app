@@ -269,16 +269,19 @@ export function generateJournalEntries(
 // ─── CSV ──────────────────────────────────────────────────────────────────────
 
 export const JOURNAL_CSV_COLUMNS = [
-  'Date', 'Entry #', 'Account Code', 'Account Name', 'Debit', 'Credit', 'Memo', 'Source',
+  'Date', 'Entry #', 'Account Code', 'Account Name', 'Debit', 'Credit', 'Memo', 'Source', 'Bank Account',
 ] as const
 
 function csvCell(value: string): string {
   return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
 }
 
-/** One row per line. The first line is a comment naming the bank account used. */
+/**
+ * Header row plus one row per line, nothing else (QuickBooks treats the first
+ * row as the header). The bank account used is repeated in the last column.
+ */
 export function journalEntriesToCSV(result: JournalResult): string {
-  const bank = result.bankAccount ? accountLabel(result.bankAccount) : 'none found in chart of accounts'
+  const bank = result.bankAccount ? accountLabel(result.bankAccount) : ''
   const rows: string[][] = [[...JOURNAL_CSV_COLUMNS]]
   for (const entry of result.entries) {
     for (const line of entry.lines) {
@@ -291,8 +294,9 @@ export function journalEntriesToCSV(result: JournalResult): string {
         line.credit ? line.credit.toFixed(2) : '',
         line.memo,
         entry.source,
+        bank,
       ])
     }
   }
-  return [`# Bank account: ${bank}`, ...rows.map((r) => r.map(csvCell).join(','))].join('\r\n') + '\r\n'
+  return rows.map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n'
 }

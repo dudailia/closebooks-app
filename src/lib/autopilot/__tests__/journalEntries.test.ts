@@ -259,13 +259,12 @@ describe('findBankAccount', () => {
 })
 
 describe('journalEntriesToCSV', () => {
-  it('writes the bank account comment, the header, and one row per line', () => {
+  it('writes only the header and one row per line, with the bank account in its own column', () => {
     const csv = journalEntriesToCSV(generateJournalEntries([tx({ description: 'ADOBE, INC "CC"' })], COA))
     expect(csv.split('\r\n')).toEqual([
-      '# Bank account: 1000 Checking Account',
-      'Date,Entry #,Account Code,Account Name,Debit,Credit,Memo,Source',
-      '2026-03-10,JE-0001,6100,Subscriptions & Software,59.99,,Posted to 6100 Subscriptions & Software,ai',
-      '2026-03-10,JE-0001,1000,Checking Account,,59.99,"ADOBE, INC ""CC""",ai',
+      'Date,Entry #,Account Code,Account Name,Debit,Credit,Memo,Source,Bank Account',
+      '2026-03-10,JE-0001,6100,Subscriptions & Software,59.99,,Posted to 6100 Subscriptions & Software,ai,1000 Checking Account',
+      '2026-03-10,JE-0001,1000,Checking Account,,59.99,"ADOBE, INC ""CC""",ai,1000 Checking Account',
       '',
     ])
   })
