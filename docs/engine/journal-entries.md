@@ -26,11 +26,22 @@ Nothing is guessed from the description.
   - `human`: `categorizationSource` is `manual`, or the status is `edited`.
   - `ai`: everything else, including `copilot`.
 
-  `categorizationSource` and `splits` are not saved to Supabase yet. After a
-  reload from Supabase, source falls back to the status (`edited` = human,
-  otherwise ai) and splits are gone.
+  Rows saved before `categorizationSource` was recorded have no source, so
+  they fall back to the status (`edited` = human, otherwise ai).
 - **Entry #:** `JE-0001`, `JE-0002`, … in date order. Transactions with the
   same date keep their original order.
+
+## Storage
+
+Splits and `categorizationSource` are saved with the transaction, in the
+`transactions.splits` (jsonb) and `transactions.categorization_source` (text)
+columns. The migration is
+`supabase/migrations/20260926000000_transaction_splits_source.sql`. Both
+columns are nullable, and rows saved before the migration load with no splits
+and no source. Reads and writes go through `src/lib/transactionPersistence.ts`.
+If the columns don't exist yet, Supabase rejects any upsert that names them
+(`PGRST204`). The writer then retries without the two columns, so the rest of
+the transaction still saves.
 
 ## Direction: `type`, not the sign of `amount`
 

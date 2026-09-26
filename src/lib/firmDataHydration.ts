@@ -5,6 +5,7 @@
 import { createClient, supabaseConfigured } from '@/lib/supabase/client'
 import { getFirmIdForUser } from '@/lib/supabase/firmScope'
 import { LEGACY_KEYS, readLegacyJson, readLegacyString } from './legacyLocalStorage'
+import { readCategorizationSource, readSplits, upsertTransactionRows } from '@/lib/transactionPersistence'
 
 export async function importLegacyLocalStorageToSupabase(): Promise<{ imported: string[]; errors: string[] }> {
   const imported: string[] = []
@@ -63,10 +64,10 @@ export async function importLegacyLocalStorageToSupabase(): Promise<{ imported: 
             final_category: t.final_category ?? null,
             final_account_code: t.final_account_code ?? null,
             notes: t.notes ?? null,
+            splits: readSplits(t.splits) ?? null,
+            categorization_source: readCategorizationSource(t.categorizationSource) ?? null,
           }))
-          for (let i = 0; i < rows.length; i += 200) {
-            await supabase.from('transactions').upsert(rows.slice(i, i + 200), { onConflict: 'id' })
-          }
+          await upsertTransactionRows(supabase, rows, 200)
         }
       }
       imported.push('jobs')
