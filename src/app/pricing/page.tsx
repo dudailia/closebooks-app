@@ -2,6 +2,7 @@ import PublicShell from '@/components/landing/PublicShell'
 import PricingTiers from '@/components/landing/PricingTiers'
 import PricingFAQ from '@/components/landing/PricingFAQ'
 import { TIERS, type TierId } from '@/lib/landing/tiers'
+import { STRIPE_TEST_MODE_NOTE, isStripeTestMode } from '@/lib/stripeMode'
 
 interface PricingPageProps {
   searchParams?: {
@@ -17,6 +18,7 @@ export default function PricingPage({ searchParams }: PricingPageProps) {
     ? (searchParams?.plan as TierId)
     : undefined
   const annualDefault = searchParams?.billing === 'annual'
+  const stripeTestMode = isStripeTestMode()
 
   return (
     <PublicShell>
@@ -80,8 +82,26 @@ export default function PricingPage({ searchParams }: PricingPageProps) {
             Starter for solo CPAs, Professional for growing firms, Enterprise when you need the
             full suite. 14-day trial on every plan. No per-transaction fees.
           </p>
+          {stripeTestMode && (
+            <p
+              role="note"
+              style={{
+                display: 'inline-block',
+                margin: '20px auto 0',
+                padding: '6px 14px',
+                borderRadius: 999,
+                border: '1px solid rgba(245,158,11,0.35)',
+                backgroundColor: 'rgba(245,158,11,0.1)',
+                color: '#F59E0B',
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              {STRIPE_TEST_MODE_NOTE}
+            </p>
+          )}
         </div>
-        <PricingTiers variant="pricing" annualDefault={annualDefault} selectedTierId={selectedPlan} />
+        <PricingTiers variant="pricing" annualDefault={annualDefault} selectedTierId={selectedPlan} stripeTestMode={stripeTestMode} />
         <div
           style={{
             margin: '34px auto 0',

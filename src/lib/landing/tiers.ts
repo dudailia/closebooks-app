@@ -43,10 +43,8 @@ export const TIERS: Tier[] = [
     features: [
       'Up to 50 clients',
       '5 seats',
-      'Full AI + rules engine',
       ...when(FEATURES.reviewAutoClose, 'Autonomous close agent'),
       ...when(FEATURES.reviewNarrative, 'Narrative insights'),
-      'Priority support',
     ],
   },
   {
@@ -62,7 +60,6 @@ export const TIERS: Tier[] = [
       ...when(isDashboardRouteVisible('/dashboard/whitelabel'), 'White-label portal'),
       ...when(isDashboardRouteVisible('/dashboard/developers'), 'API access'),
       'Priority onboarding by request',
-      'Firm setup assistance',
     ],
   },
 ]

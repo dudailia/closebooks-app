@@ -11,14 +11,17 @@ import {
   type TierId,
   type Tier,
 } from '@/lib/landing/tiers'
+import { STRIPE_TEST_MODE_NOTE } from '@/lib/stripeMode'
 
 interface Props {
   variant?: 'landing' | 'pricing'
   annualDefault?: boolean
   selectedTierId?: TierId
+  /** Resolved on the server (isStripeTestMode); shows the test-mode note under each Subscribe button. */
+  stripeTestMode?: boolean
 }
 
-export default function PricingTiers({ variant = 'landing', annualDefault = false, selectedTierId }: Props) {
+export default function PricingTiers({ variant = 'landing', annualDefault = false, selectedTierId, stripeTestMode = false }: Props) {
   const [annual, setAnnual] = useState(annualDefault)
 
   return (
@@ -103,6 +106,7 @@ export default function PricingTiers({ variant = 'landing', annualDefault = fals
               annual={annual}
               variant={variant}
               selected={selectedTierId === tier.id}
+              stripeTestMode={stripeTestMode}
             />
           </motion.div>
         ))}
@@ -128,11 +132,13 @@ function TierCard({
   annual,
   variant,
   selected,
+  stripeTestMode,
 }: {
   tier: Tier
   annual: boolean
   variant: 'landing' | 'pricing'
   selected: boolean
+  stripeTestMode: boolean
 }) {
   const display = annual ? annualTotal(tier.monthly) : tier.monthly
   const suffix = annual ? '/yr' : '/mo'
@@ -264,7 +270,7 @@ function TierCard({
       {variant === 'landing' ? (
         <LandingCta tier={tier} annual={annual} />
       ) : (
-        <PricingCta tier={tier} annual={annual} />
+        <PricingCta tier={tier} annual={annual} stripeTestMode={stripeTestMode} />
       )}
       </div>{/* end card body */}
     </GlowCard>
@@ -337,7 +343,7 @@ function LandingCta({ tier, annual }: { tier: Tier; annual: boolean }) {
   )
 }
 
-function PricingCta({ tier, annual }: { tier: Tier; annual: boolean }) {
+function PricingCta({ tier, annual, stripeTestMode }: { tier: Tier; annual: boolean; stripeTestMode: boolean }) {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -457,6 +463,11 @@ function PricingCta({ tier, annual }: { tier: Tier; annual: boolean }) {
         >
           Start trial
         </Link>
+      )}
+      {configured && stripeTestMode && (
+        <p style={{ marginTop: 8, fontSize: 11, lineHeight: 1.4, color: '#F59E0B', textAlign: 'center', fontFamily: 'var(--font-sans)' }}>
+          {STRIPE_TEST_MODE_NOTE}
+        </p>
       )}
       {error && (
         <p style={{ marginTop: 8, fontSize: 12, color: '#FF4444', fontFamily: 'var(--font-sans)' }}>{error}</p>
