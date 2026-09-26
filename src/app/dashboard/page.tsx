@@ -12,6 +12,7 @@ import ActivityFeed from '@/components/ActivityFeed'
 import { calcCumulativeROI, fmtHours } from '@/lib/roiCalc'
 import { getClientCloseStatuses } from '@/lib/clientStatus'
 import { getCorrectionStats } from '@/lib/corrections'
+import { FEATURES } from '@/lib/features'
 import type { CategorizationJob } from '@/types'
 import type { QBOConnection } from '@/lib/integrations'
 import type { ClientCloseStatus, CloseStatus } from '@/lib/clientStatus'
@@ -180,8 +181,9 @@ function QuickActions({ onPortalClick }: { onPortalClick: () => void }) {
       icon: <DemoIcon />,
       iconBg: '#f5f0ea',
       arrow: true,
+      visible: FEATURES.homeDemoLink,
     },
-  ]
+  ].filter((a) => a.visible !== false)
 
   return (
     <div>
@@ -191,7 +193,7 @@ function QuickActions({ onPortalClick }: { onPortalClick: () => void }) {
       >
         Quick Actions
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className={`grid grid-cols-1 ${actions.length + (FEATURES.homePortalLink ? 1 : 0) > 2 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
         {actions.map((a) => (
           <Link
             key={a.label}
@@ -225,33 +227,35 @@ function QuickActions({ onPortalClick }: { onPortalClick: () => void }) {
         ))}
 
         {/* Portal link — button, not href */}
-        <button
-          onClick={onPortalClick}
-          className="group flex items-center gap-3 rounded-xl border px-4 py-3.5 transition-all text-left w-full"
-          style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#b8734a'
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(184,115,74,0.08)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#e8e0d4'
-            e.currentTarget.style.boxShadow = 'none'
-          }}
-        >
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
-            style={{ backgroundColor: '#e8f0e6' }}
+        {FEATURES.homePortalLink && (
+          <button
+            onClick={onPortalClick}
+            className="group flex items-center gap-3 rounded-xl border px-4 py-3.5 transition-all text-left w-full"
+            style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#b8734a'
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(184,115,74,0.08)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#e8e0d4'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
           >
-            <LinkIcon />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium leading-tight" style={{ color: '#1a1714' }}>Client Portal Link</p>
-            <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>Share a secure upload link</p>
-          </div>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: '#c4bdb8', flexShrink: 0 }}>
-            <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
+              style={{ backgroundColor: '#e8f0e6' }}
+            >
+              <LinkIcon />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium leading-tight" style={{ color: '#1a1714' }}>Client Portal Link</p>
+              <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>Share a secure upload link</p>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: '#c4bdb8', flexShrink: 0 }}>
+              <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   )
@@ -636,7 +640,7 @@ export default function DashboardPage() {
         })()}
 
         {/* Connected integrations strip */}
-        {mounted && qboConn && (
+        {FEATURES.homeQuickBooksStrip && mounted && qboConn && (
           <div
             className="flex items-center justify-between gap-3 rounded-xl border px-4 py-3"
             style={{ borderColor: '#bbf7d0', backgroundColor: '#f0fdf4' }}
@@ -671,7 +675,7 @@ export default function DashboardPage() {
         )}
 
         {/* Tab bar */}
-        {mounted && jobs.length > 1 && (
+        {FEATURES.homePracticeView && mounted && jobs.length > 1 && (
           <div className="flex gap-1 border-b" style={{ borderColor: '#e8e0d4' }}>
             {([['overview', 'Overview'], ['war-room', 'Practice View']] as const).map(([tab, label]) => (
               <button
@@ -693,19 +697,19 @@ export default function DashboardPage() {
         )}
 
         {/* War Room tab */}
-        {mounted && activeTab === 'war-room' && jobs.length > 0 && (
+        {FEATURES.homePracticeView && mounted && activeTab === 'war-room' && jobs.length > 0 && (
           <WarRoomView jobs={jobs} />
         )}
 
         {/* Overview tab (default) */}
-        {(activeTab === 'overview' || !mounted || jobs.length <= 1) && (
+        {(activeTab === 'overview' || !FEATURES.homePracticeView || !mounted || jobs.length <= 1) && (
           <>
 
         {/* Quick Actions */}
         <QuickActions onPortalClick={scrollToPortal} />
 
         {/* Client Portal */}
-        {mounted && <ClientPortalSection sectionRef={portalRef} />}
+        {FEATURES.homeClientPortal && mounted && <ClientPortalSection sectionRef={portalRef} />}
 
         {/* Recent closes */}
         <div>
@@ -753,15 +757,17 @@ export default function DashboardPage() {
                 >
                   Start your first close
                 </Link>
-                <Link
-                  href="/demo"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium border transition-colors"
-                  style={{ borderColor: '#b8734a', color: '#b8734a', backgroundColor: '#ffffff' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
-                >
-                  See Demo
-                </Link>
+                {FEATURES.homeDemoLink && (
+                  <Link
+                    href="/demo"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium border transition-colors"
+                    style={{ borderColor: '#b8734a', color: '#b8734a', backgroundColor: '#ffffff' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
+                  >
+                    See Demo
+                  </Link>
+                )}
               </div>
             </div>
           ) : (

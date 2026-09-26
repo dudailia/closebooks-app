@@ -25,6 +25,7 @@ import TaxHandoffButton from '@/components/TaxHandoffButton'
 import ClientEmailDraft from '@/components/ClientEmailDraft'
 import BenchmarkPanel from '@/components/BenchmarkPanel'
 import { getClients } from '@/lib/storage'
+import { FEATURES } from '@/lib/features'
 import { startSession, endSession } from '@/lib/timeTracking'
 import type { QBOConnection } from '@/lib/integrations'
 import type { CategorizationJob, Transaction } from '@/types'
@@ -1196,7 +1197,7 @@ export default function ReviewPage() {
     })
     setAuditEvents(getAuditTrail(jobId))
     addToast('Close marked as complete.', 'success')
-    setShowShareModal(true)
+    if (FEATURES.reviewShareModal) setShowShareModal(true)
     logActivity({
       type: 'close_completed',
       description: `Close completed for ${job.client_name}`,
@@ -1398,45 +1399,53 @@ export default function ReviewPage() {
               {reporting ? 'Generating…' : 'Report'}
             </button>
 
-            <button
-              onClick={handleClientSummary}
-              disabled={clientSummary || exporting}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50"
-              style={{ borderColor: '#e8e0d4', color: '#1a1714', backgroundColor: '#ffffff' }}
-              onMouseEnter={(e) => { if (!clientSummary) e.currentTarget.style.borderColor = '#2d5a27' }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e8e0d4' }}
-              title="Generate a branded client-facing summary"
-            >
-              {clientSummary ? <Spinner /> : <ClientSummaryIcon />}
-              {clientSummary ? 'Generating…' : 'Client Summary'}
-            </button>
+            {FEATURES.reviewClientSummary && (
+              <button
+                onClick={handleClientSummary}
+                disabled={clientSummary || exporting}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50"
+                style={{ borderColor: '#e8e0d4', color: '#1a1714', backgroundColor: '#ffffff' }}
+                onMouseEnter={(e) => { if (!clientSummary) e.currentTarget.style.borderColor = '#2d5a27' }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e8e0d4' }}
+                title="Generate a branded client-facing summary"
+              >
+                {clientSummary ? <Spinner /> : <ClientSummaryIcon />}
+                {clientSummary ? 'Generating…' : 'Client Summary'}
+              </button>
+            )}
 
-            <TaxHandoffButton
-              job={job}
-              allClientJobs={allClientJobs}
-              onError={(msg) => addToast(msg, 'error')}
-            />
+            {FEATURES.reviewTaxHandoff && (
+              <TaxHandoffButton
+                job={job}
+                allClientJobs={allClientJobs}
+                onError={(msg) => addToast(msg, 'error')}
+              />
+            )}
 
-            <button
-              onClick={() => setShowEmailDraft(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors"
-              style={{ borderColor: '#e8e0d4', color: '#1a1714', backgroundColor: '#ffffff' }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#2d5a27' }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e8e0d4' }}
-              title="Draft a plain-English email summary for the client"
-            >
-              <EmailIcon />
-              Email Client
-            </button>
+            {FEATURES.reviewEmailClient && (
+              <button
+                onClick={() => setShowEmailDraft(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors"
+                style={{ borderColor: '#e8e0d4', color: '#1a1714', backgroundColor: '#ffffff' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#2d5a27' }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e8e0d4' }}
+                title="Draft a plain-English email summary for the client"
+              >
+                <EmailIcon />
+                Email Client
+              </button>
+            )}
 
-            <SendMonthlyReportButton
-              job={job}
-              priorJob={allClientJobs.find((j) => j.id !== job.id && j.created_at < job.created_at) ?? null}
-              clientEmail={getClients().find((c) => c.business_name === job.client_name)?.contact_email}
-            />
+            {FEATURES.reviewMonthlyReport && (
+              <SendMonthlyReportButton
+                job={job}
+                priorJob={allClientJobs.find((j) => j.id !== job.id && j.created_at < job.created_at) ?? null}
+                clientEmail={getClients().find((c) => c.business_name === job.client_name)?.contact_email}
+              />
+            )}
 
             {/* Push to QuickBooks — only shown when connected */}
-            {qboConn && approvedCount > 0 && (
+            {FEATURES.reviewQuickBooksPush && qboConn && approvedCount > 0 && (
               <button
                 onClick={handlePushToQBO}
                 disabled={exporting || reporting}
@@ -1451,16 +1460,18 @@ export default function ReviewPage() {
               </button>
             )}
 
-            <button
-              onClick={() => setAutoCloseOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white"
-              style={{ backgroundColor: '#1a1714' }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#0d0b09' }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#1a1714' }}
-              title="Run the autonomous close agent"
-            >
-              ✦ Run Auto-Close
-            </button>
+            {FEATURES.reviewAutoClose && (
+              <button
+                onClick={() => setAutoCloseOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white"
+                style={{ backgroundColor: '#1a1714' }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#0d0b09' }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#1a1714' }}
+                title="Run the autonomous close agent"
+              >
+                ✦ Run Auto-Close
+              </button>
+            )}
 
             {job.status !== 'completed' && (
               <button
@@ -1500,17 +1511,19 @@ export default function ReviewPage() {
         </div>
 
         {/* Copilot */}
-        <CopilotPanel
-          job={job}
-          jobId={jobId}
-          onTransactionsUpdated={(txs) => {
-            const approved = txs.filter((t) => t.status === 'approved' || t.status === 'edited').length
-            const flagged  = txs.filter((t) => t.status === 'flagged').length
-            const next: CategorizationJob = { ...job, transactions: txs, approved, flagged }
-            setJob(next)
-            saveJob(next)
-          }}
-        />
+        {FEATURES.reviewCopilotPanel && (
+          <CopilotPanel
+            job={job}
+            jobId={jobId}
+            onTransactionsUpdated={(txs) => {
+              const approved = txs.filter((t) => t.status === 'approved' || t.status === 'edited').length
+              const flagged  = txs.filter((t) => t.status === 'flagged').length
+              const next: CategorizationJob = { ...job, transactions: txs, approved, flagged }
+              setJob(next)
+              saveJob(next)
+            }}
+          />
+        )}
 
         {/* Progress bar */}
         <div className="flex items-center gap-3">
@@ -1532,7 +1545,7 @@ export default function ReviewPage() {
         </div>
 
         {/* AI narrative summary */}
-        {job.transactions.length > 0 && (
+        {FEATURES.reviewNarrative && job.transactions.length > 0 && (
           <NarrativeInsight
             clientName={job.client_name}
             clientIndustry={clientIndustry ?? undefined}
@@ -1571,12 +1584,12 @@ export default function ReviewPage() {
           {/* Tab bar */}
           <div className="flex border-b" style={{ borderColor: '#e8e0d4', backgroundColor: '#faf8f4' }}>
             {([
-              { key: 'transactions', label: 'Transactions',                      badge: null },
-              { key: 'anomalies',    label: 'Anomalies',                          badge: anomalies.length > 0 ? anomalies.length : null },
-              { key: 'recurring',    label: 'Recurring',                          badge: recurringPatterns.length > 0 ? recurringPatterns.length : null },
-              { key: 'benchmarks',   label: 'Benchmarks',                         badge: null },
-              { key: 'audit',        label: 'Audit Trail',                        badge: auditEvents.length > 0 ? auditEvents.length : null },
-            ] as { key: PanelTab; label: string; badge: number | null }[]).map(({ key, label, badge }) => {
+              { key: 'transactions', label: 'Transactions',                      badge: null, visible: true },
+              { key: 'anomalies',    label: 'Anomalies',                          badge: anomalies.length > 0 ? anomalies.length : null, visible: FEATURES.reviewAnomaliesTab },
+              { key: 'recurring',    label: 'Recurring',                          badge: recurringPatterns.length > 0 ? recurringPatterns.length : null, visible: FEATURES.reviewRecurringTab },
+              { key: 'benchmarks',   label: 'Benchmarks',                         badge: null, visible: FEATURES.reviewBenchmarksTab },
+              { key: 'audit',        label: 'Audit Trail',                        badge: auditEvents.length > 0 ? auditEvents.length : null, visible: true },
+            ] as { key: PanelTab; label: string; badge: number | null; visible: boolean }[]).filter((t) => t.visible).map(({ key, label, badge }) => {
               const isActive = activePanel === key
               return (
                 <button
@@ -1622,7 +1635,7 @@ export default function ReviewPage() {
                   auditEvents={auditEvents}
                   highlightIds={chatHighlightIds}
                 />
-                <JobInsightsPanel job={job} autoGenerate />
+                {FEATURES.reviewAiInsights && <JobInsightsPanel job={job} autoGenerate />}
               </>
             )}
             {activePanel === 'anomalies' && (
@@ -1656,12 +1669,14 @@ export default function ReviewPage() {
       </main>
 
       {/* Close Chat — floating */}
-      <CloseChat
-        jobId={jobId}
-        clientName={job.client_name}
-        transactions={job.transactions}
-        onHighlight={setChatHighlightIds}
-      />
+      {FEATURES.reviewCloseChat && (
+        <CloseChat
+          jobId={jobId}
+          clientName={job.client_name}
+          transactions={job.transactions}
+          onHighlight={setChatHighlightIds}
+        />
+      )}
 
       {/* Client Email Draft modal */}
       {showEmailDraft && (
@@ -1682,7 +1697,7 @@ export default function ReviewPage() {
 
       {/* Autonomous Close Agent modal */}
       <AutoCloseModal
-        open={autoCloseOpen}
+        open={FEATURES.reviewAutoClose && autoCloseOpen}
         job={job}
         onClose={() => setAutoCloseOpen(false)}
         onApply={(finalTxs) => handleTransactionsChange(finalTxs)}

@@ -12,6 +12,7 @@ import ActivityFeed from '@/components/ActivityFeed'
 import { ClientInsightsPanel } from '@/components/InsightsPanel'
 import type { Client, ClientIndustry, AccountingSoftware, CategorizationJob } from '@/types'
 import ConnectedAccounts from '@/components/plaid/ConnectedAccounts'
+import { isDashboardRouteVisible } from '@/lib/features'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -430,26 +431,30 @@ export default function ClientDetailPage() {
             >
               Edit
             </button>
-            <Link
-              href={`/dashboard/templates?template=document-request&client=${encodeURIComponent(client.business_name)}`}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border transition-colors"
-              style={{ borderColor: '#b8734a', color: '#b8734a', backgroundColor: '#ffffff' }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9' }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
-              title="Open the Document Request email template pre-filled for this client"
-            >
-              <EnvelopeIcon />
-              Send Doc Request
-            </Link>
-            <Link
-              href={`/dashboard/clients/${client.id}/predict`}
-              className="px-3 py-2 rounded-xl text-sm border transition-colors"
-              style={{ borderColor: '#e0dbd4', color: '#6b6560', backgroundColor: '#ffffff' }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#1a1714'; e.currentTarget.style.color = '#1a1714' }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e0dbd4'; e.currentTarget.style.color = '#6b6560' }}
-            >
-              Predict & Advise
-            </Link>
+            {isDashboardRouteVisible('/dashboard/templates') && (
+              <Link
+                href={`/dashboard/templates?template=document-request&client=${encodeURIComponent(client.business_name)}`}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border transition-colors"
+                style={{ borderColor: '#b8734a', color: '#b8734a', backgroundColor: '#ffffff' }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9' }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
+                title="Open the Document Request email template pre-filled for this client"
+              >
+                <EnvelopeIcon />
+                Send Doc Request
+              </Link>
+            )}
+            {isDashboardRouteVisible(`/dashboard/clients/${client.id}/predict`) && (
+              <Link
+                href={`/dashboard/clients/${client.id}/predict`}
+                className="px-3 py-2 rounded-xl text-sm border transition-colors"
+                style={{ borderColor: '#e0dbd4', color: '#6b6560', backgroundColor: '#ffffff' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#1a1714'; e.currentTarget.style.color = '#1a1714' }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e0dbd4'; e.currentTarget.style.color = '#6b6560' }}
+              >
+                Predict & Advise
+              </Link>
+            )}
             <button
               onClick={handleNewClose}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors"

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient, supabaseConfigured } from '@/lib/supabase/client'
 import { getPendingReviewCount } from '@/lib/storage'
+import { isSidebarItemVisible } from '@/lib/features'
 import type { User } from '@supabase/supabase-js'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -374,6 +375,8 @@ export default function Sidebar() {
   }, [pathname])
 
   const sections = buildSections(pendingCount)
+    .map(section => ({ ...section, items: section.items.filter(item => isSidebarItemVisible(item.label)) }))
+    .filter(section => section.items.length > 0)
   const W = collapsed ? 52 : 220
 
   const sidebarContent = (

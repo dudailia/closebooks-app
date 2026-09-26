@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
+import { FEATURES } from '@/lib/features'
 import { loadFirmSettings, saveFirmSettings } from '@/lib/firmSettings'
 
 export function markOnboardingDone() {
@@ -227,16 +228,18 @@ export default function OnboardingModal({ onClose }: { onClose: () => void }) {
                   <path d="M2 6h8M7 3l3 3-3 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </Link>
-              <Link
-                href="/demo"
-                onClick={dismiss}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium border transition-colors"
-                style={{ borderColor: '#b8734a', color: '#b8734a', backgroundColor: 'transparent' }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9' }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
-              >
-                Try Demo First
-              </Link>
+              {FEATURES.homeDemoLink && (
+                <Link
+                  href="/demo"
+                  onClick={dismiss}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium border transition-colors"
+                  style={{ borderColor: '#b8734a', color: '#b8734a', backgroundColor: 'transparent' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                >
+                  Try Demo First
+                </Link>
+              )}
             </div>
           ) : (
             <>

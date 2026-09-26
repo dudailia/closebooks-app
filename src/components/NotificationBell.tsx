@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { isDashboardRouteVisible } from '@/lib/features'
 import {
   getNotifications,
   getUnreadCount,
@@ -192,11 +193,13 @@ export default function NotificationBell() {
           </div>
 
           {/* Footer */}
-          <div style={{ padding: '10px 16px', borderTop: '1px solid #f0ece4', textAlign: 'center' }}>
-            <Link href="/dashboard/calendar" onClick={() => setOpen(false)} style={{ fontSize: 11, color: '#b8734a', textDecoration: 'none' }}>
-              View all deadlines →
-            </Link>
-          </div>
+          {isDashboardRouteVisible('/dashboard/calendar') && (
+            <div style={{ padding: '10px 16px', borderTop: '1px solid #f0ece4', textAlign: 'center' }}>
+              <Link href="/dashboard/calendar" onClick={() => setOpen(false)} style={{ fontSize: 11, color: '#b8734a', textDecoration: 'none' }}>
+                View all deadlines →
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>
