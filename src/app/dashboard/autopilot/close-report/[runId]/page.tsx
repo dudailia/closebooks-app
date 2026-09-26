@@ -71,16 +71,24 @@ function buildDemoResult(runId: string): CloseResult {
     confidence: e.confidence,
   }))
 
-  const journalEntries = Array.from({ length: jCount }, (_, i) => ({
-    id: `je_${runId}_${i}`,
-    date: '2026-03-31',
-    description: `${VENDOR_POOL[i % VENDOR_POOL.length]} payment`,
-    debitAccount: ACCOUNT_POOL[i % ACCOUNT_POOL.length],
-    creditAccount: 'Chase Checking',
-    amount: parseFloat((50 + (((seed * (i + 1)) % 1500))).toFixed(2)),
-    sourceTransactionId: `tx_${runId}_${i}`,
-    aiReasoning: 'Auto-generated via AI close engine.',
-  }))
+  const journalEntries = Array.from({ length: jCount }, (_, i) => {
+    const account = ACCOUNT_POOL[i % ACCOUNT_POOL.length]
+    const description = `${VENDOR_POOL[i % VENDOR_POOL.length]} payment`
+    const amount = parseFloat((50 + (((seed * (i + 1)) % 1500))).toFixed(2))
+    return {
+      id: `je_${runId}_${i}`,
+      entryNumber: `JE-${String(i + 1).padStart(4, '0')}`,
+      date: '2026-03-31',
+      description,
+      memo: `Posted to ${account}`,
+      source: 'ai' as const,
+      sourceTransactionId: `tx_${runId}_${i}`,
+      lines: [
+        { accountCode: '', accountName: account, debit: amount, credit: 0, memo: `Posted to ${account}` },
+        { accountCode: '', accountName: 'Chase Checking', debit: 0, credit: amount, memo: description },
+      ],
+    }
+  })
 
   const revenue = 100000 + (seed % 50000)
   const cogs = Math.floor(revenue * 0.32)

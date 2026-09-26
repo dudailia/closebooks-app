@@ -138,6 +138,7 @@ export default function ClientAgentDetailPage() {
             periodStart: clientJob.created_at.slice(0, 10),
             periodEnd: new Date().toISOString().slice(0, 10),
             transactions: clientJob.transactions,
+            chartOfAccounts: clientJob.chart_of_accounts,
           }),
         })
         if (autopilotRes.ok) {

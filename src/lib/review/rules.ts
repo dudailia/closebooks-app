@@ -114,6 +114,7 @@ export function applyRulesToJob(txs: Transaction[]): {
     return {
       ...t,
       status: 'edited' as const,
+      categorizationSource: 'firm_rule' as const,
       final_account_code: rule.accountCode,
       final_category: rule.categoryName,
       confidence: Math.max(t.confidence, 0.99),

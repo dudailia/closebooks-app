@@ -152,7 +152,7 @@ export default function TransactionRow({
       }
       onCategoryRuleCandidate?.(transaction, code, toName)
     }
-    onChange({ ...transaction, status: 'edited', final_account_code: code, final_category: account?.name ?? code })
+    onChange({ ...transaction, status: 'edited', categorizationSource: 'manual', final_account_code: code, final_category: account?.name ?? code })
   }
 
   function handleNotesBlur() {

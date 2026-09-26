@@ -97,7 +97,7 @@ function ToastStack({ toasts, onDismiss }: { toasts: ToastState[]; onDismiss: (i
 // Export dropdown — click-controlled, not CSS hover
 // ---------------------------------------------------------------------------
 
-type ExportFormat = 'quickbooks' | 'standard'
+type ExportFormat = 'quickbooks' | 'standard' | 'journal_entries'
 
 interface ExportDropdownProps {
   onExport: (format: ExportFormat) => void
@@ -148,6 +148,11 @@ function ExportDropdown({ onExport, loading, approvedCount }: ExportDropdownProp
       key:   'standard',
       label: 'Standard CSV',
       sub:   'Date, Description, Category, Debit, Credit, Status',
+    },
+    {
+      key:   'journal_entries',
+      label: 'Journal entries CSV',
+      sub:   'Date, Entry #, Account, Debit, Credit, Memo, Source',
     },
   ]
 
@@ -1090,13 +1095,16 @@ export default function ReviewPage() {
       return
     }
 
+    // Journal entries take the whole job: the generator lists skipped rows as exceptions.
+    const isJournal = format === 'journal_entries'
+
     setExporting(true)
     try {
       const res = await fetch('/api/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          transactions: exportable,
+          transactions: isJournal ? job.transactions : exportable,
           chartOfAccounts: job.chart_of_accounts,
           clientName: job.client_name,
           format,
@@ -1127,17 +1135,32 @@ export default function ReviewPage() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
 
-      const label = format === 'quickbooks' ? 'QuickBooks CSV' : 'Standard CSV'
-      addToast(`Exported ${exportable.length} transaction${exportable.length !== 1 ? 's' : ''} as ${label}`, 'success')
+      const label = format === 'quickbooks' ? 'QuickBooks CSV' : isJournal ? 'Journal entries CSV' : 'Standard CSV'
+      const count = isJournal ? Number(res.headers.get('x-je-entries') ?? 0) : exportable.length
+      const noun  = isJournal ? 'journal entr' + (count !== 1 ? 'ies' : 'y') : 'transaction' + (count !== 1 ? 's' : '')
+      if (isJournal) {
+        const skipped = Number(res.headers.get('x-je-exceptions') ?? 0)
+        const checks  = Number(res.headers.get('x-je-checks') ?? 0)
+        const notes   = [
+          skipped > 0 ? `${skipped} transaction${skipped !== 1 ? 's' : ''} skipped` : '',
+          checks > 0 ? `${checks} to check as possible refund${checks !== 1 ? 's' : ''}` : '',
+        ].filter(Boolean)
+        addToast(
+          `Exported ${count} ${noun}${notes.length ? ` · ${notes.join(' · ')} — see the close report` : ''}`,
+          notes.length ? 'warning' : 'success'
+        )
+      } else {
+        addToast(`Exported ${count} ${noun} as ${label}`, 'success')
+      }
       logAuditEvent(jobId, {
         action: 'job_exported',
         actor: 'CPA',
-        details: { count: exportable.length, format: label },
+        details: { count, format: label },
       })
       setAuditEvents(getAuditTrail(jobId))
       logActivity({
         type: 'csv_exported',
-        description: `${label} exported for ${job.client_name} (${exportable.length} transactions)`,
+        description: `${label} exported for ${job.client_name} (${count} ${noun})`,
         clientName: job.client_name,
         jobId: job.id,
       })

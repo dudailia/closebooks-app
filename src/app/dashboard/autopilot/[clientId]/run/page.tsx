@@ -268,6 +268,7 @@ export default function RunClosePage() {
             clientId,
             period,
             transactions,
+            chartOfAccounts: job?.chart_of_accounts ?? [],
             config: { autoApproveThreshold: 0.90 },
           }),
         })

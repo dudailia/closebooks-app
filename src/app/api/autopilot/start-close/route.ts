@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRouteAccess } from '@/lib/routeSubscription'
 import Anthropic from '@anthropic-ai/sdk'
-import type { Transaction } from '@/types'
+import type { ChartOfAccounts, Transaction } from '@/types'
 import { generateJournalEntries } from '@/lib/autopilot/journalEntries'
 import { detectExceptions } from '@/lib/autopilot/exceptionDetector'
 import { calculatePnL } from '@/lib/autopilot/pnlCalculator'
 
 const anthropic = new Anthropic()
-
-const JOURNAL_ENTRY_PROMPT = (transactions: Transaction[]) =>
-  `You are a CPA generating journal entries.
-For these transactions, generate double-entry journal entries.
-Return a JSON array only — no explanation, no markdown fences.
-Each element: { date, description, debitAccount, creditAccount, amount, reasoning }
-Transactions: ${JSON.stringify(transactions.slice(0, 50))}`
 
 async function categorizeBatch(transactions: Transaction[]): Promise<Transaction[]> {
   if (transactions.length === 0) return []
@@ -69,9 +62,10 @@ export async function POST(req: NextRequest) {
       periodStart: string
       periodEnd: string
       transactions: Transaction[]
+      chartOfAccounts?: ChartOfAccounts[]
     }
 
-    const { clientId, periodStart, periodEnd, transactions } = body
+    const { clientId, periodStart, periodEnd, transactions, chartOfAccounts } = body
 
     if (!clientId || !transactions || !Array.isArray(transactions)) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -83,68 +77,8 @@ export async function POST(req: NextRequest) {
     // Step 1: Categorize uncategorized transactions
     const categorized = await categorizeBatch(transactions)
 
-    // Step 2: Generate journal entries via AI (batches of 50)
-    let aiJournalEntries: Array<{
-      date: string
-      description: string
-      debitAccount: string
-      creditAccount: string
-      amount: number
-      reasoning: string
-    }> = []
-
-    const batches: Transaction[][] = []
-    for (let i = 0; i < categorized.length; i += 50) {
-      batches.push(categorized.slice(i, i + 50))
-    }
-
-    for (const batch of batches) {
-      try {
-        const message = await anthropic.messages.create({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 4096,
-          messages: [{ role: 'user', content: JOURNAL_ENTRY_PROMPT(batch) }],
-        })
-        const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : '[]'
-        const cleaned = raw.replace(/^```json\n?/, '').replace(/^```\n?/, '').replace(/```$/, '').trim()
-        const entries = JSON.parse(cleaned)
-        if (Array.isArray(entries)) {
-          aiJournalEntries = aiJournalEntries.concat(entries)
-        }
-      } catch {
-        // Fall back to rule-based for this batch
-        const fallback = generateJournalEntries(batch)
-        aiJournalEntries = aiJournalEntries.concat(
-          fallback.map(je => ({
-            date: je.date,
-            description: je.description,
-            debitAccount: je.debitAccount,
-            creditAccount: je.creditAccount,
-            amount: je.amount,
-            reasoning: je.aiReasoning,
-          }))
-        )
-      }
-    }
-
-    // If AI returned fewer entries than transactions, supplement with rule-based entries
-    // for the missing ones rather than discarding all successful AI work.
-    if (aiJournalEntries.length < categorized.length) {
-      const coveredDescriptions = new Set(aiJournalEntries.map(e => `${e.date}:${e.description}:${e.amount}`))
-      const uncovered = categorized.filter(tx => !coveredDescriptions.has(`${tx.date}:${tx.description}:${tx.amount}`))
-      if (uncovered.length > 0) {
-        const fallback = generateJournalEntries(uncovered)
-        const fallbackMapped = fallback.map(je => ({
-          date: je.date,
-          description: je.description,
-          debitAccount: je.debitAccount,
-          creditAccount: je.creditAccount,
-          amount: je.amount,
-          reasoning: je.aiReasoning,
-        }))
-        aiJournalEntries = aiJournalEntries.concat(fallbackMapped)
-      }
-    }
+    // Step 2: Journal entries from the approved chart-of-accounts accounts
+    const journalEntries = generateJournalEntries(categorized, chartOfAccounts ?? []).entries
 
     // Step 3: Detect exceptions
     const exceptions = detectExceptions(categorized)
@@ -164,14 +98,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       runId,
       status: 'complete',
-      journalEntries: aiJournalEntries,
+      journalEntries,
       exceptions,
       pnl,
       stats: {
         totalTransactions: categorized.length,
         autoCategorized,
         pctCategorized: parseFloat(pctCategorized),
-        journalEntriesCount: aiJournalEntries.length,
+        journalEntriesCount: journalEntries.length,
         exceptionsCount: exceptions.length,
         elapsedSeconds,
       },

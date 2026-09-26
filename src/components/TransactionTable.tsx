@@ -87,7 +87,7 @@ function MobileCard({
           <button onClick={approve} style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', backgroundColor: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Approve</button>
           <button onClick={flag} style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: '1px solid var(--danger)', backgroundColor: 'var(--surface-card)', color: 'var(--danger)', fontSize: 12, cursor: 'pointer' }}>Flag</button>
           <select value={transaction.final_account_code ?? transaction.suggested_account_code ?? ''}
-            onChange={e => { const a = chartOfAccounts.find(x => x.code === e.target.value); onChange({ ...transaction, status: 'edited', final_account_code: e.target.value, final_category: a?.name ?? e.target.value }) }}
+            onChange={e => { const a = chartOfAccounts.find(x => x.code === e.target.value); onChange({ ...transaction, status: 'edited', categorizationSource: 'manual', final_account_code: e.target.value, final_category: a?.name ?? e.target.value }) }}
             onClick={e => e.stopPropagation()}
             style={{ flex: 1, border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '6px 4px', fontSize: 11, color: 'var(--text-primary)', backgroundColor: 'var(--surface-card)' }}>
             <option value="">Category…</option>
@@ -281,7 +281,7 @@ export default function TransactionTable({
           if (t.status !== 'pending') return t
           if (!vendorPatternMatches(t.description, rule.vendorPattern)) return t
           onAudit?.({ action: 'tx_category_changed', txId: t.id, txDescription: t.description, details: { from: t.suggested_category ?? '—', to: cand.categoryName, rule: '1' } })
-          const up = { ...t, status: 'edited' as const, final_account_code: cand.accountCode, final_category: cand.categoryName, confidence: Math.max(t.confidence, 0.99) }
+          const up = { ...t, status: 'edited' as const, categorizationSource: 'firm_rule' as const, final_account_code: cand.accountCode, final_category: cand.categoryName, confidence: Math.max(t.confidence, 0.99) }
           updatedTxs.push(up)
           return up
         })
@@ -393,7 +393,7 @@ export default function TransactionTable({
     const target = transactionsRef.current.find(t => t.id === targetId)
     if (!target) { setSplitTxId(null); return }
     const prior = { ...target }
-    const updated: Transaction = { ...target, status: 'edited', splits }
+    const updated: Transaction = { ...target, status: 'edited', categorizationSource: 'manual', splits }
     setTransactions(prev => {
       const next = prev.map(t => (t.id === targetId ? updated : t))
       onTransactionsChange?.(next)
@@ -890,7 +890,7 @@ export default function TransactionTable({
               setTransactions(prev => {
                 const next = prev.map(t =>
                   ids.includes(t.id)
-                    ? { ...t, status: 'edited' as const, final_account_code: code, final_category: name }
+                    ? { ...t, status: 'edited' as const, categorizationSource: 'manual' as const, final_account_code: code, final_category: name }
                     : t
                 )
                 onTransactionsChange?.(next)
@@ -906,7 +906,7 @@ export default function TransactionTable({
               if (tx) {
                 const fromName = tx.final_category ?? tx.suggested_category ?? '—'
                 onAudit?.({ action: 'tx_category_changed', txId: tx.id, txDescription: tx.description, details: { from: fromName, to: name } })
-                handleChange({ ...tx, status: 'edited', final_account_code: code, final_category: name })
+                handleChange({ ...tx, status: 'edited', categorizationSource: 'manual', final_account_code: code, final_category: name })
                 handleCategoryRuleCandidate(tx, code, name)
               }
             }

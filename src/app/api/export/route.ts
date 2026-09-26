@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import Papa from 'papaparse'
 import type { ChartOfAccounts, Transaction } from '@/types'
 import { canonicalizeTransactionForExport, validateTransactionsForExport } from '@/lib/exportValidation'
+import { JournalBalanceError, generateJournalEntries, journalEntriesToCSV, type JournalResult } from '@/lib/autopilot/journalEntries'
 import { requireRouteAccess } from '@/lib/routeSubscription'
 
-type ExportFormat = 'quickbooks' | 'standard'
+type ExportFormat = 'quickbooks' | 'standard' | 'journal_entries'
 
 interface RequestBody {
   transactions: Transaction[]
@@ -21,7 +22,7 @@ function isValidBody(body: unknown): body is RequestBody {
     Array.isArray(b.chartOfAccounts) &&
     typeof b.clientName === 'string' &&
     b.clientName.trim().length > 0 &&
-    (b.format === 'quickbooks' || b.format === 'standard')
+    (b.format === 'quickbooks' || b.format === 'standard' || b.format === 'journal_entries')
   )
 }
 
@@ -88,6 +89,47 @@ function buildStandardCSV(transactions: Transaction[]): string {
 }
 
 // ---------------------------------------------------------------------------
+// Journal entries CSV
+// Columns: Date, Entry #, Account Code, Account Name, Debit, Credit, Memo, Source
+// Takes every transaction in the job; the generator decides which ones post
+// and reports the rest as exceptions (counted in X-JE-Exceptions).
+// ---------------------------------------------------------------------------
+function journalEntriesResponse(transactions: Transaction[], chartOfAccounts: ChartOfAccounts[], clientName: string): NextResponse {
+  let result: JournalResult
+  try {
+    result = generateJournalEntries(transactions, chartOfAccounts)
+  } catch (err) {
+    if (err instanceof JournalBalanceError) {
+      return NextResponse.json({ error: err.message }, { status: 422 })
+    }
+    throw err
+  }
+
+  if (result.entries.length === 0) {
+    const first = result.exceptions[0]
+    return NextResponse.json(
+      {
+        error: 'No journal entries to export.',
+        issues: first ? [{ txId: first.transactionId, description: first.description, issues: [first.reason] }] : [],
+      },
+      { status: 422 }
+    )
+  }
+
+  const filename = `${safeFilename(clientName)}_journal_entries_${new Date().toISOString().slice(0, 10)}.csv`
+  return new NextResponse(journalEntriesToCSV(result), {
+    status: 200,
+    headers: {
+      'Content-Type':        'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'X-JE-Entries':        String(result.entries.length),
+      'X-JE-Exceptions':     String(result.exceptions.length),
+      'X-JE-Checks':         String(result.checks.length),
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
 // Route handler
 // ---------------------------------------------------------------------------
 export async function POST(request: NextRequest) {
@@ -103,7 +145,7 @@ export async function POST(request: NextRequest) {
 
   if (!isValidBody(body)) {
     return NextResponse.json(
-      { error: 'Request body must include transactions (array), chartOfAccounts (array), clientName (string), and format ("quickbooks" or "standard").' },
+      { error: 'Request body must include transactions (array), chartOfAccounts (array), clientName (string), and format ("quickbooks", "standard" or "journal_entries").' },
       { status: 422 }
     )
   }
@@ -116,6 +158,10 @@ export async function POST(request: NextRequest) {
 
   if (chartOfAccounts.length === 0) {
     return NextResponse.json({ error: 'Chart of accounts is required for export validation.' }, { status: 422 })
+  }
+
+  if (format === 'journal_entries') {
+    return journalEntriesResponse(transactions, chartOfAccounts, clientName)
   }
 
   const validation = validateTransactionsForExport(transactions, chartOfAccounts)
