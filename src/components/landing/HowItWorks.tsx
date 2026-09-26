@@ -14,8 +14,8 @@ const RAW_TXS = [
 
 const EXCEPTIONS = [
   { vendor: 'GOOG*ADS-9284',     amt: '$280.00', note: 'Low confidence (71%) — verify category' },
-  { vendor: 'AMZN*FRESH-4421',   amt: '$54.20',  note: 'Maps to multiple categories'            },
-  { vendor: 'INTUIT*QBO-MAR',    amt: '$130.00', note: 'Possible duplicate — check April'       },
+  { vendor: 'AMZN*FRESH-4421',   amt: '$54.20',  note: 'Account not in client chart of accounts' },
+  { vendor: 'INTUIT*QBO-MAR',    amt: '$130.00', note: 'Direction doesn\'t match account type'    },
 ]
 
 // Deterministic confetti (no Math.random to avoid hydration mismatch)
@@ -38,17 +38,17 @@ const STEPS = [
   {
     num: '01',
     title: 'Drop in the statement',
-    body: 'CSV or PDF — CloseBooks parses every line item, normalizes vendor names, and prepares transactions for categorization. No formatting required.',
+    body: 'Upload a CSV or PDF bank statement. CloseBooks parses the transactions and prepares them for categorization against the client\'s chart of accounts.',
   },
   {
     num: '02',
     title: 'AI suggests, you approve',
-    body: "Claude reads each transaction, applies your firm's learned rules, and returns a confidence-scored category. Lower-confidence items are flagged for your review.",
+    body: "Claude suggests an account for each transaction with a confidence score and its reasoning, using your firm's recent corrections as hints. Saved vendor rules are applied, and rows under 85% confidence wait for your review.",
   },
   {
     num: '03',
     title: 'Review. Approve. Done.',
-    body: 'You only see what needs human judgment — exceptions and low-confidence rows. One click approves the close and generates your client narrative.',
+    body: 'Filter to the exceptions and low-confidence rows, approve or recategorize them (in bulk, with undo), then download a QuickBooks-ready CSV or print a close report.',
   },
 ]
 
@@ -137,7 +137,7 @@ function Visual1Upload({ active }: { active: boolean }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <span style={{ fontSize: 10, color: '#333', fontFamily: 'var(--font-sans)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            Raw import · 32 rows
+            Raw import · sample
           </span>
           <motion.span
             animate={{ opacity: [0.4, 1, 0.4] }}
@@ -277,7 +277,7 @@ function Visual3Review({ active }: { active: boolean }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: '#FAFAFA', fontFamily: 'var(--font-sans)' }}>Exceptions review</p>
-          <p style={{ margin: '2px 0 0', fontSize: 10, color: '#444', fontFamily: 'var(--font-sans)' }}>3 of 32 transactions need attention</p>
+          <p style={{ margin: '2px 0 0', fontSize: 10, color: '#444', fontFamily: 'var(--font-sans)' }}>Sample · rows that need attention</p>
         </div>
         <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', color: '#F59E0B', fontFamily: 'var(--font-sans)' }}>
           3 flagged
@@ -313,7 +313,7 @@ function Visual3Review({ active }: { active: boolean }) {
         >
           {approved ? (
             <motion.span key="done" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>
-              ✓  Close complete · Sent to client
+              ✓  Close approved · Ready to export
             </motion.span>
           ) : (
             <span style={{ fontSize: 14, fontWeight: 600, color: '#00C853' }}>Approve close →</span>
@@ -384,8 +384,8 @@ export default function HowItWorks() {
           transition={{ duration: 0.6, delay: 0.1 }}
           style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 'clamp(38px, 5vw, 56px)', fontWeight: 400, lineHeight: 1.05, letterSpacing: '-0.035em', color: '#FAFAFA' }}
         >
-          From bank import to client report{' '}
-          <span style={{ fontStyle: 'italic', color: '#444' }}>in one afternoon.</span>
+          From bank statement to QuickBooks-ready CSV{' '}
+          <span style={{ fontStyle: 'italic', color: '#444' }}>in three steps.</span>
         </motion.h2>
       </div>
 

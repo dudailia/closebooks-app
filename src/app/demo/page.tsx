@@ -19,7 +19,7 @@ const STEPS: StepInfo[] = [
   { id: 'upload',       label: '1. Upload Statement',     desc: 'Drop a CSV bank statement' },
   { id: 'categorizing', label: '2. AI Categorizes',       desc: 'CloseBooks AI analyzes every transaction' },
   { id: 'review',       label: '3. Review & Approve',     desc: 'Approve, edit, or flag items' },
-  { id: 'export',       label: '4. Export to QuickBooks', desc: 'Download QBO-ready file' },
+  { id: 'export',       label: '4. Download QuickBooks CSV', desc: 'QuickBooks-format CSV file' },
 ]
 
 const SAMPLE_CSV = `Date,Description,Amount,Type
@@ -543,7 +543,7 @@ function ExportStep({ transactions }: { transactions: Transaction[] }) {
       {/* Export buttons */}
       <div className="space-y-2">
         {[
-          { format: 'quickbooks' as const, label: 'Export to QuickBooks', sub: 'QBO-compatible CSV — import directly', icon: '📥', accent: '#00C853' },
+          { format: 'quickbooks' as const, label: 'QuickBooks CSV', sub: 'CSV in QuickBooks import format', icon: '📥', accent: '#00C853' },
           { format: 'standard' as const,   label: 'Export Standard CSV',  sub: 'Date · Category · Amount · Status',   icon: '📄', accent: '#888888' },
         ].map(b => (
           <button key={b.format} onClick={() => doExport(b.format)} disabled={exporting}
@@ -727,12 +727,12 @@ export default function DemoPage() {
               )}
               {step === 'export' && (
                 <div className="space-y-2">
-                  <p className="text-sm" style={{ color: '#FAFAFA' }}><strong>One click to QuickBooks.</strong> Your export is formatted exactly how QBO expects it — no reformatting, no pivot tables.</p>
-                  <p className="text-sm" style={{ color: '#888888' }}>Also supports standard CSV, Xero format, and our full close report PDF.</p>
+                  <p className="text-sm" style={{ color: '#FAFAFA' }}><strong>QuickBooks-ready CSV.</strong> The download uses QuickBooks&apos; import column layout, so you import the file yourself — nothing is pushed to QuickBooks.</p>
+                  <p className="text-sm" style={{ color: '#888888' }}>Also available: a standard CSV and a printable close report.</p>
                   <ul className="text-xs space-y-1 mt-3" style={{ color: '#888888' }}>
-                    <li>✓ QBO-native column format</li>
-                    <li>✓ Xero and standard CSV</li>
-                    <li>✓ Branded client PDF report</li>
+                    <li>✓ QuickBooks import column format</li>
+                    <li>✓ Standard CSV</li>
+                    <li>✓ Printable close report (Save as PDF)</li>
                   </ul>
                 </div>
               )}

@@ -217,7 +217,7 @@ export default function ActivityFeed({ clientName, limit = 10, compact = false }
                       <Link
                         href="/dashboard/clients"
                         className="text-xs font-medium px-1.5 py-0.5 rounded transition-colors"
-                        style={{ backgroundColor: '#f0ece4', color: '#6b4c32' }}
+                        style={{ backgroundColor: '#f0ece4', color: '#6b4c32', minHeight: 0 }}
                         onClick={(e) => e.stopPropagation()}
                       >
                         {event.clientName}
@@ -230,7 +230,7 @@ export default function ActivityFeed({ clientName, limit = 10, compact = false }
                       <Link
                         href={`/dashboard/review/${event.jobId}`}
                         className="text-xs transition-colors"
-                        style={{ color: '#b8734a' }}
+                        style={{ color: '#b8734a', minHeight: 0 }}
                         onMouseEnter={(e) => { e.currentTarget.style.color = '#8a4f2e' }}
                         onMouseLeave={(e) => { e.currentTarget.style.color = '#b8734a' }}
                         onClick={(e) => e.stopPropagation()}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { shouldAllowDashboardAccess } from '@/lib/middlewareSubscription'
 import { supabaseCookieOptions } from '@/lib/supabase/cookieOptions'
+import { isDashboardRouteVisible } from '@/lib/features'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -132,6 +133,13 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('next', pathname)
     const redirectRes = NextResponse.redirect(loginUrl)
+    applySecurityHeaders(redirectRes)
+    return redirectRes
+  }
+
+  // Demo build: dashboard routes outside the allowlist in features.ts bounce home
+  if (user && isDashboard && !isDashboardRouteVisible(pathname)) {
+    const redirectRes = NextResponse.redirect(new URL('/dashboard', request.url))
     applySecurityHeaders(redirectRes)
     return redirectRes
   }

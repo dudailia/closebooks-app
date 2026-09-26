@@ -3,6 +3,7 @@ import type { CategorizationJob, Transaction } from '@/types'
 import type { AuditEvent } from '@/lib/auditTrail'
 import { formatAuditEvent } from '@/lib/auditTrail'
 import type { FirmSettings } from '@/lib/firmSettings'
+import { formatStatementPeriod } from '@/lib/statementPeriod'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -10,12 +11,6 @@ import type { FirmSettings } from '@/lib/firmSettings'
 
 function fmt(amount: number): string {
   return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'long', day: 'numeric', year: 'numeric',
-  })
 }
 
 function statusLabel(status: Transaction['status']): string {
@@ -346,7 +341,7 @@ function buildHtml(job: CategorizationJob, auditEvents: AuditEvent[] = []): stri
       </div>
       <div class="header-meta">
         <strong>${escHtml(job.client_name)}</strong><br/>
-        Period: ${fmtDate(job.created_at)}<br/>
+        Period: ${escHtml(formatStatementPeriod(job.transactions) ?? '—')}<br/>
         Generated: ${generatedAt}<br/>
         Job ID: <span class="mono">${job.id.slice(0, 8)}</span>
       </div>
@@ -496,8 +491,8 @@ function buildClientSummaryHtml(job: CategorizationJob, firm: FirmSettings): str
 
   const accent     = escHtml(firm.accentColor || '#2d5a27')
   const firmName   = firm.firmName   || 'Your Accounting Firm'
-  const tagline    = firm.firmTagline || 'Certified Public Accountants'
   const preparedBy = firm.preparedBy || firmName
+  const period     = formatStatementPeriod(job.transactions)
 
   const catRows = categoryRows.slice(0, 20).map((r) => `
     <tr>
@@ -519,7 +514,6 @@ function buildClientSummaryHtml(job: CategorizationJob, firm: FirmSettings): str
     .page { max-width: 800px; margin: 0 auto; padding: 48px 48px 60px; }
     .header-bar { background: ${accent}; color: #fff; padding: 20px 32px; border-radius: 10px; margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between; }
     .firm-name { font-size: 18pt; letter-spacing: -0.01em; font-weight: bold; }
-    .firm-tagline { font-size: 9pt; opacity: 0.8; margin-top: 3px; font-family: Arial, sans-serif; }
     .header-right { text-align: right; font-family: Arial, sans-serif; font-size: 9pt; opacity: 0.9; line-height: 1.6; }
     .section { margin-bottom: 32px; }
     .section-label { font-family: Arial, sans-serif; font-size: 8pt; font-weight: bold; letter-spacing: 0.14em; text-transform: uppercase; color: ${accent}; margin-bottom: 8px; }
@@ -560,7 +554,6 @@ function buildClientSummaryHtml(job: CategorizationJob, firm: FirmSettings): str
     <div class="header-bar">
       <div>
         <div class="firm-name">${escHtml(firmName)}</div>
-        <div class="firm-tagline">${escHtml(tagline)}</div>
       </div>
       <div class="header-right">
         <strong>${escHtml(job.client_name)}</strong><br/>
@@ -571,7 +564,7 @@ function buildClientSummaryHtml(job: CategorizationJob, firm: FirmSettings): str
 
     <div class="section">
       <div class="section-label">Overview</div>
-      <h2>Your ${fmtDate(job.created_at)} Close</h2>
+      <h2>${escHtml(period ? `Your close for ${period}` : 'Your close')}</h2>
       <div class="kpi-grid">
         <div class="kpi accent">
           <div class="val">${approved.length}</div>

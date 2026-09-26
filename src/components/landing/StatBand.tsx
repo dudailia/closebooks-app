@@ -8,7 +8,7 @@ import { usePrefersReducedMotion } from '@/lib/landing/usePrefersReducedMotion'
 
 const ROW1 = [
   'CSV import', 'COA validation', 'Exception review', 'QuickBooks-ready CSV',
-  'Firm rules', 'Client portal', 'Audit trail', 'Stripe billing',
+  'Firm rules', 'PDF statement import', 'Audit trail', 'Stripe billing',
 ]
 const ROW2 = [
   'Confidence scores', 'Human approval', 'AI reasoning', 'Review queue',
@@ -17,7 +17,7 @@ const ROW2 = [
 
 const TRUST = [
   {
-    label: 'Security-first controls',
+    label: 'Firm-scoped data access',
     icon: (
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
         <rect x="3" y="6" width="8" height="6" rx="1" stroke="#00C853" strokeWidth="1.2" />
@@ -42,7 +42,7 @@ const TRUST = [
     ),
   },
   {
-    label: 'QuickBooks-ready exports',
+    label: 'QuickBooks-ready CSV export',
     icon: (
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
         <path d="M10 3H4v8h6V3z" stroke="#00C853" strokeWidth="1.1" />

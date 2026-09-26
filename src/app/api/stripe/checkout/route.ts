@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/routeAuth'
+import { STRIPE_TEST_MODE_NOTE, isStripeTestMode } from '@/lib/stripeMode'
 
 export const dynamic = 'force-dynamic'
 
@@ -88,6 +89,8 @@ export async function POST(request: NextRequest) {
       },
       success_url: `${origin}/dashboard?checkout=success`,
       cancel_url: `${origin}/pricing?checkout=cancelled`,
+      // Shown above the pay button on Stripe's hosted page
+      ...(isStripeTestMode() ? { custom_text: { submit: { message: STRIPE_TEST_MODE_NOTE } } } : {}),
     })
 
     if (!session.url) {

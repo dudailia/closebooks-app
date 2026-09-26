@@ -4,7 +4,7 @@ export const PILOT_DELIVERABLES = [
   'Sample CSV import and QuickBooks-ready export walkthrough',
   'Firm rules and correction patterns configured during review',
   'Security, privacy, and DPA review path for stakeholders',
-  'Conversion plan into Firm, Growth, or Enterprise subscription',
+  'Conversion plan into a Starter, Professional, or Enterprise subscription',
 ] as const
 
 export const PILOT_STEPS = [
@@ -17,8 +17,8 @@ export const PILOT_STEPS = [
     copy: 'Your team uploads statements, validates COA mappings, reviews exceptions, and exports a close package.',
   },
   {
-    title: 'Measure activation',
-    copy: 'We track time to first export, exception rate, rule creation, and which clients are expansion-ready.',
+    title: 'Review the results together',
+    copy: 'We walk through the exported files, the exceptions your team handled, and the rules you saved.',
   },
   {
     title: 'Convert the workflow',
@@ -26,6 +26,7 @@ export const PILOT_STEPS = [
   },
 ] as const
 
+// Not rendered on the landing page (offer figures, not product facts). Kept for reference.
 export const PILOT_METRICS = [
   ['10', 'pilot clients'],
   ['30 days', 'to prove workflow fit'],

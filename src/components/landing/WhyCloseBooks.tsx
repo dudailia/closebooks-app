@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ADD_ON_MODULES, COMPARISON_ROWS, PLATFORM_PILLARS } from '@/lib/landing/differentiators'
+import { ADD_ON_MODULES, PLATFORM_PILLARS } from '@/lib/landing/differentiators'
 
 function PillarCard({ pillar, index }: { pillar: typeof PLATFORM_PILLARS[number]; index: number }) {
   return (
@@ -40,56 +40,6 @@ function PillarCard({ pillar, index }: { pillar: typeof PLATFORM_PILLARS[number]
       </div>
       <p style={{ margin: 0, color: '#8D8D8D', fontSize: 13, lineHeight: 1.62 }}>{pillar.copy}</p>
     </motion.div>
-  )
-}
-
-function ComparisonMatrix() {
-  return (
-    <div
-      style={{
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 26,
-        background: 'linear-gradient(180deg, rgba(18,18,18,0.94), rgba(8,8,8,0.96))',
-        overflow: 'hidden',
-        boxShadow: '0 34px 110px rgba(0,0,0,0.45)',
-      }}
-    >
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '0.75fr 1fr 1.15fr',
-          gap: 0,
-          borderBottom: '1px solid #1a1a1a',
-          backgroundColor: 'rgba(255,255,255,0.025)',
-        }}
-      >
-        {['Category', 'Typical tool', 'CloseBooks'].map((header) => (
-          <div key={header} style={{ padding: '14px 16px', color: header === 'CloseBooks' ? '#00C853' : '#777', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 800 }}>
-            {header}
-          </div>
-        ))}
-      </div>
-
-      {COMPARISON_ROWS.map((row, index) => (
-        <motion.div
-          key={row.category}
-          initial={{ opacity: 0, x: -10 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, amount: 0.35 }}
-          transition={{ delay: index * 0.06, duration: 0.42 }}
-          className="why-comparison-row"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '0.75fr 1fr 1.15fr',
-            borderBottom: index < COMPARISON_ROWS.length - 1 ? '1px solid #141414' : 'none',
-          }}
-        >
-          <div style={{ padding: 16, color: '#FAFAFA', fontSize: 13, fontWeight: 700 }}>{row.category}</div>
-          <div style={{ padding: 16, color: '#777', fontSize: 13, lineHeight: 1.55, borderLeft: '1px solid #141414' }}>{row.typical}</div>
-          <div style={{ padding: 16, color: '#CFEFDC', fontSize: 13, lineHeight: 1.55, borderLeft: '1px solid rgba(0,200,83,0.16)', background: 'rgba(0,200,83,0.025)' }}>{row.closebooks}</div>
-        </motion.div>
-      ))}
-    </div>
   )
 }
 
@@ -153,16 +103,6 @@ export default function WhyCloseBooks() {
           .why-closebooks-grid {
             grid-template-columns: 1fr !important;
           }
-          .why-comparison-row,
-          .why-comparison-row + div {
-            grid-template-columns: 1fr !important;
-          }
-        }
-        @media (max-width: 760px) {
-          .why-comparison-row,
-          .why-comparison-row:first-child {
-            display: block !important;
-          }
         }
       `}</style>
 
@@ -179,7 +119,7 @@ export default function WhyCloseBooks() {
               transition={{ duration: 0.5 }}
               style={{ margin: 0, color: '#00C853', fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 800 }}
             >
-              The moat competitors miss
+              What&apos;s in the product
             </motion.p>
             <motion.h2
               initial={{ opacity: 0, y: 18 }}
@@ -188,16 +128,16 @@ export default function WhyCloseBooks() {
               transition={{ duration: 0.65, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
               style={{ margin: '16px 0 0', color: '#FAFAFA', fontFamily: 'var(--font-display)', fontSize: 'clamp(42px, 6vw, 74px)', lineHeight: 0.96, letterSpacing: '-0.055em', fontWeight: 400 }}
             >
-              Other tools automate a slice. CloseBooks owns the close.
+              One workflow, statement to export.
             </motion.h2>
             <p style={{ margin: '22px 0 0', color: '#A1A1A1', fontSize: 16, lineHeight: 1.72 }}>
-              The market is split between enterprise close systems, AP automation, document capture,
-              and outsourced bookkeeping. CloseBooks is built for CPA firms that want AI speed,
-              validation, client collaboration, and margin expansion in one workflow.
+              CloseBooks takes a client&apos;s bank statement to a validated, QuickBooks-ready CSV.
+              Claude suggests accounts from the client&apos;s chart, rules saved from your corrections
+              are reapplied, and anything uncertain waits for your review.
             </p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 28 }}>
               <Link href="/signup?plan=professional&billing=annual" style={{ padding: '13px 18px', borderRadius: 12, backgroundColor: '#00C853', color: '#020202', textDecoration: 'none', fontSize: 14, fontWeight: 800, boxShadow: '0 12px 36px rgba(0,200,83,0.28)' }}>
-                Build the AI firm
+                Start 14-day trial
               </Link>
               <Link href="/demo" style={{ padding: '13px 18px', borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.045)', border: '1px solid #1f1f1f', color: '#FAFAFA', textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>
                 See the demo
@@ -212,21 +152,19 @@ export default function WhyCloseBooks() {
           </div>
         </div>
 
-        <ComparisonMatrix />
-
-        <div style={{ marginTop: 48 }}>
+        <div style={{ marginTop: 24 }}>
           <div style={{ display: 'flex', alignItems: 'end', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap', marginBottom: 18 }}>
             <div>
               <p style={{ margin: 0, color: '#00C853', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>
-                Add-ons that compound
+                Under the hood
               </p>
               <h3 style={{ margin: '10px 0 0', color: '#FAFAFA', fontSize: 'clamp(28px, 4vw, 44px)', fontFamily: 'var(--font-display)', fontWeight: 400, letterSpacing: '-0.04em' }}>
-                Build the operating system for an AI-first CPA firm.
+                The pieces of the core workflow.
               </h3>
             </div>
             <p style={{ margin: 0, color: '#888', fontSize: 14, lineHeight: 1.6, maxWidth: 410 }}>
-              Each module supports the same goal: fewer manual rows, fewer risky exports,
-              and more clients served by the same team.
+              Each one is part of the upload, review, and export path you can try
+              during the trial.
             </p>
           </div>
 

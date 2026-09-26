@@ -87,6 +87,20 @@ export function formatAuditEvent(e: AuditEvent): string {
       return `Flagged: ${e.txDescription ?? 'transaction'}`
     case 'tx_bulk_approved':
       return 'Bulk approved transactions'
+    case 'tx_category_changed':
+      return e.details.from != null && e.details.to != null
+        ? `Recategorized: ${e.txDescription ?? 'transaction'} (${e.details.from} → ${e.details.to})`
+        : `Recategorized: ${e.txDescription ?? 'transaction'}`
+    case 'tx_note_added':
+      return `Note added: ${e.txDescription ?? 'transaction'}`
+    case 'job_exported':
+      return e.details.count != null
+        ? `Exported ${e.details.count} transactions${e.details.format ? ` (${e.details.format})` : ''}`
+        : 'Exported transactions'
+    case 'job_completed':
+      return 'Close marked as complete'
+    case 'job_created':
+      return e.details.txCount != null ? `Close created with ${e.details.txCount} transactions` : 'Close created'
     default:
       return e.action
   }
@@ -94,7 +108,7 @@ export function formatAuditEvent(e: AuditEvent): string {
 
 export function auditGroup(action: AuditActionType): 'transactions' | 'exports' | 'system' {
   if (action.startsWith('tx_')) return 'transactions'
-  if (action.startsWith('job_')) return 'exports'
+  if (action === 'job_exported') return 'exports'
   return 'system'
 }
 

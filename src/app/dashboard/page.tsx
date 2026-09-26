@@ -12,6 +12,8 @@ import ActivityFeed from '@/components/ActivityFeed'
 import { calcCumulativeROI, fmtHours } from '@/lib/roiCalc'
 import { getClientCloseStatuses } from '@/lib/clientStatus'
 import { getCorrectionStats } from '@/lib/corrections'
+import { FEATURES } from '@/lib/features'
+import { formatStatementPeriod } from '@/lib/statementPeriod'
 import type { CategorizationJob } from '@/types'
 import type { QBOConnection } from '@/lib/integrations'
 import type { ClientCloseStatus, CloseStatus } from '@/lib/clientStatus'
@@ -87,11 +89,12 @@ function SummaryStats({ jobs }: { jobs: CategorizationJob[] }) {
       sub: 'est. at 2 min/tx',
       color: timeSavedMin > 0 ? '#2d5a27' : '#a09a94',
       icon: <ClockIcon />,
+      visible: FEATURES.savingsEstimates,
     },
-  ]
+  ].filter((s) => s.visible !== false)
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div className={`grid grid-cols-2 ${stats.length > 3 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3`}>
       {stats.map((s) => (
         <div
           key={s.label}
@@ -180,8 +183,9 @@ function QuickActions({ onPortalClick }: { onPortalClick: () => void }) {
       icon: <DemoIcon />,
       iconBg: '#f5f0ea',
       arrow: true,
+      visible: FEATURES.homeDemoLink,
     },
-  ]
+  ].filter((a) => a.visible !== false)
 
   return (
     <div>
@@ -191,7 +195,7 @@ function QuickActions({ onPortalClick }: { onPortalClick: () => void }) {
       >
         Quick Actions
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className={`grid grid-cols-1 ${actions.length + (FEATURES.homePortalLink ? 1 : 0) > 2 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
         {actions.map((a) => (
           <Link
             key={a.label}
@@ -225,33 +229,35 @@ function QuickActions({ onPortalClick }: { onPortalClick: () => void }) {
         ))}
 
         {/* Portal link — button, not href */}
-        <button
-          onClick={onPortalClick}
-          className="group flex items-center gap-3 rounded-xl border px-4 py-3.5 transition-all text-left w-full"
-          style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#b8734a'
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(184,115,74,0.08)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#e8e0d4'
-            e.currentTarget.style.boxShadow = 'none'
-          }}
-        >
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
-            style={{ backgroundColor: '#e8f0e6' }}
+        {FEATURES.homePortalLink && (
+          <button
+            onClick={onPortalClick}
+            className="group flex items-center gap-3 rounded-xl border px-4 py-3.5 transition-all text-left w-full"
+            style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#b8734a'
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(184,115,74,0.08)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#e8e0d4'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
           >
-            <LinkIcon />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium leading-tight" style={{ color: '#1a1714' }}>Client Portal Link</p>
-            <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>Share a secure upload link</p>
-          </div>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: '#c4bdb8', flexShrink: 0 }}>
-            <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
+              style={{ backgroundColor: '#e8f0e6' }}
+            >
+              <LinkIcon />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium leading-tight" style={{ color: '#1a1714' }}>Client Portal Link</p>
+              <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>Share a secure upload link</p>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: '#c4bdb8', flexShrink: 0 }}>
+              <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   )
@@ -295,7 +301,7 @@ function JobCard({ job, onDelete }: { job: CategorizationJob; onDelete: (id: str
               {s.label}
             </span>
           </div>
-          <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>{formatDate(job.created_at)}</p>
+          <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>{formatStatementPeriod(job.transactions) ?? formatDate(job.created_at)}</p>
         </div>
 
         <button
@@ -602,7 +608,7 @@ export default function DashboardPage() {
         ) : null}
 
         {/* Cumulative ROI strip */}
-        {mounted && jobs.length > 0 && (() => {
+        {FEATURES.savingsEstimates && mounted && jobs.length > 0 && (() => {
           const roi = calcCumulativeROI(jobs)
           if (roi.hoursSaved < 0.1) return null
           const autoPct = roi.totalTx > 0 ? Math.round((roi.autoApproved / roi.totalTx) * 100) : 0
@@ -636,7 +642,7 @@ export default function DashboardPage() {
         })()}
 
         {/* Connected integrations strip */}
-        {mounted && qboConn && (
+        {FEATURES.homeQuickBooksStrip && mounted && qboConn && (
           <div
             className="flex items-center justify-between gap-3 rounded-xl border px-4 py-3"
             style={{ borderColor: '#bbf7d0', backgroundColor: '#f0fdf4' }}
@@ -671,7 +677,7 @@ export default function DashboardPage() {
         )}
 
         {/* Tab bar */}
-        {mounted && jobs.length > 1 && (
+        {FEATURES.homePracticeView && mounted && jobs.length > 1 && (
           <div className="flex gap-1 border-b" style={{ borderColor: '#e8e0d4' }}>
             {([['overview', 'Overview'], ['war-room', 'Practice View']] as const).map(([tab, label]) => (
               <button
@@ -693,19 +699,19 @@ export default function DashboardPage() {
         )}
 
         {/* War Room tab */}
-        {mounted && activeTab === 'war-room' && jobs.length > 0 && (
+        {FEATURES.homePracticeView && mounted && activeTab === 'war-room' && jobs.length > 0 && (
           <WarRoomView jobs={jobs} />
         )}
 
         {/* Overview tab (default) */}
-        {(activeTab === 'overview' || !mounted || jobs.length <= 1) && (
+        {(activeTab === 'overview' || !FEATURES.homePracticeView || !mounted || jobs.length <= 1) && (
           <>
 
         {/* Quick Actions */}
         <QuickActions onPortalClick={scrollToPortal} />
 
         {/* Client Portal */}
-        {mounted && <ClientPortalSection sectionRef={portalRef} />}
+        {FEATURES.homeClientPortal && mounted && <ClientPortalSection sectionRef={portalRef} />}
 
         {/* Recent closes */}
         <div>
@@ -753,15 +759,17 @@ export default function DashboardPage() {
                 >
                   Start your first close
                 </Link>
-                <Link
-                  href="/demo"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium border transition-colors"
-                  style={{ borderColor: '#b8734a', color: '#b8734a', backgroundColor: '#ffffff' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
-                >
-                  See Demo
-                </Link>
+                {FEATURES.homeDemoLink && (
+                  <Link
+                    href="/demo"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium border transition-colors"
+                    style={{ borderColor: '#b8734a', color: '#b8734a', backgroundColor: '#ffffff' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
+                  >
+                    See Demo
+                  </Link>
+                )}
               </div>
             </div>
           ) : (
@@ -824,35 +832,46 @@ function FirmIntelligenceCard({ stats }: { stats: CorrectionStats }) {
           <div>
             <p className="text-sm font-semibold" style={{ color: '#1a1714' }}>Firm Intelligence</p>
             <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>
-              AI is learning your firm&apos;s preferences
+              Category corrections from your reviews
             </p>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-2xl font-bold tabular-nums" style={{ color: '#2d5a27' }}>
-            {estimatedAccuracy}%
-          </p>
-          <p className="text-xs mt-0.5" style={{ color: '#6b6560' }}>est. accuracy</p>
-        </div>
+        {FEATURES.estimatedAccuracy ? (
+          <div className="text-right">
+            <p className="text-2xl font-bold tabular-nums" style={{ color: '#2d5a27' }}>
+              {estimatedAccuracy}%
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: '#6b6560' }}>est. accuracy</p>
+          </div>
+        ) : (
+          <div className="text-right">
+            <p className="text-2xl font-bold tabular-nums" style={{ color: '#2d5a27' }}>
+              {totalCorrections}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: '#6b6560' }}>correction{totalCorrections !== 1 ? 's' : ''} saved</p>
+          </div>
+        )}
       </div>
 
       {/* Accuracy bar */}
-      <div>
-        <div className="flex justify-between text-xs mb-1.5" style={{ color: '#a09a94' }}>
-          <span>Model calibration</span>
-          <span>{totalCorrections} correction{totalCorrections !== 1 ? 's' : ''} applied</span>
+      {FEATURES.estimatedAccuracy && (
+        <div>
+          <div className="flex justify-between text-xs mb-1.5" style={{ color: '#a09a94' }}>
+            <span>Model calibration</span>
+            <span>{totalCorrections} correction{totalCorrections !== 1 ? 's' : ''} applied</span>
+          </div>
+          <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece4' }}>
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${barWidth}%`, backgroundColor: '#2d5a27' }}
+            />
+          </div>
+          <div className="flex justify-between text-xs mt-1" style={{ color: '#c4bdb8' }}>
+            <span>Baseline 82%</span>
+            <span>Target 97%</span>
+          </div>
         </div>
-        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece4' }}>
-          <div
-            className="h-full rounded-full transition-all duration-700"
-            style={{ width: `${barWidth}%`, backgroundColor: '#2d5a27' }}
-          />
-        </div>
-        <div className="flex justify-between text-xs mt-1" style={{ color: '#c4bdb8' }}>
-          <span>Baseline 82%</span>
-          <span>Target 97%</span>
-        </div>
-      </div>
+      )}
 
       {topCorrectedFrom.length > 0 && (
         <div>
@@ -875,7 +894,7 @@ function FirmIntelligenceCard({ stats }: { stats: CorrectionStats }) {
       )}
 
       <p className="text-xs" style={{ color: '#a09a94' }}>
-        Every correction trains the AI to match your firm&apos;s categorization style. The more you use CloseBooks, the less you&apos;ll need to correct.
+        Your 10 most recent corrections are sent as examples with each new categorization request.
       </p>
     </div>
   )

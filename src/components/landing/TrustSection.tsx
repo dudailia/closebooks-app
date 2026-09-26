@@ -57,20 +57,20 @@ export default function TrustSection() {
               {...reveal(TL.eyebrow)}
               style={{ margin: 0, color: '#00C853', fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 800 }}
             >
-              Client-data ready
+              Security &amp; control
             </motion.p>
             <motion.h2
               {...reveal(TL.headline)}
               style={{ margin: '14px 0 0', color: '#FAFAFA', fontFamily: 'var(--font-display)', fontSize: 'clamp(38px, 5.4vw, 66px)', lineHeight: 0.98, letterSpacing: '-0.055em', fontWeight: 400 }}
             >
-              Security and control CPAs expect.
+              Review-first, firm-scoped, auditable.
             </motion.h2>
             <motion.p
               {...reveal(TL.line)}
               style={{ margin: '20px 0 0', color: '#A1A1A1', fontSize: 16, lineHeight: 1.7, maxWidth: 560 }}
             >
-              CloseBooks is built around review-first accounting workflows, firm-scoped access,
-              transparent AI processing, and billing infrastructure that firms already trust.
+              AI suggestions arrive with a confidence score and reasoning, low-confidence rows wait
+              for a person, data is scoped to your firm, and billing runs through Stripe.
             </motion.p>
             <motion.div {...reveal(TL.link)} style={{ display: 'inline-flex', marginTop: 24 }}>
               <Link href="/security" style={{ display: 'inline-flex', color: '#00C853', fontWeight: 800, textDecoration: 'none', fontSize: 14 }}>

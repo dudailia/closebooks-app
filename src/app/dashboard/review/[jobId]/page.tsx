@@ -25,6 +25,8 @@ import TaxHandoffButton from '@/components/TaxHandoffButton'
 import ClientEmailDraft from '@/components/ClientEmailDraft'
 import BenchmarkPanel from '@/components/BenchmarkPanel'
 import { getClients } from '@/lib/storage'
+import { FEATURES } from '@/lib/features'
+import { formatStatementPeriod } from '@/lib/statementPeriod'
 import { startSession, endSession } from '@/lib/timeTracking'
 import type { QBOConnection } from '@/lib/integrations'
 import type { CategorizationJob, Transaction } from '@/types'
@@ -103,8 +105,11 @@ interface ExportDropdownProps {
   approvedCount: number
 }
 
+const EXPORT_MENU_WIDTH = 256 // w-64
+
 function ExportDropdown({ onExport, loading, approvedCount }: ExportDropdownProps) {
   const [open, setOpen] = useState(false)
+  const [alignLeft, setAlignLeft] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   // Close on outside click
@@ -119,6 +124,18 @@ function ExportDropdown({ onExport, loading, approvedCount }: ExportDropdownProp
   function pick(format: ExportFormat) {
     setOpen(false)
     onExport(format)
+  }
+
+  // When the header actions wrap to the left edge, a right-aligned menu would
+  // spill under the sidebar (the content wrapper clips overflow-x). Open it
+  // towards whichever side has room.
+  function toggle() {
+    if (!open && ref.current) {
+      const button = ref.current.getBoundingClientRect()
+      const bound = ref.current.closest('.dashboard-content-wrapper')?.getBoundingClientRect().left ?? 0
+      setAlignLeft(button.right - EXPORT_MENU_WIDTH < bound)
+    }
+    setOpen((v) => !v)
   }
 
   const formats: { key: ExportFormat; label: string; sub: string }[] = [
@@ -137,16 +154,16 @@ function ExportDropdown({ onExport, loading, approvedCount }: ExportDropdownProp
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         disabled={loading}
         className="flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50"
         style={{
-          borderColor: open ? '#b8734a' : '#e8e0d4',
-          color: '#1a1714',
-          backgroundColor: open ? '#fdf2e9' : '#ffffff',
+          borderColor: open ? '#b8734a' : 'var(--border-strong)',
+          color: 'var(--text-primary)',
+          backgroundColor: open ? 'var(--warning-soft)' : 'var(--surface-card)',
         }}
         onMouseEnter={(e) => { if (!open) e.currentTarget.style.borderColor = '#b8734a' }}
-        onMouseLeave={(e) => { if (!open) e.currentTarget.style.borderColor = '#e8e0d4' }}
+        onMouseLeave={(e) => { if (!open) e.currentTarget.style.borderColor = 'var(--border-strong)' }}
       >
         {loading ? (
           <>
@@ -164,35 +181,35 @@ function ExportDropdown({ onExport, loading, approvedCount }: ExportDropdownProp
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1.5 w-64 rounded-xl border shadow-lg py-1.5 z-30"
-          style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+          className={`absolute ${alignLeft ? 'left-0' : 'right-0'} top-full mt-1.5 w-64 rounded-xl border shadow-lg py-1.5 z-30`}
+          style={{ borderColor: 'var(--border-strong)', backgroundColor: 'var(--surface-card)' }}
         >
           {approvedCount === 0 ? (
             <div className="px-3 py-3 text-center">
               <p className="text-xs font-medium" style={{ color: '#d97706' }}>
                 ⚠ No approved transactions
               </p>
-              <p className="text-xs mt-1" style={{ color: '#a09a94' }}>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
                 Approve transactions in the table before exporting.
               </p>
             </div>
           ) : (
             <>
-              <p className="px-3 py-1.5 text-xs" style={{ color: '#a09a94' }}>
+              <p className="px-3 py-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
                 Will export <span className="font-semibold" style={{ color: '#059669' }}>{approvedCount}</span> approved transaction{approvedCount !== 1 ? 's' : ''}
               </p>
-              <div className="my-1 border-t" style={{ borderColor: '#f0ece4' }} />
+              <div className="my-1 border-t" style={{ borderColor: 'var(--border-subtle)' }} />
               {formats.map((f) => (
                 <button
                   key={f.key}
                   onClick={() => pick(f.key)}
                   className="w-full text-left px-3 py-2.5 transition-colors"
-                  style={{ color: '#1a1714' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9' }}
+                  style={{ color: 'var(--text-primary)' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--warning-soft)' }}
                   onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
                 >
                   <p className="text-sm font-medium">{f.label}</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>{f.sub}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{f.sub}</p>
                 </button>
               ))}
             </>
@@ -211,10 +228,10 @@ function StatPill({ label, value, color }: { label: string; value: number; color
   return (
     <div
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border"
-      style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+      style={{ borderColor: 'var(--border-strong)', backgroundColor: 'var(--surface-card)' }}
     >
       <span className="font-mono text-sm font-bold tabular-nums" style={{ color }}>{value}</span>
-      <span className="text-xs" style={{ color: '#a09a94' }}>{label}</span>
+      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{label}</span>
     </div>
   )
 }
@@ -244,27 +261,27 @@ function CategoryBreakdown({ transactions }: { transactions: Transaction[] }) {
   return (
     <div
       className="rounded-xl border p-5"
-      style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+      style={{ borderColor: 'var(--border-strong)', backgroundColor: 'var(--surface-card)' }}
     >
-      <h3 className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ color: '#a09a94' }}>
+      <h3 className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ color: 'var(--text-secondary)' }}>
         Top Categories by Volume
       </h3>
       <div className="space-y-3">
         {sorted.map(([cat, { amount, count, isCredit }]) => {
           const pct = Math.round((amount / max) * 100)
-          const barColor = isCredit ? '#059669' : '#2d5a27'
-          const barBg = isCredit ? '#dcfce7' : '#e8f0e6'
+          const barColor = isCredit ? 'var(--accent)' : 'var(--text-secondary)'
+          const barBg = 'var(--border-strong)'
           return (
             <div key={cat}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium truncate max-w-[55%]" style={{ color: '#1a1714' }}>
+                <span className="text-xs font-medium truncate max-w-[55%]" style={{ color: 'var(--text-primary)' }}>
                   {cat}
                 </span>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-xs" style={{ color: '#a09a94' }}>
+                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                     {count} tx
                   </span>
-                  <span className="font-mono text-xs font-semibold" style={{ color: barColor }}>
+                  <span className="font-mono text-xs font-semibold" style={{ color: isCredit ? 'var(--accent)' : 'var(--text-primary)' }}>
                     ${amount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                   </span>
                 </div>
@@ -310,12 +327,12 @@ function ReviewSummary({ transactions, onExport, onReport, exporting, reporting 
   return (
     <div
       className="rounded-2xl border-2 overflow-hidden"
-      style={{ borderColor: '#059669', backgroundColor: '#f0fdf4' }}
+      style={{ borderColor: '#059669', backgroundColor: 'var(--surface-card)' }}
     >
       {/* Header */}
       <div
         className="px-6 py-5 flex flex-wrap items-center justify-between gap-4"
-        style={{ backgroundColor: '#dcfce7', borderBottom: '1px solid #bbf7d0' }}
+        style={{ backgroundColor: 'var(--accent-soft)', borderBottom: '1px solid var(--border-strong)' }}
       >
         <div className="flex items-center gap-3">
           <div
@@ -331,13 +348,13 @@ function ReviewSummary({ transactions, onExport, onReport, exporting, reporting 
               style={{
                 fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
                 fontSize: '1.1rem',
-                color: '#14532d',
+                color: 'var(--text-primary)',
                 letterSpacing: '-0.01em',
               }}
             >
               All {total} transactions reviewed!
             </p>
-            <p className="text-xs mt-0.5" style={{ color: '#166534' }}>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
               Ready to export or generate the close report.
             </p>
           </div>
@@ -375,16 +392,16 @@ function ReviewSummary({ transactions, onExport, onReport, exporting, reporting 
               <path d="M2 11h10" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           )}
-          {exporting ? 'Exporting…' : 'Export to QuickBooks'}
+          {exporting ? 'Exporting…' : 'Download QuickBooks CSV'}
         </button>
 
         <button
           onClick={onReport}
           disabled={reporting || exporting}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border disabled:opacity-60 transition-colors"
-          style={{ borderColor: '#059669', color: '#059669', backgroundColor: '#ffffff' }}
-          onMouseEnter={(e) => { if (!reporting && !exporting) e.currentTarget.style.backgroundColor = '#f0fdf4' }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
+          style={{ borderColor: '#059669', color: '#059669', backgroundColor: 'var(--surface-card)' }}
+          onMouseEnter={(e) => { if (!reporting && !exporting) e.currentTarget.style.backgroundColor = 'var(--accent-soft)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--surface-card)' }}
         >
           {reporting ? (
             <SummarySpinner />
@@ -398,7 +415,7 @@ function ReviewSummary({ transactions, onExport, onReport, exporting, reporting 
           {reporting ? 'Generating…' : 'Generate Close Report'}
         </button>
 
-        <p className="text-xs ml-1" style={{ color: '#6b7280' }}>
+        <p className="text-xs ml-1" style={{ color: 'var(--text-secondary)' }}>
           {flagged > 0 && `${flagged} flagged transaction${flagged !== 1 ? 's' : ''} will not be exported.`}
         </p>
       </div>
@@ -711,8 +728,8 @@ function PushModal({ count, connection, onConfirm, onCancel, step, errorMessage 
 
 type AuditFilterTab = 'all' | 'transactions' | 'exports' | 'system'
 
-function AuditPanel({ auditEvents }: { auditEvents: AuditEvent[] }) {
-  const [open, setOpen]       = useState(false)
+function AuditPanel({ auditEvents, defaultOpen = false }: { auditEvents: AuditEvent[]; defaultOpen?: boolean }) {
+  const [open, setOpen]       = useState(defaultOpen)
   const [tab, setTab]         = useState<AuditFilterTab>('all')
 
   const filtered = tab === 'all'
@@ -743,23 +760,23 @@ function AuditPanel({ auditEvents }: { auditEvents: AuditEvent[] }) {
   return (
     <div
       className="rounded-xl border overflow-hidden"
-      style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+      style={{ borderColor: 'var(--border-strong)', backgroundColor: 'var(--surface-card)' }}
     >
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between px-5 py-3.5 transition-colors text-left"
-        style={{ backgroundColor: open ? '#faf8f4' : '#ffffff' }}
-        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#faf8f4' }}
-        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = open ? '#faf8f4' : '#ffffff' }}
+        style={{ backgroundColor: open ? 'var(--surface-elevated)' : 'var(--surface-card)' }}
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--surface-elevated)' }}
+        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = open ? 'var(--surface-elevated)' : 'var(--surface-card)' }}
       >
         <div className="flex items-center gap-2.5">
           <span
             className="w-7 h-7 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: '#f5f0ea' }}
+            style={{ backgroundColor: 'var(--border-strong)' }}
           >
             <AuditClockIcon />
           </span>
-          <span className="text-sm font-semibold" style={{ color: '#1a1714' }}>
+          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
             Audit Trail
           </span>
           <span
@@ -778,9 +795,9 @@ function AuditPanel({ auditEvents }: { auditEvents: AuditEvent[] }) {
       </button>
 
       {open && (
-        <div className="border-t" style={{ borderColor: '#f0ece4' }}>
+        <div className="border-t" style={{ borderColor: 'var(--border-subtle)' }}>
           {/* Filter tabs */}
-          <div className="flex gap-0.5 px-4 pt-3 border-b" style={{ borderColor: '#f0ece4' }}>
+          <div className="flex gap-0.5 px-4 pt-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
             {(['all', 'transactions', 'exports', 'system'] as AuditFilterTab[]).map((t) => (
               <button
                 key={t}
@@ -788,7 +805,7 @@ function AuditPanel({ auditEvents }: { auditEvents: AuditEvent[] }) {
                 className="px-3 py-1.5 text-xs font-medium border-b-2 -mb-px transition-colors"
                 style={{
                   borderBottomColor: tab === t ? '#b8734a' : 'transparent',
-                  color: tab === t ? '#b8734a' : '#6b6560',
+                  color: tab === t ? '#b8734a' : 'var(--text-secondary)',
                 }}
               >
                 {tabLabels[t]}
@@ -796,7 +813,7 @@ function AuditPanel({ auditEvents }: { auditEvents: AuditEvent[] }) {
                   className="ml-1 font-mono px-1 py-0.5 rounded-full"
                   style={{
                     backgroundColor: tab === t ? '#fde8d4' : '#f5f0ea',
-                    color: tab === t ? '#b8734a' : '#a09a94',
+                    color: tab === t ? '#b8734a' : 'var(--text-secondary)',
                     fontSize: 10,
                   }}
                 >
@@ -808,7 +825,7 @@ function AuditPanel({ auditEvents }: { auditEvents: AuditEvent[] }) {
 
           {filtered.length === 0 ? (
             <div className="py-10 text-center">
-              <p className="text-sm" style={{ color: '#a09a94' }}>No events in this category.</p>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No events in this category.</p>
             </div>
           ) : (
             <div className="px-5 py-4">
@@ -819,13 +836,13 @@ function AuditPanel({ auditEvents }: { auditEvents: AuditEvent[] }) {
                       className="absolute -left-[21px] top-1 w-3 h-3 rounded-full border-2"
                       style={{
                         backgroundColor: dotColor[ev.action] ?? '#a09a94',
-                        borderColor: '#ffffff',
+                        borderColor: 'var(--surface-card)',
                       }}
                     />
-                    <p className="text-sm" style={{ color: '#1a1714' }}>
+                    <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
                       {formatAuditEvent(ev)}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
                       {ev.actor} · {fmtAuditTs(ev.timestamp)}
                     </p>
                   </li>
@@ -1037,7 +1054,7 @@ export default function ReviewPage() {
         clientName: job.client_name,
         clientIndustry: clientIndustry ?? undefined,
         jobId: job.id,
-        jobMonth: new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        jobMonth: formatStatementPeriod(job.transactions) ?? new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
         transactions: job.transactions,
         overdueCount: 0,
       },
@@ -1196,7 +1213,7 @@ export default function ReviewPage() {
     })
     setAuditEvents(getAuditTrail(jobId))
     addToast('Close marked as complete.', 'success')
-    setShowShareModal(true)
+    if (FEATURES.reviewShareModal) setShowShareModal(true)
     logActivity({
       type: 'close_completed',
       description: `Close completed for ${job.client_name}`,
@@ -1313,6 +1330,7 @@ export default function ReviewPage() {
   }
 
   const pending      = job.total_transactions - job.approved - job.flagged
+  const statementPeriod = formatStatementPeriod(job.transactions)
   const approvedCount = job.transactions.filter((t) => t.status === 'approved' || t.status === 'edited').length
   const pct = job.total_transactions > 0
     ? Math.round(((job.approved + job.flagged) / job.total_transactions) * 100)
@@ -1354,15 +1372,15 @@ export default function ReviewPage() {
               style={{
                 fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
                 fontSize: '1.6rem',
-                color: '#1a1714',
+                color: 'var(--text-primary)',
                 letterSpacing: '-0.02em',
                 lineHeight: 1.2,
               }}
             >
               {job.client_name}
             </h1>
-            <p className="text-xs mt-1" style={{ color: '#a09a94' }}>
-              {new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+              {statementPeriod ?? `Uploaded ${new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
               {' · '}
               <span
                 className="font-medium"
@@ -1389,54 +1407,62 @@ export default function ReviewPage() {
               onClick={handleReport}
               disabled={reporting || exporting}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50"
-              style={{ borderColor: '#e8e0d4', color: '#1a1714', backgroundColor: '#ffffff' }}
+              style={{ borderColor: 'var(--border-strong)', color: 'var(--text-primary)', backgroundColor: 'var(--surface-card)' }}
               onMouseEnter={(e) => { if (!reporting) e.currentTarget.style.borderColor = '#b8734a' }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e8e0d4' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-strong)' }}
               title="Generate a printable PDF report"
             >
               {reporting ? <Spinner /> : <ReportIcon />}
               {reporting ? 'Generating…' : 'Report'}
             </button>
 
-            <button
-              onClick={handleClientSummary}
-              disabled={clientSummary || exporting}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50"
-              style={{ borderColor: '#e8e0d4', color: '#1a1714', backgroundColor: '#ffffff' }}
-              onMouseEnter={(e) => { if (!clientSummary) e.currentTarget.style.borderColor = '#2d5a27' }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e8e0d4' }}
-              title="Generate a branded client-facing summary"
-            >
-              {clientSummary ? <Spinner /> : <ClientSummaryIcon />}
-              {clientSummary ? 'Generating…' : 'Client Summary'}
-            </button>
+            {FEATURES.reviewClientSummary && (
+              <button
+                onClick={handleClientSummary}
+                disabled={clientSummary || exporting}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50"
+                style={{ borderColor: 'var(--border-strong)', color: 'var(--text-primary)', backgroundColor: 'var(--surface-card)' }}
+                onMouseEnter={(e) => { if (!clientSummary) e.currentTarget.style.borderColor = '#2d5a27' }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-strong)' }}
+                title="Generate a branded client-facing summary"
+              >
+                {clientSummary ? <Spinner /> : <ClientSummaryIcon />}
+                {clientSummary ? 'Generating…' : 'Client Summary'}
+              </button>
+            )}
 
-            <TaxHandoffButton
-              job={job}
-              allClientJobs={allClientJobs}
-              onError={(msg) => addToast(msg, 'error')}
-            />
+            {FEATURES.reviewTaxHandoff && (
+              <TaxHandoffButton
+                job={job}
+                allClientJobs={allClientJobs}
+                onError={(msg) => addToast(msg, 'error')}
+              />
+            )}
 
-            <button
-              onClick={() => setShowEmailDraft(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors"
-              style={{ borderColor: '#e8e0d4', color: '#1a1714', backgroundColor: '#ffffff' }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#2d5a27' }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e8e0d4' }}
-              title="Draft a plain-English email summary for the client"
-            >
-              <EmailIcon />
-              Email Client
-            </button>
+            {FEATURES.reviewEmailClient && (
+              <button
+                onClick={() => setShowEmailDraft(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-colors"
+                style={{ borderColor: 'var(--border-strong)', color: 'var(--text-primary)', backgroundColor: 'var(--surface-card)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#2d5a27' }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-strong)' }}
+                title="Draft a plain-English email summary for the client"
+              >
+                <EmailIcon />
+                Email Client
+              </button>
+            )}
 
-            <SendMonthlyReportButton
-              job={job}
-              priorJob={allClientJobs.find((j) => j.id !== job.id && j.created_at < job.created_at) ?? null}
-              clientEmail={getClients().find((c) => c.business_name === job.client_name)?.contact_email}
-            />
+            {FEATURES.reviewMonthlyReport && (
+              <SendMonthlyReportButton
+                job={job}
+                priorJob={allClientJobs.find((j) => j.id !== job.id && j.created_at < job.created_at) ?? null}
+                clientEmail={getClients().find((c) => c.business_name === job.client_name)?.contact_email}
+              />
+            )}
 
             {/* Push to QuickBooks — only shown when connected */}
-            {qboConn && approvedCount > 0 && (
+            {FEATURES.reviewQuickBooksPush && qboConn && approvedCount > 0 && (
               <button
                 onClick={handlePushToQBO}
                 disabled={exporting || reporting}
@@ -1451,16 +1477,18 @@ export default function ReviewPage() {
               </button>
             )}
 
-            <button
-              onClick={() => setAutoCloseOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white"
-              style={{ backgroundColor: '#1a1714' }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#0d0b09' }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#1a1714' }}
-              title="Run the autonomous close agent"
-            >
-              ✦ Run Auto-Close
-            </button>
+            {FEATURES.reviewAutoClose && (
+              <button
+                onClick={() => setAutoCloseOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white"
+                style={{ backgroundColor: '#1a1714' }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#0d0b09' }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#1a1714' }}
+                title="Run the autonomous close agent"
+              >
+                ✦ Run Auto-Close
+              </button>
+            )}
 
             {job.status !== 'completed' && (
               <button
@@ -1479,11 +1507,11 @@ export default function ReviewPage() {
 
         {/* Stats pills row */}
         <div className="flex flex-wrap items-center gap-2">
-          <StatPill label="Total"    value={job.total_transactions} color="#1a1714" />
+          <StatPill label="Total"    value={job.total_transactions} color="var(--text-primary)" />
           <StatPill label="Approved" value={job.approved}           color="#059669" />
           <StatPill label="Pending"  value={pending}                color="#d97706" />
           <StatPill label="Flagged"  value={job.flagged}            color="#ef4444" />
-          {(job.auto_categorized ?? 0) > 0 && (() => {
+          {FEATURES.savingsEstimates && (job.auto_categorized ?? 0) > 0 && (() => {
             const roi = calcROI(job)
             return (
               <>
@@ -1500,43 +1528,45 @@ export default function ReviewPage() {
         </div>
 
         {/* Copilot */}
-        <CopilotPanel
-          job={job}
-          jobId={jobId}
-          onTransactionsUpdated={(txs) => {
-            const approved = txs.filter((t) => t.status === 'approved' || t.status === 'edited').length
-            const flagged  = txs.filter((t) => t.status === 'flagged').length
-            const next: CategorizationJob = { ...job, transactions: txs, approved, flagged }
-            setJob(next)
-            saveJob(next)
-          }}
-        />
+        {FEATURES.reviewCopilotPanel && (
+          <CopilotPanel
+            job={job}
+            jobId={jobId}
+            onTransactionsUpdated={(txs) => {
+              const approved = txs.filter((t) => t.status === 'approved' || t.status === 'edited').length
+              const flagged  = txs.filter((t) => t.status === 'flagged').length
+              const next: CategorizationJob = { ...job, transactions: txs, approved, flagged }
+              setJob(next)
+              saveJob(next)
+            }}
+          />
+        )}
 
         {/* Progress bar */}
         <div className="flex items-center gap-3">
-          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#f0ece4' }}>
+          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--border-strong)' }}>
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
                 width: `${pct}%`,
-                backgroundColor: pct === 100 ? '#059669' : pct >= 50 ? '#2d5a27' : '#b8734a',
+                backgroundColor: pct === 100 ? '#059669' : pct >= 50 ? 'var(--accent)' : '#b8734a',
               }}
             />
           </div>
           <span
             className="font-mono text-xs font-medium shrink-0 tabular-nums"
-            style={{ color: pct === 100 ? '#059669' : '#a09a94' }}
+            style={{ color: pct === 100 ? '#059669' : 'var(--text-secondary)' }}
           >
             {pct}% reviewed
           </span>
         </div>
 
         {/* AI narrative summary */}
-        {job.transactions.length > 0 && (
+        {FEATURES.reviewNarrative && job.transactions.length > 0 && (
           <NarrativeInsight
             clientName={job.client_name}
             clientIndustry={clientIndustry ?? undefined}
-            period={new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            period={statementPeriod ?? new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             transactions={job.transactions}
             priorTransactions={allClientJobs.find((j) => j.id !== job.id && j.created_at < job.created_at)?.transactions ?? null}
             onHighlight={(ids) => setChatHighlightIds(ids)}
@@ -1566,17 +1596,17 @@ export default function ReviewPage() {
         {/* Tabbed panels */}
         <div
           className="rounded-xl border overflow-hidden"
-          style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}
+          style={{ borderColor: 'var(--border-strong)', backgroundColor: 'var(--surface-card)' }}
         >
           {/* Tab bar */}
-          <div className="flex border-b" style={{ borderColor: '#e8e0d4', backgroundColor: '#faf8f4' }}>
+          <div className="flex border-b" style={{ borderColor: 'var(--border-strong)', backgroundColor: 'var(--surface-elevated)' }}>
             {([
-              { key: 'transactions', label: 'Transactions',                      badge: null },
-              { key: 'anomalies',    label: 'Anomalies',                          badge: anomalies.length > 0 ? anomalies.length : null },
-              { key: 'recurring',    label: 'Recurring',                          badge: recurringPatterns.length > 0 ? recurringPatterns.length : null },
-              { key: 'benchmarks',   label: 'Benchmarks',                         badge: null },
-              { key: 'audit',        label: 'Audit Trail',                        badge: auditEvents.length > 0 ? auditEvents.length : null },
-            ] as { key: PanelTab; label: string; badge: number | null }[]).map(({ key, label, badge }) => {
+              { key: 'transactions', label: 'Transactions',                      badge: null, visible: true },
+              { key: 'anomalies',    label: 'Anomalies',                          badge: anomalies.length > 0 ? anomalies.length : null, visible: FEATURES.reviewAnomaliesTab },
+              { key: 'recurring',    label: 'Recurring',                          badge: recurringPatterns.length > 0 ? recurringPatterns.length : null, visible: FEATURES.reviewRecurringTab },
+              { key: 'benchmarks',   label: 'Benchmarks',                         badge: null, visible: FEATURES.reviewBenchmarksTab },
+              { key: 'audit',        label: 'Audit Trail',                        badge: auditEvents.length > 0 ? auditEvents.length : null, visible: true },
+            ] as { key: PanelTab; label: string; badge: number | null; visible: boolean }[]).filter((t) => t.visible).map(({ key, label, badge }) => {
               const isActive = activePanel === key
               return (
                 <button
@@ -1584,9 +1614,9 @@ export default function ReviewPage() {
                   onClick={() => setActivePanel(key)}
                   className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap"
                   style={{
-                    borderBottomColor: isActive ? '#2d5a27' : 'transparent',
-                    color: isActive ? '#2d5a27' : '#6b6560',
-                    backgroundColor: isActive ? '#ffffff' : 'transparent',
+                    borderBottomColor: isActive ? 'var(--accent)' : 'transparent',
+                    color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+                    backgroundColor: isActive ? 'var(--surface-card)' : 'transparent',
                   }}
                 >
                   {label}
@@ -1595,9 +1625,9 @@ export default function ReviewPage() {
                       className="font-mono text-xs px-1.5 py-0.5 rounded-full"
                       style={{
                         backgroundColor: key === 'anomalies' && anomalies.some(a => a.severity === 'high') ? '#fee2e2'
-                          : isActive ? '#d4e8d0' : '#f0ece4',
+                          : isActive ? 'var(--accent-soft)' : 'var(--border-strong)',
                         color: key === 'anomalies' && anomalies.some(a => a.severity === 'high') ? '#991b1b'
-                          : isActive ? '#2d5a27' : '#a09a94',
+                          : isActive ? 'var(--accent)' : 'var(--text-secondary)',
                       }}
                     >
                       {badge}
@@ -1622,17 +1652,17 @@ export default function ReviewPage() {
                   auditEvents={auditEvents}
                   highlightIds={chatHighlightIds}
                 />
-                <JobInsightsPanel job={job} autoGenerate />
+                {FEATURES.reviewAiInsights && <JobInsightsPanel job={job} autoGenerate />}
               </>
             )}
             {activePanel === 'anomalies' && (
               anomalies.length === 0
-                ? <p className="text-sm py-8 text-center" style={{ color: '#a09a94' }}>No anomalies detected for this job.</p>
+                ? <p className="text-sm py-8 text-center" style={{ color: 'var(--text-secondary)' }}>No anomalies detected for this job.</p>
                 : <AnomalyPanel anomalies={anomalies} />
             )}
             {activePanel === 'recurring' && (
               recurringPatterns.length === 0
-                ? <p className="text-sm py-8 text-center" style={{ color: '#a09a94' }}>No recurring patterns found.</p>
+                ? <p className="text-sm py-8 text-center" style={{ color: 'var(--text-secondary)' }}>No recurring patterns found.</p>
                 : <RecurringPanel patterns={recurringPatterns} />
             )}
             {activePanel === 'benchmarks' && (
@@ -1648,20 +1678,23 @@ export default function ReviewPage() {
                 }}
               />
             )}
+            {/* Already behind its own tab, so start expanded */}
             {activePanel === 'audit' && (
-              <AuditPanel auditEvents={auditEvents} />
+              <AuditPanel auditEvents={auditEvents} defaultOpen />
             )}
           </div>
         </div>
       </main>
 
       {/* Close Chat — floating */}
-      <CloseChat
-        jobId={jobId}
-        clientName={job.client_name}
-        transactions={job.transactions}
-        onHighlight={setChatHighlightIds}
-      />
+      {FEATURES.reviewCloseChat && (
+        <CloseChat
+          jobId={jobId}
+          clientName={job.client_name}
+          transactions={job.transactions}
+          onHighlight={setChatHighlightIds}
+        />
+      )}
 
       {/* Client Email Draft modal */}
       {showEmailDraft && (
@@ -1682,7 +1715,7 @@ export default function ReviewPage() {
 
       {/* Autonomous Close Agent modal */}
       <AutoCloseModal
-        open={autoCloseOpen}
+        open={FEATURES.reviewAutoClose && autoCloseOpen}
         job={job}
         onClose={() => setAutoCloseOpen(false)}
         onApply={(finalTxs) => handleTransactionsChange(finalTxs)}

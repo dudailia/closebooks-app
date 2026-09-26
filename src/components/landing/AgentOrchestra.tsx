@@ -1,30 +1,24 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 
 const AGENTS = [
-  { name: 'Parser', role: 'Reads statements', color: '#38BDF8', x: 50, y: 7 },
-  { name: 'Categorizer', role: 'Maps vendors', color: '#00C853', x: 82, y: 28 },
+  { name: 'Parser', role: 'Reads CSV & PDF statements', color: '#38BDF8', x: 50, y: 7 },
+  { name: 'Categorizer', role: 'Suggests accounts', color: '#00C853', x: 82, y: 28 },
   { name: 'Validator', role: 'Checks the COA', color: '#F59E0B', x: 82, y: 74 },
-  { name: 'Reconciler', role: 'Finds exceptions', color: '#A855F7', x: 50, y: 92 },
-  { name: 'Exporter', role: 'Prepares QBO', color: '#22C55E', x: 16, y: 74 },
-  { name: 'Messenger', role: 'Drafts client notes', color: '#FB7185', x: 16, y: 28 },
+  { name: 'Review', role: 'Your team approves', color: '#A855F7', x: 50, y: 92 },
+  { name: 'Exporter', role: 'Builds the CSV', color: '#22C55E', x: 16, y: 74 },
+  { name: 'Rules', role: 'Applies saved rules', color: '#FB7185', x: 16, y: 28 },
 ] as const
 
 const ACTIVITY = [
-  { label: 'Bank statement parsed', detail: '212 new transactions normalized', color: '#38BDF8' },
-  { label: 'Vendor memory applied', detail: 'Gusto, Stripe, AWS matched to firm rules', color: '#00C853' },
-  { label: 'Chart validation passed', detail: '205 transactions resolved to approved accounts', color: '#F59E0B' },
-  { label: 'Exceptions isolated', detail: '7 rows routed to CPA review', color: '#A855F7' },
-  { label: 'Close package assembled', detail: 'Export, narrative, and action list ready', color: '#22C55E' },
-] as const
-
-const METRICS = [
-  ['00:48', 'first pass close run'],
-  ['7', 'exceptions instead of 212 rows'],
-  ['1 click', 'export and client brief'],
+  { label: 'Bank statement parsed', detail: 'CSV or PDF rows turned into transactions', color: '#38BDF8' },
+  { label: 'Accounts suggested', detail: 'Each suggestion checked against the client chart of accounts', color: '#00C853' },
+  { label: 'Saved rules applied', detail: 'Vendors your firm has a rule for get that account', color: '#FB7185' },
+  { label: 'Exceptions flagged', detail: 'Low-confidence and invalid rows wait for review', color: '#A855F7' },
+  { label: 'Ready to export', detail: 'QuickBooks-ready CSV and printable close report', color: '#22C55E' },
 ] as const
 
 function AgentNode({
@@ -47,7 +41,10 @@ function AgentNode({
         position: 'absolute',
         left: `${agent.x}%`,
         top: `${agent.y}%`,
-        transform: 'translate(-50%, -50%)',
+        // Centre on (x, y). A plain `transform` would be overwritten by the
+        // animated `scale`; Motion composes x/y with it.
+        x: '-50%',
+        y: '-50%',
         width: 126,
         padding: '10px 11px',
         borderRadius: 16,
@@ -163,7 +160,6 @@ function ActivityFeed({ active }: { active: number }) {
 export default function AgentOrchestra() {
   const [active, setActive] = useState(0)
   const activeAgent = AGENTS[active % AGENTS.length]
-  const metricDelay = useMemo(() => active * 0.03, [active])
 
   useEffect(() => {
     const timer = setInterval(() => setActive((current) => (current + 1) % AGENTS.length), 2300)
@@ -216,38 +212,17 @@ export default function AgentOrchestra() {
               One workflow for parsing, categorization, review, and export.
             </h2>
             <p style={{ margin: '22px 0 0', color: '#A1A1A1', fontSize: 16, lineHeight: 1.7, maxWidth: 560 }}>
-              CloseBooks coordinates parsing, categorization,
-              validation, review, export, and client communication, so your team can manage
-              every close from one guided workflow.
+              CloseBooks runs parsing, categorization, chart-of-accounts validation, and saved
+              rules for you, then hands the exceptions to your team for review before anything
+              is exported.
             </p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10, marginTop: 28 }}>
-              {METRICS.map(([value, label], index) => (
-                <motion.div
-                  key={value}
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: metricDelay + index * 0.08, duration: 0.42 }}
-                  style={{
-                    padding: '14px 12px',
-                    borderRadius: 16,
-                    border: '1px solid #1f1f1f',
-                    background: 'rgba(255,255,255,0.035)',
-                  }}
-                >
-                  <p style={{ margin: 0, color: '#FAFAFA', fontSize: 21, fontFamily: 'var(--font-mono)', letterSpacing: '-0.03em' }}>{value}</p>
-                  <p style={{ margin: '6px 0 0', color: '#777', fontSize: 12, lineHeight: 1.35 }}>{label}</p>
-                </motion.div>
-              ))}
-            </div>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 28 }}>
               <Link href="/get-started" style={{ padding: '13px 18px', borderRadius: 12, backgroundColor: '#FAFAFA', color: '#050505', textDecoration: 'none', fontSize: 14, fontWeight: 800 }}>
                 Run your first close
               </Link>
-              <Link href="/tools/roi-calculator" style={{ padding: '13px 18px', borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.045)', border: '1px solid #1f1f1f', color: '#FAFAFA', textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>
-                Calculate ROI
+              <Link href="/demo" style={{ padding: '13px 18px', borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.045)', border: '1px solid #1f1f1f', color: '#FAFAFA', textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>
+                Try the demo
               </Link>
             </div>
           </motion.div>
@@ -284,38 +259,36 @@ export default function AgentOrchestra() {
                 }}
               />
 
-              <motion.div
-                animate={{ y: [0, -8, 0], boxShadow: [`0 0 55px ${activeAgent.color}26`, `0 0 95px ${activeAgent.color}36`, `0 0 55px ${activeAgent.color}26`] }}
-                transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-                style={{
-                  position: 'absolute',
-                  left: '50%',
-                  top: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: 190,
-                  minHeight: 154,
-                  borderRadius: 28,
-                  border: `1px solid ${activeAgent.color}58`,
-                  background: 'linear-gradient(180deg, rgba(250,250,250,0.08), rgba(10,10,10,0.95))',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                  padding: 20,
-                  zIndex: 4,
-                }}
-              >
-                <p style={{ margin: 0, color: '#00C853', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>
-                  CloseBooks AI
-                </p>
-                <h3 style={{ margin: '8px 0 0', color: '#FAFAFA', fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 400, letterSpacing: '-0.045em' }}>
-                  Command center
-                </h3>
-                <p style={{ margin: '8px 0 0', color: '#888', fontSize: 12, lineHeight: 1.45 }}>
-                  Currently coordinating: <span style={{ color: activeAgent.color }}>{activeAgent.name}</span>
-                </p>
-              </motion.div>
+              {/* Static wrapper does the centring; the animated y bob would overwrite a transform on the motion element. */}
+              <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 4 }}>
+                <motion.div
+                  animate={{ y: [0, -8, 0], boxShadow: [`0 0 55px ${activeAgent.color}26`, `0 0 95px ${activeAgent.color}36`, `0 0 55px ${activeAgent.color}26`] }}
+                  transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{
+                    width: 190,
+                    minHeight: 154,
+                    borderRadius: 28,
+                    border: `1px solid ${activeAgent.color}58`,
+                    background: 'linear-gradient(180deg, rgba(250,250,250,0.08), rgba(10,10,10,0.95))',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    padding: 20,
+                  }}
+                >
+                  <p style={{ margin: 0, color: '#00C853', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>
+                    CloseBooks
+                  </p>
+                  <h3 style={{ margin: '8px 0 0', color: '#FAFAFA', fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 400, letterSpacing: '-0.045em' }}>
+                    Close pipeline
+                  </h3>
+                  <p style={{ margin: '8px 0 0', color: '#888', fontSize: 12, lineHeight: 1.45 }}>
+                    Current stage: <span style={{ color: activeAgent.color }}>{activeAgent.name}</span>
+                  </p>
+                </motion.div>
+              </div>
 
               {AGENTS.map((agent, index) => (
                 <AgentNode key={agent.name} agent={agent} index={index} active={active % AGENTS.length === index} />

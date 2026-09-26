@@ -19,7 +19,7 @@ export default function SettingsPage() {
   const [saved, setSaved]       = useState(false)
   const [settings, setSettings] = useState<FirmSettings>({
     firmName:    '',
-    firmTagline: 'Certified Public Accountants',
+    firmTagline: '',
     accentColor: '#2d5a27',
     preparedBy:  '',
     inboxSlug:   '',
@@ -104,7 +104,7 @@ export default function SettingsPage() {
                 type="text"
                 value={settings.firmTagline}
                 onChange={(e) => handleChange('firmTagline', e.target.value)}
-                placeholder="e.g. Certified Public Accountants"
+                placeholder="Not shown on generated documents"
                 className="w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 transition-colors"
                 style={{ borderColor: '#e8e0d4', backgroundColor: '#faf8f4', color: '#1a1714' }}
                 onFocus={(e) => { e.currentTarget.style.borderColor = '#2d5a27' }}
@@ -201,9 +201,6 @@ export default function SettingsPage() {
                 <div>
                   <p className="font-bold text-white text-base leading-tight">
                     {settings.firmName || 'Your Firm Name'}
-                  </p>
-                  <p className="text-white text-xs mt-0.5" style={{ opacity: 0.8 }}>
-                    {settings.firmTagline || 'Certified Public Accountants'}
                   </p>
                 </div>
                 <div className="text-right text-white text-xs" style={{ opacity: 0.85 }}>

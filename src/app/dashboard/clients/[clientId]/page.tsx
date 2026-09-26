@@ -12,6 +12,8 @@ import ActivityFeed from '@/components/ActivityFeed'
 import { ClientInsightsPanel } from '@/components/InsightsPanel'
 import type { Client, ClientIndustry, AccountingSoftware, CategorizationJob } from '@/types'
 import ConnectedAccounts from '@/components/plaid/ConnectedAccounts'
+import { FEATURES, isDashboardRouteVisible } from '@/lib/features'
+import { formatStatementPeriod } from '@/lib/statementPeriod'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -164,18 +166,20 @@ function HealthScoreCard({ breakdown, jobs, clientName }: { breakdown: HealthBre
     <div className="rounded-xl border p-5" style={{ borderColor: '#e8e0d4', backgroundColor: '#ffffff' }}>
       <div className="flex items-center justify-between mb-4">
         <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#a09a94' }}>Client Health Score</p>
-        <button
-          onClick={exportReport}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors"
-          style={{ borderColor: '#e0dbd4', color: '#6b6560', backgroundColor: '#ffffff' }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f0ea' }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
-        >
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-            <path d="M2 10h8M6 2v6M3.5 5.5l2.5 3 2.5-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Export Report
-        </button>
+        {FEATURES.clientHealthExport && (
+          <button
+            onClick={exportReport}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors"
+            style={{ borderColor: '#e0dbd4', color: '#6b6560', backgroundColor: '#ffffff' }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f0ea' }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
+          >
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+              <path d="M2 10h8M6 2v6M3.5 5.5l2.5 3 2.5-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Export Report
+          </button>
+        )}
       </div>
 
       <div className="flex items-center gap-6">
@@ -246,7 +250,7 @@ function CloseCard({ job }: { job: CategorizationJob }) {
       <div className="flex items-center justify-between gap-3 mb-3">
         <div>
           <p className="text-sm font-medium" style={{ color: '#1a1714' }}>
-            {new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            {formatStatementPeriod(job.transactions) ?? new Date(job.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
           <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>
             {job.total_transactions} transactions
@@ -292,7 +296,7 @@ export default function ClientDetailPage() {
   const [health,   setHealth]   = useState<HealthBreakdown | null>(null)
 
   useEffect(() => {
-    if (!client) return
+    if (!client || !FEATURES.clientHealthScore) return
     const payload = { clients: [{ clientName: client.business_name, jobs }] }
     void (async () => {
       try {
@@ -371,7 +375,9 @@ export default function ClientDetailPage() {
     { label: 'Total Closes',    value: String(jobs.length),        color: '#1a1714' },
     { label: 'Transactions',    value: totalTx.toLocaleString(),   color: '#1a1714' },
     { label: 'Auto-categorized',value: `${totalAuto}`,             color: '#2d5a27' },
-    { label: 'Time Saved',      value: timeSaved,                  color: timeSavedMin > 0 ? '#2d5a27' : '#a09a94' },
+    ...(FEATURES.savingsEstimates
+      ? [{ label: 'Time Saved',   value: timeSaved,                  color: timeSavedMin > 0 ? '#2d5a27' : '#a09a94' }]
+      : []),
   ]
 
   return (
@@ -430,26 +436,30 @@ export default function ClientDetailPage() {
             >
               Edit
             </button>
-            <Link
-              href={`/dashboard/templates?template=document-request&client=${encodeURIComponent(client.business_name)}`}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border transition-colors"
-              style={{ borderColor: '#b8734a', color: '#b8734a', backgroundColor: '#ffffff' }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9' }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
-              title="Open the Document Request email template pre-filled for this client"
-            >
-              <EnvelopeIcon />
-              Send Doc Request
-            </Link>
-            <Link
-              href={`/dashboard/clients/${client.id}/predict`}
-              className="px-3 py-2 rounded-xl text-sm border transition-colors"
-              style={{ borderColor: '#e0dbd4', color: '#6b6560', backgroundColor: '#ffffff' }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#1a1714'; e.currentTarget.style.color = '#1a1714' }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e0dbd4'; e.currentTarget.style.color = '#6b6560' }}
-            >
-              Predict & Advise
-            </Link>
+            {isDashboardRouteVisible('/dashboard/templates') && (
+              <Link
+                href={`/dashboard/templates?template=document-request&client=${encodeURIComponent(client.business_name)}`}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border transition-colors"
+                style={{ borderColor: '#b8734a', color: '#b8734a', backgroundColor: '#ffffff' }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fdf2e9' }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff' }}
+                title="Open the Document Request email template pre-filled for this client"
+              >
+                <EnvelopeIcon />
+                Send Doc Request
+              </Link>
+            )}
+            {isDashboardRouteVisible(`/dashboard/clients/${client.id}/predict`) && (
+              <Link
+                href={`/dashboard/clients/${client.id}/predict`}
+                className="px-3 py-2 rounded-xl text-sm border transition-colors"
+                style={{ borderColor: '#e0dbd4', color: '#6b6560', backgroundColor: '#ffffff' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#1a1714'; e.currentTarget.style.color = '#1a1714' }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e0dbd4'; e.currentTarget.style.color = '#6b6560' }}
+              >
+                Predict & Advise
+              </Link>
+            )}
             <button
               onClick={handleNewClose}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors"
@@ -464,7 +474,7 @@ export default function ClientDetailPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className={`grid grid-cols-2 ${stats.length > 3 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3`}>
           {stats.map((s) => (
             <div
               key={s.label}
@@ -506,14 +516,16 @@ export default function ClientDetailPage() {
         {health && <HealthScoreCard breakdown={health} jobs={jobs} clientName={client.business_name} />}
 
         {/* Connected Bank Account */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#a09a94' }}>
-              Bank Account
-            </h2>
+        {FEATURES.clientBankConnection && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#a09a94' }}>
+                Bank Account
+              </h2>
+            </div>
+            <ConnectedAccounts clientId={clientId} />
           </div>
-          <ConnectedAccounts clientId={clientId} />
-        </div>
+        )}
 
         {/* Close history */}
         <div>
@@ -555,7 +567,7 @@ export default function ClientDetailPage() {
         </div>
 
         {/* AI Trends & Insights */}
-        {jobs.length >= 1 && (
+        {FEATURES.clientAiInsights && jobs.length >= 1 && (
           <ClientInsightsPanel clientName={client.business_name} jobs={jobs} />
         )}
 

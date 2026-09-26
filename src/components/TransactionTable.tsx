@@ -58,7 +58,7 @@ function MobileCard({
     setExpanded(false)
   }
   return (
-    <div style={{ border: `1px solid ${selected ? 'var(--warning)' : 'var(--border-subtle)'}`, borderRadius: 10, backgroundColor: selected ? 'var(--surface-elevated)' : '#fff', overflow: 'hidden' }}>
+    <div style={{ border: `1px solid ${selected ? 'var(--warning)' : 'var(--border-subtle)'}`, borderRadius: 10, backgroundColor: selected ? 'var(--surface-elevated)' : 'var(--surface-card)', overflow: 'hidden' }}>
       <div style={{ display: 'flex', gap: 10, padding: '10px 12px', cursor: 'pointer', alignItems: 'flex-start' }} onClick={() => setExpanded(v => !v)}>
         <div onClick={e => { e.stopPropagation(); onToggleSelect(transaction.id) }} style={{ paddingTop: 2 }}>
           <input type="checkbox" checked={selected} onChange={() => onToggleSelect(transaction.id)} style={{ accentColor: 'var(--accent)' }} />
@@ -89,7 +89,7 @@ function MobileCard({
           <select value={transaction.final_account_code ?? transaction.suggested_account_code ?? ''}
             onChange={e => { const a = chartOfAccounts.find(x => x.code === e.target.value); onChange({ ...transaction, status: 'edited', final_account_code: e.target.value, final_category: a?.name ?? e.target.value }) }}
             onClick={e => e.stopPropagation()}
-            style={{ flex: 1, border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '6px 4px', fontSize: 11, color: 'var(--text-primary)' }}>
+            style={{ flex: 1, border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '6px 4px', fontSize: 11, color: 'var(--text-primary)', backgroundColor: 'var(--surface-card)' }}>
             <option value="">Category…</option>
             {chartOfAccounts.map(a => <option key={a.code} value={a.code}>[{a.code}] {a.name}</option>)}
           </select>
@@ -810,7 +810,7 @@ export default function TransactionTable({
       </div>
 
       {/* Mobile cards */}
-      <div className="md:hidden" style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div className="flex flex-col md:hidden" style={{ marginTop: 10, gap: 8 }}>
         {visible.length === 0
           ? <p style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-tertiary)', fontSize: 13 }}>{search ? 'No transactions match your search.' : 'No transactions in this category.'}</p>
           : visible.map(tx => (
