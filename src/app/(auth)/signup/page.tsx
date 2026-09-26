@@ -19,6 +19,9 @@ import {
 } from '@/components/landing/DarkFormPrimitives'
 import { TIERS } from '@/lib/landing/tiers'
 
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+const AUTH_NOT_CONFIGURED_ERROR = 'Sign-up is unavailable right now: authentication is not configured.'
+
 const FIRM_SIZE_OPTIONS = [
   { value: '1-5', label: '1–5 people' },
   { value: '6-15', label: '6–15 people' },
@@ -56,6 +59,11 @@ function SignupForm() {
 
     const supabase = createClient()
     if (!supabase) {
+      if (!DEMO_MODE) {
+        setError(AUTH_NOT_CONFIGURED_ERROR)
+        setLoading(false)
+        return
+      }
       if (firmName) {
         void saveFirmSettings({ ...loadFirmSettings(), firmName, preparedBy: fullName })
       }
@@ -68,6 +76,7 @@ function SignupForm() {
       email,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
         data: {
           full_name: fullName,
           firm_name: firmName,
@@ -91,7 +100,12 @@ function SignupForm() {
     }
 
     if (data.user) {
-      await dbEnsureFirm(firmName || email.split('@')[0], data.user.id)
+      const firm = await dbEnsureFirm(firmName || email.split('@')[0], data.user.id)
+      if (!firm.ok) {
+        setError(`Your account was created, but setting up your firm failed: ${firm.error ?? 'unknown error'}`)
+        setLoading(false)
+        return
+      }
     }
 
     // If a plan was pre-selected, keep it selected through checkout.
@@ -110,6 +124,11 @@ function SignupForm() {
 
     const supabase = createClient()
     if (!supabase) {
+      if (!DEMO_MODE) {
+        setError(AUTH_NOT_CONFIGURED_ERROR)
+        setGoogleLoading(false)
+        return
+      }
       router.push('/dashboard')
       return
     }
@@ -161,7 +180,7 @@ function SignupForm() {
     )
   }
 
-  if (!supabaseConfigured) {
+  if (!supabaseConfigured && DEMO_MODE) {
     if (typeof window !== 'undefined') {
       if (firmName) {
         void saveFirmSettings({ ...loadFirmSettings(), firmName, preparedBy: fullName })

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import Anthropic from '@anthropic-ai/sdk'
 import type { Transaction } from '@/types'
 import { generateJournalEntries } from '@/lib/autopilot/journalEntries'
@@ -107,6 +108,9 @@ function buildTrialBalance(journalEntries: Array<{ debitAccount: string; creditA
 }
 
 export async function POST(req: NextRequest) {
+  const access = await requireRouteAccess(req)
+  if (!access.ok) return access.response
+
   const globalStart = Date.now()
 
   try {

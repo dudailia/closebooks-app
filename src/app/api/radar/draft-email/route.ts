@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import Anthropic from '@anthropic-ai/sdk'
 
 const anthropic = new Anthropic()
@@ -43,7 +44,10 @@ function formatCurrency(n: number): string {
 // POST /api/radar/draft-email
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function POST(request: Request): Promise<NextResponse> {
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  const access = await requireRouteAccess(request)
+  if (!access.ok) return access.response
+
   let body: DraftEmailRequest
   try {
     body = (await request.json()) as DraftEmailRequest

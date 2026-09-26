@@ -24,6 +24,15 @@ function getServiceSupabase() {
   return createClient(url, key)
 }
 
+// Mirrors isSupabaseEnvConfigured() so the log can name the offending variable.
+function missingSupabaseEnvVars(): string[] {
+  const vars = ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY'] as const
+  return vars.filter((name) => {
+    const value = process.env[name] ?? ''
+    return !value || value.startsWith('your_')
+  })
+}
+
 export async function requireRouteAccess(
   request: NextRequest,
   options: RouteAccessOptions = {}
@@ -31,7 +40,27 @@ export async function requireRouteAccess(
   const user = await getUserFromRequest(request)
 
   if (!isSupabaseEnvConfigured()) {
-    return { ok: true, user, tier: null }
+    const demoMode = process.env.DEMO_MODE === 'true'
+    const isProduction = process.env.VERCEL_ENV === 'production'
+
+    // Open access only for an explicit, non-production demo deployment.
+    if (demoMode && !isProduction) {
+      return { ok: true, user, tier: null }
+    }
+
+    if (demoMode && isProduction) {
+      console.warn('[requireRouteAccess] DEMO_MODE=true is ignored in production; failing closed.')
+    }
+    console.error(
+      `[requireRouteAccess] Supabase auth not configured — missing or placeholder: ${missingSupabaseEnvVars().join(', ') || 'unknown'}`
+    )
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: 'Auth not configured', code: 'auth_not_configured' },
+        { status: 503 }
+      ),
+    }
   }
 
   if (!user?.email) {

@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireRouteAccess } from '@/lib/routeSubscription'
 import Anthropic from '@anthropic-ai/sdk'
 import type { Transaction, ChatMessage } from '@/types'
 
@@ -74,7 +75,10 @@ BEHAVIOR RULES:
 - If you don't have enough data, say so honestly.`
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const access = await requireRouteAccess(request)
+  if (!access.ok) return access.response
+
   let body: {
     message: string
     jobId: string

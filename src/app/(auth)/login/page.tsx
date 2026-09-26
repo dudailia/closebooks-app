@@ -18,6 +18,11 @@ import {
 /** Matches legacy DarkButton dimensions for pixel parity on auth surfaces. */
 const authButtonSize = { padding: '12px 18px', fontSize: 14, borderRadius: 10 } as const
 
+const CALLBACK_ERROR_MESSAGES: Record<string, string> = {
+  auth_callback_failed:
+    "We couldn't finish signing you in from that link. If you just confirmed your email, sign in below with your password.",
+}
+
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -25,7 +30,9 @@ function LoginForm() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(
+    () => CALLBACK_ERROR_MESSAGES[searchParams.get('error') ?? ''] ?? null
+  )
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
