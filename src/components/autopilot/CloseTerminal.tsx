@@ -10,16 +10,8 @@ export interface CloseEvent {
   timestamp: number
 }
 
-export interface JournalEntry {
-  id: string
-  date: string
-  description: string
-  debitAccount: string
-  creditAccount: string
-  amount: number
-  sourceTransactionId: string
-  aiReasoning: string
-}
+export type { JournalEntry } from '@/lib/autopilot/journalEntries'
+import type { JournalEntry } from '@/lib/autopilot/journalEntries'
 
 export interface CloseException {
   id: string
@@ -185,16 +177,24 @@ function buildDemoResult(): CloseResult {
       aiSuggestion: exc.suggestion,
       confidence: 0.65 + (i % 4) * 0.08,
     })),
-    journalEntries: Array.from({ length: 241 }, (_, i) => ({
-      id: `je_demo_${i}`,
-      date: '2026-03-31',
-      description: `${VENDORS[i % VENDORS.length]} payment`,
-      debitAccount: ACCOUNTS[i % ACCOUNTS.length],
-      creditAccount: 'Chase Checking',
-      amount: parseFloat((Math.random() * 1500 + 10).toFixed(2)),
-      sourceTransactionId: `tx_demo_${i}`,
-      aiReasoning: 'Auto-generated via AI close engine.',
-    })),
+    journalEntries: Array.from({ length: 241 }, (_, i) => {
+      const account = ACCOUNTS[i % ACCOUNTS.length]
+      const description = `${VENDORS[i % VENDORS.length]} payment`
+      const amount = parseFloat((Math.random() * 1500 + 10).toFixed(2))
+      return {
+        id: `je_demo_${i}`,
+        entryNumber: `JE-${String(i + 1).padStart(4, '0')}`,
+        date: '2026-03-31',
+        description,
+        memo: `Posted to ${account}`,
+        source: 'ai' as const,
+        sourceTransactionId: `tx_demo_${i}`,
+        lines: [
+          { accountCode: '', accountName: account, debit: amount, credit: 0, memo: `Posted to ${account}` },
+          { accountCode: '', accountName: 'Chase Checking', debit: 0, credit: amount, memo: description },
+        ],
+      }
+    }),
     pnl: {
       revenue: 127450,
       cogs: 41230,

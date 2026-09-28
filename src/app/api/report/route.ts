@@ -4,6 +4,7 @@ import type { AuditEvent } from '@/lib/auditTrail'
 import { formatAuditEvent } from '@/lib/auditTrail'
 import type { FirmSettings } from '@/lib/firmSettings'
 import { formatStatementPeriod } from '@/lib/statementPeriod'
+import { generateJournalEntries, type JournalResult } from '@/lib/autopilot/journalEntries'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -35,6 +36,94 @@ function buildCategoryBreakdown(transactions: Transaction[]) {
   return Array.from(map.entries())
     .map(([cat, v]) => ({ cat, ...v }))
     .sort((a, b) => (b.debit + b.credit) - (a.debit + a.credit))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Journal entries section
+// ─────────────────────────────────────────────────────────────────────────────
+
+function buildJournalSection(job: CategorizationJob): string {
+  let result: JournalResult | null = null
+  let error: string | null = null
+  try {
+    result = generateJournalEntries(job.transactions, job.chart_of_accounts ?? [])
+  } catch (err) {
+    error = err instanceof Error ? err.message : String(err)
+  }
+
+  const bank = result?.bankAccount
+    ? `${escHtml(result.bankAccount.code)} ${escHtml(result.bankAccount.name)}`
+    : 'none found in the chart of accounts'
+
+  const status = error
+    ? `<span style="color:#991b1b;font-weight:bold">Error: ${escHtml(error)}</span>`
+    : '<span style="color:#166534;font-weight:bold">Balanced</span>'
+
+  const exceptionRows = (result?.exceptions ?? []).map((e) => `
+          <tr>
+            <td class="date">${escHtml(e.date)}</td>
+            <td class="desc">${escHtml(e.description)}</td>
+            <td class="amount mono">$${fmt(e.amount)}</td>
+            <td>${escHtml(e.reason)}</td>
+          </tr>`).join('')
+
+  const checkRows = (result?.checks ?? []).map((c) => `
+          <tr>
+            <td class="mono">${escHtml(c.entryNumber)}</td>
+            <td>${escHtml(c.reason)}</td>
+            <td>${escHtml(c.detail)}</td>
+          </tr>`).join('')
+
+  return `
+    <!-- Journal entries -->
+    <div class="section">
+      <div class="section-label">Journal entries</div>
+      <h2>Journal entries (${result?.entries.length ?? 0})</h2>
+      <p style="margin:0 0 10px;color:#6b6560">Bank account: <strong style="color:#1a1714">${bank}</strong></p>
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:right">Total debits</th>
+            <th style="text-align:right">Total credits</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="num mono">${result ? `$${fmt(result.totals.debit)}` : '—'}</td>
+            <td class="num mono">${result ? `$${fmt(result.totals.credit)}` : '—'}</td>
+            <td>${status}</td>
+          </tr>
+        </tbody>
+      </table>
+      ${exceptionRows ? `
+      <h2 style="margin-top:18px">Not posted (${result?.exceptions.length})</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th style="text-align:right">Amount</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>${exceptionRows}
+        </tbody>
+      </table>` : ''}
+      ${checkRows ? `
+      <h2 style="margin-top:18px">To check (${result?.checks.length})</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Entry #</th>
+            <th>Check</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody>${checkRows}
+        </tbody>
+      </table>` : ''}
+    </div>`
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -427,6 +516,8 @@ function buildHtml(job: CategorizationJob, auditEvents: AuditEvent[] = []): stri
         </tfoot>
       </table>
     </div>
+
+    ${buildJournalSection(job)}
 
     ${auditEvents.length > 0 ? `
     <!-- Audit Trail -->

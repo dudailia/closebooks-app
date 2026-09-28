@@ -50,6 +50,7 @@ export default function BulkClosePage() {
           periodStart: item.job.created_at.slice(0, 10),
           periodEnd: new Date().toISOString().slice(0, 10),
           transactions: item.job.transactions,
+          chartOfAccounts: item.job.chart_of_accounts,
         }),
       })
 

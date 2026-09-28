@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRouteAccess } from '@/lib/routeSubscription'
 import Anthropic from '@anthropic-ai/sdk'
-import type { Transaction } from '@/types'
-import { generateJournalEntries } from '@/lib/autopilot/journalEntries'
+import type { ChartOfAccounts, Transaction } from '@/types'
+import { generateJournalEntries, type JournalEntry } from '@/lib/autopilot/journalEntries'
 import { detectExceptions } from '@/lib/autopilot/exceptionDetector'
 import { calculatePnL } from '@/lib/autopilot/pnlCalculator'
 import type { StageResult, StageId, TrialBalanceLine, PipelineResult } from '@/lib/autopilot/pipelineTypes'
@@ -54,54 +54,16 @@ Transactions: ${JSON.stringify(uncategorized.map(tx => ({
   }
 }
 
-async function runJournalEntryGeneration(transactions: Transaction[]): Promise<Array<{
-  date: string; description: string; debitAccount: string; creditAccount: string; amount: number; reasoning: string
-}>> {
-  const prompt = `You are a CPA generating journal entries.
-For these transactions, generate double-entry journal entries.
-Return a JSON array only — no explanation, no markdown fences.
-Each element: { date, description, debitAccount, creditAccount, amount, reasoning }
-Transactions: ${JSON.stringify(transactions.slice(0, 50))}`
-
-  const results: Array<{ date: string; description: string; debitAccount: string; creditAccount: string; amount: number; reasoning: string }> = []
-
-  const batches: Transaction[][] = []
-  for (let i = 0; i < transactions.length; i += 50) {
-    batches.push(transactions.slice(i, i + 50))
-  }
-
-  for (const batch of batches) {
-    try {
-      const message = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 4096,
-        messages: [{ role: 'user', content: prompt.replace(JSON.stringify(transactions.slice(0, 50)), JSON.stringify(batch)) }],
-      })
-      const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : '[]'
-      const cleaned = raw.replace(/^```json\n?/, '').replace(/^```\n?/, '').replace(/```$/, '').trim()
-      const entries = JSON.parse(cleaned)
-      if (Array.isArray(entries)) results.push(...entries)
-    } catch {
-      const fallback = generateJournalEntries(batch)
-      results.push(...fallback.map(je => ({
-        date: je.date, description: je.description,
-        debitAccount: je.debitAccount, creditAccount: je.creditAccount,
-        amount: je.amount, reasoning: je.aiReasoning,
-      })))
-    }
-  }
-
-  return results
-}
-
-function buildTrialBalance(journalEntries: Array<{ debitAccount: string; creditAccount: string; amount: number }>): TrialBalanceLine[] {
+function buildTrialBalance(journalEntries: JournalEntry[]): TrialBalanceLine[] {
   const accounts: Record<string, { debit: number; credit: number }> = {}
 
   for (const je of journalEntries) {
-    if (!accounts[je.debitAccount]) accounts[je.debitAccount] = { debit: 0, credit: 0 }
-    if (!accounts[je.creditAccount]) accounts[je.creditAccount] = { debit: 0, credit: 0 }
-    accounts[je.debitAccount].debit += je.amount
-    accounts[je.creditAccount].credit += je.amount
+    for (const line of je.lines) {
+      const account = `${line.accountCode} ${line.accountName}`
+      if (!accounts[account]) accounts[account] = { debit: 0, credit: 0 }
+      accounts[account].debit += line.debit
+      accounts[account].credit += line.credit
+    }
   }
 
   return Object.entries(accounts).map(([account, { debit, credit }]) => ({ account, debit, credit }))
@@ -118,10 +80,11 @@ export async function POST(req: NextRequest) {
       clientId: string
       period: string
       transactions: Transaction[]
+      chartOfAccounts?: ChartOfAccounts[]
       config?: { autoApproveThreshold?: number }
     }
 
-    const { clientId, period, transactions, config } = body
+    const { clientId, period, transactions, chartOfAccounts, config } = body
     const autoApproveThreshold = config?.autoApproveThreshold ?? 0.90
 
     if (!clientId || !transactions || !Array.isArray(transactions)) {
@@ -211,17 +174,7 @@ export async function POST(req: NextRequest) {
     const s4Start = Date.now()
     update(3, { status: 'running', logs: ['Generating journal entries…'] })
 
-    const rawJEs = await runJournalEntryGeneration(categorized)
-    const journalEntries = rawJEs.map((je, i) => ({
-      id: `je_${runId}_${i}`,
-      date: je.date || new Date().toISOString().slice(0, 10),
-      description: je.description,
-      debitAccount: je.debitAccount,
-      creditAccount: je.creditAccount,
-      amount: je.amount,
-      sourceTransactionId: categorized[i]?.id ?? `tx_${i}`,
-      aiReasoning: je.reasoning,
-    }))
+    const journalEntries = generateJournalEntries(categorized, chartOfAccounts ?? []).entries
 
     update(3, {
       status: 'complete',
@@ -262,7 +215,7 @@ export async function POST(req: NextRequest) {
     const s6Start = Date.now()
     update(5, { status: 'running', logs: ['Generating trial balance…'] })
 
-    const trialBalance = buildTrialBalance(rawJEs)
+    const trialBalance = buildTrialBalance(journalEntries)
     const totalDebits = trialBalance.reduce((s, r) => s + r.debit, 0)
     const totalCredits = trialBalance.reduce((s, r) => s + r.credit, 0)
     const tbBalanced = Math.abs(totalDebits - totalCredits) < 0.01

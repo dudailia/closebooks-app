@@ -71,6 +71,7 @@ export function executeToolClient(
       ctx.mutateTransactions(ids, (t) => ({
         ...t,
         status: 'edited',
+        categorizationSource: 'copilot',
         final_account_code: accountCode,
         final_category: categoryName,
       }))

@@ -18,6 +18,7 @@ import {
   memoryDeleteClient as lsDeleteClient,
 } from '@/lib/memoryData'
 import type { CategorizationJob, Client, Transaction } from '@/types'
+import { newColumnValues, readCategorizationSource, readSplits, upsertTransactionRows } from '@/lib/transactionPersistence'
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
@@ -64,6 +65,8 @@ function mapTxRow(row: Record<string, unknown>): Transaction {
     final_account_code:   row.final_account_code ? String(row.final_account_code) : undefined,
     notes,
     reasoning,
+    splits:               readSplits(row.splits),
+    categorizationSource: readCategorizationSource(row.categorization_source),
   }
 }
 
@@ -187,12 +190,11 @@ export async function dbSaveJob(job: CategorizationJob): Promise<void> {
       final_category:       t.final_category ?? null,
       final_account_code:   t.final_account_code ?? null,
       notes:                t.notes ?? (t.reasoning ? `${AI_REASONING_NOTE_PREFIX}${t.reasoning}` : null),
+      ...newColumnValues(t),
     }))
 
     // Batch in chunks of 500 to stay within Supabase limits
-    for (let i = 0; i < txRows.length; i += 500) {
-      await supabase.from('transactions').upsert(txRows.slice(i, i + 500), { onConflict: 'id' })
-    }
+    await upsertTransactionRows(supabase, txRows, 500)
   } catch {
     // memory already has the data — silently ignore Supabase errors
   }
