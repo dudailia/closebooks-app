@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   accuracy, calibration, confusions, cost, excludedCount, latency, percentile, perAccount,
-  reviewSplit, scoreRows, stability, unlabelledSplit,
+  reviewLabelled, reviewSplit, scoreRows, stability, unlabelledSplit,
   type CallUsage, type Prediction, type Pricing, type TruthRow,
 } from '../metrics'
 
@@ -172,5 +172,19 @@ describe('confusions', () => {
       { trueCode: '1100', predictedCode: '4100', count: 1, acceptable: true },
       { trueCode: '6100', predictedCode: '(none)', count: 1, acceptable: false },
     ])
+  })
+})
+
+describe('REVIEW labels', () => {
+  const t = [truth('a', '6100'), truth('v', 'REVIEW'), truth('w', 'REVIEW')]
+  const p = [pred('a', '6100', 0.9), pred('v', '5700', 0.95, 'approved'), pred('w', '5700', 0.6, 'pending')]
+
+  it('are excluded from account scoring', () => {
+    expect(scoreRows(p, t).map((r) => r.id)).toEqual(['a'])
+  })
+
+  it('are correct if and only if not auto-approved', () => {
+    expect(reviewLabelled(p, t)).toEqual({ n: 2, sentToReview: 1, autoApproved: 1, rate: 0.5 })
+    expect(reviewLabelled([pred('v', '', 0, 'flagged')], t)).toMatchObject({ sentToReview: 1, autoApproved: 0 })
   })
 })

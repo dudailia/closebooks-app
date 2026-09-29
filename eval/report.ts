@@ -7,8 +7,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import {
-  accuracy, calibration, confusions, cost, excludedCount, latency, perAccount, reviewSplit,
-  scoreRows, stability, unlabelledSplit,
+  accuracy, calibration, confusions, cost, excludedCount, latency, perAccount, reviewLabelled, reviewSplit,
+  scoreRows, stability, unlabelledSplit, REVIEW_LABEL,
   type BatchTiming, type CallUsage, type Prediction, type Pricing, type TruthRow,
 } from './metrics'
 import type { ChartAccount } from './data'
@@ -21,9 +21,10 @@ export interface RunMeta {
   /** --limit, or null for all selected rows. */
   limit: number | null
   labelledOnly: boolean
-  /** Rows in the whole dataset / labelled rows in the whole dataset. */
+  /** Rows in the whole dataset / rows with an account label / rows labelled REVIEW. */
   datasetRows: number
   datasetLabelledRows: number
+  datasetReviewRows: number
   /** Average transactions per month in the dataset (one "statement"). */
   statementSize: number
   datasetSha256: string
@@ -62,6 +63,8 @@ export function summarise(raw: RawResults) {
     cost: cost(raw.calls, raw.pricing, raw.predictions.length, raw.meta.statementSize),
     confusions: confusions(scored),
     unlabelled: unlabelledSplit(raw.predictions, raw.rows),
+    reviewLabelled: reviewLabelled(raw.predictions, raw.rows),
+    reviewRows: raw.rows.filter((r) => r.trueCode === REVIEW_LABEL).length,
   }
 }
 
@@ -81,7 +84,8 @@ export function renderReport(raw: RawResults): string {
   const label = (code: string) => (names.has(code) ? `${code} ${names.get(code)}` : code === '(none)' ? '(no prediction)' : `${code} (not in chart)`)
   const partial = s.scoredRows < m.datasetLabelledRows
   const runsText = `${m.runs} run${m.runs === 1 ? '' : 's'}`
-  const scope = `${s.scoredRows} scored rows × ${runsText} = ${s.scoredPredictions} scored predictions`
+  const scope = `${s.scoredRows} rows with an account label × ${runsText} = ${s.scoredPredictions} scored predictions` +
+    (s.reviewRows ? ` (the ${s.reviewRows} REVIEW rows are excluded here; see "Unknowable from the bank line")` : '')
   const basis = `${m.business} (fictional), ${m.chartName}, model \`${m.model}\`, ${runsText}`
 
   const lines: string[] = []
@@ -96,7 +100,7 @@ export function renderReport(raw: RawResults): string {
       `> Numbers below describe only these rows and are too few to compare models or settings.`, '')
   }
   p(`**Measured on:** ${m.datasetRows}-row synthetic dataset; this run sent ${raw.rows.length} rows to the engine ` +
-    `(${s.scoredRows} scored, ${s.excludedRows} excluded because they have no label yet). ${basis}.`,
+    `(${s.scoredRows} with an account label, ${s.reviewRows} labelled REVIEW, ${s.excludedRows} excluded because they have no label yet). ${basis}.`,
     '',
     `**Engine:** the real \`categorizeTransactionsWithUsage\` in \`src/lib/categorize.ts\`, called directly (the same code \`/api/categorize\` runs), ` +
     `batch size ${m.batchSize}, auto-approve threshold ${m.autoApproveThreshold}, no firm corrections supplied. ` +
@@ -118,9 +122,20 @@ export function renderReport(raw: RawResults): string {
     `| **Wrong among auto-approved** (strict / lenient) | **${pct(r.autoApprovedErrorRate.strict)} / ${pct(r.autoApprovedErrorRate.lenient)}** (${r.autoApproved.n - r.autoApproved.strictCorrect} / ${r.autoApproved.n - r.autoApproved.lenientCorrect} of ${r.autoApproved.n}) |`,
     `| Sent to review | ${of(r.pending + r.flagged, r.n)} (${r.pending} pending, ${r.flagged} flagged) |`,
     `| Account not in the chart | ${of(r.unknownToChart, r.n)} |`,
+    `| REVIEW rows sent to review (correct = not auto-approved) | ${s.reviewLabelled.n ? of(s.reviewLabelled.sentToReview, s.reviewLabelled.n) : '— (none in this run)'} |`,
     `| No prediction (batch failed or row skipped) | ${of(r.noPrediction, r.n)} |`,
     `| Cost per transaction | ${s.cost.totalUsd === null ? s.cost.reason : usd(s.cost.perTransactionUsd)} |`,
     `| Latency per batch (median) | ${ms(s.latency.perBatchMs.median)} |`, '')
+
+  // REVIEW rows
+  const rl = s.reviewLabelled
+  p(`## Unknowable from the bank line: sent to review ${rl.sentToReview} of ${rl.n}`, '')
+  if (rl.n === 0) p(`No rows labelled REVIEW were in this run.`, '')
+  else p(`On ${s.reviewRows} rows labelled REVIEW × ${runsText} = ${rl.n} predictions. These are payments whose right account can't be known from the bank description ` +
+    `(Venmo, PayPal, Zelle to a person). The only correct outcome is that the app does **not** auto-approve them; the account it suggests doesn't matter. ` +
+    `They are excluded from every account-accuracy number in this report.`, '',
+    `- Sent to review (correct): ${of(rl.sentToReview, rl.n)}`,
+    `- Auto-approved (wrong): ${of(rl.autoApproved, rl.n)}`, '')
 
   // Auto-approve vs review
   p(`## Auto-approved vs sent to review`, '', `On ${scope}. The app auto-approves a row when confidence ≥ ${m.autoApproveThreshold} and chart validation raised no flag.`, '',

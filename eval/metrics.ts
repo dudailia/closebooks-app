@@ -3,6 +3,13 @@
 
 export type Status = 'approved' | 'pending' | 'flagged'
 
+/**
+ * Hand label for a row whose right account can't be known from the bank line
+ * (e.g. a Venmo payment to a person). Correct if and only if the app did NOT
+ * auto-approve it. Never counted in account accuracy.
+ */
+export const REVIEW_LABEL = 'REVIEW'
+
 /** One row of eval/data/synthetic_transactions.csv. */
 export interface TruthRow {
   id: string
@@ -10,7 +17,7 @@ export interface TruthRow {
   description: string
   amount: number
   type: 'debit' | 'credit'
-  /** Empty = not labelled yet (excluded from scoring). */
+  /** Empty = not labelled yet (excluded from scoring). REVIEW = must go to a human. */
   trueCode: string
   /** Other defensible answers (policy-dependent labels). */
   acceptable: string[]
@@ -79,8 +86,8 @@ export function percentile(values: number[], p: number): number | null {
 // ─── Scoring ──────────────────────────────────────────────────────────────────
 
 /**
- * Join predictions to labels. Rows with no true label are left out; they are
- * counted by `excludedCount`.
+ * Join predictions to account labels. Rows with no label yet, and REVIEW rows,
+ * are left out: see `excludedCount` and `reviewLabelled`.
  */
 export function scoreRows(predictions: Prediction[], truth: TruthRow[]): ScoredRow[] {
   const byId = new Map(truth.map((t) => [t.id, t]))
@@ -88,7 +95,7 @@ export function scoreRows(predictions: Prediction[], truth: TruthRow[]): ScoredR
   for (const p of predictions) {
     const t = byId.get(p.id)
     if (!t) throw new Error(`prediction for unknown row ${p.id}`)
-    if (!t.trueCode) continue
+    if (!t.trueCode || t.trueCode === REVIEW_LABEL) continue
     const strict = p.predictedCode !== '' && p.predictedCode === t.trueCode
     const lenient = strict || (p.predictedCode !== '' && t.acceptable.includes(p.predictedCode))
     out.push({ ...p, trueCode: t.trueCode, acceptable: t.acceptable, strict, lenient })
@@ -378,6 +385,26 @@ export function confusions(rows: ScoredRow[], top = 15): Confusion[] {
   return [...counts.values()]
     .sort((a, b) => b.count - a.count || a.trueCode.localeCompare(b.trueCode) || a.predictedCode.localeCompare(b.predictedCode))
     .slice(0, top)
+}
+
+// ─── REVIEW rows ──────────────────────────────────────────────────────────────
+
+export interface ReviewLabelled {
+  /** Predictions on REVIEW rows (rows × runs). */
+  n: number
+  /** Correct: not auto-approved (pending or flagged). */
+  sentToReview: number
+  /** Wrong: auto-approved although the account can't be known. */
+  autoApproved: number
+  rate: number | null
+}
+
+/** How the app handled rows labelled REVIEW. */
+export function reviewLabelled(predictions: Prediction[], truth: TruthRow[]): ReviewLabelled {
+  const review = new Set(truth.filter((t) => t.trueCode === REVIEW_LABEL).map((t) => t.id))
+  const rows = predictions.filter((p) => review.has(p.id))
+  const sent = rows.filter((p) => p.status !== 'approved').length
+  return { n: rows.length, sentToReview: sent, autoApproved: rows.length - sent, rate: ratio(sent, rows.length) }
 }
 
 // ─── Unlabelled rows ──────────────────────────────────────────────────────────

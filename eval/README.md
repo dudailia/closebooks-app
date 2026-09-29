@@ -47,6 +47,11 @@ the categoriser or the Anthropic API.
    Regenerating merges those labels back into `synthetic_transactions.csv`,
    so hand work is never lost. Rows still unlabelled stay blank, so a
    measurement script can report them separately.
+4. **REVIEW labels.** Some payments can't be classified from the bank line
+   at all: Venmo, PayPal, and Zelle to a person. These are labelled
+   `REVIEW` instead of an account. A REVIEW row is correct if and only if
+   the app did **not** auto-approve it. REVIEW rows are reported in their own
+   section and left out of every account-accuracy number.
 
 ### Bookkeeping policy behind the labels
 
@@ -68,6 +73,9 @@ The labels encode one reasonable policy. Change `vendors.csv` if yours differs.
   credit to **2400**, the SBA loan to **2500** (all treated as principal,
   because the chart has no interest-expense account), and sales-tax remittance
   to **2200**.
+- **Equipment:** capitalisation threshold $2,500 (common de minimis policy).
+  Apple Store purchases at or above it go to **1500 Equipment**, and
+  `generate.ts` stops if an equipment amount falls below it.
 - **Vendor refunds** go back to the original expense account.
 - **Meals and entertainment** both go to **5800 Travel & Entertainment**,
   because this chart has one account for both.
@@ -121,6 +129,8 @@ Each run writes three files:
 `eval/results/` is gitignored; commit a finished result with `git add -f`.
 Rows with no label are sent to the engine, but they are left out of scoring
 and counted. The report shows separately what the app did with them.
+To compare models side by side, run
+`npx vite-node --config vitest.config.ts eval/compare.ts eval/results/<run1> eval/results/<run2> --out comparison.md`.
 `report.ts` can re-render a saved run:
 `npx vite-node --config vitest.config.ts eval/report.ts eval/results/<ts>/raw.json`.
 
@@ -156,6 +166,9 @@ and upload `synthetic_upload.csv`.
   modelled here. Each vendor also reuses only 2–3 templates, so real data
   will vary more.
 - **Frequencies and amounts are plausible guesses,** not taken from real firms.
+- **SBA loan payments are labelled all principal (2500)** because the chart
+  has no interest-expense account. In real books the interest portion would
+  be split out to an interest-expense account.
 - **Some labels are policy choices, not facts.** Examples are AR versus
   revenue for client payments, Mailchimp as marketing rather than software,
   and fuel and coffee as travel and entertainment. A categoriser that picks

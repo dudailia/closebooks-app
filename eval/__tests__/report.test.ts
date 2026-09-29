@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { loadChart, loadTruth, spreadSample } from '../data'
 import { renderReport, summarise, type RawResults } from '../report'
+import { renderComparison } from '../compare'
 import type { Prediction, TruthRow } from '../metrics'
 
 const chart = [
@@ -23,7 +24,7 @@ function raw(model: string, prices: 'filled' | 'null'): RawResults {
   return {
     meta: {
       startedAt: '2026-09-29T00:00:00Z', finishedAt: '2026-09-29T00:00:01Z', model, runs: 1, limit: 2, labelledOnly: false,
-      datasetRows: 292, datasetLabelledRows: 262, statementSize: 97, datasetSha256: 'abc', gitCommit: 'deadbeef', gitDirty: false,
+      datasetRows: 292, datasetLabelledRows: 262, datasetReviewRows: 8, statementSize: 97, datasetSha256: 'abc', gitCommit: 'deadbeef', gitDirty: false,
       autoApproveThreshold: 0.85, batchSize: 20, business: 'Brightline Studio LLC', chartName: 'Standard Small Business chart (34 accounts)',
     },
     chart, rows, predictions: [pred('a', '6100'), pred('u', '6100')],
@@ -38,7 +39,7 @@ describe('report', () => {
     const md = renderReport(raw('m', 'filled'))
     expect(md).toContain('SMOKE TEST: 1 of 262 labelled rows. Not a result.')
     expect(md).toContain('292-row synthetic dataset')
-    expect(md).toContain('1 scored, 1 excluded because they have no label yet')
+    expect(md).toContain('1 with an account label, 0 labelled REVIEW, 1 excluded because they have no label yet')
     expect(md).toContain('Brightline Studio LLC (fictional), Standard Small Business chart (34 accounts), model `m`, 1 run')
     expect(md).toContain('## Limits')
   })
@@ -74,5 +75,32 @@ describe('dataset', () => {
     expect(spreadSample([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 5)).toEqual([0, 2, 4, 6, 8])
     expect(spreadSample([1, 2, 3], null)).toEqual([1, 2, 3])
     expect(spreadSample([1, 2, 3], 10)).toEqual([1, 2, 3])
+  })
+})
+
+describe('REVIEW rows in the report', () => {
+  it('scores REVIEW rows only on being sent to review and keeps them out of account accuracy', () => {
+    const r = raw('m', 'filled')
+    r.rows = [...r.rows, { id: 'v', date: '2026-06-03', description: 'VENMO', amount: 40, type: 'debit', trueCode: 'REVIEW', acceptable: [], labelSource: 'hand' }]
+    r.predictions = [...r.predictions, { ...pred('v', '5700'), status: 'pending' }]
+    const s = summarise(r)
+    expect(s.accuracy.n).toBe(1)
+    expect(s.reviewLabelled).toEqual({ n: 1, sentToReview: 1, autoApproved: 0, rate: 1 })
+    const md = renderReport(r)
+    expect(md).toContain('## Unknowable from the bank line: sent to review 1 of 1')
+    expect(md).toContain('the 1 REVIEW rows are excluded here')
+  })
+})
+
+describe('comparison', () => {
+  it('one row per model with the requested columns, stating what it was measured on', () => {
+    const a = raw('m', 'filled')
+    const b = { ...raw('other', 'filled'), pricing: { ...raw('m', 'filled').pricing } }
+    const md = renderComparison([a, b])
+    expect(md).toContain('**Measured on:** the 292-row synthetic dataset')
+    expect(md).toContain('| Model | Runs | Accuracy strict | Accuracy lenient | Wrong among auto-approved (strict / lenient) | REVIEW rows sent to review | Sent to review (of which flagged) | ECE (strict) | Median latency / transaction | Cost / 100 transactions |')
+    expect(md).toContain('| `m` | 1 | 1/1 (100.0%) | 1/1 (100.0%) | 0/1 (0.0%) / 0/1 (0.0%) |')
+    expect(md).toContain('$0.600 |') // $0.012 over 2 predictions = $0.006 each
+    expect(md).toMatch(/\| `other` .*cost not computed: no price for model "other"/)
   })
 })

@@ -63,8 +63,8 @@ cc_payment,CHASE CREDIT CRD AUTOPAY PPD ID: 4760039224 | PAYMENT TO CHASE CARD E
 sba_loan,SBA LOAN PYMT DES:LOAN PMT ID:{ref} | SBA EIDL LOAN PAYMENT {ref},debit,2500,Long-Term Loan,Monthly SBA loan payment; labelled all principal because this chart has no interest-expense account.,no,
 loc_repayment,LOC PAYMENT ...5521 ONLINE TRANSFER | LINE OF CREDIT PAYMENT 5521,debit,2400,Short-Term Loan,Paying down the business line of credit.,no,
 atm_petty_cash,ATM WITHDRAWAL {mmdd} 1100 CONGRESS AVE AUSTIN TX | NON-CHASE ATM WITHDRAW {mmdd} AUSTIN TX,debit,1020,Petty Cash,Cash taken out for the office float; tracked as petty cash until spent.,no,
-apple_equipment,APPLE STORE #R452 AUSTIN TX | APPLE ONLINE STORE 800-676-2775 CA,debit,1500,Equipment,Laptops and monitors above the capitalisation threshold are equipment not expenses.,no,
-ace_hardware,ACE HARDWARE #07891 AUSTIN TX | POS DEBIT {mmdd} ACE HDWE 07891 AUSTIN,debit,6300,Miscellaneous Expense,Small office repairs; this chart has no repairs account.,no,
+apple_equipment,APPLE STORE #R452 AUSTIN TX | APPLE ONLINE STORE 800-676-2775 CA,debit,1500,Equipment,"Laptops and monitors above the $2,500 capitalisation threshold are equipment not expenses.",no,
+ace_hardware,ACE HARDWARE #07891 AUSTIN TX | POS DEBIT {mmdd} ACE HDWE 07891 AUSTIN,debit,6300,Miscellaneous Expense,Small office repairs; this chart has no repairs account.,no,5400
 amazon,AMZN Mktp US*2K4TR8LQ2 Amzn.com/bill WA | Amazon.com*RT5AB12C3 Amzn.com/bill WA | AMAZON MKTPL*ZX9LL0PQ1 Amzn.com/bill,debit,,,Could be office supplies or equipment or a personal order; the description never says which.,yes,
 costco,COSTCO WHSE #0681 AUSTIN TX | POS DEBIT {mmdd} COSTCO WHOLESALE 0681 AUSTIN,debit,,,Could be studio snacks and supplies or the owner's personal shopping.,yes,
 venmo,VENMO DES:PAYMENT ID:{ref} INDN:JORDAN REYES | VENMO *PAYMENT 855-812-4430 NY,debit,,,Could be paying a freelancer or reimbursing an employee or a personal payment.,yes,

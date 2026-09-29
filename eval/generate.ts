@@ -11,6 +11,10 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const SEED = 20260601
+/** Equipment purchases at or above this are capitalised (1500), below it expensed. */
+const CAPITALISATION_THRESHOLD = 2500
+/** Hand label for rows whose account can't be known from the bank line. */
+const REVIEW = 'REVIEW'
 const PERIOD_START = '2026-06-01'
 const PERIOD_END = '2026-08-31'
 
@@ -210,8 +214,9 @@ const SCHEDULES: Record<string, Schedule> = {
   sba_loan:             { kind: 'monthly', day: 28, businessDay: true, amount: 731 },
   loc_repayment:        { kind: 'dates', dates: ['2026-07-31', '2026-08-31'], amount: 5000 },
   atm_petty_cash:       { kind: 'dates', dates: ['2026-06-12', '2026-08-06'], amount: [100, 200], round: 20 },
-  // Exact receipt totals (price + Austin sales tax), one per date.
-  apple_equipment:      { kind: 'dates', dates: ['2026-06-24', '2026-08-03'], amounts: [2705.17, 1731.12] },
+  // Exact receipt totals (price + 8.25% Austin sales tax), one per date; both
+  // at or above the $2,500 capitalisation threshold.
+  apple_equipment:      { kind: 'dates', dates: ['2026-06-24', '2026-08-03'], amounts: [2705.17, 2813.42] },
   ace_hardware:         { kind: 'random', perMonth: [0, 2], amount: [8.4, 64] },
 
   // Ambiguous: labelled by hand
@@ -359,6 +364,15 @@ function main(): void {
     generated.set(vendor.key, dates.map((date, i) => ({ vendor, date, amount: amounts[i] })))
   }
 
+  for (const [key, rows] of generated) {
+    const vendor = vendors.find((v) => v.key === key)!
+    for (const r of rows) {
+      if (vendor.accountCode === '1500' && r.amount < CAPITALISATION_THRESHOLD) {
+        throw new Error(`${key} ${r.date}: $${r.amount} is below the $${CAPITALISATION_THRESHOLD} capitalisation threshold for 1500 Equipment`)
+      }
+    }
+  }
+
   // Stable ids: date + vendor + occurrence number on that date.
   const order = new Map(vendors.map((v, i) => [v.key, i]))
   const rows = [...generated.values()].flat()
@@ -391,8 +405,9 @@ function main(): void {
     const prior = existing.get(r.id)
     const code = prior?.true_account_code ?? ''
     const alternates = parseCodes(prior?.acceptable_codes ?? '')
+    if (code === REVIEW && alternates.length) throw new Error(`hand_labels.csv ${r.id}: a REVIEW row takes no acceptable_codes`)
     for (const c of [code, ...alternates]) {
-      if (c && !codes.has(c)) throw new Error(`hand_labels.csv ${r.id}: "${c}" is not in the chart`)
+      if (c && c !== REVIEW && !codes.has(c)) throw new Error(`hand_labels.csv ${r.id}: "${c}" is not in the chart (or REVIEW)`)
     }
     if (alternates.length && !code) throw new Error(`hand_labels.csv ${r.id}: acceptable_codes needs a true_account_code too`)
     r.true_account_code = code
@@ -415,6 +430,7 @@ function main(): void {
 
   // Summary
   const names = new Map(chart.map((a) => [a.code, a.name]))
+  names.set(REVIEW, 'must go to human review')
   const perAccount = new Map<string, number>()
   for (const r of out) {
     const key = r.true_account_code || '(hand label needed)'

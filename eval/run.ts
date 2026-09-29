@@ -18,7 +18,7 @@ import { execSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import type { Transaction } from '@/types'
 import { loadChart, loadTruth, spreadSample, DATA_DIR, EVAL_DIR, ROOT_DIR } from './data'
-import type { BatchTiming, CallUsage, Prediction, Pricing, TruthRow } from './metrics'
+import { REVIEW_LABEL, type BatchTiming, type CallUsage, type Prediction, type Pricing, type TruthRow } from './metrics'
 import { renderReport, writeResults, type RawResults } from './report'
 
 interface Args {
@@ -153,7 +153,8 @@ async function main(): Promise<void> {
       limit: args.limit,
       labelledOnly: args.labelledOnly,
       datasetRows: truth.length,
-      datasetLabelledRows: truth.filter((t) => t.trueCode).length,
+      datasetLabelledRows: truth.filter((t) => t.trueCode && t.trueCode !== REVIEW_LABEL).length,
+      datasetReviewRows: truth.filter((t) => t.trueCode === REVIEW_LABEL).length,
       statementSize: Math.round(truth.length / months),
       datasetSha256: createHash('sha256').update(readFileSync(truthPath)).digest('hex'),
       gitCommit: git('rev-parse HEAD'),
