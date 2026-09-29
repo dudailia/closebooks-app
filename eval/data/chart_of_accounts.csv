@@ -1,0 +1,35 @@
+Code,Name,Type
+1000,Checking Account,asset
+1010,Savings Account,asset
+1020,Petty Cash,asset
+1100,Accounts Receivable,asset
+1200,Inventory,asset
+1300,Prepaid Expenses,asset
+1500,Equipment,asset
+1510,Accumulated Depreciation,asset
+2000,Accounts Payable,liability
+2100,Credit Card Payable,liability
+2200,Sales Tax Payable,liability
+2300,Payroll Liabilities,liability
+2400,Short-Term Loan,liability
+2500,Long-Term Loan,liability
+3000,Owner's Equity,equity
+3100,Owner's Draw,equity
+3200,Retained Earnings,equity
+4000,Sales Revenue,revenue
+4100,Service Revenue,revenue
+4200,Other Income,revenue
+5000,Cost of Goods Sold,expense
+5100,Payroll & Wages,expense
+5200,Rent & Lease,expense
+5300,Utilities,expense
+5400,Office Supplies,expense
+5500,Marketing & Advertising,expense
+5600,Insurance,expense
+5700,Professional Fees,expense
+5800,Travel & Entertainment,expense
+5900,Depreciation Expense,expense
+6000,Bank Fees & Charges,expense
+6100,Subscriptions & Software,expense
+6200,Taxes & Licenses,expense
+6300,Miscellaneous Expense,expense
