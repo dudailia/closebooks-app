@@ -1,11 +1,8 @@
 // Turns raw eval results into summary.json and a plain-language report.md.
 //
-//   npx vite-node --config vitest.config.ts eval/report.ts eval/results/<timestamp>/raw.json
-//
-// run.ts calls writeResults() itself; the CLI re-renders a saved run.
+// run.ts calls writeResults(); eval/report-cli.ts re-renders a saved run.
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import {
   accuracy, calibration, confusions, cost, excludedCount, latency, perAccount, reviewLabelled, reviewSplit,
   scoreRows, stability, unlabelledSplit, REVIEW_LABEL,
@@ -34,6 +31,18 @@ export interface RunMeta {
   batchSize: number
   business: string
   chartName: string
+  /** Spend-ledger totals when the run had a --budget cap. */
+  budget?: { capUsd: number; spentBeforeUsd: number; spentAfterUsd: number } | null
+  /** Set when the budget cap stopped the run early. */
+  cut?: { run: number; rowsDone: number; rowsPlanned: number } | null
+}
+
+/** "100-row subset" for --limit runs, plus "cut by budget cap" when stopped early. */
+export function runLabel(meta: RunMeta, rowsSent: number): string {
+  const parts: string[] = []
+  if (meta.limit !== null) parts.push(`${rowsSent}-row subset`)
+  if (meta.cut) parts.push('cut by budget cap')
+  return parts.join(', ')
 }
 
 export interface RawResults {
@@ -83,8 +92,8 @@ export function renderReport(raw: RawResults): string {
   const names = new Map(raw.chart.map((a) => [a.code, a.name]))
   const label = (code: string) => (names.has(code) ? `${code} ${names.get(code)}` : code === '(none)' ? '(no prediction)' : `${code} (not in chart)`)
   const partial = s.scoredRows < m.datasetLabelledRows
-  const runsText = `${m.runs} run${m.runs === 1 ? '' : 's'}`
-  const scope = `${s.scoredRows} rows with an account label × ${runsText} = ${s.scoredPredictions} scored predictions` +
+  const runsText = `${m.runs} run${m.runs === 1 ? '' : 's'}` + (m.cut ? ` (run ${m.cut.run + 1} cut short by the budget cap)` : '')
+  const scope = `${s.scoredPredictions} scored predictions (${s.scoredRows} rows with an account label, ${runsText})` +
     (s.reviewRows ? ` (the ${s.reviewRows} REVIEW rows are excluded here; see "Unknowable from the bank line")` : '')
   const basis = `${m.business} (fictional), ${m.chartName}, model \`${m.model}\`, ${runsText}`
 
@@ -95,11 +104,23 @@ export function renderReport(raw: RawResults): string {
   if (m.model === 'fake') {
     p(`> **FAKE MODEL: no API calls were made. This is a pipeline test; every number below is meaningless.**`, '')
   }
-  if (partial) {
-    p(`> **${m.limit !== null && s.scoredRows <= 50 ? 'SMOKE TEST' : 'PARTIAL RUN'}: ${s.scoredRows} of ${m.datasetLabelledRows} labelled rows. Not a result.**`,
-      `> Numbers below describe only these rows and are too few to compare models or settings.`, '')
+  if (m.cut) {
+    p(`> **CUT BY BUDGET CAP: run ${m.cut.run + 1} of ${m.runs} stopped after ${m.cut.rowsDone} of ${m.cut.rowsPlanned} rows.** ` +
+      `The rest were never sent. Numbers below cover only the finished part.`, '')
   }
-  p(`**Measured on:** ${m.datasetRows}-row synthetic dataset; this run sent ${raw.rows.length} rows to the engine ` +
+  if (partial && m.limit !== null && s.scoredRows <= 50) {
+    p(`> **SMOKE TEST: ${s.scoredRows} of ${m.datasetLabelledRows} labelled rows. Not a result.**`,
+      `> Numbers below describe only these rows and are too few to compare models or settings.`, '')
+  } else if (m.limit !== null) {
+    p(`> **${raw.rows.length}-ROW SUBSET** of the ${m.datasetRows}-row dataset (evenly spaced across the three months). ` +
+      `Not directly comparable with full-dataset runs: fewer rows per account, wider uncertainty.`, '')
+  } else if (partial && !m.cut) {
+    p(`> **PARTIAL RUN: ${s.scoredRows} of ${m.datasetLabelledRows} labelled rows. Not a result.**`, '')
+  }
+  const sentText = m.cut
+    ? `this run planned ${raw.rows.length} rows per run and finished ${m.cut.run} full run${m.cut.run === 1 ? '' : 's'} plus ${m.cut.rowsDone} rows of run ${m.cut.run + 1} before the budget cap`
+    : `this run sent ${raw.rows.length} rows to the engine`
+  p(`**Measured on:** ${m.datasetRows}-row synthetic dataset; ${sentText} ` +
     `(${s.scoredRows} with an account label, ${s.reviewRows} labelled REVIEW, ${s.excludedRows} excluded because they have no label yet). ${basis}.`,
     '',
     `**Engine:** the real \`categorizeTransactionsWithUsage\` in \`src/lib/categorize.ts\`, called directly (the same code \`/api/categorize\` runs), ` +
@@ -131,7 +152,7 @@ export function renderReport(raw: RawResults): string {
   const rl = s.reviewLabelled
   p(`## Unknowable from the bank line: sent to review ${rl.sentToReview} of ${rl.n}`, '')
   if (rl.n === 0) p(`No rows labelled REVIEW were in this run.`, '')
-  else p(`On ${s.reviewRows} rows labelled REVIEW × ${runsText} = ${rl.n} predictions. These are payments whose right account can't be known from the bank description ` +
+  else p(`On ${rl.n} predictions for the ${s.reviewRows} rows labelled REVIEW (${runsText}). These are payments whose right account can't be known from the bank description ` +
     `(Venmo, PayPal, Zelle to a person). The only correct outcome is that the app does **not** auto-approve them; the account it suggests doesn't matter. ` +
     `They are excluded from every account-accuracy number in this report.`, '',
     `- Sent to review (correct): ${of(rl.sentToReview, rl.n)}`,
@@ -201,6 +222,7 @@ export function renderReport(raw: RawResults): string {
     `| Output tokens | ${num(c.tokens.outputTokens)} |`,
     `| Cache read / write tokens | ${num(c.tokens.cacheReadTokens)} / ${num(c.tokens.cacheWriteTokens)} |`,
     `| Total cost of this run | ${c.totalUsd === null ? c.reason : usd(c.totalUsd)} |`,
+    ...(m.budget ? [`| Spend ledger (all capped runs) before → after this run | $${m.budget.spentBeforeUsd.toFixed(4)} → $${m.budget.spentAfterUsd.toFixed(4)} of $${m.budget.capUsd.toFixed(2)} cap |`] : []),
     `| Cost per transaction | ${c.totalUsd === null ? '—' : usd(c.perTransactionUsd)} |`,
     `| Cost per statement (${c.statementSize} transactions, the dataset's monthly average) | ${c.totalUsd === null ? '—' : usd(c.perStatementUsd)} |`, '')
 
@@ -230,20 +252,4 @@ export function writeResults(raw: RawResults, dir: string): void {
   writeFileSync(`${dir}/raw.json`, JSON.stringify(raw, null, 2) + '\n')
   writeFileSync(`${dir}/summary.json`, JSON.stringify({ meta: raw.meta, ...summarise(raw) }, null, 2) + '\n')
   writeFileSync(`${dir}/report.md`, renderReport(raw))
-}
-
-// CLI: re-render a saved run.
-if (process.argv[1] && fileIsMain(process.argv[1])) {
-  const path = process.argv[2]
-  if (!path) {
-    console.error('usage: vite-node --config vitest.config.ts eval/report.ts <path/to/raw.json>')
-    process.exit(1)
-  }
-  const raw = JSON.parse(readFileSync(path, 'utf8')) as RawResults
-  writeResults(raw, dirname(path))
-  console.log(`wrote ${dirname(path)}/report.md and summary.json`)
-}
-
-function fileIsMain(argv1: string): boolean {
-  return /eval[/\\]report\.ts$/.test(argv1)
 }

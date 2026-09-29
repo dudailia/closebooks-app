@@ -1,14 +1,15 @@
 // Side-by-side comparison of saved eval runs.
 //
-//   npx vite-node --config vitest.config.ts eval/compare.ts <run-dir> <run-dir> ... [--out file.md]
+// Command line: eval/compare-cli.ts.
 
-import { readFileSync, writeFileSync } from 'node:fs'
-import { summarise, type RawResults } from './report'
+import { runLabel, summarise, type RawResults } from './report'
 
 const pct = (x: number | null) => (x === null ? '—' : `${(x * 100).toFixed(1)}%`)
 const frac = (k: number, n: number) => (n ? `${k}/${n} (${pct(k / n)})` : '—')
 
-export function renderComparison(raws: RawResults[]): string {
+export interface LedgerTotal { capUsd: number; spentUsd: number; calls: number }
+
+export function renderComparison(raws: RawResults[], ledger: LedgerTotal | null = null): string {
   if (raws.length === 0) throw new Error('nothing to compare')
   const first = raws[0].meta
   const rowsBy = new Set(raws.map((r) => r.rows.length))
@@ -29,7 +30,8 @@ export function renderComparison(raws: RawResults[]): string {
     const wrongLenient = r.autoApproved.n - r.autoApproved.lenientCorrect
     const perTx = s.latency.perTransactionMs.median
     const cost100 = s.cost.perTransactionUsd === null ? s.cost.reason ?? '—' : `$${(s.cost.perTransactionUsd * 100).toFixed(3)}`
-    lines.push(`| \`${raw.meta.model}\` | ${raw.meta.runs} | ${frac(s.accuracy.strictCorrect, s.accuracy.n)} | ${frac(s.accuracy.lenientCorrect, s.accuracy.n)} | ` +
+    const tag = runLabel(raw.meta, raw.rows.length)
+    lines.push(`| \`${raw.meta.model}\`${tag ? ` (${tag})` : ''} | ${raw.meta.runs} | ${frac(s.accuracy.strictCorrect, s.accuracy.n)} | ${frac(s.accuracy.lenientCorrect, s.accuracy.n)} | ` +
       `${frac(wrongStrict, r.autoApproved.n)} / ${frac(wrongLenient, r.autoApproved.n)} | ` +
       `${frac(s.reviewLabelled.sentToReview, s.reviewLabelled.n)} | ` +
       `${pct(r.reviewRate)} (${pct(r.flagRate)}) | ${s.calibration.strict.ece === null ? '—' : s.calibration.strict.ece.toFixed(3)} | ` +
@@ -44,21 +46,15 @@ export function renderComparison(raws: RawResults[]): string {
     `Latency is batch wall-clock ÷ batch size, so it depends on network and API load at run time. ` +
     `Cost uses the API-reported tokens and eval/pricing.json list prices (${raws[0].pricing.source_url}, checked ${raws[0].pricing.date_checked}).`, '',
     `**Runs compared:** ${raws.map((r) => `\`${r.meta.model}\` ${r.meta.startedAt}`).join('; ')}.`, '',
+    `**Total actual cost of these runs:** ${totalCost(raws)} (sum of each run's API-reported tokens × list price)` +
+    (ledger ? `; spend ledger: $${ledger.spentUsd.toFixed(4)} over ${ledger.calls} billed calls, cap $${ledger.capUsd.toFixed(2)}.` : '.'), '',
     `**Limits:** one synthetic business and chart; a single run per model (except where Runs > 1) can't show run-to-run variation; ` +
     `labels encode one bookkeeping policy; the prompt was written for the app's current model and was not tuned for the others.`, '')
   return lines.join('\n')
 }
 
-if (process.argv[1] && /eval[/\\]compare\.ts$/.test(process.argv[1])) {
-  const args = process.argv.slice(2)
-  let out: string | null = null
-  const dirs: string[] = []
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--out') out = args[++i] ?? null
-    else dirs.push(args[i])
-  }
-  const raws = dirs.map((d) => JSON.parse(readFileSync(`${d.replace(/\/$/, '')}/raw.json`, 'utf8')) as RawResults)
-  const md = renderComparison(raws)
-  if (out) writeFileSync(out, md)
-  console.log(md)
+function totalCost(raws: RawResults[]): string {
+  const costs = raws.map((r) => summarise(r).cost.totalUsd)
+  if (costs.some((c) => c === null)) return 'not computed for every run (a price is missing)'
+  return `$${costs.reduce((a, b) => a! + b!, 0)!.toFixed(4)}`
 }

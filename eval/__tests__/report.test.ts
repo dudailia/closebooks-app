@@ -99,7 +99,7 @@ describe('comparison', () => {
     const md = renderComparison([a, b])
     expect(md).toContain('**Measured on:** the 292-row synthetic dataset')
     expect(md).toContain('| Model | Runs | Accuracy strict | Accuracy lenient | Wrong among auto-approved (strict / lenient) | REVIEW rows sent to review | Sent to review (of which flagged) | ECE (strict) | Median latency / transaction | Cost / 100 transactions |')
-    expect(md).toContain('| `m` | 1 | 1/1 (100.0%) | 1/1 (100.0%) | 0/1 (0.0%) / 0/1 (0.0%) |')
+    expect(md).toContain('| `m` (2-row subset) | 1 | 1/1 (100.0%) | 1/1 (100.0%) | 0/1 (0.0%) / 0/1 (0.0%) |')
     expect(md).toContain('$0.600 |') // $0.012 over 2 predictions = $0.006 each
     expect(md).toMatch(/\| `other` .*cost not computed: no price for model "other"/)
   })

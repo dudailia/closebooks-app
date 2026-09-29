@@ -20,7 +20,7 @@ checking account from 2026-06-01 to 2026-08-31.
 | `data/synthetic_upload.csv` | The same transactions in the app's upload format (`Date, Description, Amount`, where negative means money out). |
 | `data/chart_of_accounts.csv` | The chart used, in the app's chart upload format (`Code, Name, Type`). |
 | `run.ts` | Runs the real engine on the dataset and writes a report (see "Measuring the engine"). |
-| `metrics.ts`, `report.ts`, `data.ts` | Scoring (pure functions, unit-tested in `__tests__/`), report writing, and dataset loading. |
+| `metrics.ts`, `report.ts`, `compare.ts`, `data.ts`, `budget.ts` (+ `*-cli.ts`) | Scoring (pure functions, unit-tested in `__tests__/`), report writing, and dataset loading. |
 | `pricing.json` | Price per million tokens for each model, with the source URL and the date checked. |
 
 ## How the labels were produced
@@ -130,9 +130,9 @@ Each run writes three files:
 Rows with no label are sent to the engine, but they are left out of scoring
 and counted. The report shows separately what the app did with them.
 To compare models side by side, run
-`npx vite-node --config vitest.config.ts eval/compare.ts eval/results/<run1> eval/results/<run2> --out comparison.md`.
+`npx vite-node --config vitest.config.ts eval/compare-cli.ts eval/results/<run1> eval/results/<run2> --out comparison.md`.
 `report.ts` can re-render a saved run:
-`npx vite-node --config vitest.config.ts eval/report.ts eval/results/<ts>/raw.json`.
+`npx vite-node --config vitest.config.ts eval/report-cli.ts eval/results/<ts>/raw.json`.
 
 Cost comes from the token usage the API reports and the prices in
 `pricing.json`. If a price is missing, the report says "cost not computed"
