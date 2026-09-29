@@ -66,7 +66,12 @@ export function summarise(raw: RawResults) {
     accuracy: accuracy(scored),
     perAccount: perAccount(scored, names),
     review: reviewSplit(scored),
-    calibration: { strict: calibration(scored, 'strict'), lenient: calibration(scored, 'lenient') },
+    // Rows the engine never answered have no confidence to calibrate.
+    calibration: {
+      strict: calibration(scored.filter((r) => !r.noPrediction), 'strict'),
+      lenient: calibration(scored.filter((r) => !r.noPrediction), 'lenient'),
+    },
+    failures: callFailures(raw.calls),
     stability: stability(raw.predictions),
     latency: latency(raw.batches, raw.calls),
     cost: cost(raw.calls, raw.pricing, raw.predictions.length, raw.meta.statementSize),
@@ -75,6 +80,14 @@ export function summarise(raw: RawResults) {
     reviewLabelled: reviewLabelled(raw.predictions, raw.rows),
     reviewRows: raw.rows.filter((r) => r.trueCode === REVIEW_LABEL).length,
   }
+}
+
+/** Failed API attempts, with the most common error message. */
+export function callFailures(calls: CallUsage[]): { failed: number; total: number; topError: string | null; topCount: number } {
+  const counts = new Map<string, number>()
+  for (const c of calls) if (c.error) counts.set(c.error, (counts.get(c.error) ?? 0) + 1)
+  const top = [...counts].sort((a, b) => b[1] - a[1])[0]
+  return { failed: calls.filter((c) => c.error).length, total: calls.length, topError: top?.[0] ?? null, topCount: top?.[1] ?? 0 }
 }
 
 // ─── Formatting ───────────────────────────────────────────────────────────────
@@ -103,6 +116,12 @@ export function renderReport(raw: RawResults): string {
   p(`# Categorisation eval report`, '')
   if (m.model === 'fake') {
     p(`> **FAKE MODEL: no API calls were made. This is a pipeline test; every number below is meaningless.**`, '')
+  }
+  if (s.review.noPrediction > 0) {
+    const f = s.failures
+    p(`> **${s.review.noPrediction} of ${s.review.n} scored predictions got no answer from the engine** (the batch failed). ` +
+      `${f.failed} of ${f.total} API calls failed${f.topError ? `; most common error (${f.topCount}×): \`${f.topError}\`` : ''}. ` +
+      `Those rows count as wrong and as sent to review; they say nothing about the model's accounting.`, '')
   }
   if (m.cut) {
     p(`> **CUT BY BUDGET CAP: run ${m.cut.run + 1} of ${m.runs} stopped after ${m.cut.rowsDone} of ${m.cut.rowsPlanned} rows.** ` +

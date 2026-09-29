@@ -31,6 +31,11 @@ export function renderComparison(raws: RawResults[], ledger: LedgerTotal | null 
     const perTx = s.latency.perTransactionMs.median
     const cost100 = s.cost.perTransactionUsd === null ? s.cost.reason ?? '—' : `$${(s.cost.perTransactionUsd * 100).toFixed(3)}`
     const tag = runLabel(raw.meta, raw.rows.length)
+    if (r.n > 0 && r.noPrediction === r.n) {
+      lines.push(`| \`${raw.meta.model}\`${tag ? ` (${tag})` : ''} | ${raw.meta.runs} | **no usable predictions** (${r.noPrediction}/${r.n} batch failures) | — | — | — | — | — | ` +
+        `${s.latency.perTransactionMs.median === null ? '—' : `${(s.latency.perTransactionMs.median / 1000).toFixed(2)} s`} | ${s.cost.perTransactionUsd === null ? '—' : `$${(s.cost.perTransactionUsd * 100).toFixed(3)}`} |`)
+      continue
+    }
     lines.push(`| \`${raw.meta.model}\`${tag ? ` (${tag})` : ''} | ${raw.meta.runs} | ${frac(s.accuracy.strictCorrect, s.accuracy.n)} | ${frac(s.accuracy.lenientCorrect, s.accuracy.n)} | ` +
       `${frac(wrongStrict, r.autoApproved.n)} / ${frac(wrongLenient, r.autoApproved.n)} | ` +
       `${frac(s.reviewLabelled.sentToReview, s.reviewLabelled.n)} | ` +
@@ -45,12 +50,21 @@ export function renderComparison(raws: RawResults[], ledger: LedgerTotal | null 
     `(account not in the chart, or batch failure). *ECE* is expected calibration error over 10 confidence buckets (0 = perfect). ` +
     `Latency is batch wall-clock ÷ batch size, so it depends on network and API load at run time. ` +
     `Cost uses the API-reported tokens and eval/pricing.json list prices (${raws[0].pricing.source_url}, checked ${raws[0].pricing.date_checked}).`, '',
+    ...failureNotes(raws),
     `**Runs compared:** ${raws.map((r) => `\`${r.meta.model}\` ${r.meta.startedAt}`).join('; ')}.`, '',
     `**Total actual cost of these runs:** ${totalCost(raws)} (sum of each run's API-reported tokens × list price)` +
     (ledger ? `; spend ledger: $${ledger.spentUsd.toFixed(4)} over ${ledger.calls} billed calls, cap $${ledger.capUsd.toFixed(2)}.` : '.'), '',
     `**Limits:** one synthetic business and chart; a single run per model (except where Runs > 1) can't show run-to-run variation; ` +
     `labels encode one bookkeeping policy; the prompt was written for the app's current model and was not tuned for the others.`, '')
   return lines.join('\n')
+}
+
+function failureNotes(raws: RawResults[]): string[] {
+  const notes = raws.flatMap((raw) => {
+    const f = summarise(raw).failures
+    return f.failed ? [`\`${raw.meta.model}\`: ${f.failed} of ${f.total} API calls failed; most common error (${f.topCount}×): \`${f.topError}\`. Failed calls are billed and included in its cost.`] : []
+  })
+  return notes.length ? [`**Failed calls.** ${notes.join(' ')}`, ''] : []
 }
 
 function totalCost(raws: RawResults[]): string {
