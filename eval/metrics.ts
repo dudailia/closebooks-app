@@ -420,3 +420,62 @@ export function unlabelledSplit(predictions: Prediction[], truth: TruthRow[]): {
     flagged: rows.filter((r) => r.status === 'flagged').length,
   }
 }
+
+// ─── Threshold sweep ──────────────────────────────────────────────────────────
+
+/**
+ * Would the app auto-approve this prediction at threshold `t`? Same rule as
+ * resolveAgainstCoa: no validation flag and confidence ≥ t. Rows the engine
+ * never answered are never approved.
+ */
+export function autoApprovedAt(p: Prediction, t: number): boolean {
+  return !p.noPrediction && p.validationFlags.length === 0 && p.confidence >= t
+}
+
+export interface SweepRow {
+  threshold: number
+  /** Account-labelled predictions auto-approved. */
+  autoApproved: number
+  autoApproveRate: number | null
+  wrongStrict: number
+  wrongLenient: number
+  wrongStrictRate: number | null
+  wrongLenientRate: number | null
+  /** REVIEW-labelled predictions that would be auto-approved (always wrong). */
+  reviewRowsAutoApproved: number
+  /** Everything a human must check: all predictions not auto-approved, REVIEW rows included. */
+  reviewLoad: number
+  reviewLoadRate: number | null
+}
+
+/** Re-decide auto-approval at each threshold from saved predictions. */
+export function thresholdSweep(predictions: Prediction[], truth: TruthRow[], thresholds: number[]): SweepRow[] {
+  const scored = scoreRows(predictions, truth)
+  const review = new Set(truth.filter((t) => t.trueCode === REVIEW_LABEL).map((t) => t.id))
+  const reviewPreds = predictions.filter((p) => review.has(p.id))
+  const all = scored.length + reviewPreds.length
+  return thresholds.map((threshold) => {
+    const approved = scored.filter((r) => autoApprovedAt(r, threshold))
+    const wrongStrict = approved.filter((r) => !r.strict).length
+    const wrongLenient = approved.filter((r) => !r.lenient).length
+    const reviewApproved = reviewPreds.filter((p) => autoApprovedAt(p, threshold)).length
+    const load = all - approved.length - reviewApproved
+    return {
+      threshold,
+      autoApproved: approved.length,
+      autoApproveRate: ratio(approved.length, scored.length),
+      wrongStrict,
+      wrongLenient,
+      wrongStrictRate: ratio(wrongStrict, approved.length),
+      wrongLenientRate: ratio(wrongLenient, approved.length),
+      reviewRowsAutoApproved: reviewApproved,
+      reviewLoad: load,
+      reviewLoadRate: ratio(load, all),
+    }
+  })
+}
+
+/** 0.70, 0.71, … 0.99 without floating-point drift. */
+export function thresholdRange(from = 70, to = 99): number[] {
+  return Array.from({ length: to - from + 1 }, (_, i) => (from + i) / 100)
+}

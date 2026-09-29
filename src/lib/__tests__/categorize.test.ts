@@ -108,11 +108,68 @@ describe('categorizeTransactions output is unchanged by usage reporting', () => 
     ])
   })
 
-  it('a reply with no JSON flags the batch and still records its tokens', async () => {
+  it('a reply with no JSON is retried once, then flags the batch; both calls record their tokens', async () => {
     create.mockResolvedValue(message('sorry, no json'))
     const { transactions, calls, batches } = await categorizeTransactionsWithUsage(TXS, COA)
     expect(transactions.every((t) => t.status === 'flagged')).toBe(true)
-    expect(calls).toEqual([expect.objectContaining({ attempt: 1, inputTokens: 1200, error: 'No JSON array found in Claude response' })])
+    expect(calls.map((c) => [c.attempt, c.inputTokens, c.error])).toEqual([
+      [1, 1200, 'No JSON array found in Claude response'],
+      [2, 1200, 'No JSON array found in Claude response'],
+    ])
     expect(batches[0].ok).toBe(false)
   })
+})
+
+// Replies from models that think before answering (e.g. claude-opus-5-5):
+// content = [thinking, text]. Previously content[0] was read and rejected.
+const thinking = { type: 'thinking', thinking: 'Let me map each transaction…', signature: 'sig' }
+const withContent = (content: unknown[]) => ({
+  content,
+  usage: { input_tokens: 1200, output_tokens: 300, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
+})
+
+describe('reading replies', () => {
+  it('ignores a thinking block and reads the text block, in one call', async () => {
+    const expected = await categorizeTransactions(TXS, COA) // plain text reply
+    create.mockReset()
+    create.mockResolvedValue(withContent([thinking, { type: 'text', text: REPLY }]))
+    const { transactions, calls } = await categorizeTransactionsWithUsage(TXS, COA)
+    expect(transactions).toEqual(expected)
+    expect(calls).toHaveLength(1)
+    expect(calls[0].error).toBeUndefined()
+  })
+
+  it('joins several text blocks', async () => {
+    const expected = await categorizeTransactions(TXS, COA)
+    create.mockReset()
+    // Blocks are joined with a newline, so split between two JSON objects.
+    const cut = REPLY.indexOf('},{') + 2
+    create.mockResolvedValue(withContent([thinking, { type: 'text', text: REPLY.slice(0, cut) }, { type: 'text', text: REPLY.slice(cut) }]))
+    expect((await categorizeTransactionsWithUsage(TXS, COA)).transactions).toEqual(expected)
+  })
+
+  it('a thinking-only reply is retried once, then flags the batch (was: three billed attempts)', async () => {
+    create.mockResolvedValue(withContent([thinking]))
+    const { transactions, calls } = await categorizeTransactionsWithUsage(TXS, COA)
+    expect(transactions.every((t) => t.status === 'flagged')).toBe(true)
+    expect(calls.map((c) => c.error)).toEqual([
+      'No text in Claude response (content types: thinking)',
+      'No text in Claude response (content types: thinking)',
+    ])
+  })
+
+  it('an unparseable reply followed by a good one recovers on the single retry', async () => {
+    const expected = await categorizeTransactions(TXS, COA)
+    create.mockReset()
+    create.mockResolvedValueOnce(message('[{"index": 0, "suggested_category": }]')).mockResolvedValue(message(REPLY))
+    const { transactions, calls } = await categorizeTransactionsWithUsage(TXS, COA)
+    expect(transactions).toEqual(expected)
+    expect(calls.map((c) => c.error ?? null)).toEqual([expect.stringMatching(/^Failed to parse Claude JSON/), null])
+  })
+
+  it('network errors still get up to three attempts', async () => {
+    create.mockRejectedValue(new Error('socket hang up'))
+    const { calls } = await categorizeTransactionsWithUsage(TXS, COA)
+    expect(calls.map((c) => c.attempt)).toEqual([1, 2, 3])
+  }, 20000)
 })

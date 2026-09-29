@@ -131,6 +131,15 @@ Rows with no label are sent to the engine, but they are left out of scoring
 and counted. The report shows separately what the app did with them.
 To compare models side by side, run
 `npx vite-node --config vitest.config.ts eval/compare-cli.ts eval/results/<run1> eval/results/<run2> --out comparison.md`.
+Two more tools work from saved runs:
+
+- **Threshold sweep, no API calls.**
+  `npx vite-node --config vitest.config.ts eval/sweep-cli.ts eval/results/<run> ... --out threshold-sweep.md`
+  replays the app's auto-approve rule (no validation flag and confidence ≥ threshold) at 0.70–0.99 on the saved confidences. It checks that it reproduces the saved decisions at the app's 0.85, then reports auto-approve rate, wrong-among-auto-approved and review load.
+- **Learning from corrections.**
+  `npx vite-node --config vitest.config.ts eval/learn-cli.ts --base eval/results/<run>`
+  treats June as reviewed. Each wrong June prediction becomes a rule through the app's own `saveRule()`. July–August rows are then matched with `applyRulesToJob()` before any AI call. Without `--run` it makes no API calls: it prints a baseline, "app today" and "rules first" projections, and the estimated cost of a live run. `--run --budget <usd>` does the live run for unmatched rows, and `--run --fake` tests the pipeline. The CLI removes Supabase settings from its environment so the app's rule code can't persist anything.
+
 `report.ts` can re-render a saved run:
 `npx vite-node --config vitest.config.ts eval/report-cli.ts eval/results/<ts>/raw.json`.
 

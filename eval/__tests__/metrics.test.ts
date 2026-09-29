@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   accuracy, calibration, confusions, cost, excludedCount, latency, percentile, perAccount,
-  reviewLabelled, reviewSplit, scoreRows, stability, unlabelledSplit,
+  autoApprovedAt, reviewLabelled, reviewSplit, scoreRows, stability, thresholdRange, thresholdSweep, unlabelledSplit,
   type CallUsage, type Prediction, type Pricing, type TruthRow,
 } from '../metrics'
 
@@ -186,5 +186,39 @@ describe('REVIEW labels', () => {
   it('are correct if and only if not auto-approved', () => {
     expect(reviewLabelled(p, t)).toEqual({ n: 2, sentToReview: 1, autoApproved: 1, rate: 0.5 })
     expect(reviewLabelled([pred('v', '', 0, 'flagged')], t)).toMatchObject({ sentToReview: 1, autoApproved: 0 })
+  })
+})
+
+describe('threshold sweep', () => {
+  const t = [truth('a', '6100'), truth('b', '1100', ['4100']), truth('c', '5800'), truth('v', 'REVIEW')]
+  const p = [
+    pred('a', '6100', 0.96), pred('b', '4100', 0.9), pred('c', '5700', 0.88),
+    pred('v', '5700', 0.91),
+    pred('d', '9999', 0.99, 'flagged', 0, { validationFlags: ['coa_account_unknown'], unknownToChart: true }),
+  ]
+  const tt = [...t, truth('d', '5400')]
+
+  it('uses the app rule: no validation flag and confidence ≥ threshold', () => {
+    expect(autoApprovedAt(p[0], 0.96)).toBe(true)
+    expect(autoApprovedAt(p[0], 0.97)).toBe(false)
+    expect(autoApprovedAt(p[4], 0.5)).toBe(false) // flagged by chart validation
+    expect(autoApprovedAt(pred('x', '', 0.99, 'flagged', 0, { noPrediction: true }), 0.5)).toBe(false)
+  })
+
+  it('counts approvals, wrong approvals, REVIEW approvals and review load per threshold', () => {
+    const [at85, at90, at95] = thresholdSweep(p, tt, [0.85, 0.9, 0.95])
+    // 0.85: a ✓, b lenient ✓ strict ✗, c ✗ approved; d flagged; v (REVIEW) approved
+    expect(at85).toMatchObject({ autoApproved: 3, wrongStrict: 2, wrongLenient: 1, reviewRowsAutoApproved: 1, reviewLoad: 1 })
+    expect(at90).toMatchObject({ autoApproved: 2, wrongStrict: 1, wrongLenient: 0, reviewRowsAutoApproved: 1, reviewLoad: 2 })
+    expect(at95).toMatchObject({ autoApproved: 1, wrongStrict: 0, wrongLenient: 0, reviewRowsAutoApproved: 0, reviewLoad: 4 })
+    expect(at95.reviewLoadRate).toBe(4 / 5)
+  })
+
+  it('thresholdRange gives exact hundredths', () => {
+    const r = thresholdRange()
+    expect(r).toHaveLength(30)
+    expect(r[0]).toBe(0.7)
+    expect(r[15]).toBe(0.85)
+    expect(r[29]).toBe(0.99)
   })
 })

@@ -7,6 +7,8 @@ export const CATEGORIZE_MODEL = 'claude-sonnet-4-6'
 const MODEL = CATEGORIZE_MODEL
 export const BATCH_SIZE = 20
 const MAX_RETRIES = 3
+/** A reply that arrived but can't be read (no text, no JSON) is retried at most this many times. */
+const MAX_UNREADABLE_RETRIES = 1
 const RETRY_DELAY_MS = 1000
 export const AUTO_APPROVE_THRESHOLD = 0.85
 
@@ -152,6 +154,29 @@ function extractJSON(text: string): ClaudeItem[] {
   }
 }
 
+/**
+ * The reply's text, joined across text blocks. Thinking blocks (and any other
+ * non-text blocks) are ignored, so models that think before answering work.
+ */
+function replyText(content: Array<{ type: string; text?: string }>): string {
+  const text = content
+    .filter((block) => block.type === 'text' && typeof block.text === 'string')
+    .map((block) => block.text as string)
+    .join('\n')
+  if (!text.trim()) {
+    const types = content.map((block) => block.type).join(', ') || 'none'
+    throw new Error(`No text in Claude response (content types: ${types})`)
+  }
+  return text
+}
+
+/** The reply arrived but couldn't be read; worth at most one retry. */
+function isUnreadable(err: Error): boolean {
+  return err.message.includes('No text in Claude response') ||
+    err.message.includes('No JSON array') ||
+    err.message.includes('Failed to parse')
+}
+
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
@@ -209,6 +234,7 @@ async function categorizeBatch(
   calls: CategorizeCall[]
 ): Promise<ClaudeItem[]> {
   let lastError: Error | null = null
+  let unreadableRetries = 0
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     const started = Date.now()
@@ -235,12 +261,7 @@ async function categorizeBatch(
       }
       calls.push(call)
 
-      const content = message.content[0]
-      if (content.type !== 'text') {
-        throw new Error(`Unexpected Claude content type: ${content.type}`)
-      }
-
-      const items = extractJSON(content.text)
+      const items = extractJSON(replyText(message.content))
 
       return items
     } catch (err) {
@@ -252,11 +273,8 @@ async function categorizeBatch(
         error: lastError.message,
       })
 
-      const isFatal =
-        lastError.message.includes('No JSON array') ||
-        lastError.message.includes('Failed to parse')
-
-      if (isFatal || attempt === MAX_RETRIES) break
+      if (isUnreadable(lastError) && ++unreadableRetries > MAX_UNREADABLE_RETRIES) break
+      if (attempt === MAX_RETRIES) break
       await sleep(RETRY_DELAY_MS * 2 ** (attempt - 1))
     }
   }
