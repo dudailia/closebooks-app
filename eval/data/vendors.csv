@@ -1,74 +1,74 @@
-vendor_key,example_descriptions,direction,account_code,account_name,why,ambiguous
-client_harborline,ACH CREDIT HARBORLINE DENTAL PPD ID: 1742233991 | HARBORLINE DENTAL DES:PAYMENT ID:{ref} INDN:BRIGHTLINE STUDIO LLC,credit,1100,Accounts Receivable,Client pays an invoice already raised in the books; the payment clears the receivable.,no
-client_kestrel,ORIG CO NAME:KESTREL ROBOTICS ENTRY DESCR:PAYABLES SEC:CCD IND ID:{ref} | KESTREL ROBOTICS DES:VENDOR PAY ID:{ref} CO ID:9000123456 CCD,credit,1100,Accounts Receivable,Client pays an invoice already raised in the books; the payment clears the receivable.,no
-client_orchard_wire,INCOMING WIRE TRF ORCHARD AND PINE CO REF {ref} | WIRE TYPE:FED IN DATE:{mmdd} ORIG:ORCHARD & PINE CO,credit,1100,Accounts Receivable,Client pays a large invoice by wire; the payment clears the receivable.,no
-client_check_deposit,MOBILE DEPOSIT CHECK #{n4} | REMOTE ONLINE DEPOSIT #{n4},credit,1100,Accounts Receivable,Clients who pay by paper check are paying issued invoices.,no
-stripe_payout,STRIPE TRANSFER ST-{ref} | STRIPE DES:TRANSFER ID:ST-{ref} INDN:BRIGHTLINE STUDIO LLC,credit,1100,Accounts Receivable,Payouts settle invoices clients paid by card online; payouts are net of Stripe fees (a full ledger would split the fee out).,no
-square_workshop,SQ *BRIGHTLINE WORKSHOP {mmdd} | SQUARE INC DES:SQ{mmdd} ID:T3{ref} WORKSHOP,credit,4100,Service Revenue,Design-workshop seats are paid on the day with no invoice so the deposit is revenue directly.,no
-bank_interest,INTEREST PAYMENT | INTEREST EARNED,credit,4200,Other Income,Interest the bank pays on the checking balance is not from the firm's services.,no
-owner_contribution,ONLINE TRANSFER FROM REYES J PERSONAL CHK ...4417 REF #{ref} | TRANSFER FROM JORDAN REYES,credit,3000,Owner's Equity,The owner puts personal money into the business; that is capital not income.,no
-savings_transfer_in,ONLINE TRANSFER FROM SAV ...8830 REF #{ref} | ONLINE BANKING TRANSFER FROM SAVINGS 8830,credit,1010,Savings Account,Money moved back from the firm's own savings account; not income.,no
-loc_draw,LOC ADVANCE ...5521 ONLINE TRANSFER | LINE OF CREDIT DRAW 5521,credit,2400,Short-Term Loan,A draw on the business line of credit increases what the firm owes.,no
-refund_adobe,ADOBE *REFUND 408-536-6000 CA | ADOBE REFUND ADOBE.LY/ENUS,credit,6100,Subscriptions & Software,Refund of a software charge reverses the original subscription expense.,no
-refund_delta,DELTA AIR LINES REFUND ATLANTA GA | DELTA AIR 0062318842271 REFUND,credit,5800,Travel & Entertainment,Refund of a cancelled flight reverses the original travel expense.,no
-gusto_net_pay,GUSTO DES:NET {mmdd} ID:{ref} INDN:BRIGHTLINE STUDIO LLC | GUSTO PAYROLL NET PAY {mmdd},debit,5100,Payroll & Wages,Employees' net pay on each semi-monthly payroll run.,no
-gusto_tax,GUSTO DES:TAX {mmdd} ID:{ref} INDN:BRIGHTLINE STUDIO LLC | GUSTO PAYROLL TAXES {mmdd},debit,2300,Payroll Liabilities,Withheld and employer payroll taxes Gusto collects to remit; the payroll journal records the liability and this payment clears it.,no
-gusto_fee,GUSTO DES:FEE {mmdd} ID:{ref} | GUSTO.COM MONTHLY FEE,debit,6100,Subscriptions & Software,Gusto's own monthly platform fee is software not wages.,no
-office_rent,ACH DEBIT CEDAR PARK PROPERTIES RENT {ref} | CEDAR PARK PROP DES:RENT ID:{ref},debit,5200,Rent & Lease,Monthly rent for the studio office.,no
-coworking,WEWORK MEMBERSHIPS 646-491-9060 NY | WEWORK {ref} NEW YORK NY,debit,5200,Rent & Lease,Meeting-room and day-pass bookings for client sessions are space rental.,no
-electric,AUSTIN ENERGY WEB PMT {ref} | CITY OF AUSTIN UTIL DES:UTIL PYMT ID:{ref},debit,5300,Utilities,Office electricity and water from the city utility.,no
-internet,SPECTRUM BUSINESS 855-707-7328 TX | CHARTER COMM* SPECTRUM 855-707-7328,debit,5300,Utilities,Office internet service; this chart files internet under utilities.,no
-phone,VZWRLSS*APOCC VISB 800-922-0204 FL | VERIZON WRLS P{n4}-01 FL,debit,5300,Utilities,Business mobile phone plan; this chart files phone under utilities.,no
-staples,STAPLES 00115 AUSTIN TX | POS DEBIT {mmdd} STAPLES DIRECT 800-3333330 MA,debit,5400,Office Supplies,Paper ink and desk supplies.,no
-office_depot,OFFICE DEPOT #1138 AUSTIN TX | POS DEBIT {mmdd} OFFICEMAX/DEPOT 6143 AUSTIN TX,debit,5400,Office Supplies,Office consumables.,no
-usps,USPS PO 4853460532 AUSTIN TX | USPS.COM CLICKNSHIP 800-344-7779 DC,debit,5400,Office Supplies,Postage for mailing contracts and client deliverables; this chart has no postage account.,no
-google_ads,GOOGLE *ADS8128341279 CC@GOOGLE.COM CA | GOOGLE ADS {n4} MOUNTAIN VIEW CA,debit,5500,Marketing & Advertising,Search ads for the studio.,no
-meta_ads,FACEBK *K7DB2XQLR2 FB.ME/ADS CA | META PLATFORMS ADS 650-5434800 CA,debit,5500,Marketing & Advertising,Instagram and Facebook ads for the studio.,no
-linkedin_ads,LINKEDIN *MKTG SOLUTNS 855-6535653 CA | LINKEDIN ADS {ref} 855-6535653,debit,5500,Marketing & Advertising,Sponsored posts aimed at B2B clients.,no
-mailchimp,MAILCHIMP *MONTHLY MAILCHIMP.COM GA | INTUIT *MAILCHIMP ATLANTA GA,debit,5500,Marketing & Advertising,Email newsletter platform used only for marketing; treated as marketing spend rather than general software.,no
-hiscox,HISCOX INC 866-283-7545 NY | HISCOX INSURANCE DES:PREMIUM ID:{ref},debit,5600,Insurance,Monthly professional liability premium.,no
-health_insurance,BCBS TX DES:INS PREM ID:{ref} INDN:BRIGHTLINE STUDIO | BLUE CROSS BLUE SHIELD TX PREMIUM,debit,5600,Insurance,Employee group health premium paid by the firm.,no
-auto_insurance,PROGRESSIVE *INSURANCE 800-776-4737 OH | PROG DIRECT INS DES:INS PREM ID:{ref},debit,5600,Insurance,Policy on the studio's one business vehicle.,no
-cpa_firm,ACH DEBIT MORALES & KIM CPAS {ref} | MORALES AND KIM CPA DES:BILLPAY ID:{ref},debit,5700,Professional Fees,Monthly bookkeeping and tax-prep retainer.,no
-law_firm,BILL PAY HALVERSON LAW PLLC {ref} | ONLINE PMT HALVERSON LAW PLLC,debit,5700,Professional Fees,Legal review of a client master services agreement.,no
-upwork,UPWORK -{ref}REF SAN FRANCISCO CA | UPWORK ESCROW INC 650-3162277 CA,debit,5700,Professional Fees,Freelance developers hired for client projects; this chart has no contractor account.,no
-delta,DELTA AIR 0062318842271 ATLANTA GA | DELTA AIR LINES 0062321957006 ATLANTA,debit,5800,Travel & Entertainment,Flights to on-site client workshops.,no
-southwest,SOUTHWES 5262134986715 800-435-9792 TX | SOUTHWEST AIRLINES (526) DALLAS TX,debit,5800,Travel & Entertainment,Flights to on-site client workshops.,no
-marriott,MARRIOTT DENVER DOWNTOWN DENVER CO | COURTYARD BY MARRIOTT DALLAS TX,debit,5800,Travel & Entertainment,Hotel on client trips.,no
-airbnb,AIRBNB * HMQ2K8Z9XD SAN FRANCISCO CA | AIRBNB * HM{ref} 415-800-5959 CA,debit,5800,Travel & Entertainment,Lodging for a multi-day client workshop.,no
-uber,UBER *TRIP HELP.UBER.COM CA | UBER* TRIP 8005928996 CA,debit,5800,Travel & Entertainment,Rides to client meetings and airports.,no
-lyft,LYFT *RIDE SUN 11AM 855-865-9553 CA | LYFT *RIDE THU 8AM LYFT.COM CA,debit,5800,Travel & Entertainment,Rides to client meetings and airports.,no
-parking,PARKMOBILE AUSTIN TX | CITY OF AUSTIN PARKING METER AUSTIN TX,debit,5800,Travel & Entertainment,Parking at client sites.,no
-fuel,SHELL OIL 57444211502 AUSTIN TX | POS DEBIT {mmdd} SHELL SERVICE STATION AUSTIN,debit,5800,Travel & Entertainment,Fuel for the business vehicle; this chart has no separate vehicle account.,no
-starbucks,STARBUCKS STORE 11527 AUSTIN TX | STARBUCKS 800-782-7282 WA,debit,5800,Travel & Entertainment,Coffee meetings with prospects and clients; meals and entertainment share one account in this chart.,no
-doordash_team,DOORDASH*TACODELI SAN FRANCISCO CA | DOORDASH*TORCHYS TACO DOORDASH.COM,debit,5800,Travel & Entertainment,Lunch delivered to the studio on client workshop days.,no
-google_workspace,GOOGLE *GSUITE_brightli CC@GOOGLE.COM CA | GOOGLE*WORKSPACE BRIGHTLINESTUD,debit,6100,Subscriptions & Software,Email and docs for the team.,no
-adobe,ADOBE *CREATIVE CLOUD 408-536-6000 CA | ADOBE  *ADOBE ACROPRO SUBS ADOBE.LY/ENUS,debit,6100,Subscriptions & Software,Design software seats.,no
-figma,FIGMA MONTHLY RENEWAL FIGMA.COM CA | FIGMA 415-890-5404 CA,debit,6100,Subscriptions & Software,Design and prototyping software seats.,no
-slack,SLACK T0214XQ9V DUBLIN | SLACK TECHNOLOGIES SLACK.COM CA,debit,6100,Subscriptions & Software,Team chat.,no
-zoom,ZOOM.US 888-799-9666 CA | ZOOM VIDEO COMMUNICATIONS ZOOM.US,debit,6100,Subscriptions & Software,Video calls with remote clients.,no
-notion,"NOTION LABS, INC. NOTION.SO CA | NOTION LABS INC 415-9022010",debit,6100,Subscriptions & Software,Project wiki and client docs.,no
-quickbooks,INTUIT *QBooks Online CL.INTUIT.COM CA | INTUIT *QUICKBOOKS 800-286-6800 CA,debit,6100,Subscriptions & Software,Accounting software.,no
-aws,Amazon web services aws.amazon.co WA | AWS EMEA AWS.AMAZON.COM,debit,6100,Subscriptions & Software,Hosting for client websites the studio maintains; cloud service not a marketplace purchase.,no
-github,"GITHUB, INC. GITHUB.COM CA | GITHUB INC 877-4484820 CA",debit,6100,Subscriptions & Software,Code hosting for client web projects.,no
-bank_monthly_fee,MONTHLY MAINTENANCE FEE | SERVICE FEE - ACCOUNT ANALYSIS,debit,6000,Bank Fees & Charges,The bank's monthly account fee.,no
-wire_fee,INCOMING WIRE FEE | WIRE TRANSFER FEE,debit,6000,Bank Fees & Charges,Fee the bank charges on an incoming client wire.,no
-franchise_tax,TX COMPTROLLER DES:FRANCHISE ID:{ref} | TEXAS COMPTROLLER WEBFILE FRANCHISE TAX,debit,6200,Taxes & Licenses,Annual Texas franchise tax is a business tax.,no
-sales_tax,TX COMPTROLLER DES:SALES TAX ID:{ref} | TEXAS COMPTROLLER WEBFILE SALES TAX,debit,2200,Sales Tax Payable,Remits sales tax collected from clients on taxable services; clears the liability and is not an expense.,no
-sos_filing,TX SOS ONLINE FILING 512-4635555 TX | SECRETARY OF STATE TX FILING FEE,debit,6200,Taxes & Licenses,State filing fee for the LLC's annual paperwork.,no
-irs_estimated,IRS DES:USATAXPYMT ID:{ref} INDN:JORDAN REYES | IRS USATAXPYMT {ref},debit,3100,Owner's Draw,The owner's personal estimated income tax for a pass-through LLC; not a business expense.,no
-owner_draw,ONLINE TRANSFER TO REYES J PERSONAL CHK ...4417 REF #{ref} | TRANSFER TO JORDAN REYES PERSONAL,debit,3100,Owner's Draw,The owner pays themself from profits; equity withdrawal not wages.,no
-savings_transfer_out,ONLINE TRANSFER TO SAV ...8830 REF #{ref} | ONLINE BANKING TRANSFER TO SAVINGS 8830,debit,1010,Savings Account,Money moved to the firm's own savings account; not an expense.,no
-cc_payment,CHASE CREDIT CRD AUTOPAY PPD ID: 4760039224 | PAYMENT TO CHASE CARD ENDING IN 3301,debit,2100,Credit Card Payable,Paying the business credit card balance; the card's own purchases are categorised on the card statement.,no
-sba_loan,SBA LOAN PYMT DES:LOAN PMT ID:{ref} | SBA EIDL LOAN PAYMENT {ref},debit,2500,Long-Term Loan,Monthly SBA loan payment; labelled all principal because this chart has no interest-expense account.,no
-loc_repayment,LOC PAYMENT ...5521 ONLINE TRANSFER | LINE OF CREDIT PAYMENT 5521,debit,2400,Short-Term Loan,Paying down the business line of credit.,no
-atm_petty_cash,ATM WITHDRAWAL {mmdd} 1100 CONGRESS AVE AUSTIN TX | NON-CHASE ATM WITHDRAW {mmdd} AUSTIN TX,debit,1020,Petty Cash,Cash taken out for the office float; tracked as petty cash until spent.,no
-apple_equipment,APPLE STORE #R452 AUSTIN TX | APPLE ONLINE STORE 800-676-2775 CA,debit,1500,Equipment,Laptops and monitors above the capitalisation threshold are equipment not expenses.,no
-ace_hardware,ACE HARDWARE #07891 AUSTIN TX | POS DEBIT {mmdd} ACE HDWE 07891 AUSTIN,debit,6300,Miscellaneous Expense,Small office repairs; this chart has no repairs account.,no
-amazon,AMZN Mktp US*2K4TR8LQ2 Amzn.com/bill WA | Amazon.com*RT5AB12C3 Amzn.com/bill WA | AMAZON MKTPL*ZX9LL0PQ1 Amzn.com/bill,debit,,,Could be office supplies or equipment or a personal order; the description never says which.,yes
-costco,COSTCO WHSE #0681 AUSTIN TX | POS DEBIT {mmdd} COSTCO WHOLESALE 0681 AUSTIN,debit,,,Could be studio snacks and supplies or the owner's personal shopping.,yes
-venmo,VENMO DES:PAYMENT ID:{ref} INDN:JORDAN REYES | VENMO *PAYMENT 855-812-4430 NY,debit,,,Could be paying a freelancer or reimbursing an employee or a personal payment.,yes
-paypal,PAYPAL *INST XFER {ref} | PAYPAL DES:INST XFER ID:{ref} INDN:JORDAN REYES,debit,,,PayPal hides the real merchant; could be software or a freelancer or personal.,yes
-restaurant,SQ *ODD DUCK AUSTIN TX | TST* UCHI AUSTIN - AUSTIN TX | POS DEBIT {mmdd} LAMBERTS DOWNTOWN AUSTIN,debit,,,A dinner could be client entertainment (5800 whether meal or entertainment) or the owner's personal meal (3100).,yes
-zelle_individual,ZELLE TO MARCUS LEE ON {mmdd} REF #{ref} | ZELLE PAYMENT TO MARCUS LEE CONF# {ref},debit,,,A payment to a person could be a freelancer or an expense reimbursement or personal.,yes
-apple_services,APPLE.COM/BILL 866-712-7753 CA | APPLE.COM/BILL ONE APPLE PARK WAY,debit,,,Could be business iCloud storage and apps or the owner's personal subscriptions.,yes
+vendor_key,example_descriptions,direction,account_code,account_name,why,ambiguous,acceptable_codes
+client_harborline,ACH CREDIT HARBORLINE DENTAL PPD ID: 1742233991 | HARBORLINE DENTAL DES:PAYMENT ID:{ref} INDN:BRIGHTLINE STUDIO LLC,credit,1100,Accounts Receivable,Client pays an invoice already raised in the books; the payment clears the receivable.,no,4100
+client_kestrel,ORIG CO NAME:KESTREL ROBOTICS ENTRY DESCR:PAYABLES SEC:CCD IND ID:{ref} | KESTREL ROBOTICS DES:VENDOR PAY ID:{ref} CO ID:9000123456 CCD,credit,1100,Accounts Receivable,Client pays an invoice already raised in the books; the payment clears the receivable.,no,4100
+client_orchard_wire,INCOMING WIRE TRF ORCHARD AND PINE CO REF {ref} | WIRE TYPE:FED IN DATE:{mmdd} ORIG:ORCHARD & PINE CO,credit,1100,Accounts Receivable,Client pays a large invoice by wire; the payment clears the receivable.,no,4100
+client_check_deposit,MOBILE DEPOSIT CHECK #{n4} | REMOTE ONLINE DEPOSIT #{n4},credit,1100,Accounts Receivable,Clients who pay by paper check are paying issued invoices.,no,4100
+stripe_payout,STRIPE TRANSFER ST-{ref} | STRIPE DES:TRANSFER ID:ST-{ref} INDN:BRIGHTLINE STUDIO LLC,credit,1100,Accounts Receivable,Payouts settle invoices clients paid by card online; payouts are net of Stripe fees (a full ledger would split the fee out).,no,4100
+square_workshop,SQ *BRIGHTLINE WORKSHOP {mmdd} | SQUARE INC DES:SQ{mmdd} ID:T3{ref} WORKSHOP,credit,4100,Service Revenue,Design-workshop seats are paid on the day with no invoice so the deposit is revenue directly.,no,
+bank_interest,INTEREST PAYMENT | INTEREST EARNED,credit,4200,Other Income,Interest the bank pays on the checking balance is not from the firm's services.,no,
+owner_contribution,ONLINE TRANSFER FROM REYES J PERSONAL CHK ...4417 REF #{ref} | TRANSFER FROM JORDAN REYES,credit,3000,Owner's Equity,The owner puts personal money into the business; that is capital not income.,no,
+savings_transfer_in,ONLINE TRANSFER FROM SAV ...8830 REF #{ref} | ONLINE BANKING TRANSFER FROM SAVINGS 8830,credit,1010,Savings Account,Money moved back from the firm's own savings account; not income.,no,
+loc_draw,LOC ADVANCE ...5521 ONLINE TRANSFER | LINE OF CREDIT DRAW 5521,credit,2400,Short-Term Loan,A draw on the business line of credit increases what the firm owes.,no,
+refund_adobe,ADOBE *REFUND 408-536-6000 CA | ADOBE REFUND ADOBE.LY/ENUS,credit,6100,Subscriptions & Software,Refund of a software charge reverses the original subscription expense.,no,
+refund_delta,DELTA AIR LINES REFUND ATLANTA GA | DELTA AIR 0062318842271 REFUND,credit,5800,Travel & Entertainment,Refund of a cancelled flight reverses the original travel expense.,no,
+gusto_net_pay,GUSTO DES:NET {mmdd} ID:{ref} INDN:BRIGHTLINE STUDIO LLC | GUSTO PAYROLL NET PAY {mmdd},debit,5100,Payroll & Wages,Employees' net pay on each semi-monthly payroll run.,no,
+gusto_tax,GUSTO DES:TAX {mmdd} ID:{ref} INDN:BRIGHTLINE STUDIO LLC | GUSTO PAYROLL TAXES {mmdd},debit,2300,Payroll Liabilities,Withheld and employer payroll taxes Gusto collects to remit; the payroll journal records the liability and this payment clears it.,no,
+gusto_fee,GUSTO DES:FEE {mmdd} ID:{ref} | GUSTO.COM MONTHLY FEE,debit,6100,Subscriptions & Software,Gusto's own monthly platform fee is software not wages.,no,
+office_rent,ACH DEBIT CEDAR PARK PROPERTIES RENT {ref} | CEDAR PARK PROP DES:RENT ID:{ref},debit,5200,Rent & Lease,Monthly rent for the studio office.,no,
+coworking,WEWORK MEMBERSHIPS 646-491-9060 NY | WEWORK {ref} NEW YORK NY,debit,5200,Rent & Lease,Meeting-room and day-pass bookings for client sessions are space rental.,no,
+electric,AUSTIN ENERGY WEB PMT {ref} | CITY OF AUSTIN UTIL DES:UTIL PYMT ID:{ref},debit,5300,Utilities,Office electricity and water from the city utility.,no,
+internet,SPECTRUM BUSINESS 855-707-7328 TX | CHARTER COMM* SPECTRUM 855-707-7328,debit,5300,Utilities,Office internet service; this chart files internet under utilities.,no,
+phone,VZWRLSS*APOCC VISB 800-922-0204 FL | VERIZON WRLS P{n4}-01 FL,debit,5300,Utilities,Business mobile phone plan; this chart files phone under utilities.,no,
+staples,STAPLES 00115 AUSTIN TX | POS DEBIT {mmdd} STAPLES DIRECT 800-3333330 MA,debit,5400,Office Supplies,Paper ink and desk supplies.,no,
+office_depot,OFFICE DEPOT #1138 AUSTIN TX | POS DEBIT {mmdd} OFFICEMAX/DEPOT 6143 AUSTIN TX,debit,5400,Office Supplies,Office consumables.,no,
+usps,USPS PO 4853460532 AUSTIN TX | USPS.COM CLICKNSHIP 800-344-7779 DC,debit,5400,Office Supplies,Postage for mailing contracts and client deliverables; this chart has no postage account.,no,
+google_ads,GOOGLE *ADS8128341279 CC@GOOGLE.COM CA | GOOGLE ADS {n4} MOUNTAIN VIEW CA,debit,5500,Marketing & Advertising,Search ads for the studio.,no,
+meta_ads,FACEBK *K7DB2XQLR2 FB.ME/ADS CA | META PLATFORMS ADS 650-5434800 CA,debit,5500,Marketing & Advertising,Instagram and Facebook ads for the studio.,no,
+linkedin_ads,LINKEDIN *MKTG SOLUTNS 855-6535653 CA | LINKEDIN ADS {ref} 855-6535653,debit,5500,Marketing & Advertising,Sponsored posts aimed at B2B clients.,no,
+mailchimp,MAILCHIMP *MONTHLY MAILCHIMP.COM GA | INTUIT *MAILCHIMP ATLANTA GA,debit,5500,Marketing & Advertising,Email newsletter platform used only for marketing; treated as marketing spend rather than general software.,no,6100
+hiscox,HISCOX INC 866-283-7545 NY | HISCOX INSURANCE DES:PREMIUM ID:{ref},debit,5600,Insurance,Monthly professional liability premium.,no,
+health_insurance,BCBS TX DES:INS PREM ID:{ref} INDN:BRIGHTLINE STUDIO | BLUE CROSS BLUE SHIELD TX PREMIUM,debit,5600,Insurance,Employee group health premium paid by the firm.,no,
+auto_insurance,PROGRESSIVE *INSURANCE 800-776-4737 OH | PROG DIRECT INS DES:INS PREM ID:{ref},debit,5600,Insurance,Policy on the studio's one business vehicle.,no,
+cpa_firm,ACH DEBIT MORALES & KIM CPAS {ref} | MORALES AND KIM CPA DES:BILLPAY ID:{ref},debit,5700,Professional Fees,Monthly bookkeeping and tax-prep retainer.,no,
+law_firm,BILL PAY HALVERSON LAW PLLC {ref} | ONLINE PMT HALVERSON LAW PLLC,debit,5700,Professional Fees,Legal review of a client master services agreement.,no,
+upwork,UPWORK -{ref}REF SAN FRANCISCO CA | UPWORK ESCROW INC 650-3162277 CA,debit,5700,Professional Fees,Freelance developers hired for client projects; this chart has no contractor account.,no,
+delta,DELTA AIR 0062318842271 ATLANTA GA | DELTA AIR LINES 0062321957006 ATLANTA,debit,5800,Travel & Entertainment,Flights to on-site client workshops.,no,
+southwest,SOUTHWES 5262134986715 800-435-9792 TX | SOUTHWEST AIRLINES (526) DALLAS TX,debit,5800,Travel & Entertainment,Flights to on-site client workshops.,no,
+marriott,MARRIOTT DENVER DOWNTOWN DENVER CO | COURTYARD BY MARRIOTT DALLAS TX,debit,5800,Travel & Entertainment,Hotel on client trips.,no,
+airbnb,AIRBNB * HMQ2K8Z9XD SAN FRANCISCO CA | AIRBNB * HM{ref} 415-800-5959 CA,debit,5800,Travel & Entertainment,Lodging for a multi-day client workshop.,no,
+uber,UBER *TRIP HELP.UBER.COM CA | UBER* TRIP 8005928996 CA,debit,5800,Travel & Entertainment,Rides to client meetings and airports.,no,
+lyft,LYFT *RIDE SUN 11AM 855-865-9553 CA | LYFT *RIDE THU 8AM LYFT.COM CA,debit,5800,Travel & Entertainment,Rides to client meetings and airports.,no,
+parking,PARKMOBILE AUSTIN TX | CITY OF AUSTIN PARKING METER AUSTIN TX,debit,5800,Travel & Entertainment,Parking at client sites.,no,
+fuel,SHELL OIL 57444211502 AUSTIN TX | POS DEBIT {mmdd} SHELL SERVICE STATION AUSTIN,debit,5800,Travel & Entertainment,Fuel for the business vehicle; this chart has no separate vehicle account.,no,6300
+starbucks,STARBUCKS STORE 11527 AUSTIN TX | STARBUCKS 800-782-7282 WA,debit,5800,Travel & Entertainment,Coffee meetings with prospects and clients; meals and entertainment share one account in this chart.,no,5500
+doordash_team,DOORDASH*TACODELI SAN FRANCISCO CA | DOORDASH*TORCHYS TACO DOORDASH.COM,debit,5800,Travel & Entertainment,Lunch delivered to the studio on client workshop days.,no,
+google_workspace,GOOGLE *GSUITE_brightli CC@GOOGLE.COM CA | GOOGLE*WORKSPACE BRIGHTLINESTUD,debit,6100,Subscriptions & Software,Email and docs for the team.,no,
+adobe,ADOBE *CREATIVE CLOUD 408-536-6000 CA | ADOBE  *ADOBE ACROPRO SUBS ADOBE.LY/ENUS,debit,6100,Subscriptions & Software,Design software seats.,no,
+figma,FIGMA MONTHLY RENEWAL FIGMA.COM CA | FIGMA 415-890-5404 CA,debit,6100,Subscriptions & Software,Design and prototyping software seats.,no,
+slack,SLACK T0214XQ9V DUBLIN | SLACK TECHNOLOGIES SLACK.COM CA,debit,6100,Subscriptions & Software,Team chat.,no,
+zoom,ZOOM.US 888-799-9666 CA | ZOOM VIDEO COMMUNICATIONS ZOOM.US,debit,6100,Subscriptions & Software,Video calls with remote clients.,no,
+notion,"NOTION LABS, INC. NOTION.SO CA | NOTION LABS INC 415-9022010",debit,6100,Subscriptions & Software,Project wiki and client docs.,no,
+quickbooks,INTUIT *QBooks Online CL.INTUIT.COM CA | INTUIT *QUICKBOOKS 800-286-6800 CA,debit,6100,Subscriptions & Software,Accounting software.,no,
+aws,Amazon web services aws.amazon.co WA | AWS EMEA AWS.AMAZON.COM,debit,6100,Subscriptions & Software,Hosting for client websites the studio maintains; cloud service not a marketplace purchase.,no,
+github,"GITHUB, INC. GITHUB.COM CA | GITHUB INC 877-4484820 CA",debit,6100,Subscriptions & Software,Code hosting for client web projects.,no,
+bank_monthly_fee,MONTHLY MAINTENANCE FEE | SERVICE FEE - ACCOUNT ANALYSIS,debit,6000,Bank Fees & Charges,The bank's monthly account fee.,no,
+wire_fee,INCOMING WIRE FEE | WIRE TRANSFER FEE,debit,6000,Bank Fees & Charges,Fee the bank charges on an incoming client wire.,no,
+franchise_tax,TX COMPTROLLER DES:FRANCHISE ID:{ref} | TEXAS COMPTROLLER WEBFILE FRANCHISE TAX,debit,6200,Taxes & Licenses,Annual Texas franchise tax is a business tax.,no,
+sales_tax,TX COMPTROLLER DES:SALES TAX ID:{ref} | TEXAS COMPTROLLER WEBFILE SALES TAX,debit,2200,Sales Tax Payable,Remits sales tax collected from clients on taxable services; clears the liability and is not an expense.,no,
+sos_filing,TX SOS ONLINE FILING 512-4635555 TX | SECRETARY OF STATE TX FILING FEE,debit,6200,Taxes & Licenses,State filing fee for the LLC's annual paperwork.,no,
+irs_estimated,IRS DES:USATAXPYMT ID:{ref} INDN:JORDAN REYES | IRS USATAXPYMT {ref},debit,3100,Owner's Draw,The owner's personal estimated income tax for a pass-through LLC; not a business expense.,no,6200
+owner_draw,ONLINE TRANSFER TO REYES J PERSONAL CHK ...4417 REF #{ref} | TRANSFER TO JORDAN REYES PERSONAL,debit,3100,Owner's Draw,The owner pays themself from profits; equity withdrawal not wages.,no,
+savings_transfer_out,ONLINE TRANSFER TO SAV ...8830 REF #{ref} | ONLINE BANKING TRANSFER TO SAVINGS 8830,debit,1010,Savings Account,Money moved to the firm's own savings account; not an expense.,no,
+cc_payment,CHASE CREDIT CRD AUTOPAY PPD ID: 4760039224 | PAYMENT TO CHASE CARD ENDING IN 3301,debit,2100,Credit Card Payable,Paying the business credit card balance; the card's own purchases are categorised on the card statement.,no,
+sba_loan,SBA LOAN PYMT DES:LOAN PMT ID:{ref} | SBA EIDL LOAN PAYMENT {ref},debit,2500,Long-Term Loan,Monthly SBA loan payment; labelled all principal because this chart has no interest-expense account.,no,
+loc_repayment,LOC PAYMENT ...5521 ONLINE TRANSFER | LINE OF CREDIT PAYMENT 5521,debit,2400,Short-Term Loan,Paying down the business line of credit.,no,
+atm_petty_cash,ATM WITHDRAWAL {mmdd} 1100 CONGRESS AVE AUSTIN TX | NON-CHASE ATM WITHDRAW {mmdd} AUSTIN TX,debit,1020,Petty Cash,Cash taken out for the office float; tracked as petty cash until spent.,no,
+apple_equipment,APPLE STORE #R452 AUSTIN TX | APPLE ONLINE STORE 800-676-2775 CA,debit,1500,Equipment,Laptops and monitors above the capitalisation threshold are equipment not expenses.,no,
+ace_hardware,ACE HARDWARE #07891 AUSTIN TX | POS DEBIT {mmdd} ACE HDWE 07891 AUSTIN,debit,6300,Miscellaneous Expense,Small office repairs; this chart has no repairs account.,no,
+amazon,AMZN Mktp US*2K4TR8LQ2 Amzn.com/bill WA | Amazon.com*RT5AB12C3 Amzn.com/bill WA | AMAZON MKTPL*ZX9LL0PQ1 Amzn.com/bill,debit,,,Could be office supplies or equipment or a personal order; the description never says which.,yes,
+costco,COSTCO WHSE #0681 AUSTIN TX | POS DEBIT {mmdd} COSTCO WHOLESALE 0681 AUSTIN,debit,,,Could be studio snacks and supplies or the owner's personal shopping.,yes,
+venmo,VENMO DES:PAYMENT ID:{ref} INDN:JORDAN REYES | VENMO *PAYMENT 855-812-4430 NY,debit,,,Could be paying a freelancer or reimbursing an employee or a personal payment.,yes,
+paypal,PAYPAL *INST XFER {ref} | PAYPAL DES:INST XFER ID:{ref} INDN:JORDAN REYES,debit,,,PayPal hides the real merchant; could be software or a freelancer or personal.,yes,
+restaurant,SQ *ODD DUCK AUSTIN TX | TST* UCHI AUSTIN - AUSTIN TX | POS DEBIT {mmdd} LAMBERTS DOWNTOWN AUSTIN,debit,,,A dinner could be client entertainment (5800 whether meal or entertainment) or the owner's personal meal (3100).,yes,
+zelle_individual,ZELLE TO MARCUS LEE ON {mmdd} REF #{ref} | ZELLE PAYMENT TO MARCUS LEE CONF# {ref},debit,,,A payment to a person could be a freelancer or an expense reimbursement or personal.,yes,
+apple_services,APPLE.COM/BILL 866-712-7753 CA | APPLE.COM/BILL ONE APPLE PARK WAY,debit,,,Could be business iCloud storage and apps or the owner's personal subscriptions.,yes,

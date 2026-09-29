@@ -19,6 +19,9 @@ checking account from 2026-06-01 to 2026-08-31.
 | `data/hand_labels.csv` | The rows from ambiguous vendors, for you to label by hand. |
 | `data/synthetic_upload.csv` | The same transactions in the app's upload format (`Date, Description, Amount`, where negative means money out). |
 | `data/chart_of_accounts.csv` | The chart used, in the app's chart upload format (`Code, Name, Type`). |
+| `run.ts` | Runs the real engine on the dataset and writes a report (see "Measuring the engine"). |
+| `metrics.ts`, `report.ts`, `data.ts` | Scoring (pure functions, unit-tested in `__tests__/`), report writing, and dataset loading. |
+| `pricing.json` | Price per million tokens for each model, with the source URL and the date checked. |
 
 ## How the labels were produced
 
@@ -68,6 +71,62 @@ The labels encode one reasonable policy. Change `vendors.csv` if yours differs.
 - **Vendor refunds** go back to the original expense account.
 - **Meals and entertainment** both go to **5800 Travel & Entertainment**,
   because this chart has one account for both.
+
+### Acceptable alternates
+
+Where the right account depends on bookkeeping policy, the vendor table's
+optional `acceptable_codes` column (pipe-separated, e.g. `4100` or
+`5500|6100`) lists other defensible answers. `true_account_code` stays the
+primary answer. It is pre-filled for:
+
+- client payments and Stripe payouts (4100);
+- Mailchimp (6100);
+- fuel (6300);
+- coffee meetings (5500);
+- IRS estimated tax (6200).
+
+`hand_labels.csv` has the same column for hand-labelled rows. Reports show
+**strict** accuracy (primary answer only) and **lenient** accuracy (primary
+answer or an alternate).
+
+## Measuring the engine
+
+```bash
+npx vite-node --config vitest.config.ts eval/run.ts --runs 3                  # full run (calls the API)
+npx vite-node --config vitest.config.ts eval/run.ts --limit 20 --labelled-only # small smoke test
+npx vite-node --config vitest.config.ts eval/run.ts --fake --limit 40          # no API calls, pipeline test
+```
+
+Options:
+
+- `--model <id>`: defaults to the app's `CATEGORIZE_MODEL`.
+- `--runs <n>`: defaults to 1. Stability across runs needs 2 or more.
+- `--limit <n>`: evenly spaced rows across the dataset.
+- `--labelled-only`: skip rows with no label yet.
+- `--out <dir>`: defaults to `eval/results/<timestamp>/`.
+- `--fake`: a stand-in model; no API calls.
+
+The runner calls the real `categorizeTransactionsWithUsage()` in
+`src/lib/categorize.ts` directly, not over HTTP. That is the same engine code
+`/api/categorize` runs, including confidence adjustment, chart validation and
+the app's auto-approve threshold. It passes no firm corrections. The API key
+comes from the environment or `.env.local`.
+
+Each run writes three files:
+
+- `raw.json`: every prediction, API call, token count and timing;
+- `summary.json`: the computed metrics;
+- `report.md`: a plain-language report.
+
+`eval/results/` is gitignored; commit a finished result with `git add -f`.
+Rows with no label are sent to the engine, but they are left out of scoring
+and counted. The report shows separately what the app did with them.
+`report.ts` can re-render a saved run:
+`npx vite-node --config vitest.config.ts eval/report.ts eval/results/<ts>/raw.json`.
+
+Cost comes from the token usage the API reports and the prices in
+`pricing.json`. If a price is missing, the report says "cost not computed"
+rather than estimating.
 
 ## How to regenerate
 

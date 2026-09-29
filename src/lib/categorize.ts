@@ -2,11 +2,13 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { Transaction, ChartOfAccounts } from '@/types'
 import { resolveAgainstCoa } from '@/lib/coaValidation'
 
-const MODEL = 'claude-sonnet-4-6'
-const BATCH_SIZE = 20
+/** The model the app categorises with. Exported for the eval harness. */
+export const CATEGORIZE_MODEL = 'claude-sonnet-4-6'
+const MODEL = CATEGORIZE_MODEL
+export const BATCH_SIZE = 20
 const MAX_RETRIES = 3
 const RETRY_DELAY_MS = 1000
-const AUTO_APPROVE_THRESHOLD = 0.85
+export const AUTO_APPROVE_THRESHOLD = 0.85
 
 // Plain object shape — mirrors Correction from corrections.ts but without the
 // savedAt field and without a client-side localStorage dependency.
@@ -158,23 +160,80 @@ async function sleep(ms: number) {
 // Batch call with retry
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Usage reporting (read by the eval harness; the app ignores it)
+// ---------------------------------------------------------------------------
+
+/** One Anthropic API attempt. Retries are separate entries. */
+export interface CategorizeCall {
+  batchIndex: number
+  attempt: number
+  model: string
+  latencyMs: number
+  inputTokens: number
+  outputTokens: number
+  cacheReadTokens: number
+  cacheWriteTokens: number
+  /** Set when this attempt failed (network error, bad JSON, …). */
+  error?: string
+}
+
+/** Wall-clock time for one batch, including any retries and back-off. */
+export interface CategorizeBatchTiming {
+  batchIndex: number
+  size: number
+  wallMs: number
+  ok: boolean
+}
+
+export interface CategorizeOptions {
+  /** Override the model (eval only). Defaults to CATEGORIZE_MODEL. */
+  model?: string
+  /** Override the Anthropic client (tests only). */
+  client?: Pick<Anthropic, 'messages'>
+}
+
+export interface CategorizeResult {
+  transactions: Transaction[]
+  calls: CategorizeCall[]
+  batches: CategorizeBatchTiming[]
+}
+
 async function categorizeBatch(
   batch: Transaction[],
   coa: ChartOfAccounts[],
-  corrections: CorrectionHint[]
+  corrections: CorrectionHint[],
+  api: Pick<Anthropic, 'messages'>,
+  model: string,
+  batchIndex: number,
+  calls: CategorizeCall[]
 ): Promise<ClaudeItem[]> {
   let lastError: Error | null = null
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const started = Date.now()
+    let call: CategorizeCall | null = null
     try {
       const prompt = buildUserPrompt(batch, coa, corrections)
 
-      const message = await client.messages.create({
-        model: MODEL,
+      const message = await api.messages.create({
+        model,
         max_tokens: 4096,
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: prompt }],
       })
+
+      call = {
+        batchIndex,
+        attempt,
+        model,
+        latencyMs: Date.now() - started,
+        inputTokens: message.usage?.input_tokens ?? 0,
+        outputTokens: message.usage?.output_tokens ?? 0,
+        cacheReadTokens: message.usage?.cache_read_input_tokens ?? 0,
+        cacheWriteTokens: message.usage?.cache_creation_input_tokens ?? 0,
+      }
+      calls.push(call)
 
       const content = message.content[0]
       if (content.type !== 'text') {
@@ -186,6 +245,12 @@ async function categorizeBatch(
       return items
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err))
+      if (call) call.error = lastError.message
+      else calls.push({
+        batchIndex, attempt, model, latencyMs: Date.now() - started,
+        inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0,
+        error: lastError.message,
+      })
 
       const isFatal =
         lastError.message.includes('No JSON array') ||
@@ -211,18 +276,39 @@ export async function categorizeTransactions(
   chartOfAccounts: ChartOfAccounts[],
   corrections: CorrectionHint[] = []
 ): Promise<Transaction[]> {
-  if (!transactions.length) return []
+  return (await categorizeTransactionsWithUsage(transactions, chartOfAccounts, corrections)).transactions
+}
+
+/**
+ * Same as categorizeTransactions, plus per-call token usage and timings.
+ * The categorised transactions are identical; see categorize.test.ts.
+ */
+export async function categorizeTransactionsWithUsage(
+  transactions: Transaction[],
+  chartOfAccounts: ChartOfAccounts[],
+  corrections: CorrectionHint[] = [],
+  options: CategorizeOptions = {}
+): Promise<CategorizeResult> {
+  const calls: CategorizeCall[] = []
+  const batches: CategorizeBatchTiming[] = []
+  if (!transactions.length) return { transactions: [], calls, batches }
   if (!chartOfAccounts.length) throw new Error('Chart of accounts is empty.')
 
+  const api = options.client ?? client
+  const model = options.model ?? MODEL
   const results: Transaction[] = []
 
   for (let i = 0; i < transactions.length; i += BATCH_SIZE) {
     const batch = transactions.slice(i, i + BATCH_SIZE)
+    const batchIndex = i / BATCH_SIZE
+    const started = Date.now()
 
     let items: ClaudeItem[]
     try {
-      items = await categorizeBatch(batch, chartOfAccounts, corrections)
+      items = await categorizeBatch(batch, chartOfAccounts, corrections, api, model, batchIndex, calls)
+      batches.push({ batchIndex, size: batch.length, wallMs: Date.now() - started, ok: true })
     } catch {
+      batches.push({ batchIndex, size: batch.length, wallMs: Date.now() - started, ok: false })
       for (const tx of batch) results.push({ ...tx, status: 'flagged' })
       continue
     }
@@ -266,5 +352,5 @@ export async function categorizeTransactions(
 
   }
 
-  return results
+  return { transactions: results, calls, batches }
 }

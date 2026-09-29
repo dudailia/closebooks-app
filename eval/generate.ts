@@ -79,7 +79,14 @@ interface Vendor {
   examples: string[]
   direction: 'debit' | 'credit'
   accountCode: string
+  /** Other defensible answers for a policy-dependent label (optional column). */
+  acceptableCodes: string[]
   ambiguous: boolean
+}
+
+/** "4100|6100" → ["4100", "6100"] */
+function parseCodes(value: string): string[] {
+  return value.split('|').map((c) => c.trim()).filter(Boolean)
 }
 
 function readVendors(chart: Account[]): Vendor[] {
@@ -101,7 +108,13 @@ function readVendors(chart: Account[]): Vendor[] {
       if (!account) throw new Error(`${where}: account_code "${r.account_code}" is not in the chart`)
       if (account.name !== r.account_name) throw new Error(`${where}: account_name "${r.account_name}" should be "${account.name}"`)
     }
-    return { key: r.vendor_key, examples, direction: r.direction, accountCode: r.account_code, ambiguous: r.ambiguous === 'yes' }
+    const acceptableCodes = parseCodes(r.acceptable_codes ?? '')
+    for (const code of acceptableCodes) {
+      if (!byCode.has(code)) throw new Error(`${where}: acceptable code "${code}" is not in the chart`)
+      if (code === r.account_code) throw new Error(`${where}: acceptable_codes repeats the primary account`)
+    }
+    if (r.ambiguous === 'yes' && acceptableCodes.length) throw new Error(`${where}: ambiguous vendors get alternates in hand_labels.csv, not here`)
+    return { key: r.vendor_key, examples, direction: r.direction, accountCode: r.account_code, acceptableCodes, ambiguous: r.ambiguous === 'yes' }
   })
 }
 
@@ -364,6 +377,7 @@ function main(): void {
       amount: r.amount.toFixed(2),
       type: r.vendor.direction,
       true_account_code: r.vendor.ambiguous ? '' : r.vendor.accountCode,
+      acceptable_codes: r.vendor.acceptableCodes.join('|'),
       label_source: r.vendor.ambiguous ? 'hand' : 'vendor_table',
     }
   })
@@ -376,17 +390,22 @@ function main(): void {
   const handRows = out.filter((r) => r.label_source === 'hand').map((r) => {
     const prior = existing.get(r.id)
     const code = prior?.true_account_code ?? ''
-    if (code && !codes.has(code)) throw new Error(`hand_labels.csv ${r.id}: "${code}" is not in the chart`)
+    const alternates = parseCodes(prior?.acceptable_codes ?? '')
+    for (const c of [code, ...alternates]) {
+      if (c && !codes.has(c)) throw new Error(`hand_labels.csv ${r.id}: "${c}" is not in the chart`)
+    }
+    if (alternates.length && !code) throw new Error(`hand_labels.csv ${r.id}: acceptable_codes needs a true_account_code too`)
     r.true_account_code = code
-    return { id: r.id, date: r.date, description: r.description, amount: r.amount, type: r.type, true_account_code: code, note: prior?.note ?? '' }
+    r.acceptable_codes = alternates.join('|')
+    return { id: r.id, date: r.date, description: r.description, amount: r.amount, type: r.type, true_account_code: code, acceptable_codes: r.acceptable_codes, note: prior?.note ?? '' }
   })
   const dropped = [...existing.keys()].filter((id) => !handRows.some((r) => r.id === id))
   if (dropped.length) console.warn(`hand_labels.csv: ${dropped.length} labelled id(s) no longer generated and were dropped: ${dropped.join(', ')}`)
 
   writeFileSync(`${DATA}synthetic_transactions.csv`,
-    toCsv(['id', 'date', 'description', 'amount', 'type', 'true_account_code', 'label_source'], out))
+    toCsv(['id', 'date', 'description', 'amount', 'type', 'true_account_code', 'acceptable_codes', 'label_source'], out))
   writeFileSync(handPath,
-    toCsv(['id', 'date', 'description', 'amount', 'type', 'true_account_code', 'note'], handRows))
+    toCsv(['id', 'date', 'description', 'amount', 'type', 'true_account_code', 'acceptable_codes', 'note'], handRows))
   writeFileSync(`${DATA}synthetic_upload.csv`,
     toCsv(['Date', 'Description', 'Amount'], out.map((r) => ({
       Date: r.date, Description: r.description, Amount: r.type === 'debit' ? `-${r.amount}` : r.amount,
@@ -404,6 +423,7 @@ function main(): void {
   console.log(`vendors: ${vendors.length} (${vendors.filter((v) => v.ambiguous).length} ambiguous)`)
   console.log(`transactions: ${out.length} (${out.filter((r) => r.type === 'debit').length} money out, ${out.filter((r) => r.type === 'credit').length} money in)`)
   console.log(`need a hand label: ${out.filter((r) => r.label_source === 'hand' && !r.true_account_code).length}`)
+  console.log(`rows with acceptable alternates: ${out.filter((r) => r.acceptable_codes).length}`)
   console.log('per account:')
   for (const [code, count] of [...perAccount].sort((a, b) => a[0].localeCompare(b[0]))) {
     console.log(`  ${code.padEnd(6)} ${(names.get(code) ?? '').padEnd(26)} ${String(count).padStart(4)}`)
