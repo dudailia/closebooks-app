@@ -12,9 +12,10 @@ the bank line). Dataset: `eval/data/synthetic_transactions.csv`, sha256
 `c8a4b728e0d0…`, described in `eval/README.md`. CloseBooks has no paying
 customers and no real client data; nothing here was measured on real books.
 
-**About the sources.** `eval/results/` is gitignored, so the result files
-named below exist on the development machine and are not in git. Commit one
-with `git add -f` before sending it to a reviewer.
+**About the sources.** `eval/results/` is gitignored, but every summary file
+named below (`report.md`, `summary.json`, `comparison.md`,
+`threshold-sweep.md`, `learn-plan.md` and the two spend ledgers) is committed
+with `git add -f`. The per-prediction `raw.json` files are not in git.
 
 **Terms.** *Strict* accuracy accepts only the primary label. *Lenient* also
 accepts the policy alternates listed in `eval/data/vendors.csv` (for

@@ -68,8 +68,8 @@ There are no end-to-end browser tests.
 real categorisation engine against it with a hard spending cap. Commands and
 method: [eval/README.md](eval/README.md). A full run calls the Anthropic API
 and costs money (about $0.34 for 292 rows on Sonnet 5.5); `--fake` tests the
-pipeline with no API calls. Results go to `eval/results/`, which is not in
-git.
+pipeline with no API calls. Results go to `eval/results/`, which is gitignored;
+the summaries the docs cite are committed, the per-prediction `raw.json` files are not.
 
 ## Docs
 
