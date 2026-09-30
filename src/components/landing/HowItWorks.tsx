@@ -1,6 +1,7 @@
 'use client'
 import { useRef, useState, useEffect } from 'react'
 import { motion, AnimatePresence, useInView } from 'framer-motion'
+import { AUTO_APPROVE_PERCENT } from '@/lib/ai/models'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -43,7 +44,7 @@ const STEPS = [
   {
     num: '02',
     title: 'AI suggests, you approve',
-    body: "Claude suggests an account for each transaction with a confidence score and its reasoning, using your firm's recent corrections as hints. Saved vendor rules are applied, and rows under 85% confidence wait for your review.",
+    body: `Claude suggests an account for each transaction with a confidence score and its reasoning, using your firm's recent corrections as hints. Saved vendor rules are applied, and rows under ${AUTO_APPROVE_PERCENT}% confidence wait for your review.`,
   },
   {
     num: '03',

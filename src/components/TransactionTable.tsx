@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import TransactionRow from './TransactionRow'
 import type { Transaction, ChartOfAccounts } from '@/types'
+import { AUTO_APPROVE_PERCENT, AUTO_APPROVE_THRESHOLD } from '@/lib/ai/models'
 import type { AuditCallback, AuditEvent } from '@/lib/auditTrail'
 import { useShortcut } from '@/lib/review/KeyboardShortcutProvider'
 import InlineCategoryPicker from '@/components/review/InlineCategoryPicker'
@@ -118,7 +119,7 @@ function ConfirmModal({ count, remaining, onConfirm, onCancel }: { count: number
           <div>
             <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Approve high-confidence transactions?</p>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-              Approves <strong style={{ color: 'var(--accent)' }}>{count}</strong> transaction{count !== 1 ? 's' : ''} with confidence ≥ 85%
+              Approves <strong style={{ color: 'var(--accent)' }}>{count}</strong> transaction{count !== 1 ? 's' : ''} with confidence ≥ {AUTO_APPROVE_PERCENT}%
               {remaining > 0 ? `, leaving ${remaining} for manual review.` : '. All pending transactions will be approved.'}
             </p>
           </div>
@@ -207,8 +208,8 @@ export default function TransactionTable({
   }), [transactions])
 
   const focusedIndex    = useMemo(() => visible.findIndex(t => t.id === focusedId), [visible, focusedId])
-  const highConfPending = transactions.filter(t => t.confidence >= 0.85 && t.status === 'pending').length
-  const lowConfPending  = transactions.filter(t => t.status === 'pending' && t.confidence < 0.85).length
+  const highConfPending = transactions.filter(t => t.confidence >= AUTO_APPROVE_THRESHOLD && t.status === 'pending').length
+  const lowConfPending  = transactions.filter(t => t.status === 'pending' && t.confidence < AUTO_APPROVE_THRESHOLD).length
 
   function trackApproval(tx: Transaction) {
     const pattern = normalizeVendor(tx.description)
@@ -521,13 +522,13 @@ export default function TransactionTable({
 
   function doApproveHighConfidence() {
     setShowConfirm(false)
-    const eligible = transactionsRef.current.filter(t => t.confidence >= 0.85 && t.status === 'pending')
+    const eligible = transactionsRef.current.filter(t => t.confidence >= AUTO_APPROVE_THRESHOLD && t.status === 'pending')
     if (eligible.length === 0) return
     const priors = eligible.map(t => ({ ...t }))
     const approvedTxs: Transaction[] = []
     setTransactions(prev => {
       const next = prev.map(t => {
-        if (!(t.confidence >= 0.85 && t.status === 'pending')) return t
+        if (!(t.confidence >= AUTO_APPROVE_THRESHOLD && t.status === 'pending')) return t
         onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '', bulk: 'true' } })
         const updated = approveTransaction(t)
         approvedTxs.push(updated)

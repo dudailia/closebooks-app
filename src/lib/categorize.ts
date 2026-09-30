@@ -1,16 +1,16 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { Transaction, ChartOfAccounts } from '@/types'
 import { resolveAgainstCoa } from '@/lib/coaValidation'
+import { AUTO_APPROVE_THRESHOLD, CATEGORIZE_MODEL } from '@/lib/ai/models'
 
-/** The model the app categorises with. Exported for the eval harness. */
-export const CATEGORIZE_MODEL = 'claude-sonnet-4-6'
+// Re-exported for the eval harness, which imports the engine module.
+export { AUTO_APPROVE_THRESHOLD, CATEGORIZE_MODEL }
 const MODEL = CATEGORIZE_MODEL
 export const BATCH_SIZE = 20
 const MAX_RETRIES = 3
 /** A reply that arrived but can't be read (no text, no JSON) is retried at most this many times. */
 const MAX_UNREADABLE_RETRIES = 1
 const RETRY_DELAY_MS = 1000
-export const AUTO_APPROVE_THRESHOLD = 0.85
 
 // Plain object shape — mirrors Correction from corrections.ts but without the
 // savedAt field and without a client-side localStorage dependency.

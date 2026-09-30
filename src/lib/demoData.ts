@@ -1,4 +1,5 @@
 import type { Transaction, ChartOfAccounts } from '@/types'
+import { AUTO_APPROVE_THRESHOLD } from '@/lib/ai/models'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Chart of Accounts — Standard Small Business
@@ -49,7 +50,7 @@ export const DEMO_COA: ChartOfAccounts[] = [
 // 20 realistic demo transactions — March 2026, "Sunrise Advisory LLC"
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const DEMO_TRANSACTIONS: Transaction[] = [
+const SAMPLE_TRANSACTIONS: Transaction[] = [
   {
     id:                    'demo-001',
     date:                  '2026-03-31',
@@ -326,6 +327,15 @@ export const DEMO_TRANSACTIONS: Transaction[] = [
   },
 ]
 
+// A sample row is shown as auto-approved only if the app would approve it today:
+// below the threshold it waits in review, like a real upload.
+export const DEMO_TRANSACTIONS: Transaction[] = SAMPLE_TRANSACTIONS.map((t) => {
+  if (t.status !== 'approved' || t.confidence >= AUTO_APPROVE_THRESHOLD) return t
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { final_category, final_account_code, ...rest } = t
+  return { ...rest, status: 'pending' }
+})
+
 // Derived summary counts (for header display)
 export const DEMO_SUMMARY = {
   clientName:        'Sunrise Advisory LLC',
@@ -334,5 +344,5 @@ export const DEMO_SUMMARY = {
   approved:          DEMO_TRANSACTIONS.filter((t) => t.status === 'approved' || t.status === 'edited').length,
   pending:           DEMO_TRANSACTIONS.filter((t) => t.status === 'pending').length,
   flagged:           DEMO_TRANSACTIONS.filter((t) => t.status === 'flagged').length,
-  autoApproved:      DEMO_TRANSACTIONS.filter((t) => t.status === 'approved' && t.confidence >= 0.85).length,
+  autoApproved:      DEMO_TRANSACTIONS.filter((t) => t.status === 'approved' && t.confidence >= AUTO_APPROVE_THRESHOLD).length,
 }

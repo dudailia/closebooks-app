@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { AUTO_APPROVE_PERCENT } from '@/lib/ai/models'
 
 interface Props {
   params: { slug: string }
@@ -18,7 +19,7 @@ export default function ReferralLandingPage({ params }: Props) {
   const stats = [
     { value: 'AI-assisted', label: 'categorization with confidence scores' },
     { value: 'Human review', label: 'before every export' },
-    { value: '85%+', label: 'confidence threshold for suggested auto-approval' },
+    { value: `${AUTO_APPROVE_PERCENT}%+`, label: 'confidence threshold for suggested auto-approval' },
   ]
 
   const features = [

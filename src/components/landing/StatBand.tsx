@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, useInView, useMotionValue, useTransform, animate } from 'framer-motion'
 import { ease, duration as dur } from '@/lib/landing/motion'
 import { usePrefersReducedMotion } from '@/lib/landing/usePrefersReducedMotion'
+import { AUTO_APPROVE_PERCENT } from '@/lib/ai/models'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -293,7 +294,7 @@ function Metrics({ reduced }: { reduced: boolean }) {
         }}
       >
         <StatItem
-          from={0} to={85}
+          from={0} to={AUTO_APPROVE_PERCENT}
           suffix="%"
           label="Auto-approval threshold"
           sublabel="Lower confidence stays in review"

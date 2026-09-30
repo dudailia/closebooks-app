@@ -45,7 +45,7 @@ describe('Budget', () => {
       id: `t${i}`, date: '2026-06-01', description: 'ADOBE CC', original_description: 'ADOBE CC', amount: 50, type: 'debit',
       suggested_category: '', suggested_account_code: '', confidence: 0, status: 'pending',
     }))
-    const reply = JSON.stringify(Array.from({ length: 20 }, (_, index) => ({ index, suggested_category: 'Subscriptions & Software', suggested_account_code: '6100', confidence: 0.9, reasoning: 'r' })))
+    const reply = JSON.stringify(Array.from({ length: 20 }, (_, index) => ({ index, suggested_category: 'Subscriptions & Software', suggested_account_code: '6100', confidence: 0.96, reasoning: 'r' })))
     // Each call really costs $0.06; the worst case is ~$0.07, so one call fits under $0.10 and a second can't.
     const inner = { messages: { create: vi.fn().mockResolvedValue({ content: [{ type: 'text', text: reply }], usage: { input_tokens: 5000, output_tokens: 3000 } }) } }
     const budget = new Budget(0.1, ledger())

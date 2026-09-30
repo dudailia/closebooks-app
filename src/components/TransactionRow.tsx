@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { Transaction, ChartOfAccounts } from '@/types'
+import { AUTO_APPROVE_THRESHOLD } from '@/lib/ai/models'
 import { saveCorrection } from '@/lib/corrections'
 import { getAlternativeSuggestions } from '@/lib/categorySuggestions'
 import { approveTransaction, recategorizeTransaction } from '@/lib/review/approve'
@@ -44,7 +45,7 @@ function StatusPill({ status }: { status: Transaction['status'] }) {
 
 function ConfidencePill({ value }: { value: number }) {
   const pct = Math.round(value * 100)
-  const color = value >= 0.85 ? 'var(--accent)' : value >= 0.7 ? 'var(--warning)' : 'var(--danger)'
+  const color = value >= AUTO_APPROVE_THRESHOLD ? 'var(--accent)' : value >= 0.7 ? 'var(--warning)' : 'var(--danger)'
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'monospace', fontSize: 12, color }}>
       <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: color, flexShrink: 0 }} />

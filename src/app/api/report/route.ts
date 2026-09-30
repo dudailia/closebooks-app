@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { CategorizationJob, Transaction } from '@/types'
+import { AUTO_APPROVE_THRESHOLD } from '@/lib/ai/models'
 import type { AuditEvent } from '@/lib/auditTrail'
 import { formatAuditEvent } from '@/lib/auditTrail'
 import type { FirmSettings } from '@/lib/firmSettings'
@@ -139,7 +140,7 @@ function fmtAuditTs(iso: string): string {
 
 function buildHtml(job: CategorizationJob, auditEvents: AuditEvent[] = []): string {
   const pending      = job.transactions.filter((t) => t.status === 'pending').length
-  const autoApproved = job.transactions.filter((t) => t.status === 'approved' && t.confidence >= 0.85).length
+  const autoApproved = job.transactions.filter((t) => t.status === 'approved' && t.confidence >= AUTO_APPROVE_THRESHOLD).length
   const categoryRows = buildCategoryBreakdown(job.transactions)
   const generatedAt  = new Date().toLocaleDateString('en-US', {
     month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',

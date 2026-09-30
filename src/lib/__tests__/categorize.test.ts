@@ -67,7 +67,9 @@ describe('categorizeTransactions output is unchanged by usage reporting', () => 
     expect(out[2].confidence).toBeCloseTo(0.82, 10)
     expect(create).toHaveBeenCalledTimes(1)
     expect(create.mock.calls[0][0].model).toBe(CATEGORIZE_MODEL)
-    expect(AUTO_APPROVE_THRESHOLD).toBe(0.85)
+    // The 2026-09-30 eval decision (src/lib/ai/models.ts).
+    expect(CATEGORIZE_MODEL).toBe('claude-sonnet-5-5')
+    expect(AUTO_APPROVE_THRESHOLD).toBe(0.93)
   })
 
   it('categorizeTransactionsWithUsage returns exactly the same transactions', async () => {
