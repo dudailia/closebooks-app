@@ -33,8 +33,8 @@ describe('learning from June corrections', () => {
 
   it('turns a wrong June prediction into an app rule, and only wrong ones', async () => {
     const corrections = await learnFromJune(truth, [pred('2026-06-10_ace_hardware_1', '5400'), pred('2026-06-12_staples_1', '5400')], chart)
-    expect(corrections).toEqual([expect.objectContaining({ id: '2026-06-10_ace_hardware_1', predictedCode: '5400', trueCode: '6300', pattern: 'ace hardware #07891 austin' })])
-    expect(listRules().map((r) => [r.vendorPattern, r.accountCode])).toEqual([['ace hardware #07891 austin', '6300']])
+    expect(corrections).toEqual([expect.objectContaining({ id: '2026-06-10_ace_hardware_1', predictedCode: '5400', trueCode: '6300', pattern: 'ace hardware austin' })])
+    expect(listRules().map((r) => [r.vendorPattern, r.accountCode])).toEqual([['ace hardware austin', '6300']])
   })
 
   it('applies rules before the AI, using the app matcher, and counts what they catch', async () => {

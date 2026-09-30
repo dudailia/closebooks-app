@@ -83,41 +83,55 @@ async function main(): Promise<void> {
 
   const pct = (x: number | null) => (x === null ? '—' : `${(x * 100).toFixed(1)}%`)
   const usd = (x: number | null) => (x === null ? 'cost not computed: pricing not filled in' : `$${x.toFixed(4)}`)
-  const row = (label: string, s: typeof plan.baseline) =>
-    `| ${label} | ${s.aiRows} | ${pct(s.strict)} | ${pct(s.lenient)} | ${s.autoApproved} | ${s.wrongAmongAutoApprovedLenient} (${pct(s.wrongAmongAutoApprovedLenientRate)}) | ${s.reviewRowsAutoApproved} | ${s.reviewLoad} |`
   const testCount = plan.testRows
+  const perStatement = (load: number) => ((load / testCount) * m.statementSize).toFixed(1)
+  const before = plan.baseline
+  const after = liveMetrics ?? plan.rulesFirst
+  const afterLabel = liveMetrics ? (fake ? 'After (LIVE, fake model)' : 'After (live run)') : 'After: rules first (projection)'
+  const cmp = (label: string, b: string, a: string) => `| ${label} | ${b} | ${a} |`
+  const saved = baselineEstimate.costUsd !== null && estimate.costUsd !== null ? baselineEstimate.costUsd - estimate.costUsd : null
   const lines = [
     '# Learning from corrections: June review → rules for July–August', '',
+    liveMetrics
+      ? (fake ? '> **LIVE RUN WITH THE FAKE MODEL: pipeline test; the "after" numbers are meaningless.**' : '> **Includes a live run for the unmatched rows.**')
+      : '> **PROJECTION FROM SAVED PREDICTIONS. No API calls were made.** Rule-matched rows take the rule\'s account; every other row keeps the AI answer saved in the earlier run. A live run would batch the unmatched rows differently, so its AI answers could differ a little.',
+    '',
     `**Measured on:** the ${m.datasetRows}-row synthetic dataset (${m.business}, fictional; ${m.chartName}); saved run ${runIndex + 1} of \`${base}\` ` +
     `(model \`${m.model}\`, ${m.startedAt}). Reviewed month ${REVIEWED_MONTH} (${raw.rows.filter((r) => r.date.startsWith(REVIEWED_MONTH)).length} rows); ` +
-    `test months ${TEST_MONTHS.join(' and ')} (${testCount} rows). ${live ? (fake ? '**Live run with the FAKE model (pipeline test; numbers meaningless).**' : '**Includes a live run.**') : '**No API calls were made.**'}`, '',
+    `test months ${TEST_MONTHS.join(' and ')} (${testCount} rows).`, '',
     `**Assumption:** the reviewer corrects every June row the model got wrong (lenient) and accepts the app's "Always categorize … as …?" prompt each time. ` +
-    `Rules are created and matched by the app's own code (\`saveRule\`, \`applyRulesToJob\` in \`src/lib/review/rules.ts\`, \`normalizeVendor\`/\`vendorPatternMatches\` in \`src/lib/review/vendor.ts\`).`, '',
+    `Rules are created and matched by the app's own code (\`saveRule\`, \`applyRulesToJob\` in \`src/lib/review/rules.ts\`; \`vendorKey\` in \`src/lib/review/vendor.ts\`), with direction.`, '',
+    `## Before vs after on July–August (${testCount} rows)`, '',
+    'Accuracy and wrong auto-approvals are over rows with an account label; REVIEW rows count toward review load and are wrong only if auto-approved. Rule-applied rows count as approved (the app marks them *edited*).', '',
+    `| | Before: no rules | ${afterLabel} |`, '|---|---:|---:|',
+    cmp('Accuracy, lenient', pct(before.lenient), pct(after.lenient)),
+    cmp('Accuracy, strict', pct(before.strict), pct(after.strict)),
+    cmp('Auto-approved', String(before.autoApproved), String(after.autoApproved)),
+    cmp('Wrong auto-approvals (lenient)', `${before.wrongAmongAutoApprovedLenient} (${pct(before.wrongAmongAutoApprovedLenientRate)})`, `${after.wrongAmongAutoApprovedLenient} (${pct(after.wrongAmongAutoApprovedLenientRate)})`),
+    cmp('REVIEW rows auto-approved', String(before.reviewRowsAutoApproved), String(after.reviewRowsAutoApproved)),
+    cmp(`Review load (rows a human checks) · per ${m.statementSize}-row statement`, `${before.reviewLoad} · ${perStatement(before.reviewLoad)}`, `${after.reviewLoad} · ${perStatement(after.reviewLoad)}`),
+    cmp('Rows sent to the AI', String(before.aiRows), String(after.aiRows)),
+    cmp('API calls (batches of ' + m.batchSize + ')', String(baselineEstimate.calls), String(estimate.calls)),
+    cmp('Estimated API cost', usd(baselineEstimate.costUsd), usd(estimate.costUsd)),
+    '',
+    `**Rules caught ${plan.ruleMatched} of ${testCount} rows** (${plan.ruleMatchedCorrectLenient} right lenient, ${plan.ruleMatchedCorrectStrict} strict)` +
+    `${saved !== null ? `, saving ${baselineEstimate.calls - estimate.calls} API call${baselineEstimate.calls - estimate.calls === 1 ? '' : 's'} and about ${usd(saved)} for these two months` : ''}. ` +
+    `${plan.sameVendorRows} July–August rows are from vendors that had a June correction.`, '',
+    ...(plan.ruleMatchedWrong.length
+      ? ['**Wrong rule matches:**', '', '| Bank line | Rule pattern | Rule gave | Correct |', '|---|---|---|---|',
+        ...plan.ruleMatchedWrong.map((w) => `| \`${w.description}\` | \`${w.pattern}\` | ${w.ruleCode} | ${w.trueCode} |`), '']
+      : ['**Wrong rule matches: none.**', '']),
     `## June corrections → rules (${corrections.length} corrections, ${plan.rules.length} rules)`, '',
-    '| June row | Model said | Correct | Rule pattern created |', '|---|---|---|---|',
+    '| June row | Model said | Correct | Rule (vendor key, direction) |', '|---|---|---|---|',
     ...corrections.map((c) => `| \`${c.description}\` | ${c.predictedCode || '(none)'} | ${c.trueCode} | \`${c.pattern}\` |`), '',
-    `## July–August: which rows the rules catch`, '',
-    `- Rows matched by a rule: **${plan.ruleMatched} of ${testCount}** (right: ${plan.ruleMatchedCorrectLenient} lenient / ${plan.ruleMatchedCorrectStrict} strict).`,
-    `- Rows left for the AI: **${plan.unmatched}**, which is ${plan.aiCalls} API call${plan.aiCalls === 1 ? '' : 's'} in batches of ${m.batchSize}.`,
-    `- For scale: ${plan.sameVendorRows} July–August rows come from the same vendors as the June corrections. That is what a rule matching the vendor (not the exact bank line) could catch.`,
-    ...(plan.ruleMatchedWrong.length ? ['- Rules that matched the wrong vendor:', ...plan.ruleMatchedWrong.map((w) => `  - \`${w.description}\` → rule \`${w.pattern}\` gave ${w.ruleCode}, should be ${w.trueCode}`)] : ['- No rule matched a row it shouldn\'t have.']), '',
-    `## Outcome on July–August (${testCount} rows)`, '',
-    'Accuracy and wrong-among-auto-approved are over rows with an account label; REVIEW rows count toward review load and are wrong only if auto-approved. Rule-applied rows count as approved (the app marks them *edited*).', '',
-    '| Scenario | Rows sent to the AI | Strict | Lenient | Auto-approved | Wrong among auto-approved (lenient) | REVIEW rows auto-approved | Review load |',
-    '|---|---:|---:|---:|---:|---:|---:|---:|',
-    row('Baseline: saved AI predictions, no rules', plan.baseline),
-    row('App today: AI first, then rules on rows still pending', plan.appToday),
-    row('Rules first (projection: saved AI answers for unmatched rows)', plan.rulesFirst),
-    ...(liveMetrics ? [row(fake ? 'Rules first, LIVE with fake model' : 'Rules first, LIVE', liveMetrics)] : []), '',
-    `## Estimated API cost`, '',
-    `- **Live "rules first" run (AI for the ${plan.unmatched} unmatched rows, one run): ${usd(estimate.costUsd)}** — ${estimate.calls} calls, ~${estimate.inputTokens.toLocaleString('en-US')} input and ~${estimate.outputTokens.toLocaleString('en-US')} output tokens with \`${m.model}\` list prices.`,
-    `- For comparison, re-running all ${testCount} July–August rows without rules: ${usd(baselineEstimate.costUsd)} (${baselineEstimate.calls} calls).`,
-    `- Basis: ${estimate.basis}. Retries on failed replies would add to this.`,
+    `## Cost basis`, '',
+    `- ${estimate.basis}, \`${m.model}\` list prices from eval/pricing.json. Retries on failed replies would add to this.`,
+    `- A live "after" run would cost about ${usd(estimate.costUsd)} (${estimate.calls} calls for the ${plan.unmatched} unmatched rows).`,
     ...(live ? [`- Actual cost of the live run: ${fake ? '$0 (fake model)' : usd(liveCost)}.`] : []), '',
     '## Limits', '',
-    '- The projection reuses AI answers from a run where rows were batched with different neighbours; a live run can differ.',
-    '- The best case for rules: every correction becomes a rule. In the app the reviewer must accept each prompt.',
-    '- Rules come from one month and one synthetic business; real vendors reuse description formats differently.', '',
+    '- Best case for rules: every June correction becomes a rule. In the app the reviewer must accept each prompt.',
+    '- Rules learn the bank format they saw: a vendor that appears in two formats needs a correction in each.',
+    '- One reviewed month, one synthetic business; real vendors vary their bank lines in more ways.', '',
   ]
   mkdirSync(dirname(out), { recursive: true })
   writeFileSync(out, lines.join('\n'))

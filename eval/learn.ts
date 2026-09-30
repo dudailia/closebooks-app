@@ -5,8 +5,8 @@
 // row was wrong (lenient), the reviewer corrects it to the true account and
 // accepts the app's "Always categorize … as …?" prompt, which creates a vendor
 // rule through the app's own saveRule(). July and August are then categorised
-// with rules applied first (the app's own applyRulesToJob) and the AI only for
-// rows no rule matched.
+// with rules applied first (the app's own applyRulesBeforeAI / applyRulesToJob,
+// the same code the upload page now runs) and the AI only for rows no rule matched.
 //
 // Without API calls this computes:
 //   - baseline: the saved predictions for July–August;
@@ -97,7 +97,7 @@ export async function learnFromJune(truth: TruthRow[], preds: Prediction[], char
     const row = june.find((t) => t.id === r.id)!
     // What the reviewer does in the app: pick the right account, then accept
     // "Always categorize … as …?" (TransactionTable → saveRule).
-    const rule = await saveRule({ description: row.description, accountCode: r.trueCode, categoryName: names.get(r.trueCode) ?? r.trueCode, createdBy: 'eval-reviewer' })
+    const rule = await saveRule({ description: row.description, accountCode: r.trueCode, categoryName: names.get(r.trueCode) ?? r.trueCode, createdBy: 'eval-reviewer', direction: row.type })
     corrections.push({ id: r.id, description: row.description, predictedCode: r.predictedCode, trueCode: r.trueCode, pattern: rule.vendorPattern })
   }
   return corrections

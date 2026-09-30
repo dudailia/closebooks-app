@@ -4,8 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import TransactionTable from '@/components/TransactionTable'
 import { KeyboardShortcutProvider } from '@/lib/review/KeyboardShortcutProvider'
-import { hydrateRules, applyRulesToJob } from '@/lib/review/rules'
-import { getSupabaseAndFirm } from '@/lib/syncSupabase'
+import { ensureRulesLoaded, applyRulesToJob } from '@/lib/review/rules'
 import NarrativeInsight from '@/components/ai/NarrativeInsight'
 import SendMonthlyReportButton from '@/components/reports/SendMonthlyReportButton'
 import AutoCloseModal from '@/components/ai/AutoCloseModal'
@@ -915,19 +914,18 @@ export default function ReviewPage() {
 
   useEffect(() => {
     let cancelled = false
-    // Hydrate category rules in parallel (fails soft if Supabase unavailable)
-    getSupabaseAndFirm().then((ctx) => {
-      if (!ctx || cancelled) return
-      return hydrateRules(ctx.supabase, ctx.firmId)
-    }).catch(() => { /* ignore — rules will just be empty */ })
+    // Rules must be loaded before they're applied (fails soft if Supabase is unavailable).
+    const rulesReady = ensureRulesLoaded().catch(() => { /* rules will just be empty */ })
     // Try Supabase first, fall back to localStorage
-    dbGetJob(jobId).then((found) => {
+    dbGetJob(jobId).then(async (found) => {
+      await rulesReady
       if (cancelled) return
       if (!found) { setNotFound(true); return }
-      // Apply rules that have been learned for this firm
+      // Apply rules that have been learned for this firm, and save the result straight away
       const { txs: seeded, applied } = applyRulesToJob(found.transactions)
       if (applied.length > 0) {
         found = { ...found, transactions: seeded }
+        dbSaveJob(found).catch(() => { /* memory copy already updated */ })
       }
       setJob(found)
       // Start time tracking for this review session
@@ -966,12 +964,17 @@ export default function ReviewPage() {
       } else {
         setAuditEvents(existing)
       }
-    }).catch(() => {
+    }).catch(async () => {
       // Supabase failed, fall back to localStorage
+      await rulesReady
+      if (cancelled) return
       let found = getJob(jobId)
       if (!found) { setNotFound(true); return }
       const { txs: seeded, applied } = applyRulesToJob(found.transactions)
-      if (applied.length > 0) found = { ...found, transactions: seeded }
+      if (applied.length > 0) {
+        found = { ...found, transactions: seeded }
+        dbSaveJob(found).catch(() => { /* memory copy already updated */ })
+      }
       setJob(found)
       setQboConn(getQBOConnection())
       setQboLive(false)

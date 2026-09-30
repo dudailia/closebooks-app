@@ -149,7 +149,7 @@ export default function TransactionTable({
   const [pickerAnchor, setPickerAnchor] = useState<{ top: number; left: number; txId: string } | null>(null)
   const [paletteOpen, setPaletteOpen]   = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const [ruleCandidate, setRuleCandidate] = useState<{ vendor: string; accountCode: string; categoryName: string; matchingCount: number; ruleSuggestionOnly?: boolean } | null>(null)
+  const [ruleCandidate, setRuleCandidate] = useState<{ vendor: string; direction: Transaction['type']; accountCode: string; categoryName: string; matchingCount: number; ruleSuggestionOnly?: boolean } | null>(null)
   const approvalTracker = useRef<Map<string, { count: number; accountCode: string; categoryName: string; suggested: boolean }>>(new Map())
   const proactiveDismissed = useRef<Set<string>>(new Set())
   const [splitTxId, setSplitTxId] = useState<string | null>(null)
@@ -215,7 +215,7 @@ export default function TransactionTable({
     const category = tx.final_category ?? tx.suggested_category ?? ''
     const accountCode = tx.final_account_code ?? tx.suggested_account_code ?? ''
     if (!pattern || !category || !accountCode) return
-    if (findRuleForDescription(tx.description)) return
+    if (findRuleForDescription(tx.description, tx.type)) return
     const key = `${pattern}::${accountCode}`
     if (proactiveDismissed.current.has(key)) return
     const existing = approvalTracker.current.get(key)
@@ -223,8 +223,8 @@ export default function TransactionTable({
       existing.count += 1
       if (existing.count >= 3 && !existing.suggested) {
         existing.suggested = true
-        const pending = transactionsRef.current.filter(t => t.status === 'pending' && vendorPatternMatches(t.description, pattern))
-        setRuleCandidate({ vendor: pattern, accountCode, categoryName: category, matchingCount: pending.length, ruleSuggestionOnly: true })
+        const pending = transactionsRef.current.filter(t => t.status === 'pending' && t.type === tx.type && vendorPatternMatches(t.description, pattern))
+        setRuleCandidate({ vendor: pattern, direction: tx.type, accountCode, categoryName: category, matchingCount: pending.length, ruleSuggestionOnly: true })
       }
     } else {
       approvalTracker.current.set(key, { count: 1, accountCode, categoryName: category, suggested: false })
@@ -253,14 +253,15 @@ export default function TransactionTable({
     const pattern = normalizeVendor(tx.description)
     if (!pattern) return
     // If there's already an active rule for this vendor + category, skip the prompt
-    const existing = findRuleForDescription(tx.description)
+    const existing = findRuleForDescription(tx.description, tx.type)
     if (existing && existing.accountCode === accountCode) return
     const matching = transactionsRef.current.filter(t =>
       t.id !== tx.id &&
       t.status === 'pending' &&
+      t.type === tx.type &&
       vendorPatternMatches(t.description, pattern)
     )
-    setRuleCandidate({ vendor: pattern, accountCode, categoryName, matchingCount: matching.length })
+    setRuleCandidate({ vendor: pattern, direction: tx.type, accountCode, categoryName, matchingCount: matching.length })
   }
 
   async function handleSaveRule() {
@@ -272,14 +273,15 @@ export default function TransactionTable({
         accountCode: cand.accountCode,
         categoryName: cand.categoryName,
         createdBy: 'CPA',
+        direction: cand.direction,
       })
       const priorMatches = transactionsRef.current.filter(
-        t => t.status === 'pending' && vendorPatternMatches(t.description, rule.vendorPattern)
+        t => t.status === 'pending' && t.type === cand.direction && vendorPatternMatches(t.description, rule.vendorPattern)
       ).map(t => ({ ...t }))
       const updatedTxs: Transaction[] = []
       setTransactions(prev => {
         const next = prev.map(t => {
-          if (t.status !== 'pending') return t
+          if (t.status !== 'pending' || t.type !== cand.direction) return t
           if (!vendorPatternMatches(t.description, rule.vendorPattern)) return t
           onAudit?.({ action: 'tx_category_changed', txId: t.id, txDescription: t.description, details: { from: t.suggested_category ?? '—', to: cand.categoryName, rule: '1' } })
           const up = { ...t, status: 'edited' as const, categorizationSource: 'firm_rule' as const, final_account_code: cand.accountCode, final_category: cand.categoryName, confidence: Math.max(t.confidence, 0.99) }
@@ -298,7 +300,7 @@ export default function TransactionTable({
           restoreTxs(priorMatches)
         },
         redo: () => {
-          void saveRule({ description: cand.vendor, accountCode: cand.accountCode, categoryName: cand.categoryName, createdBy: 'CPA' })
+          void saveRule({ description: cand.vendor, accountCode: cand.accountCode, categoryName: cand.categoryName, createdBy: 'CPA', direction: cand.direction })
           applyTxs(updatedTxs)
         },
       })

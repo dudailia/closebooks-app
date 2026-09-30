@@ -7,6 +7,7 @@ import Link from 'next/link'
 import ChartOfAccountsUpload from '@/components/ChartOfAccountsUpload'
 import { dbSaveJob } from '@/lib/db'
 import { getRecentCorrections } from '@/lib/corrections'
+import { applyRulesBeforeAI, ensureRulesLoaded, mergeCategorized } from '@/lib/review/rules'
 import { notify } from '@/lib/notify'
 import { logActivity } from '@/lib/activity'
 import { canStartClose, recordCloseUsed, getTrialStatus } from '@/lib/freeTrial'
@@ -144,29 +145,36 @@ function CategorizeStep({
     setPhase('sending')
 
     try {
-      const corrections = getRecentCorrections(10)
-      const res = await fetch('/api/categorize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactions, chartOfAccounts, clientName, corrections }),
-      })
+      // Firm rules run first: matching rows take the rule's account and skip the AI.
+      await ensureRulesLoaded().catch((err) => console.warn('Rules could not be loaded; categorising without them.', err))
+      const { txs: withRules, unmatched } = applyRulesBeforeAI(transactions)
+
+      let categorized: Transaction[] = withRules
+      if (unmatched.length > 0) {
+        const corrections = getRecentCorrections(10)
+        const res = await fetch('/api/categorize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transactions: unmatched, chartOfAccounts, clientName, corrections }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error ?? `Server error ${res.status}`)
+        categorized = mergeCategorized(withRules, data.transactions as Transaction[])
+      }
 
       if (timerRef.current) clearInterval(timerRef.current)
       setPhase('saving')
       setBatchCurrent(numBatches)
 
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? `Server error ${res.status}`)
-
-      const categorized: Transaction[] = data.transactions
       const job: CategorizationJob = {
         id: crypto.randomUUID(),
         client_name: clientName,
         created_at: new Date().toISOString(),
         status: 'review',
         total_transactions: categorized.length,
-        auto_categorized: categorized.filter((t) => t.status === 'approved').length,
-        approved: categorized.filter((t) => t.status === 'approved').length,
+        // Rule-applied rows are 'edited' (approved by a firm rule).
+        auto_categorized: categorized.filter((t) => t.status === 'approved' || t.status === 'edited').length,
+        approved: categorized.filter((t) => t.status === 'approved' || t.status === 'edited').length,
         flagged: categorized.filter((t) => t.status === 'flagged').length,
         transactions: categorized,
         chart_of_accounts: chartOfAccounts,
