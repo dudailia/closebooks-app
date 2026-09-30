@@ -51,7 +51,7 @@ export function renderComparison(raws: RawResults[], ledger: LedgerTotal | null 
     `Latency is batch wall-clock ÷ batch size, so it depends on network and API load at run time. ` +
     `Cost uses the API-reported tokens and eval/pricing.json list prices (${raws[0].pricing.source_url}, checked ${raws[0].pricing.date_checked}).`, '',
     ...failureNotes(raws),
-    `**Runs compared:** ${raws.map((r) => `\`${r.meta.model}\` ${r.meta.startedAt}`).join('; ')}.`, '',
+    `**Runs compared:** ${raws.map((r) => `\`${r.meta.model}\` ${r.meta.mergedFrom ? `pooled from ${r.meta.mergedFrom.join(' + ')}` : r.meta.startedAt}`).join('; ')}.`, '',
     `**Total actual cost of these runs:** ${totalCost(raws)} (sum of each run's API-reported tokens × list price)` +
     (ledger ? `; spend ledger: $${ledger.spentUsd.toFixed(4)} over ${ledger.calls} billed calls, cap $${ledger.capUsd.toFixed(2)}.` : '.'), '',
     `**Limits:** one synthetic business and chart; a single run per model (except where Runs > 1) can't show run-to-run variation; ` +

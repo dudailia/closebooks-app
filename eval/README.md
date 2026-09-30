@@ -131,6 +131,12 @@ Rows with no label are sent to the engine, but they are left out of scoring
 and counted. The report shows separately what the app did with them.
 To compare models side by side, run
 `npx vite-node --config vitest.config.ts eval/compare-cli.ts eval/results/<run1> eval/results/<run2> --out comparison.md`.
+To pool separately saved runs of the same model (for example a second run done
+on another day), run
+`npx vite-node --config vitest.config.ts eval/merge-cli.ts eval/results/<run1> eval/results/<run2> --out eval/results/<pooled>`.
+It refuses runs of different models, datasets, thresholds or row sets, and
+writes a normal result directory that `compare-cli.ts` and `sweep-cli.ts` treat
+like one `--runs n` invocation.
 Two more tools work from saved runs:
 
 - **Threshold sweep, no API calls.**

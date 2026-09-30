@@ -1,6 +1,6 @@
 # SESSION_LOG — CloseBooks handoff
 
-**Last updated:** 2026-09-29. Working copy: `~/code/closebooks-app-fresh` (the `~/Desktop` copy is retired).
+**Last updated:** 2026-09-30. Working copy: `~/code/closebooks-app-fresh` (the `~/Desktop` copy is retired).
 Durable architecture lives in `CLAUDE.md`; this file is where things stand now.
 
 ## Branches
@@ -30,10 +30,10 @@ Durable architecture lives in `CLAUDE.md`; this file is where things stand now.
 ## Results so far (synthetic data; see `eval/results/`)
 
 - **Sonnet 4.6 (app's model), 2 runs × 292 rows:** accuracy 84.5% strict / 94.9% lenient; auto-approves 82%; 5.8% of auto-approved rows wrong (lenient); all 16 REVIEW predictions sent to review; ~$0.16 per 97-row statement.
-- **Comparison (1 run each):** Sonnet 5.5 86.6% / 95.1%, 5.1% wrong auto-approved, ~30% cheaper; Haiku 4.5 75.4% / 86.6%, 13.0% wrong auto-approved. Opus 5.5 produced no usable predictions (thinking-block bug, since fixed on this branch).
-- **Threshold sweep:** keeping wrong auto-approvals ≤2% needs 0.98 on Sonnet 4.6 (review ~93 of 97 rows/statement) but 0.91 on Sonnet 5.5 (~49 of 97). Threshold left at 0.85.
+- **Sonnet 5.5, 2 runs (pooled with `eval/merge-cli.ts`; run 2 on 2026-09-30 was cut by the $0.45 cap after 280 of 292 rows, last 12-row batch not sent):** 86.7% strict / 95.0% lenient; 5.3% of auto-approved rows wrong (lenient) at 0.85; ECE 0.092 vs 0.121; ~$0.115 vs $0.164 per 100 rows; 2.9% of rows changed account between runs (Sonnet 4.6: 1.4%). Haiku 4.5 (1 run) 75.4% / 86.6%, 13.0% wrong auto-approved. Opus 5.5 produced no usable predictions (thinking-block bug, since fixed on this branch).
+- **Threshold sweep (Sonnet 5.5 pooled):** ≤2% wrong auto-approvals at 0.91 (4 of 291 wrong, review ~48 of 97 rows/statement), but run 2 alone needed 0.93. At 0.93: 1 of 274 wrong (0.4%), review ~51 of 97. Sonnet 4.6 needs 0.98 (~93 of 97). Today (4.6 at 0.85) reviews ~19 of 97. Remaining high-confidence Sonnet 5.5 errors are Stripe payouts → 4000 (should be 1100) and Gusto payroll tax → 5100 (2300). **App model and threshold unchanged** (Sonnet 4.6, 0.85).
 - **Rules (projection from saved predictions):** with the new vendor keys, June corrections caught 5 of 188 July–August rows (all right, no wrong matches): every row in a bank format June had corrected. Lenient accuracy 94.5% → 95.6%, wrong auto-approvals 8 → 6. The other 11 same-vendor rows use a second bank format.
-- Total API spend on evals this session: $1.94 (smoke test $0.03 + capped runs $1.91).
+- API spend on evals: $1.94 on 2026-09-29 (smoke test $0.03 + capped runs $1.91); $0.41 on 2026-09-30 (ledger `eval/results/spend-ledger-2026-09-30.json`, cap $0.45): $0.32 for Sonnet 5.5 run 2, plus $0.09 for 4 calls from an interrupted invocation whose predictions were not saved.
 
 ## Open issues
 

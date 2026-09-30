@@ -35,6 +35,8 @@ export interface RunMeta {
   budget?: { capUsd: number; spentBeforeUsd: number; spentAfterUsd: number } | null
   /** Set when the budget cap stopped the run early. */
   cut?: { run: number; rowsDone: number; rowsPlanned: number } | null
+  /** Set by eval/merge-cli.ts: the separately saved runs pooled into this one. */
+  mergedFrom?: string[]
 }
 
 /** "100-row subset" for --limit runs, plus "cut by budget cap" when stopped early. */
@@ -144,8 +146,9 @@ export function renderReport(raw: RawResults): string {
     '',
     `**Engine:** the real \`categorizeTransactionsWithUsage\` in \`src/lib/categorize.ts\`, called directly (the same code \`/api/categorize\` runs), ` +
     `batch size ${m.batchSize}, auto-approve threshold ${m.autoApproveThreshold}, no firm corrections supplied. ` +
-    `Commit \`${m.gitCommit.slice(0, 8)}\`${m.gitDirty ? ' with uncommitted changes' : ''}, dataset sha256 \`${m.datasetSha256.slice(0, 12)}\`, ` +
-    `run ${m.startedAt} → ${m.finishedAt}.`,
+    `Commit \`${m.gitCommit.split('+').map((c) => c.slice(0, 8)).join(' + ')}\`${m.gitDirty ? ' with uncommitted changes' : ''}, dataset sha256 \`${m.datasetSha256.slice(0, 12)}\`, ` +
+    `run ${m.startedAt} → ${m.finishedAt}.` +
+    (m.mergedFrom ? ` Pooled from separately saved runs: ${m.mergedFrom.join('; ')}.` : ''),
     '',
     `**How to read it:** *strict* counts a row correct only if the engine picked the primary label. *Lenient* also accepts the ` +
     `alternates listed where the right account is a bookkeeping policy choice (e.g. 1100 vs 4100 for client payments). ` +

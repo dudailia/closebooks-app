@@ -4,7 +4,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs'
 import { autoApprovedAt, thresholdRange, thresholdSweep, type SweepRow } from './metrics'
-import type { RawResults } from './report'
+import { runLabel, type RawResults } from './report'
 
 const args = process.argv.slice(2)
 let out: string | null = null
@@ -42,7 +42,8 @@ for (const dir of dirs) {
   const best = meets[0] ?? null
   const current = rows.find((r) => r.threshold === m.autoApproveThreshold)!
 
-  lines.push(`## \`${m.model}\``, '',
+  const tag = [m.mergedFrom ? `pooled from ${m.mergedFrom.length} saved results` : '', runLabel(m, raw.rows.length)].filter(Boolean).join(', ')
+  lines.push(`## \`${m.model}\`${tag ? ` (${tag})` : ''}`, '',
     `**Measured on:** ${raw.predictions.length} saved predictions (${raw.rows.length} rows × ${m.runs} run${m.runs === 1 ? '' : 's'}) of the ` +
     `${m.datasetRows}-row synthetic dataset (${m.business}, fictional; ${m.chartName}), run ${m.startedAt}. ` +
     `Sanity check passed: at ${m.autoApproveThreshold} the sweep reproduces all ${raw.predictions.length} saved auto-approve decisions.`, '')
@@ -66,7 +67,7 @@ for (const dir of dirs) {
 
 lines.push('## Limits', '',
   '- Confidence values are what the engine produced in these runs; a different threshold was never actually run, but the app\'s decision depends only on confidence, flags and threshold, so the recomputation is exact for these predictions.',
-  '- One synthetic business; few rows per account. Sonnet 5.5 has a single run, so its row is less certain than Sonnet 4.6\'s two runs.',
+  '- One synthetic business; few rows per account. A model with fewer runs has a less certain curve; the run count is stated in each section.',
   '- Confidence clusters on a few values (e.g. 0.92, 0.95), so the curve moves in steps rather than smoothly.', '')
 
 const md = lines.join('\n')
