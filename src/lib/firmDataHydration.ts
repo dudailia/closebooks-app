@@ -106,18 +106,8 @@ export async function importLegacyLocalStorageToSupabase(): Promise<{ imported: 
     imported.push('firm_settings')
   }
 
-  const firmUsage = readLegacyJson(LEGACY_KEYS.freeTrial, null)
-  if (firmUsage) {
-    const u = firmUsage as Record<string, unknown>
-    await supabase.from('firm_usage').upsert({
-      firm_id: firmId,
-      closes_used: Number(u.closesUsed ?? 0),
-      trial_started_at: u.startedAt ? String(u.startedAt) : null,
-      plan_status: String(u.plan ?? 'free'),
-      trial_activated_at: u.trialActivatedAt ? String(u.trialActivatedAt) : null,
-    }, { onConflict: 'firm_id' })
-    imported.push('firm_usage')
-  }
+  // Legacy trial state (LEGACY_KEYS.freeTrial) is not imported: trial dates are
+  // server-owned and a browser value must not set them.
 
   // JSON blob tables
   const blobUpserts: Array<{ table: string; key: keyof typeof LEGACY_KEYS; name: string }> = [

@@ -312,15 +312,15 @@ export async function dbEnsureFirm(
       return fail(`Firm creation failed: ${firmError?.message ?? 'no firm id returned'}`)
     }
 
-    const { error: usageError } = await supabase.from('firm_usage').upsert(
-      {
-        firm_id: data.id,
-        trial_started_at: new Date().toISOString(),
-        plan_status: 'free',
-        closes_used: 0,
-      },
-      { onConflict: 'firm_id', ignoreDuplicates: true }
-    )
+    // Trial row: created server-side with trial_started_at = now(); never overwrites an existing row.
+    let { error: usageError } = await supabase.rpc('cb_ensure_firm_usage', { fid: data.id })
+    // Until the migration is applied the function doesn't exist: insert the row if it's missing, as before.
+    if (usageError && (usageError.code === 'PGRST202' || usageError.code === '42883')) {
+      ;({ error: usageError } = await supabase.from('firm_usage').upsert(
+        { firm_id: data.id, trial_started_at: new Date().toISOString(), plan_status: 'free', closes_used: 0 },
+        { onConflict: 'firm_id', ignoreDuplicates: true }
+      ))
+    }
     if (usageError) return fail(`Trial setup failed: ${usageError.message}`)
 
     return { ok: true }
