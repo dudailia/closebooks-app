@@ -23,6 +23,8 @@ export type Transaction = {
   reasoning?: string
   validation_flags?: string[]
   categorizationSource?: 'ai' | 'firm_rule' | 'manual' | 'copilot'
+  /** Who approved the row: the AI at upload (confidence at or above the threshold), a firm rule, or a reviewer. */
+  approvedBy?: 'ai' | 'rule' | 'reviewer'
   splits?: TransactionSplit[]
 }
 

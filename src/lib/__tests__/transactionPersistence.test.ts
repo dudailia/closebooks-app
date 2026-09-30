@@ -3,6 +3,7 @@ import type { Transaction } from '@/types'
 import {
   isMissingNewColumnError,
   newColumnValues,
+  readApprovedBy,
   readCategorizationSource,
   readSplits,
   resetNewColumnDetection,
@@ -11,23 +12,27 @@ import {
 
 const MISSING = { code: 'PGRST204', message: "Could not find the 'categorization_source' column of 'transactions' in the schema cache" }
 
-// A fake Supabase client that records upserts and rejects rows naming columns it doesn't have.
-function fakeSupabase(opts: { hasNewColumns: boolean; otherError?: { code: string; message: string } }) {
+const ALL_NEW = ['splits', 'categorization_source', 'approved_by']
+
+// A fake Supabase client that records upserts and, like PostgREST, rejects a
+// write by naming the first column it doesn't have.
+function fakeSupabase(opts: { hasNewColumns: boolean | string[]; otherError?: { code: string; message: string } }) {
+  const has = opts.hasNewColumns === true ? ALL_NEW : opts.hasNewColumns === false ? [] : opts.hasNewColumns
   const calls: Record<string, unknown>[][] = []
   const client = {
     from: () => ({
       upsert: async (rows: Record<string, unknown>[]) => {
         calls.push(rows)
         if (opts.otherError) return { error: opts.otherError }
-        const namesNew = rows.some((r) => 'splits' in r || 'categorization_source' in r)
-        return { error: namesNew && !opts.hasNewColumns ? MISSING : null }
+        const unknown = ALL_NEW.find((c) => !has.includes(c) && rows.some((r) => c in r))
+        return { error: unknown ? { code: 'PGRST204', message: `Could not find the '${unknown}' column of 'transactions' in the schema cache` } : null }
       },
     }),
   }
   return { client: client as never, calls }
 }
 
-const row = (id: string) => ({ id, job_id: 'j1', amount: 1, splits: null, categorization_source: 'manual' })
+const row = (id: string) => ({ id, job_id: 'j1', amount: 1, splits: null, categorization_source: 'manual', approved_by: 'reviewer' })
 
 beforeEach(() => {
   resetNewColumnDetection()
@@ -47,6 +52,9 @@ describe('reading old and new rows', () => {
     expect(readSplits([{ id: 's1', amount: '60.5', account_code: '6100', category: 'Software', notes: 'n' }]))
       .toEqual([{ id: 's1', amount: 60.5, account_code: '6100', category: 'Software', notes: 'n' }])
     expect(readCategorizationSource('firm_rule')).toBe('firm_rule')
+    expect(readApprovedBy('ai')).toBe('ai')
+    expect(readApprovedBy('robot')).toBeUndefined()
+    expect(readApprovedBy(null)).toBeUndefined()
   })
 
   it('a bad split amount becomes 0 and an unknown source is dropped', () => {
@@ -57,14 +65,14 @@ describe('reading old and new rows', () => {
 
 describe('newColumnValues', () => {
   it('writes null for no splits and no source', () => {
-    expect(newColumnValues({ id: 't' } as Transaction)).toEqual({ splits: null, categorization_source: null })
-    expect(newColumnValues({ id: 't', splits: [] } as unknown as Transaction)).toEqual({ splits: null, categorization_source: null })
+    expect(newColumnValues({ id: 't' } as Transaction)).toEqual({ splits: null, categorization_source: null, approved_by: null })
+    expect(newColumnValues({ id: 't', splits: [] } as unknown as Transaction)).toEqual({ splits: null, categorization_source: null, approved_by: null })
   })
 
   it('writes splits and source when present', () => {
     const splits = [{ id: 's1', amount: 1, account_code: '6100', category: 'X' }]
-    expect(newColumnValues({ id: 't', splits, categorizationSource: 'manual' } as Transaction))
-      .toEqual({ splits, categorization_source: 'manual' })
+    expect(newColumnValues({ id: 't', splits, categorizationSource: 'manual', approvedBy: 'reviewer' } as Transaction))
+      .toEqual({ splits, categorization_source: 'manual', approved_by: 'reviewer' })
   })
 })
 
@@ -91,12 +99,24 @@ describe('upsertTransactionRows', () => {
     const { client, calls } = fakeSupabase({ hasNewColumns: false })
     const res = await upsertTransactionRows(client, [row('a'), row('b'), row('c')], 2)
     expect(res.error).toBeNull()
-    // chunk 1: rejected, retried without; chunk 2: sent without from the start
+    // chunk 1: rejected once per missing column, then saved; chunk 2: sent without them from the start
+    expect(calls).toHaveLength(5)
+    expect(calls[3][0]).not.toHaveProperty('splits')
+    expect(calls[3][0]).not.toHaveProperty('categorization_source')
+    expect(calls[3][0]).not.toHaveProperty('approved_by')
+    expect(calls[3][0]).toMatchObject({ id: 'a', job_id: 'j1', amount: 1 })
+    expect(calls[4].map((r) => 'splits' in r)).toEqual([false])
+  })
+
+  it('only approved_by missing: drops just that column and keeps saving the others', async () => {
+    const { client, calls } = fakeSupabase({ hasNewColumns: ['splits', 'categorization_source'] })
+    const res = await upsertTransactionRows(client, [row('a'), row('b')], 1)
+    expect(res.error).toBeNull()
     expect(calls).toHaveLength(3)
-    expect(calls[1][0]).not.toHaveProperty('splits')
-    expect(calls[1][0]).not.toHaveProperty('categorization_source')
-    expect(calls[1][0]).toMatchObject({ id: 'a', job_id: 'j1', amount: 1 })
-    expect(calls[2].map((r) => 'splits' in r)).toEqual([false])
+    expect(calls[1][0]).not.toHaveProperty('approved_by')
+    expect(calls[1][0]).toHaveProperty('categorization_source', 'manual')
+    expect(calls[2][0]).toHaveProperty('categorization_source', 'manual')
+    expect(calls[2][0]).not.toHaveProperty('approved_by')
   })
 
   it('other errors are returned, not retried', async () => {

@@ -9,13 +9,14 @@ export function approveTransaction(t: Transaction): Transaction {
   return {
     ...t,
     status: 'approved',
+    approvedBy: 'reviewer',
     final_category: t.final_category ?? t.suggested_category,
     final_account_code: t.final_account_code ?? t.suggested_account_code,
   }
 }
 
-/** A reviewer picks an account from the chart. */
+/** A reviewer picks an account from the chart (which also approves the row). */
 export function recategorizeTransaction(t: Transaction, code: string, chartOfAccounts: ChartOfAccounts[]): Transaction {
   const account = chartOfAccounts.find((a) => a.code === code)
-  return { ...t, status: 'edited', categorizationSource: 'manual', final_account_code: code, final_category: account?.name ?? code }
+  return { ...t, status: 'edited', categorizationSource: 'manual', approvedBy: 'reviewer', final_account_code: code, final_category: account?.name ?? code }
 }

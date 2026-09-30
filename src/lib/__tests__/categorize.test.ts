@@ -67,6 +67,8 @@ describe('categorizeTransactions output is unchanged by usage reporting', () => 
     expect(out[2].confidence).toBeCloseTo(0.82, 10)
     expect(create).toHaveBeenCalledTimes(1)
     expect(create.mock.calls[0][0].model).toBe(CATEGORIZE_MODEL)
+    // Only the row the AI auto-approved is marked as approved by the AI.
+    expect(out.map((t) => t.approvedBy)).toEqual(['ai', undefined, undefined, undefined, undefined])
     // The 2026-09-30 eval decision (src/lib/ai/models.ts).
     expect(CATEGORIZE_MODEL).toBe('claude-sonnet-5-5')
     expect(AUTO_APPROVE_THRESHOLD).toBe(0.93)

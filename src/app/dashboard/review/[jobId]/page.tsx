@@ -15,6 +15,8 @@ import { logActivity } from '@/lib/activity'
 import { getQBOConnection, recordQBOSync } from '@/lib/integrations'
 import { JobInsightsPanel } from '@/components/InsightsPanel'
 import { getAuditTrail, logAuditEvent, auditGroup, formatAuditEvent, fmtAuditTs } from '@/lib/auditTrail'
+import { SYSTEM_ACTOR, userActor } from '@/lib/auditActor'
+import { createClient as createSupabaseClient } from '@/lib/supabase/client'
 import { calcROI, fmtHours } from '@/lib/roiCalc'
 import { detectAnomalies } from '@/lib/anomalyDetection'
 import { loadFirmSettings } from '@/lib/firmSettings'
@@ -891,6 +893,13 @@ export default function ReviewPage() {
   const [activePanel, setActivePanel]           = useState<PanelTab>('transactions')
   const [toasts, setToasts]     = useState<ToastState[]>([])
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([])
+  // Signed-in user's email, the actor on audit events a person causes.
+  const userEmailRef = useRef<string | null>(null)
+  useEffect(() => {
+    const supabase = createSupabaseClient()
+    if (!supabase) return
+    supabase.auth.getUser().then(({ data }) => { userEmailRef.current = data.user?.email ?? null }).catch(() => {})
+  }, [])
   const toastId = useRef(0)
   const [autoCloseOpen, setAutoCloseOpen] = useState(false)
 
@@ -957,7 +966,7 @@ export default function ReviewPage() {
       if (existing.length === 0) {
         logAuditEvent(jobId, {
           action: 'job_created',
-          actor: 'system',
+          actor: SYSTEM_ACTOR,
           details: { txCount: found.total_transactions },
         })
         setAuditEvents(getAuditTrail(jobId))
@@ -997,7 +1006,7 @@ export default function ReviewPage() {
       if (client) setClientIndustry(client.industry)
       const existing = getAuditTrail(jobId)
       if (existing.length === 0) {
-        logAuditEvent(jobId, { action: 'job_created', actor: 'system', details: { txCount: found.total_transactions } })
+        logAuditEvent(jobId, { action: 'job_created', actor: SYSTEM_ACTOR, details: { txCount: found.total_transactions } })
         setAuditEvents(getAuditTrail(jobId))
       } else {
         setAuditEvents(existing)
@@ -1007,7 +1016,7 @@ export default function ReviewPage() {
   }, [jobId])
 
   const logAudit: AuditCallback = useCallback((event) => {
-    logAuditEvent(jobId, { ...event, actor: 'CPA' })
+    logAuditEvent(jobId, { ...event, actor: userActor(userEmailRef.current) })
     setAuditEvents(getAuditTrail(jobId))
   }, [jobId])
 
@@ -1157,7 +1166,7 @@ export default function ReviewPage() {
       }
       logAuditEvent(jobId, {
         action: 'job_exported',
-        actor: 'CPA',
+        actor: userActor(userEmailRef.current),
         details: { count, format: label },
       })
       setAuditEvents(getAuditTrail(jobId))
@@ -1234,7 +1243,7 @@ export default function ReviewPage() {
     setCompleting(false)
     logAuditEvent(jobId, {
       action: 'job_completed',
-      actor: 'CPA',
+      actor: userActor(userEmailRef.current),
       details: { approved: job.approved, flagged: job.flagged },
     })
     setAuditEvents(getAuditTrail(jobId))

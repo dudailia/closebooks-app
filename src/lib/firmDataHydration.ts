@@ -5,7 +5,7 @@
 import { createClient, supabaseConfigured } from '@/lib/supabase/client'
 import { getFirmIdForUser } from '@/lib/supabase/firmScope'
 import { LEGACY_KEYS, readLegacyJson, readLegacyString } from './legacyLocalStorage'
-import { readCategorizationSource, readSplits, upsertTransactionRows } from '@/lib/transactionPersistence'
+import { readApprovedBy, readCategorizationSource, readSplits, upsertTransactionRows } from '@/lib/transactionPersistence'
 
 export async function importLegacyLocalStorageToSupabase(): Promise<{ imported: string[]; errors: string[] }> {
   const imported: string[] = []
@@ -66,6 +66,7 @@ export async function importLegacyLocalStorageToSupabase(): Promise<{ imported: 
             notes: t.notes ?? null,
             splits: readSplits(t.splits) ?? null,
             categorization_source: readCategorizationSource(t.categorizationSource) ?? null,
+            approved_by: readApprovedBy(t.approvedBy) ?? null,
           }))
           await upsertTransactionRows(supabase, rows, 200)
         }

@@ -285,7 +285,7 @@ export default function TransactionTable({
           if (t.status !== 'pending' || t.type !== cand.direction) return t
           if (!vendorPatternMatches(t.description, rule.vendorPattern)) return t
           onAudit?.({ action: 'tx_category_changed', txId: t.id, txDescription: t.description, details: { from: t.suggested_category ?? '—', to: cand.categoryName, rule: '1' } })
-          const up = { ...t, status: 'edited' as const, categorizationSource: 'firm_rule' as const, final_account_code: cand.accountCode, final_category: cand.categoryName, confidence: Math.max(t.confidence, 0.99) }
+          const up = { ...t, status: 'edited' as const, categorizationSource: 'firm_rule' as const, approvedBy: 'rule' as const, final_account_code: cand.accountCode, final_category: cand.categoryName, confidence: Math.max(t.confidence, 0.99) }
           updatedTxs.push(up)
           return up
         })
@@ -397,7 +397,7 @@ export default function TransactionTable({
     const target = transactionsRef.current.find(t => t.id === targetId)
     if (!target) { setSplitTxId(null); return }
     const prior = { ...target }
-    const updated: Transaction = { ...target, status: 'edited', categorizationSource: 'manual', splits }
+    const updated: Transaction = { ...target, status: 'edited', categorizationSource: 'manual', approvedBy: 'reviewer', splits }
     setTransactions(prev => {
       const next = prev.map(t => (t.id === targetId ? updated : t))
       onTransactionsChange?.(next)
@@ -467,7 +467,7 @@ export default function TransactionTable({
       const next = prev.map(t => {
         if (!selectedIds.includes(t.id)) return t
         onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '', bulk: 'true' } })
-        const updated = { ...t, status: 'approved' as const, final_category: t.final_category ?? t.suggested_category, final_account_code: t.final_account_code ?? t.suggested_account_code }
+        const updated = approveTransaction(t)
         approvedTxs.push(updated)
         return updated
       })
@@ -572,7 +572,7 @@ export default function TransactionTable({
     if (fi < 0) return
     const t = vis[fi]
     onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '' } })
-    handleChange({ ...t, status: 'approved', final_category: t.final_category ?? t.suggested_category, final_account_code: t.final_account_code ?? t.suggested_account_code })
+    handleChange(approveTransaction(t))
   }
   function focusedFlag() {
     const vis = visibleRef.current, fi = focusedIdxRef.current
@@ -894,7 +894,7 @@ export default function TransactionTable({
               setTransactions(prev => {
                 const next = prev.map(t =>
                   ids.includes(t.id)
-                    ? { ...t, status: 'edited' as const, categorizationSource: 'manual' as const, final_account_code: code, final_category: name }
+                    ? { ...t, status: 'edited' as const, categorizationSource: 'manual' as const, approvedBy: 'reviewer' as const, final_account_code: code, final_category: name }
                     : t
                 )
                 onTransactionsChange?.(next)
@@ -910,7 +910,7 @@ export default function TransactionTable({
               if (tx) {
                 const fromName = tx.final_category ?? tx.suggested_category ?? '—'
                 onAudit?.({ action: 'tx_category_changed', txId: tx.id, txDescription: tx.description, details: { from: fromName, to: name } })
-                handleChange({ ...tx, status: 'edited', categorizationSource: 'manual', final_account_code: code, final_category: name })
+                handleChange({ ...tx, status: 'edited', categorizationSource: 'manual', approvedBy: 'reviewer', final_account_code: code, final_category: name })
                 handleCategoryRuleCandidate(tx, code, name)
               }
             }

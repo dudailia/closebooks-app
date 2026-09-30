@@ -18,7 +18,7 @@ import {
   memoryDeleteClient as lsDeleteClient,
 } from '@/lib/memoryData'
 import type { CategorizationJob, Client, Transaction } from '@/types'
-import { newColumnValues, readCategorizationSource, readSplits, upsertTransactionRows } from '@/lib/transactionPersistence'
+import { newColumnValues, readApprovedBy, readCategorizationSource, readSplits, upsertTransactionRows } from '@/lib/transactionPersistence'
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
@@ -67,6 +67,7 @@ function mapTxRow(row: Record<string, unknown>): Transaction {
     reasoning,
     splits:               readSplits(row.splits),
     categorizationSource: readCategorizationSource(row.categorization_source),
+    approvedBy:           readApprovedBy(row.approved_by),
   }
 }
 

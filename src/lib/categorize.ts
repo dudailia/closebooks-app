@@ -365,6 +365,7 @@ export async function categorizeTransactionsWithUsage(
         reasoning: resolved.reasoning,
         validation_flags: resolved.validationFlags,
         categorizationSource: 'ai',
+        ...(resolved.status === 'approved' ? { approvedBy: 'ai' as const } : {}),
       })
     }
 
