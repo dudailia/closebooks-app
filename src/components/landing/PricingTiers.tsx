@@ -344,7 +344,6 @@ function LandingCta({ tier, annual }: { tier: Tier; annual: boolean }) {
 }
 
 function PricingCta({ tier, annual, stripeTestMode }: { tier: Tier; annual: boolean; stripeTestMode: boolean }) {
-  const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const priceId = resolvePriceId(tier.id, annual)
@@ -385,12 +384,16 @@ function PricingCta({ tier, annual, stripeTestMode }: { tier: Tier; annual: bool
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           priceId,
-          customerEmail: email || undefined,
           planSlug: tier.id,
           billingInterval: annual ? 'year' : 'month',
         }),
       })
       const data = await res.json()
+      // Checkout needs a signed-in firm; send visitors to sign up with this plan.
+      if (res.status === 401) {
+        window.location.href = `/signup?plan=${tier.id}&billing=${annual ? 'annual' : 'monthly'}`
+        return
+      }
       if (!res.ok) throw new Error(data.error ?? 'Checkout failed.')
       window.location.href = data.url
     } catch (err) {
@@ -401,25 +404,6 @@ function PricingCta({ tier, annual, stripeTestMode }: { tier: Tier; annual: bool
 
   return (
     <>
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="your@email.com"
-        style={{
-          width: '100%',
-          padding: '10px 12px',
-          fontSize: 13,
-          color: '#FAFAFA',
-          backgroundColor: '#141414',
-          border: '1px solid #1f1f1f',
-          borderRadius: 8,
-          outline: 'none',
-          marginBottom: 10,
-          boxSizing: 'border-box',
-          fontFamily: 'var(--font-sans)',
-        }}
-      />
       {configured ? (
         <button
           type="button"

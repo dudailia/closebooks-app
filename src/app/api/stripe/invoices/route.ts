@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 import { createClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/routeAuth'
+import { latestFirmSubscription } from '@/lib/subscriptionLookup'
 
 function getSupabaseService() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -27,13 +28,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ invoices: [] })
   }
 
-  const { data: sub } = await supabase
-    .from('subscriptions')
-    .select('stripe_customer_id')
-    .eq('customer_email', user.email.toLowerCase())
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const { data: sub } = await latestFirmSubscription(supabase, user.id, 'stripe_customer_id')
 
   const customerId = sub?.stripe_customer_id as string | undefined
   if (!customerId || customerId === 'unknown') {

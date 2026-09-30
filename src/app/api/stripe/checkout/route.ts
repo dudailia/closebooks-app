@@ -53,25 +53,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Request must include priceId (string).' }, { status: 422 })
   }
 
-  const { priceId, customerEmail: bodyEmail, planSlug, billingInterval } = body
+  const { priceId, planSlug, billingInterval } = body
+  // Checkout is tied to the signed-in user's firm, never to an email typed into
+  // the form: access is looked up by firm (src/lib/subscriptionLookup.ts).
   const user = await getUserFromRequest(request)
-  const email = (user?.email ?? bodyEmail ?? '').trim().toLowerCase()
-  if (!email) {
-    return NextResponse.json({ error: 'Sign in or provide an email for checkout.' }, { status: 400 })
+  const email = (user?.email ?? '').trim().toLowerCase()
+  if (!user?.id || !email) {
+    return NextResponse.json({ error: 'Sign in to subscribe.', code: 'sign_in_required' }, { status: 401 })
   }
 
-  let firmId: string | null = null
   const supabase = getSupabaseService()
-  if (supabase && user?.id) {
-    const { data: firm } = await supabase.from('firms').select('id').eq('owner_id', user.id).maybeSingle()
-    firmId = firm?.id ?? null
+  if (!supabase) {
+    return NextResponse.json({ error: 'Billing lookup requires Supabase.' }, { status: 503 })
+  }
+  const { data: firm } = await supabase.from('firms').select('id').eq('owner_id', user.id).maybeSingle()
+  const firmId: string | null = firm?.id ?? null
+  if (!firmId) {
+    return NextResponse.json({ error: 'No firm found for this account.', code: 'no_firm' }, { status: 409 })
   }
 
   const origin = request.headers.get('origin') ?? 'http://localhost:3000'
   const meta = {
     plan_slug: planSlug ?? 'unknown',
     product: 'closebooks',
-    firm_id: firmId ?? '',
+    firm_id: firmId,
     billing_interval: billingInterval ?? 'month',
   }
 

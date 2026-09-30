@@ -4,6 +4,7 @@ import { getUserFromRequest } from '@/lib/supabase/routeAuth'
 import { PLAN_LIMITS, parsePlanSlug } from '@/lib/plans'
 import type { SubscriptionState } from '@/lib/subscriptionTypes'
 import { EMPTY_SUBSCRIPTION } from '@/lib/subscriptionTypes'
+import { latestFirmSubscription } from '@/lib/subscriptionLookup'
 import {
   computeSubscriptionAccess,
   isPastDueLocked,
@@ -113,17 +114,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ subscription: { ...EMPTY_SUBSCRIPTION, hasAccess: true } })
   }
 
-  const email = user.email.toLowerCase()
-
-  const { data: row } = await supabase
-    .from('subscriptions')
-    .select(
-      'status, plan_slug, stripe_customer_id, stripe_subscription_id, current_period_end, trial_end, cancel_at_period_end, payment_failed_at, grace_period_end, billing_interval'
-    )
-    .eq('customer_email', email)
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const { data: row } = await latestFirmSubscription(supabase, user.id, 'status, plan_slug, stripe_customer_id, stripe_subscription_id, current_period_end, trial_end, cancel_at_period_end, payment_failed_at, grace_period_end, billing_interval')
 
   const { data: firm } = await supabase.from('firms').select('id').eq('owner_id', user.id).maybeSingle()
 

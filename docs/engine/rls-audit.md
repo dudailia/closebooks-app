@@ -30,13 +30,14 @@ open until their migration is applied.
 | F5 `firm_members` insert, `cb_firm_id()` | Open. |
 | F6 Plaid webhook signature | Mitigated: Plaid routes 404 (the Vercel cron at `/api/integrations/plaid/sync/cron` now gets 404 too). |
 | F7 members can rewrite trial state | **Open in the database until the migration is applied.** The browser no longer writes `trial_started_at` or `plan_status` (`src/lib/freeTrial.ts`, `src/lib/db.ts`); after the migration, only `cb_ensure_firm_usage` and `cb_record_close_used` can change the row from a signed-in session. |
-| F8 subscription keyed on email | Open. |
+| F8 subscription keyed on email | **Code fixed; migration written, not applied.** Every lookup is by the caller's firm (`src/lib/subscriptionLookup.ts`); checkout requires a signed-in firm and ignores any email in the body; the pricing page sends visitors to sign up. `supabase/migrations/20261001000000_subscriptions_by_firm.sql` removes the email match from the select policy. Until applied, a signed-in user can still read a subscription row whose `customer_email` matches theirs through the REST API (no access or billing portal, since the app no longer uses the email match). |
 | F9 `brand-assets` upload to any path | Open in the database. `/api/firm/logo` returns 404, but the bucket policy is unchanged. |
 | F10 `cb_is_member_of_firm` callable over RPC | Open (information leak only). |
 | F11, F12 portal pages | Mitigated: `/portal/*` returns 404. |
 | F13 membership-only policies | Open at the database level; the affected routes (inbox, consolidation, Plaid, bank rec) return 404. |
 | F14 admins can change `owner_id` | Open. |
-| F15, F16 schema drift, user id as firm id | Open. |
+| F15 schema drift | Partly fixed: `supabase/migrations/20261001100000_lock_tables_outside_migrations.sql` enables RLS on `qbo_connections` and revokes anon/authenticated access (not applied). The live state is unknown; `supabase/checks/open_findings_check.sql` shows it. The `inbox-attachments` bucket and `portal_tokens` drift remain. |
+| F16 user id as firm id | Open (fails closed for bank rec; portal and Plaid routes 404). |
 
 ## 1. What was reviewed and how
 

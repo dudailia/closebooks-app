@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/routeAuth'
+import { latestFirmSubscription } from '@/lib/subscriptionLookup'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,13 +24,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ hasSubscription: false })
   }
 
-  const { data: row } = await supabase
-    .from('subscriptions')
-    .select('status, plan_slug')
-    .eq('customer_email', user.email.toLowerCase())
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const { data: row } = await latestFirmSubscription(supabase, user.id, 'status, plan_slug')
 
   if (!row) {
     return NextResponse.json({ hasSubscription: false })
