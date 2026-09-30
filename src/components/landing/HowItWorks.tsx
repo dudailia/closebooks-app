@@ -44,7 +44,7 @@ const STEPS = [
   {
     num: '02',
     title: 'AI suggests, you approve',
-    body: `Claude suggests an account for each transaction with a confidence score and its reasoning, using your firm's recent corrections as hints. Saved vendor rules are applied, and rows under ${AUTO_APPROVE_PERCENT}% confidence wait for your review.`,
+    body: `Claude suggests an account for each transaction with a confidence score and its reasoning, using your firm's recent corrections as hints. Saved vendor rules are applied, and rows below the default auto-approve confidence threshold of ${AUTO_APPROVE_PERCENT}% wait for your review.`,
   },
   {
     num: '03',

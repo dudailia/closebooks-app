@@ -3,7 +3,7 @@ import { AUTO_APPROVE_PERCENT } from '@/lib/ai/models'
 export const TRUST_PILLARS = [
   {
     title: 'Human review before export',
-    copy: `Rows under ${AUTO_APPROVE_PERCENT}% confidence, or that don't match the client\'s chart of accounts, wait for your team. Export is blocked until every row is approved and maps to the chart.`,
+    copy: `Rows below the default auto-approve confidence threshold of ${AUTO_APPROVE_PERCENT}%, or that don't match the client\'s chart of accounts, wait for your team. Export is blocked until every row is approved and maps to the chart.`,
   },
   {
     title: 'Firm-scoped access',

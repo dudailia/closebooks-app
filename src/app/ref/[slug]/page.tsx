@@ -19,7 +19,7 @@ export default function ReferralLandingPage({ params }: Props) {
   const stats = [
     { value: 'AI-assisted', label: 'categorization with confidence scores' },
     { value: 'Human review', label: 'before every export' },
-    { value: `${AUTO_APPROVE_PERCENT}%+`, label: 'confidence threshold for suggested auto-approval' },
+    { value: `${AUTO_APPROVE_PERCENT}%`, label: 'default auto-approve confidence threshold (a setting, not an accuracy figure)' },
   ]
 
   const features = [

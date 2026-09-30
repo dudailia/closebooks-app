@@ -296,8 +296,8 @@ function Metrics({ reduced }: { reduced: boolean }) {
         <StatItem
           from={0} to={AUTO_APPROVE_PERCENT}
           suffix="%"
-          label="Auto-approval threshold"
-          sublabel="Lower confidence stays in review"
+          label="Default auto-approve confidence threshold"
+          sublabel="A setting, not an accuracy figure. Rows below it wait for review"
           progress={progress} landed={landed} reduced={reduced}
         />
 
