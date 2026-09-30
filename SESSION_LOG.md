@@ -15,7 +15,7 @@ Durable architecture lives in `CLAUDE.md`; this file is where things stand now.
 ## On `main` (merged)
 
 - **Journal entries** (`src/lib/autopilot/journalEntries.ts`): one balanced entry per approved transaction against the approved chart account and the bank account; direction from `type`; exceptions and "check: possible refund" lists; JE CSV export; Journal entries section in the close report. Spec: `docs/engine/journal-entries.md`.
-- **Splits and `categorizationSource` persisted** to Supabase via migration `supabase/migrations/20260926000000_transaction_splits_source.sql`, with a fallback that saves without those columns if the migration isn't applied. **Whether the migration was run in the Supabase SQL editor is not confirmed.**
+- **Splits and `categorizationSource` persisted** to Supabase via migration `supabase/migrations/20260926000000_transaction_splits_source.sql`, **applied in the Supabase SQL editor on 2026-09-26; both columns confirmed via `information_schema`.** (A fallback still saves without those columns if they're ever missing.)
 - **Approve keeps the reviewer's chosen account** (was overwritten by the AI suggestion). CSV exports have no footer lines.
 - `next.config.mjs` has `ignoreBuildErrors: false` and `ignoreDuringBuilds: false`: the build type-checks and lints. Test runner: vitest (`npm test`).
 
