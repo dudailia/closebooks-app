@@ -38,6 +38,8 @@ Durable architecture lives in `CLAUDE.md`; this file is where things stand now.
 
 ## Open issues
 
+- **Security (read-only audit, `docs/engine/rls-audit.md`, not fixed):** `portal-docs` storage policy open to the anon key (critical); portal routes update by id without an ownership check; `/api/portal/ingest` unauthenticated; inbox webhook open if `POSTMARK_WEBHOOK_TOKEN` is unset. Live DB not inspected.
+
 - **Migration not applied:** `supabase/migrations/20260930000000_transaction_approved_by.sql` adds `transactions.approved_by` (who approved a row: ai / rule / reviewer; used by the close report's approval breakdown). Until it's applied, saves drop only that column (`src/lib/transactionPersistence.ts`) and reloaded rows fall back to `categorizationSource`, showing "not recorded" where it can't tell.
 
 - The categorisation prompt sends deposits to revenue; client payments land on 4100 instead of 1100 AR. Consistent high-confidence errors: Gusto payroll tax → 6200 (should be 2300), sales-tax remittance → 6200 (2200), SBA loan → 2400 (2500). Sonnet 4.6's confidence on these is 0.95–0.97, so the threshold can't catch them.
