@@ -1,6 +1,6 @@
 # SESSION_LOG — CloseBooks handoff
 
-**Last updated:** 2026-09-30. Working copy: `~/code/closebooks-app-fresh` (the `~/Desktop` copy is retired).
+**Last updated:** 2026-09-30 (evening). Working copy: `~/code/closebooks-app-fresh` (the `~/Desktop` copy is retired).
 Durable architecture lives in `CLAUDE.md`; this file is where things stand now.
 
 ## Branches
@@ -24,6 +24,7 @@ Durable architecture lives in `CLAUDE.md`; this file is where things stand now.
 **Eval (`eval/`, see `eval/README.md`):** a 292-row synthetic labelled dataset (fictional Brightline Studio, 34-account Standard Small Business chart; 284 account labels, 8 REVIEW); `run.ts` runs the real engine with a hard budget cap; `metrics.ts`/`report.ts`/`compare.ts` score and report; `sweep-cli.ts` (threshold sweep) and `learn-cli.ts` (June corrections → rules) work from saved runs without API calls. Results live in `eval/results/` (gitignored).
 
 **App changes also on this branch:**
+- **2026-09-30 reliability/security:** categorisation runs 4 batches at a time (`CATEGORIZE_CONCURRENCY`, same prompts and results, input order kept; a 292-row upload projects to ~35 s vs ~128 s). Prompt text fields go through `sanitizePromptField` (one line, escaped, descriptions ≤200 chars) and are labelled as data, not instructions; the saved eval runs predate that label. `/api/notify` (called after upload) forwards the client name to Formspree without auth.
 - **Categorisation model → `claude-sonnet-5-5`, auto-approve threshold 0.85 → 0.93 (decision 2026-09-30).** Evidence: `eval/results/comparison.md` + `eval/results/threshold-sweep.md` (synthetic data, 292 rows; Sonnet 5.5 pooled over 2 runs): at 0.93 wrong auto-approvals 0.4% (1 of 274) vs 5.8% for Sonnet 4.6 at 0.85; review load ~51 of 97 rows/statement vs ~19. Both values live in `src/lib/ai/models.ts` (`CATEGORIZE_MODEL`, `AUTO_APPROVE_THRESHOLD`, `AUTO_APPROVE_PERCENT`); read by `categorize.ts` (upload auto-approve, also `/api/demo/categorize`), `coaValidation.ts` default, `TransactionTable.tsx` ("approve high-confidence" + counts), `TransactionRow.tsx` (confidence pill), `/api/report` (auto-approved count), `demoData.ts` (sample statuses + summary), landing text (StatBand, HowItWorks, trustClaims, `/ref/[slug]`), and the eval harness via `categorize.ts` re-exports. Not changed: `/api/parse-pdf` (still Sonnet 4.6; unmeasured) and hidden features (copilot, autopilot, analytics, agent) that keep their own 0.85/0.90 values.
 - `categorize.ts`: reads the reply's text blocks and ignores thinking blocks (Opus 5.5 replies were rejected); an unreadable reply is retried at most once (network errors up to 3). New `categorizeTransactionsWithUsage()` reports tokens/latency; `categorizeTransactions()` output unchanged.
 - Rules: `vendorKey()` (`src/lib/review/vendor.ts`) strips month-to-month noise (dates, IDs, card digits, phones, state codes) and keeps type words (`DES:NET` vs `DES:TAX`); matching is exact on the key; rules store direction. **Rules now run first at upload** (matched rows skip the AI, source = firm rule), are loaded before they're applied (`ensureRulesLoaded`), and rule-applied rows on the review page are saved immediately.
@@ -38,7 +39,7 @@ Durable architecture lives in `CLAUDE.md`; this file is where things stand now.
 
 ## Open issues
 
-- **Security (read-only audit, `docs/engine/rls-audit.md`, not fixed):** `portal-docs` storage policy open to the anon key (critical); portal routes update by id without an ownership check; `/api/portal/ingest` unauthenticated; inbox webhook open if `POSTMARK_WEBHOOK_TOKEN` is unset. Live DB not inspected.
+- **Security (`docs/engine/rls-audit.md`, section 0 has the status):** hidden features' API routes now 404 (middleware allowlist, 13 routes served) and `/portal/*` 404s. **Two migrations written, not applied:** `20260930100000_portal_docs_service_role_only.sql` (portal-docs bucket open to the anon key) and `20260930200000_firm_usage_server_owned.sql` (members could reset their trial). Until applied, both holes are open to direct Supabase calls with the anon key; the middleware can't block those. Check the bucket with `supabase/checks/portal_docs_check.sql`. Still open: F5, F8, F9, F10, F13-F16.
 
 - **Migration not applied:** `supabase/migrations/20260930000000_transaction_approved_by.sql` adds `transactions.approved_by` (who approved a row: ai / rule / reviewer; used by the close report's approval breakdown). Until it's applied, saves drop only that column (`src/lib/transactionPersistence.ts`) and reloaded rows fall back to `categorizationSource`, showing "not recorded" where it can't tell.
 

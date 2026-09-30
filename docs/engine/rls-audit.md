@@ -2,6 +2,42 @@
 
 Date: 2026-09-30. Branch: `eval-harness`. Read-only review; no policy or code was changed.
 
+## 0. Status after fixes (2026-09-30)
+
+Changes on `eval-harness`, commits `9a27a7ad` to `72f2b51f`:
+
+- **Hidden features are off at the back end.** `src/middleware.ts` now runs on
+  `/api/*` and returns 404 for every API route not in `VISIBLE_API_ROUTES`
+  (`src/lib/features.ts`): 13 routes served, 87 blocked. `/portal/*` pages
+  return 404 (`PORTAL_ENABLED = false`). `src/lib/__tests__/features.test.ts`
+  walks `src/app/api` and checks that exactly the allowlist is served.
+- **Two migrations written, not applied:**
+  `supabase/migrations/20260930100000_portal_docs_service_role_only.sql` (F1) and
+  `supabase/migrations/20260930200000_firm_usage_server_owned.sql` (F7). The
+  app code already works with them applied or not.
+
+**Important limit.** The middleware only blocks this app's routes. Anyone
+with the public anon key can still call Supabase's REST and Storage APIs
+directly, where only RLS applies. Findings that live in the database stay
+open until their migration is applied.
+
+| Finding | Status |
+|---|---|
+| F1 `portal-docs` bucket open to anon | **Open in the database until the migration is applied.** The app no longer serves portal routes, but the bucket is reachable directly with the anon key. Run `supabase/checks/portal_docs_check.sql` to see how many objects it holds. |
+| F2 portal routes update by id | Mitigated: every portal route returns 404. The route code is unchanged; fix it before re-enabling the portal. |
+| F3 `/api/portal/ingest`, `/api/inbox/webhook` | Mitigated: both return 404. Fix before re-enabling (auth on ingest, make the webhook token required, remove the `supabase.rpc` payload write). |
+| F4 inbox slugs not unique | Mitigated for now (inbox routes 404). The missing unique index remains. |
+| F5 `firm_members` insert, `cb_firm_id()` | Open. |
+| F6 Plaid webhook signature | Mitigated: Plaid routes 404 (the Vercel cron at `/api/integrations/plaid/sync/cron` now gets 404 too). |
+| F7 members can rewrite trial state | **Open in the database until the migration is applied.** The browser no longer writes `trial_started_at` or `plan_status` (`src/lib/freeTrial.ts`, `src/lib/db.ts`); after the migration, only `cb_ensure_firm_usage` and `cb_record_close_used` can change the row from a signed-in session. |
+| F8 subscription keyed on email | Open. |
+| F9 `brand-assets` upload to any path | Open in the database. `/api/firm/logo` returns 404, but the bucket policy is unchanged. |
+| F10 `cb_is_member_of_firm` callable over RPC | Open (information leak only). |
+| F11, F12 portal pages | Mitigated: `/portal/*` returns 404. |
+| F13 membership-only policies | Open at the database level; the affected routes (inbox, consolidation, Plaid, bank rec) return 404. |
+| F14 admins can change `owner_id` | Open. |
+| F15, F16 schema drift, user id as firm id | Open. |
+
 ## 1. What was reviewed and how
 
 Files read:

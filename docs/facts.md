@@ -23,6 +23,11 @@ auto-approved* is the share of rows the app would approve without a human
 that have the wrong account. A *statement* is 97 rows (the dataset's monthly
 average).
 
+**Prompt version.** All runs below used the prompt before 2026-09-30's
+change that labels transaction text as data (`src/lib/categorize.ts`). The
+synthetic descriptions need no sanitising, so only that label differs; the
+effect has not been measured.
+
 ## Accuracy per model
 
 Source: `eval/results/comparison.md`, from each run's `summary.json`.
@@ -154,9 +159,10 @@ not measured.
 
 ## Tests
 
-116 tests in 12 files, all passing (`npm test`, vitest, run 2026-09-30 on
+131 tests in 15 files, all passing (`npm test`, vitest, run 2026-09-30 on
 branch `eval-harness`). They cover the categorisation engine with a mocked
 API client (`src/lib/__tests__/categorize.test.ts`), persistence fallbacks,
-rules and vendor keys, journal entries, approval counts, and the eval
+rules and vendor keys, journal entries, approval counts, concurrent
+batching with a fake model, prompt sanitising, the API allowlist, and the eval
 harness's scoring, reports and budget cap (`eval/__tests__/`). There are no
 end-to-end browser tests.

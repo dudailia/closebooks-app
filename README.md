@@ -55,7 +55,7 @@ Database migrations are in `supabase/migrations/`.
 ## Tests and checks
 
 ```bash
-npm test          # vitest: 116 tests, no API calls
+npm test          # vitest: 131 tests, no API calls
 npm run build     # type-checks and lints; the main correctness gate
 npm run lint
 ```
