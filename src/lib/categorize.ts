@@ -7,6 +7,8 @@ import { AUTO_APPROVE_THRESHOLD, CATEGORIZE_MODEL } from '@/lib/ai/models'
 export { AUTO_APPROVE_THRESHOLD, CATEGORIZE_MODEL }
 const MODEL = CATEGORIZE_MODEL
 export const BATCH_SIZE = 20
+/** Batches sent at once. 4 keeps a 292-row statement (15 batches) to about 4 rounds of calls. */
+export const CATEGORIZE_CONCURRENCY = 4
 const MAX_RETRIES = 3
 /** A reply that arrived but can't be read (no text, no JSON) is retried at most this many times. */
 const MAX_UNREADABLE_RETRIES = 1
@@ -216,6 +218,8 @@ export interface CategorizeOptions {
   model?: string
   /** Override the Anthropic client (tests only). */
   client?: Pick<Anthropic, 'messages'>
+  /** Batches in flight at once (default CATEGORIZE_CONCURRENCY). */
+  concurrency?: number
 }
 
 export interface CategorizeResult {
@@ -314,11 +318,12 @@ export async function categorizeTransactionsWithUsage(
 
   const api = options.client ?? client
   const model = options.model ?? MODEL
-  const results: Transaction[] = []
+  const concurrency = Math.max(1, Math.floor(options.concurrency ?? CATEGORIZE_CONCURRENCY))
 
-  for (let i = 0; i < transactions.length; i += BATCH_SIZE) {
-    const batch = transactions.slice(i, i + BATCH_SIZE)
-    const batchIndex = i / BATCH_SIZE
+  // One batch: the prompt, the call and the per-row resolution are the same as
+  // when batches ran one after another; only the scheduling changed.
+  async function runBatch(batchIndex: number): Promise<Transaction[]> {
+    const batch = transactions.slice(batchIndex * BATCH_SIZE, (batchIndex + 1) * BATCH_SIZE)
     const started = Date.now()
 
     let items: ClaudeItem[]
@@ -327,20 +332,14 @@ export async function categorizeTransactionsWithUsage(
       batches.push({ batchIndex, size: batch.length, wallMs: Date.now() - started, ok: true })
     } catch {
       batches.push({ batchIndex, size: batch.length, wallMs: Date.now() - started, ok: false })
-      for (const tx of batch) results.push({ ...tx, status: 'flagged' })
-      continue
+      return batch.map((tx) => ({ ...tx, status: 'flagged' as const }))
     }
 
     const byIndex = new Map(items.map((item) => [item.index, item]))
 
-    for (let j = 0; j < batch.length; j++) {
-      const tx = batch[j]
+    return batch.map((tx, j): Transaction => {
       const suggestion = byIndex.get(j)
-
-      if (!suggestion) {
-        results.push({ ...tx, status: 'flagged' })
-        continue
-      }
+      if (!suggestion) return { ...tx, status: 'flagged' }
 
       const rawConf  = Math.min(1, Math.max(0, Number(suggestion.confidence) || 0))
       const calibratedConfidence = calibrateConfidence(tx.description, tx.amount, rawConf)
@@ -356,7 +355,7 @@ export async function categorizeTransactionsWithUsage(
         AUTO_APPROVE_THRESHOLD
       )
 
-      results.push({
+      return {
         ...tx,
         suggested_category: resolved.suggested_category,
         suggested_account_code: resolved.suggested_account_code,
@@ -366,10 +365,25 @@ export async function categorizeTransactionsWithUsage(
         validation_flags: resolved.validationFlags,
         categorizationSource: 'ai',
         ...(resolved.status === 'approved' ? { approvedBy: 'ai' as const } : {}),
-      })
-    }
-
+      }
+    })
   }
 
+  // Up to `concurrency` batches in flight; each result lands in its own slot,
+  // so the output keeps the input order whatever order the replies arrive in.
+  const batchCount = Math.ceil(transactions.length / BATCH_SIZE)
+  const perBatch: Transaction[][] = new Array(batchCount)
+  let nextBatch = 0
+  async function worker(): Promise<void> {
+    while (nextBatch < batchCount) {
+      const b = nextBatch++
+      perBatch[b] = await runBatch(b)
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, batchCount) }, worker))
+
+  const results = perBatch.flat()
+  batches.sort((a, b) => a.batchIndex - b.batchIndex)
+  calls.sort((a, b) => a.batchIndex - b.batchIndex || a.attempt - b.attempt)
   return { transactions: results, calls, batches }
 }
