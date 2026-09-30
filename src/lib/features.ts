@@ -36,6 +36,42 @@ export function isDashboardRouteVisible(pathname: string): boolean {
   return ROUTE_PATTERNS.some((re) => re.test(path))
 }
 
+// ─── API routes and portal ────────────────────────────────────────────────────
+
+// API routes the core path calls. While DEMO_HIDE is on, middleware returns 404
+// for every other /api route, so a hidden feature's back end is off too, not
+// just its page. Matching is exact (`[param]` = one segment).
+export const VISIBLE_API_ROUTES: readonly string[] = [
+  '/api/auth/membership',   // role lookup (usePermissions)
+  '/api/auth/sessions',     // session heartbeat (SessionPulse in the dashboard layout)
+  '/api/categorize',        // upload + onboarding
+  '/api/parse-pdf',         // PDF upload
+  '/api/export',            // review: CSV and journal-entry export
+  '/api/report',            // review: close report
+  '/api/notify',            // upload: "categorization completed" notice to the owner
+  '/api/demo/categorize',   // public /demo page
+  '/api/subscription',      // subscription state (SubscriptionContext)
+  '/api/stripe/checkout',   // pricing page
+  '/api/stripe/webhook',    // Stripe → subscriptions
+  '/api/stripe/portal',     // subscription page
+  '/api/stripe/invoices',   // subscription page
+]
+
+const API_PATTERNS = VISIBLE_API_ROUTES.map(
+  (route) => new RegExp('^' + route.replace(/\[[^\]]+\]/g, '[^/]+') + '$'),
+)
+
+/** True if an /api path may be served. Non-API paths are always true. */
+export function isApiRouteVisible(pathname: string): boolean {
+  if (!DEMO_HIDE) return true
+  if (pathname !== '/api' && !pathname.startsWith('/api/')) return true
+  const path = pathname.replace(/\/+$/, '')
+  return API_PATTERNS.some((re) => re.test(path))
+}
+
+/** The client portal (/portal/*) and its routes are part of the hidden set. */
+export const PORTAL_ENABLED = show
+
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 // Matched by label, since some items share an href (Bank Rec → /dashboard/clients).

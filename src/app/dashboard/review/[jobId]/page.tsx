@@ -943,7 +943,7 @@ export default function ReviewPage() {
       }
       setQboConn(getQBOConnection())
       setQboLive(false)
-      fetch('/api/integrations/quickbooks/status')
+      if (FEATURES.reviewQuickBooksPush) fetch('/api/integrations/quickbooks/status')
         .then((r) => r.json())
         .then((data: { connected?: boolean; companyName?: string; realmId?: string; lastSyncAt?: string | null; totalSynced?: number }) => {
           if (data.connected && data.companyName && data.realmId) {
@@ -987,7 +987,7 @@ export default function ReviewPage() {
       setJob(found)
       setQboConn(getQBOConnection())
       setQboLive(false)
-      fetch('/api/integrations/quickbooks/status')
+      if (FEATURES.reviewQuickBooksPush) fetch('/api/integrations/quickbooks/status')
         .then((r) => r.json())
         .then((data: { connected?: boolean; companyName?: string; realmId?: string; lastSyncAt?: string | null; totalSynced?: number }) => {
           if (data.connected && data.companyName && data.realmId) {

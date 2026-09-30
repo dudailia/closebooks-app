@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { shouldAllowDashboardAccess } from '@/lib/middlewareSubscription'
 import { supabaseCookieOptions } from '@/lib/supabase/cookieOptions'
-import { isDashboardRouteVisible } from '@/lib/features'
+import { isApiRouteVisible, isDashboardRouteVisible, PORTAL_ENABLED } from '@/lib/features'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -50,6 +50,21 @@ function applySecurityHeaders(res: NextResponse): void {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // Demo build: hidden features are off at the back end too (src/lib/features.ts).
+  if (pathname === '/api' || pathname.startsWith('/api/')) {
+    if (!isApiRouteVisible(pathname)) {
+      const res = NextResponse.json({ error: 'Not found' }, { status: 404 })
+      applySecurityHeaders(res)
+      return res
+    }
+    return NextResponse.next()
+  }
+  if (!PORTAL_ENABLED && pathname.startsWith('/portal')) {
+    const res = new NextResponse('Not found', { status: 404, headers: { 'Content-Type': 'text/plain' } })
+    applySecurityHeaders(res)
+    return res
+  }
 
   // Rate limit portal routes
   if (pathname.startsWith('/portal/')) {
@@ -166,5 +181,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/signup', '/portal/:path*'],
+  matcher: ['/dashboard/:path*', '/login', '/signup', '/portal/:path*', '/api/:path*'],
 }
