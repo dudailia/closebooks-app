@@ -139,3 +139,12 @@ Branch: `overnight`, created from `eval-harness` at `8f357bcf`.
   - Found: `next build` did not type-check test files (a type error in
     `clientJobs.test.ts` from task 5 passed the build). Fixed the error and
     added `npm run typecheck` (`tsc --noEmit`, whole repo); I run it from here on.
+- Task 7 (dependencies, `docs/dependency-report.md`): `npm audit` 9 flagged
+  packages before, 8 after. Applied only `npm audit fix` without `--force`
+  (brace-expansion, lockfile only); tests, typecheck, build and e2e pass after
+  it. Everything else needs a major version, listed as proposals. Only Next
+  14.2.35 has findings on the core path (React Server Components DoS, possibly
+  RSC cache poisoning); 14.2.35 is the last 14.x, so the fix is Next 15.5.24+.
+  Choice: `@anthropic-ai/sdk` 0.82 to 0.91.1 looks like a minor bump but npm
+  treats a 0.x minor as breaking (outside `^0.82.0`), and its advisory is in
+  the memory-tool helper the app doesn't use, so I listed it as a proposal.
