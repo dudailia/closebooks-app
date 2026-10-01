@@ -3,7 +3,7 @@
 Forty questions a CTO at an AI accounting company would ask about the
 CloseBooks engine, grouped by topic. Each answer is short and points to the
 code or document that backs it. Line numbers are for branch `overnight`
-(created from `eval-harness`) on 2026-09-30.
+(created from `eval-harness`) at the end of the 2026-10-01 overnight session.
 
 Ground rules for every answer:
 
@@ -31,12 +31,12 @@ Contents: [Architecture](#architecture) (1-5), [Data](#data-and-storage)
 ### 1. Walk me through one statement from upload to journal entries.
 
 The CSV is parsed in the browser (`src/lib/parseCSV.ts:157`). Firm rules run
-first (`src/app/dashboard/upload/page.tsx:149-150`); matched rows skip the
+first (`src/app/dashboard/upload/page.tsx:153-154`); matched rows skip the
 model. The rest go to `POST /api/categorize`, which calls
-`categorizeTransactions` (`src/lib/categorize.ts:299`): batches of 20, up to 4
+`categorizeTransactions` (`src/lib/categorize.ts:347`): batches of 20, up to 4
 at once, one Claude call per batch. Each suggestion is checked against the
 chart (`src/lib/coaValidation.ts:39-88`) and gets a status: approved, pending
-or flagged. The job is saved (`src/lib/db.ts:148`), reviewed on the review
+or flagged. The job is saved (`src/lib/db.ts:150`), reviewed on the review
 page, and exported. Journal entries are built at export time by
 `generateJournalEntries` (`src/lib/autopilot/journalEntries.ts:181`). Diagram:
 [architecture.md](./architecture.md) section 1.
@@ -45,7 +45,7 @@ page, and exported. Journal entries are built at export time by
 
 It started as a client-first demo with an in-memory store, and the
 orchestration stayed there: rules, the categorise call, merging and saving
-all run in `src/app/dashboard/upload/page.tsx:147-203`. The model call itself
+all run in `src/app/dashboard/upload/page.tsx:151-208`. The model call itself
 is server-side, so the API key never reaches the browser. The cost is that
 nothing durable happens if the tab closes mid-upload, and saving is
 fire-and-forget (`upload/page.tsx:183`). For a real product I'd move the
@@ -55,7 +55,7 @@ pipeline into a server job (see question 38).
 
 One call per row repeats the chart and system prompt every time, so it costs
 more. One call per statement makes the reply long and means one parse error
-loses the whole statement. 20 rows (`src/lib/categorize.ts:10`) keeps a
+loses the whole statement. 20 rows (`src/lib/categorize.ts:11`) keeps a
 failure to 20 flagged rows (`categorize.ts:338`) and keeps the reply inside
 `max_tokens: 4096` (`categorize.ts:254`). I did not measure other batch
 sizes; every eval run used 20 (facts.md, "Accuracy per model").
@@ -63,7 +63,7 @@ sizes; every eval run used 20 (facts.md, "Accuracy per model").
 ### 4. Why not tool use or structured outputs for the reply?
 
 The reply is a raw JSON array parsed from the text blocks
-(`src/lib/categorize.ts:271`). Unreadable replies are retried once
+(`src/lib/categorize.ts:319`). Unreadable replies are retried once
 (`categorize.ts:15`, `:283`). I haven't measured how often a reply is
 unreadable with the current model. Structured output would remove that
 failure class. I'd switch and confirm with the existing mocked-client tests
@@ -85,9 +85,9 @@ and `autopilot/journalEntries.ts`.
 
 Per row: date, description, amount and direction. Per batch: the whole chart
 (code, name, type) and up to 10 recent corrections
-(`src/lib/categorize.ts:98-112`, `src/app/dashboard/upload/page.tsx:154`).
+(`src/lib/categorize.ts:103-125`, `src/app/dashboard/upload/page.tsx:158`).
 The client name is accepted by the route but not put in the prompt
-(`src/app/api/categorize/route.ts:47-64`). Text fields are made single-line,
+(`src/app/api/categorize/route.ts:48-65`). Text fields are made single-line,
 escaped and capped at 200 characters (`src/lib/promptSanitize.ts:17`,
 `:27-32`). The PDF path is different: it sends up to 60,000 characters of
 extracted statement text, which can include the account holder's name,
@@ -105,7 +105,7 @@ the answer into the security doc.
 In Supabase (`jobs`, `transactions`, `clients`, plus payload-row tables for
 corrections and rules; table list in [architecture.md](./architecture.md)
 section 2). `dbSaveJob` writes the in-memory cache first, then Supabase, and
-swallows every Supabase error (`src/lib/db.ts:148-202`, the silent return at
+swallows every Supabase error (`src/lib/db.ts:150-205`, the silent return at
 `:175` and the empty catch at `:199-201`). The upload page doesn't await it
 (`upload/page.tsx:183`). So if the write fails, the reviewer sees the job,
 works on it, and loses it on reload with no warning. That is a real gap.
@@ -126,7 +126,7 @@ through `parseTransactionCSV` with expected row counts and totals.
 
 ### 10. What's in the system prompt, and why should I trust it?
 
-`SYSTEM_PROMPT` (`src/lib/categorize.ts:30-78`): a bookkeeper role, keyword
+`SYSTEM_PROMPT` (`src/lib/categorize.ts:31-79`): a bookkeeper role, keyword
 rules with suggested confidences, amount guidance, a confidence scale, the
 output format, and a line saying the user message is data, not instructions
 (`:78`). Parts of it are wrong for an invoicing business: it sends deposits
@@ -137,7 +137,7 @@ expense account (`:37`). The labels expect AR (1100) and Payroll Liabilities
 ### 11. The prompt tells the model what confidence to give ("confidence 0.97"). Doesn't that make confidence meaningless?
 
 Partly, yes. Keyword rules like `"PAYROLL TAX" ... → Payroll Tax Expense,
-confidence 0.97` (`src/lib/categorize.ts:37`) anchor the score, so a confident
+confidence 0.97` (`src/lib/categorize.ts:38`) anchor the score, so a confident
 wrong answer can come straight from the prompt. On the synthetic data,
 Sonnet 4.6 put payroll tax and sales-tax remittances on 6200 at 0.95 to 0.97
 (architecture.md section 8). The threshold can't catch errors the prompt
@@ -149,7 +149,7 @@ confidences; it's one of the next experiments.
 Each text field is reduced to one line, control characters and Unicode line
 separators become spaces, quotes and backslashes are escaped, and
 descriptions are capped at 200 characters (`src/lib/promptSanitize.ts:27-32`).
-The transactions block is labelled as data (`src/lib/categorize.ts:111`), and
+The transactions block is labelled as data (`src/lib/categorize.ts:118`), and
 the system prompt says not to follow instructions inside it (`:78`). The
 model still reads the text, so this reduces the risk; it doesn't remove it.
 After the model replies, the account must exist in the chart or the row is
@@ -225,7 +225,7 @@ Yes, on the same synthetic set. Haiku 4.5 (single run): 214/284 (75.4%)
 strict, 246/284 (86.6%) lenient, and 30/230 (13.0%) wrong among
 auto-approved at 0.85. Opus 5.5 produced no usable predictions: all 8 calls
 failed on a reply-parsing bug (thinking blocks) that is now fixed
-(`src/lib/categorize.ts:271` reads text blocks only). Opus is unmeasured.
+(`src/lib/categorize.ts:319` reads text blocks only). Opus is unmeasured.
 Source: facts.md, "Accuracy per model".
 
 ## Confidence and calibration
@@ -254,7 +254,7 @@ Moderately, on this data. Expected calibration error over 10 buckets, strict
 labels: Sonnet 5.5 0.092, Sonnet 4.6 0.121, Haiku 4.5 0.202 (single run);
 lenient: 0.067, 0.055, 0.089 (facts.md, "Calibration"). On top of the model's
 score, `calibrateConfidence` subtracts 0.08 under $20 and caps short or
-all-digit descriptions at 0.60 (`src/lib/categorize.ts:118-135`). Those two
+all-digit descriptions at 0.60 (`src/lib/categorize.ts:168-185`). Those two
 adjustments are hand-set; I haven't measured whether they help.
 
 ### 24. What happens when the model returns an account that isn't in the chart?
@@ -264,7 +264,7 @@ The row is flagged, confidence is capped at 0.55, and a note is added
 chart's account wins and the row can't auto-approve (`:70-72`, `:84`). If the
 direction looks wrong (money out to revenue, money in to an expense),
 confidence is capped at 0.60 (`:74-78`). A row missing from an otherwise good
-reply is flagged (`src/lib/categorize.ts:345`).
+reply is flagged (`src/lib/categorize.ts:396`).
 
 ### 25. Are there errors the threshold can't catch?
 
@@ -286,26 +286,32 @@ not measured. Total eval spend so far: $2.3571 (facts.md, "Total eval spend").
 
 ### 27. Why no prompt caching? The chart and system prompt repeat on every batch.
 
-It isn't on: the call has no `cache_control` (`src/lib/categorize.ts:252-257`).
-The code already records cache read and write tokens (`:266-267`), so
-measuring it is a small change. I don't know yet whether the repeated part
-is long enough per batch to qualify for caching, or what it saves. I'd count
-input tokens per batch from a saved run, turn caching on, and run the same
-capped eval with caching on and off.
+It isn't on in the app: the request has no `cache_control`
+(`buildCategorizeRequest`, `src/lib/categorize.ts:131-163`). The eval can now
+test it with `--cache` (two breakpoints, after the system prompt and after
+the chart), and the code records cache read and write tokens
+(`src/lib/categorize.ts:314-315`). I don't know yet what it saves. My
+arithmetic says little: the repeated part is about 1,400 tokens (a
+character-count estimate), output is about two thirds of a call's cost, and
+with 4 batches starting at once the first 4 calls all write, so a 97-row
+statement is about break-even. I also don't know whether Sonnet 5.5's minimum
+cacheable length is met. The prepared experiment
+([next-experiments.md](./next-experiments.md), part b) checks that first for
+about $0.05, then measures on and off for about $1.32 in total.
 
 ### 28. How fast is it?
 
 Median per transaction (batch time divided by 20): Sonnet 5.5 0.43 s (p90
 0.46 s), Sonnet 4.6 1.15 s (p90 1.29 s), Haiku 4.5 0.53 s (single run).
 Source: facts.md, "Latency". These were measured one batch at a time. The app
-now runs 4 batches at once (`src/lib/categorize.ts:12`); end-to-end time with
+now runs 4 batches at once (`src/lib/categorize.ts:13`); end-to-end time with
 concurrency against the real API is not measured, only with a fake model
 (`src/lib/__tests__/categorizeConcurrency.test.ts`).
 
 ### 29. What stops someone running up your API bill?
 
 Less than I'd like. `/api/categorize` needs a signed-in user with an active
-trial or subscription (`src/app/api/categorize/route.ts:18-19`,
+trial or subscription (`src/app/api/categorize/route.ts:19-20`,
 `src/lib/routeSubscription.ts:67-120`). It has a rate limit of 10 requests
 per second per user (`route.ts:22`), but the limiter is in process memory, so
 it's per server instance (`src/lib/rateLimit.ts:1-4`), and there is no cap on
@@ -339,10 +345,13 @@ calling Supabase directly; the middleware can't block that.
 Undefined. `cb_firm_id()` returns `firm_id ... limit 1` with no `order by`
 (`supabase/migrations/20260416000000_firm_members_rls_audit.sql:119-127`),
 and `category_rules` uses it. Meanwhile the app finds "my firm" by
-`firms.owner_id` (`src/lib/db.ts:28-44`, `src/lib/supabase/firmScope.ts:14-18`).
+`firms.owner_id` (`src/lib/db.ts:29-45`, `src/lib/supabase/firmScope.ts:14-18`).
 So non-owner members don't persist at all today (the TODO at `db.ts:28`), and
 a user in two firms can lose their rules. Finding F5 in rls-audit.md. It's
-single-owner software right now.
+single-owner software right now. A migration written overnight (not applied,
+`supabase/migrations/20261001600000_firm_members_insert_limits.sql`) makes
+`cb_firm_id()` return the firm the user owns first, then their oldest
+membership; it is tested on PGlite (`supabase/__tests__/migrations.test.ts`).
 
 ### 33. Firm rules: are they per client?
 
@@ -362,23 +371,26 @@ least checked against the chart.
 Yes: after each upload, `/api/notify` forwards an event with the **client
 name** and row counts to a Formspree form, and the route has no
 authentication (`src/app/api/notify/route.ts:3-35`,
-`src/app/dashboard/upload/page.tsx:196-201`). It was an owner notification for
+`src/app/dashboard/upload/page.tsx:201-206`). It was an owner notification for
 the demo. It should be removed or reduced to counts before real data.
 
 ### 35. Two clients with the same name?
 
-Today they get mixed up. A job stores `client_name`, not a client id
-(`src/app/dashboard/upload/page.tsx:171`), and the review page finds the
-client with `business_name === client_name`
-(`src/app/dashboard/review/[jobId]/page.tsx:962`). Renaming a client also
-breaks the link. Linking by id is on tonight's list.
+They used to get mixed up: jobs stored only `client_name`. On branch
+`overnight`, New Close step 1 picks a client from a list and the job stores
+its id (`src/app/dashboard/upload/page.tsx:175`); matching is by id
+(`src/lib/clientJobs.ts`), and the e2e test checks two same-name clients keep
+separate closes. Jobs saved before, and jobs from `/get-started`, have no id
+and still match by name. The `jobs.client_id` column's migration is written
+but not applied, so with Supabase on, new jobs fall back to name matching
+after a reload until it is.
 
 ## Failure modes and scaling
 
 ### 36. What happens when the API fails mid-statement?
 
 Network and API errors are retried up to 3 attempts with 1 s and 2 s back-off
-(`src/lib/categorize.ts:13`, `:284-285`); an unreadable reply is retried once
+(`src/lib/categorize.ts:14`, `:284-285`); an unreadable reply is retried once
 (`:15`, `:283`). If a batch still fails, its 20 rows are flagged with no
 suggestion and the rest of the statement continues (`:336-338`). If the
 whole request fails, the upload page shows an error and nothing is saved
@@ -409,7 +421,7 @@ haven't load-tested anything.
 ### 39. What's the weakest part of the engine?
 
 The prompt's accounting policy. It sends deposits and client payments to
-revenue (`src/lib/categorize.ts:39`, `:55`, `:60`) and payroll tax to an
+revenue (`src/lib/categorize.ts:40`, `:55`, `:60`) and payroll tax to an
 expense (`:37`), which is wrong for a business that invoices or runs payroll
 through a provider. On the synthetic data, Stripe payouts land on 4000
 instead of 1100, and payroll-tax impounds on 5100 instead of 2300, sometimes

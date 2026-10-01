@@ -210,27 +210,27 @@ it running:
 ```
 cd ~/code/closebooks-app-fresh
 git checkout overnight
-NEXT_PUBLIC_SUPABASE_URL= NEXT_PUBLIC_SUPABASE_ANON_KEY= SUPABASE_SERVICE_ROLE_KEY= npm run dev
+DEMO_MODE=true NEXT_PUBLIC_SUPABASE_URL= NEXT_PUBLIC_SUPABASE_ANON_KEY= SUPABASE_SERVICE_ROLE_KEY= npm run dev
 ```
 
 Empty values in the shell take precedence over `.env.local`, which is how
-Next.js loads env files. Open http://localhost:3000/dashboard and follow the
+Next.js loads env files. `DEMO_MODE=true` is needed: without Supabase,
+`/api/categorize` otherwise answers 503 (`src/lib/routeSubscription.ts`). Open http://localhost:3000/dashboard and follow the
 same steps. This uses the real Anthropic key from `.env.local`, so it calls
 Claude Sonnet 5.5 and costs about $0.111 per 97 rows
 (`eval/results/comparison.md`). On this version the full 292-row file can be
 used.
 
-Check `docs/overnight-log.md` for whether a fake-model switch was added
-overnight for end-to-end tests. If it was, it can run the flow with no API
-call, but its categories are not Claude's and must not be presented as
-results.
+To run the same flow with no API call at all, add `CLOSEBOOKS_FAKE_MODEL=1
+ANTHROPIC_API_KEY=` to that command (`src/lib/ai/fakeCategorizer.ts`, added
+overnight for the end-to-end test). Its categories come from keyword rules,
+not Claude, and must not be presented as results.
 
 ### C. No network, or nothing runs
 
-Show the screenshots in `docs/screenshots/` (made by the end-to-end test, if
-it was completed overnight; check that the folder exists). Say that they were
-made with a fake model in demo mode, so the categories on them show the flow,
-not accuracy.
+Show the screenshots in `docs/screenshots/` (12 steps, made by `npm run e2e`;
+`docs/screenshots/README.md` lists them). Say that they were made with a fake
+model in demo mode, so the categories on them show the flow, not accuracy.
 
 ### D. Talk through the engine from documents
 

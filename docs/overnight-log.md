@@ -4,7 +4,86 @@ Branch: `overnight`, created from `eval-harness` at `8f357bcf`.
 
 ## Morning summary
 
-(written at the end)
+All 10 tasks done on branch `overnight` (12 commits after the branch point,
+each pushed). Nothing was committed to `eval-harness` or `main`. No Anthropic
+API calls, no live Supabase calls, no migration applied. API spend tonight: $0.
+
+**Gate at the last commit:** `npm test` 178 tests in 21 files passing (was 135
+in 16); `npm run typecheck` clean; `npm run build` passes; `npm run e2e`
+1 test passing; lint warnings 112 to 108.
+
+**Done**
+
+| # | What | Where |
+|---|---|---|
+| 1 | Technical overview for the CTO (about 4 pages) | `docs/technical-overview.md` |
+| 2 | 5-minute demo script with backup plans | `docs/demo-script.md` |
+| 3 | 40 hard questions with sourced answers | `docs/likely-questions.md` |
+| 4 | Playwright e2e of the core path, screenshots | `e2e/core-path.spec.ts`, `npm run e2e`, `docs/screenshots/` |
+| 5 | Closes linked to clients by id; client picker on New Close | `src/lib/clientJobs.ts`, `src/components/ClientPicker.tsx` |
+| 6 | Migrations for F5, F9, F10, F14 (not applied), tested on PGlite | `supabase/migrations/202610013*` to `202610016*`, `docs/engine/rls-audit.md` |
+| 7 | npm audit: 1 non-breaking fix applied, majors listed | `docs/dependency-report.md` |
+| 8 | Two experiments made runnable with exact commands and costs | `docs/next-experiments.md` |
+| 9 | One source for chart templates | `src/lib/coaTemplates.ts` |
+| 10 | Four unused names removed in core files | |
+
+**Tested, and how**
+
+- e2e (local build, demo mode, fake model, every non-localhost request
+  blocked): demo entry, two same-name clients, client picker search and
+  duplicate warning, chart, 8-row US-date CSV (08/15 read as 15 August),
+  categorise, move a Stripe payout to AR, save the rule, approve all,
+  journal-entry CSV balanced per entry and in total, report, second close with
+  the 292-row file where the 5 Stripe rows take the rule and only 287 rows go
+  to the model, second JE export balanced, closes counted on the right client.
+- Migrations: every file in `supabase/migrations/` applied in order to PGlite;
+  17 tests of the new policies as signed-in and anon users. Removing the four
+  new migrations makes 12 fail. PGlite is not Supabase: auth, roles and
+  storage are stand-ins.
+- Experiments: all 11 documented commands run with `--fake`.
+
+**Not tested**
+
+- `/get-started` after the chart change (typecheck and build only).
+- The client picker with Supabase on (only demo mode, where memory is the
+  store).
+- Whether the migrations apply to the live database: its state isn't visible
+  from the repo (rls-audit.md, section 5).
+
+**Blocked:** nothing. Limits I hit: no local Postgres (used PGlite instead);
+token counts for the caching estimate are a character-count estimate, because
+counting tokens is an API call.
+
+**Needs your decision**
+
+1. **Run the experiments?** About $1.11 for (a) and $1.32 for (b), each with
+   a hard cap (`docs/next-experiments.md`). My expectation: (b) saves little.
+2. **Apply migrations?** 10 are written and not applied. From `eval-harness`:
+   F1 portal-docs bucket (critical), F7 trial state, F8 subscriptions, F15
+   qbo_connections, `transactions.approved_by`. From tonight:
+   `jobs.client_id`, F9, F10, F14, F5. I'd do F1 first.
+   Read-only checks first: `supabase/checks/open_findings_check.sql`.
+3. **F5 consent:** a user can still be added to a firm without accepting.
+   Fixing it needs an invitation flow; do you want one?
+4. **Two bugs found, not fixed** (outside the task list):
+   - Select all + Approve re-labels rows the AI already auto-approved as
+     approved by the reviewer, so the close report said "8 by reviewer" with
+     4 of them AI approvals.
+   - React warns "Cannot update a component while rendering a different
+     component" from `TransactionTable` on recategorise (dev only).
+5. **Major upgrades:** Next 14 to 15.5.24+ is the only fix that touches the
+   core path (RSC denial-of-service advisories); `@anthropic-ai/sdk` 0.82 to
+   current is small. Both are proposals in the dependency report.
+6. **Strict wrong-auto-approval figure:** facts.md quotes only the lenient
+   0.4% at 0.93; the strict figure is 20 of 274 (7.3%,
+   `eval/results/threshold-sweep.md`). Add it to facts.md? A CTO may ask.
+7. **The demo script targets `main`** (the live app: Sonnet 4.6 at 0.85, no
+   client picker). Merging `eval-harness` and `overnight` would change what
+   the call shows; the script says which version is on screen.
+
+**One fix to the demo script you should know about:** its local backup
+command was missing `DEMO_MODE=true`, without which `/api/categorize` answers
+503 when Supabase is blank. Fixed.
 
 ## Decisions and notes, in order
 

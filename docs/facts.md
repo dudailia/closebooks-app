@@ -165,5 +165,12 @@ branch `eval-harness`). They cover the categorisation engine with a mocked
 API client (`src/lib/__tests__/categorize.test.ts`), persistence fallbacks,
 rules and vendor keys, journal entries, approval counts, concurrent
 batching with a fake model, prompt sanitising, the API allowlist, and the eval
-harness's scoring, reports and budget cap (`eval/__tests__/`). There are no
-end-to-end browser tests.
+harness's scoring, reports and budget cap (`eval/__tests__/`).
+
+On branch `overnight` (2026-10-01): 178 tests in 21 files, all passing
+(`npm test`), adding client-by-id matching, chart templates, the fake model,
+request building for the prompt and caching experiments, and 17 migration
+tests that apply every file in `supabase/migrations/` to PGlite
+(`supabase/__tests__/migrations.test.ts`). One end-to-end browser test
+(`npm run e2e`, Playwright, demo mode, fake model) covers the core path; it
+says nothing about accuracy.

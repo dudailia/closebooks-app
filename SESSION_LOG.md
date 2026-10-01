@@ -19,6 +19,13 @@ Durable architecture lives in `CLAUDE.md`; this file is where things stand now.
 - **Approve keeps the reviewer's chosen account** (was overwritten by the AI suggestion). CSV exports have no footer lines.
 - `next.config.mjs` has `ignoreBuildErrors: false` and `ignoreDuringBuilds: false`: the build type-checks and lints. Test runner: vitest (`npm test`).
 
+## On `overnight` (not merged; branched from `eval-harness` 2026-09-30)
+
+Overnight session: docs for a CTO call, e2e test, client-by-id, migrations for
+F5/F9/F10/F14 (not applied), dependency report, prepared experiments, one chart
+source. **Read `docs/overnight-log.md` first**: its morning summary lists
+what's done, tested, blocked and needs a decision.
+
 ## On `eval-harness` (not merged)
 
 **Eval (`eval/`, see `eval/README.md`):** a 292-row synthetic labelled dataset (fictional Brightline Studio, 34-account Standard Small Business chart; 284 account labels, 8 REVIEW); `run.ts` runs the real engine with a hard budget cap; `metrics.ts`/`report.ts`/`compare.ts` score and report; `sweep-cli.ts` (threshold sweep) and `learn-cli.ts` (June corrections → rules) work from saved runs without API calls. Results live in `eval/results/` (gitignored).
