@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { strictErrorBreakdown } from '../strict-errors'
+import { allStrictErrors, strictErrorBreakdown } from '../strict-errors'
 import type { Prediction, TruthRow } from '../metrics'
 
 const row = (id: string, trueCode: string, acceptable: string[] = []): TruthRow =>
@@ -22,5 +22,13 @@ describe('strictErrorBreakdown', () => {
 
   it('a flagged row is never auto-approved', () => {
     expect(strictErrorBreakdown([pred('c', '5100', 0.99, ['coa_direction_review'])], rows, 0.93).autoApproved).toBe(0)
+  })
+})
+
+describe('allStrictErrors', () => {
+  it('groups every strict error with its confidence range, whatever the threshold', () => {
+    const rows = [row('a', '2500'), row('b', '2500'), row('c', '1100')]
+    const preds = [pred('a', '2400', 0.8), pred('b', '2400', 0.9), pred('c', '1100', 0.99)]
+    expect(allStrictErrors(preds, rows)).toEqual([{ trueCode: '2500', predictedCode: '2400', count: 2, policy: false, minConfidence: 0.8, maxConfidence: 0.9 }])
   })
 })

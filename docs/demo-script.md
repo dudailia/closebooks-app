@@ -180,7 +180,7 @@ Next.js loads env files. `DEMO_MODE=true` is needed: without Supabase,
 `/api/categorize` otherwise answers 503 (`src/lib/routeSubscription.ts`). Open http://localhost:3000/dashboard and follow the
 same steps. This uses the real Anthropic key from `.env.local`, so it calls
 Claude Sonnet 5.5 and costs about $0.111 per 97 rows
-(`eval/results/comparison.md`), so about $0.33 for the 292-row file.
+(`eval/results/comparison.md`), so about $0.34 for the 292-row file.
 
 To run the same flow with no API call at all, add `CLOSEBOOKS_FAKE_MODEL=1
 ANTHROPIC_API_KEY=` to that command (`src/lib/ai/fakeCategorizer.ts`, added

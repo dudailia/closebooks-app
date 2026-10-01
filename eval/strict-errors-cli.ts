@@ -6,7 +6,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import type { RawResults } from './report'
 import { loadChart } from './data'
-import { strictErrorBreakdown } from './strict-errors'
+import { allStrictErrors, strictErrorBreakdown } from './strict-errors'
 
 const args = process.argv.slice(2)
 let out: string | null = null
@@ -45,6 +45,14 @@ for (const dir of dirs) {
     }
     lines.push('')
   }
+  const all = allStrictErrors(raw.predictions, raw.rows)
+  lines.push('**Every strict error, any confidence** (the confidence the app ends with, after its own adjustments), groups of 2 or more:', '',
+    '| Correct account | Booked to | Rows | Kind | Confidence |', '|---|---|---:|---|---|')
+  for (const g of all.filter((x) => x.count >= 2)) {
+    const range = g.minConfidence === g.maxConfidence ? g.minConfidence.toFixed(2) : `${g.minConfidence.toFixed(2)} to ${g.maxConfidence.toFixed(2)}`
+    lines.push(`| ${acct(g.trueCode)} | ${acct(g.predictedCode)} | ${g.count} | ${g.policy ? 'policy alternate' : '**real mistake**'} | ${range} |`)
+  }
+  lines.push('')
 }
 const md = lines.join('\n')
 if (out) writeFileSync(out, md)

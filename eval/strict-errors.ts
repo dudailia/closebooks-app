@@ -47,3 +47,29 @@ export function strictErrorBreakdown(preds: Prediction[], rows: TruthRow[], thre
   const policyAlternates = list.filter((g) => g.policy).reduce((s, g) => s + g.count, 0)
   return { threshold, autoApproved: auto.length, strictWrong, policyAlternates, realMistakes: strictWrong - policyAlternates, groups: list }
 }
+
+export interface ErrorGroupAllConfidence {
+  trueCode: string
+  predictedCode: string
+  count: number
+  policy: boolean
+  minConfidence: number
+  maxConfidence: number
+}
+
+/** Every strict error, whatever its confidence, grouped by correct and booked account. */
+export function allStrictErrors(preds: Prediction[], rows: TruthRow[]): ErrorGroupAllConfidence[] {
+  const byId = new Map(rows.map((r) => [r.id, r]))
+  const groups = new Map<string, ErrorGroupAllConfidence>()
+  for (const p of preds) {
+    const r = byId.get(p.id)
+    if (!r || !r.trueCode || r.trueCode === REVIEW_LABEL || p.noPrediction || p.predictedCode === r.trueCode) continue
+    const key = `${r.trueCode}>${p.predictedCode}`
+    const g = groups.get(key) ?? { trueCode: r.trueCode, predictedCode: p.predictedCode, count: 0, policy: r.acceptable.includes(p.predictedCode), minConfidence: 1, maxConfidence: 0 }
+    g.count++
+    g.minConfidence = Math.min(g.minConfidence, p.confidence)
+    g.maxConfidence = Math.max(g.maxConfidence, p.confidence)
+    groups.set(key, g)
+  }
+  return [...groups.values()].sort((a, b) => b.count - a.count || a.trueCode.localeCompare(b.trueCode))
+}

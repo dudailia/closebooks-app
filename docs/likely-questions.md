@@ -2,8 +2,10 @@
 
 Forty questions a CTO at an AI accounting company would ask about the
 CloseBooks engine, grouped by topic. Each answer is short and points to the
-code or document that backs it. Line numbers are for branch `overnight`
-(created from `eval-harness`) at the end of the 2026-10-01 overnight session.
+code or document that backs it. Answers describe the app once `eval-harness`
+and `overnight` are merged to `main` (Claude Sonnet 5.5 at 0.93, 4 batches at
+once, rules first, clients by id). Line numbers are for branch `overnight` on
+2026-10-01.
 
 Ground rules for every answer:
 
@@ -11,6 +13,9 @@ Ground rules for every answer:
   and latency number comes from one **synthetic** labelled dataset (292 rows,
   one fictional business, one checking account, one 34-account chart). Numbers
   are copied from [facts.md](./facts.md), which names the source file for each.
+  The one exception is a single timed live run on the preview deployment
+  (292 rows in about 40 s; 128 of 292 auto-approved), also in facts.md and
+  labelled as one run.
 - "Lenient" accepts the policy alternates in `eval/data/vendors.csv`;
   "strict" accepts only the primary label (definitions in facts.md).
 - Where the honest answer is "I don't know yet", I say so and say how I'd
@@ -31,8 +36,8 @@ Contents: [Architecture](#architecture) (1-5), [Data](#data-and-storage)
 ### 1. Walk me through one statement from upload to journal entries.
 
 The CSV is parsed in the browser (`src/lib/parseCSV.ts:157`). Firm rules run
-first (`src/app/dashboard/upload/page.tsx:153-154`); matched rows skip the
-model. The rest go to `POST /api/categorize`, which calls
+first (`src/app/dashboard/upload/page.tsx:153-154`); matched rows are
+approved, credited to the rule, and skip the model. The rest go to `POST /api/categorize`, which calls
 `categorizeTransactions` (`src/lib/categorize.ts:347`): batches of 20, up to 4
 at once, one Claude call per batch. Each suggestion is checked against the
 chart (`src/lib/coaValidation.ts:39-88`) and gets a status: approved, pending
@@ -48,7 +53,7 @@ orchestration stayed there: rules, the categorise call, merging and saving
 all run in `src/app/dashboard/upload/page.tsx:151-208`. The model call itself
 is server-side, so the API key never reaches the browser. The cost is that
 nothing durable happens if the tab closes mid-upload, and saving is
-fire-and-forget (`upload/page.tsx:183`). For a real product I'd move the
+fire-and-forget (`upload/page.tsx:188`). For a real product I'd move the
 pipeline into a server job (see question 38).
 
 ### 3. Why one model call per 20 rows instead of one per row or one per statement?
@@ -64,7 +69,7 @@ sizes; every eval run used 20 (facts.md, "Accuracy per model").
 
 The reply is a raw JSON array parsed from the text blocks
 (`src/lib/categorize.ts:319`). Unreadable replies are retried once
-(`categorize.ts:15`, `:283`). I haven't measured how often a reply is
+(`categorize.ts:15`, `:331`). I haven't measured how often a reply is
 unreadable with the current model. Structured output would remove that
 failure class. I'd switch and confirm with the existing mocked-client tests
 (`src/lib/__tests__/categorize.test.ts`) plus one capped eval run.
@@ -106,8 +111,8 @@ In Supabase (`jobs`, `transactions`, `clients`, plus payload-row tables for
 corrections and rules; table list in [architecture.md](./architecture.md)
 section 2). `dbSaveJob` writes the in-memory cache first, then Supabase, and
 swallows every Supabase error (`src/lib/db.ts:150-205`, the silent return at
-`:175` and the empty catch at `:199-201`). The upload page doesn't await it
-(`upload/page.tsx:183`). So if the write fails, the reviewer sees the job,
+`:178` and the empty catch at `:202-204`). The upload page doesn't await it
+(`upload/page.tsx:188`). So if the write fails, the reviewer sees the job,
 works on it, and loses it on reload with no warning. That is a real gap.
 The fix is to await the save and show an error.
 
@@ -129,9 +134,9 @@ through `parseTransactionCSV` with expected row counts and totals.
 `SYSTEM_PROMPT` (`src/lib/categorize.ts:31-79`): a bookkeeper role, keyword
 rules with suggested confidences, amount guidance, a confidence scale, the
 output format, and a line saying the user message is data, not instructions
-(`:78`). Parts of it are wrong for an invoicing business: it sends deposits
-and client payments to revenue (`:39`, `:55`, `:60`) and payroll tax to an
-expense account (`:37`). The labels expect AR (1100) and Payroll Liabilities
+(`:79`). Parts of it are wrong for an invoicing business: it sends deposits
+and client payments to revenue (`:40`, `:56`, `:61`) and payroll tax to an
+expense account (`:38`). The labels expect AR (1100) and Payroll Liabilities
 (2300). See question 39.
 
 ### 11. The prompt tells the model what confidence to give ("confidence 0.97"). Doesn't that make confidence meaningless?
@@ -140,7 +145,7 @@ Partly, yes. Keyword rules like `"PAYROLL TAX" ... → Payroll Tax Expense,
 confidence 0.97` (`src/lib/categorize.ts:38`) anchor the score, so a confident
 wrong answer can come straight from the prompt. On the synthetic data,
 Sonnet 4.6 put payroll tax and sales-tax remittances on 6200 at 0.95 to 0.97
-(architecture.md section 8). The threshold can't catch errors the prompt
+(facts.md, "Confidence of the known errors"). The threshold can't catch errors the prompt
 itself causes. I haven't measured a prompt without the suggested
 confidences; it's one of the next experiments.
 
@@ -150,7 +155,7 @@ Each text field is reduced to one line, control characters and Unicode line
 separators become spaces, quotes and backslashes are escaped, and
 descriptions are capped at 200 characters (`src/lib/promptSanitize.ts:27-32`).
 The transactions block is labelled as data (`src/lib/categorize.ts:118`), and
-the system prompt says not to follow instructions inside it (`:78`). The
+the system prompt says not to follow instructions inside it (`:79`). The
 model still reads the text, so this reduces the risk; it doesn't remove it.
 After the model replies, the account must exist in the chart or the row is
 flagged (`src/lib/coaValidation.ts:56-67`), which limits what an injected
@@ -173,7 +178,12 @@ old and new category (`corrections.ts:7-12`), with no client. So a
 correction made on client A's books is sent in the prompt for client B. For a
 firm, that means one client's bank descriptions go into another client's
 prompt, and a pattern right for A may be wrong for B. They should be scoped
-by client and selected by vendor, not by recency.
+by client and selected by vendor, not by recency. Every account change a
+reviewer makes is saved as one (`handleRecategorize`,
+`src/components/TransactionTable.tsx`). On the preview, a corrected Stripe
+payout came back on Accounts Receivable at the next upload from the hint
+alone, below 0.93, so it stayed pending: a hint moves the suggestion, a saved
+rule approves the row.
 
 ## Accuracy and evaluation
 
@@ -244,7 +254,10 @@ pooled over 2 runs, 0.93 auto-approves 274 rows (49.3%) with 1 wrong lenient
 (0.4%) and 20 wrong strict (7.3%), and leaves 50.5 of 97 rows per statement
 for review. The 2% target was set on the lenient figure: 0.91 met it on the
 pooled runs (4 of 291 wrong lenient, 1.4%; 27 strict, 9.3%), but run 2 alone
-needed 0.93 (facts.md, "Threshold sweep"). The constant is
+needed 0.93 (facts.md, "Threshold sweep"). In one live run on the preview,
+128 of 292 rows (43.8%) were auto-approved (facts.md, "Live preview run"; not
+the same measure as the eval's 49.3%, which counts labelled rows over two
+saved runs). The constant is
 `src/lib/ai/models.ts:15`. 19 of the 20 strict errors at 0.93 are client
 payments and one Mailchimp charge on a policy alternate; 1 is a real mistake
 (question 17). If a firm books client payments against invoices, strict is
@@ -282,7 +295,7 @@ reply is flagged (`src/lib/categorize.ts:396`).
 Yes: confident, consistent errors. On the synthetic data, Sonnet 5.5 books
 Gusto payroll-tax impounds to 5100 instead of 2300 at 0.85 to 0.93, and one
 of those at 0.93 was auto-approved; Sonnet 4.6 put payroll tax and sales-tax
-remittances on 6200 at 0.95 to 0.97 (architecture.md section 8). These come
+remittances on 6200 at 0.95 to 0.97 (facts.md, "Confidence of the known errors"). These come
 from the prompt (question 11). Only a prompt fix or a rule catches them.
 
 ## Cost and latency
@@ -315,9 +328,10 @@ about $0.05, then measures on and off for about $1.32 in total.
 Median per transaction (batch time divided by 20): Sonnet 5.5 0.43 s (p90
 0.46 s), Sonnet 4.6 1.15 s (p90 1.29 s), Haiku 4.5 0.53 s (single run).
 Source: facts.md, "Latency". These were measured one batch at a time. The app
-now runs 4 batches at once (`src/lib/categorize.ts:13`); end-to-end time with
-concurrency against the real API is not measured, only with a fake model
-(`src/lib/__tests__/categorizeConcurrency.test.ts`).
+runs 4 batches at once (`src/lib/categorize.ts:13`). End to end, the 292-row
+synthetic file took about 40 s on the preview deployment (one stopwatch run,
+2026-10-01; facts.md, "Live preview run"). One run says nothing about the
+spread; I'd time ten uploads at different hours.
 
 ### 29. What stops someone running up your API bill?
 
@@ -347,12 +361,13 @@ in the repo (rls-audit.md section 1).
 Sixteen findings (rls-audit.md section 3). The worst: the `portal-docs`
 bucket is readable and writable with the public anon key (F1), and members
 can reset their own trial (F7). Hidden features' routes now return 404. The
-F1 migration was applied on 2026-09-30, so the bucket is closed. Migrations
-for F7, F8, part of F15, and (written overnight) F5, F9, F10 and F14 are
-written but **not applied** (rls-audit.md section 0,
-[migrations-to-apply.md](./migrations-to-apply.md)). Until F7's is applied,
-anyone calling Supabase directly can reset a trial; the middleware can't block
-that.
+F1 migration was applied on 2026-09-30, so the bucket is closed. Eight more
+are written, tested on PGlite and **not applied**, with an order in
+[migrations-to-apply.md](./migrations-to-apply.md): seven (F15, F8, F10, F14,
+F5, F9 and `jobs.client_id`) can run before the merge; F7 must run right after
+it deploys, because the old code writes trial state from the browser. Until
+each runs, its finding is open to anyone calling Supabase directly with the
+anon key; the middleware can't block that.
 
 ### 32. A user who belongs to two firms: which firm's data do they see?
 
@@ -360,7 +375,7 @@ Undefined. `cb_firm_id()` returns `firm_id ... limit 1` with no `order by`
 (`supabase/migrations/20260416000000_firm_members_rls_audit.sql:119-127`),
 and `category_rules` uses it. Meanwhile the app finds "my firm" by
 `firms.owner_id` (`src/lib/db.ts:29-45`, `src/lib/supabase/firmScope.ts:14-18`).
-So non-owner members don't persist at all today (the TODO at `db.ts:28`), and
+So non-owner members don't persist at all today (the TODO at `db.ts:29`), and
 a user in two firms can lose their rules. Finding F5 in rls-audit.md. It's
 single-owner software right now. A migration written overnight (not applied,
 `supabase/migrations/20261001600000_firm_members_insert_limits.sql`) makes
@@ -404,19 +419,19 @@ after a reload until it is.
 ### 36. What happens when the API fails mid-statement?
 
 Network and API errors are retried up to 3 attempts with 1 s and 2 s back-off
-(`src/lib/categorize.ts:14`, `:284-285`); an unreadable reply is retried once
-(`:15`, `:283`). If a batch still fails, its 20 rows are flagged with no
-suggestion and the rest of the statement continues (`:336-338`). If the
+(`src/lib/categorize.ts:14`, `:332-333`); an unreadable reply is retried once
+(`:16`, `:331`). If a batch still fails, its 20 rows are flagged with no
+suggestion and the rest of the statement continues (`:387-389`). If the
 whole request fails, the upload page shows an error and nothing is saved
-(`upload/page.tsx:204-207`).
+(`upload/page.tsx:209-212`).
 
 ### 37. What's the largest statement you can process?
 
-I don't know yet; it hasn't been measured against the real API. The
-categorise function has a 120 s limit (`vercel.json`). 292 rows is 15 batches,
-or 4 rounds at 4 at a time. Concurrency was only tested with a fake model, and
-rate limits under 4 parallel calls are unmeasured (architecture.md section
-8). PDFs have a lower ceiling: the file is sent as base64 JSON
+I don't know yet. The categorise function has a 120 s limit (`vercel.json`).
+The only real measurement is one live run: 292 rows (15 batches, 4 rounds at 4
+at a time) in about 40 s on the preview (facts.md, "Live preview run"). Scaled
+linearly that is roughly 900 rows in 120 s, an extrapolation from one run;
+rate limits under load are unmeasured (architecture.md section 8). PDFs have a lower ceiling: the file is sent as base64 JSON
 (`src/components/FileUpload.tsx:51-55`) and Vercel caps request bodies at 4.5
 MB, though the browser allows 20 MB (`FileUpload.tsx:40`); the PDF reply is
 limited to 8,192 tokens (`src/app/api/parse-pdf/route.ts:88`). I'd find out
@@ -435,8 +450,8 @@ haven't load-tested anything.
 ### 39. What's the weakest part of the engine?
 
 The prompt's accounting policy. It sends deposits and client payments to
-revenue (`src/lib/categorize.ts:40`, `:55`, `:60`) and payroll tax to an
-expense (`:37`), which is wrong for a business that invoices or runs payroll
+revenue (`src/lib/categorize.ts:40`, `:56`, `:61`) and payroll tax to an
+expense (`:38`), which is wrong for a business that invoices or runs payroll
 through a provider. On the synthetic data, Stripe payouts land on 4000
 instead of 1100, and payroll-tax impounds on 5100 instead of 2300, sometimes
 with high confidence (architecture.md section 8). Second weakest: the

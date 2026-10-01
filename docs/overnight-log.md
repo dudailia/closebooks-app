@@ -2,6 +2,45 @@
 
 Branch: `overnight`, created from `eval-harness` at `8f357bcf`.
 
+## Latest summary (2026-10-01, afternoon)
+
+**Done**
+- `docs/technical-overview.md` and `docs/likely-questions.md` now describe
+  the app after the merge: Sonnet 5.5 at 0.93, 4 batches at once, rules first
+  with rule rows approved, corrections also sent as hints (and what that did
+  on the preview), clients by id, and the migration plan from
+  `docs/migrations-to-apply.md`. Both quote the live preview run (292 rows in
+  about 40 s, one stopwatch run; 128 of 292 auto-approved, 43.8%), labelled as
+  one run and kept apart from the eval's 49.3%.
+- `docs/call-cheatsheet.md`: 12 numbers with what each was measured on
+  (strict and lenient where both exist), 3 weaknesses, 10 one-sentence
+  answers keyed to `likely-questions.md`.
+- Every number in the docs re-checked. facts.md itself matches the files it
+  cites (accuracy, wrong auto-approvals, calibration, latency, cost,
+  stability, spend: recomputed from each `summary.json` and the ledgers).
+
+**Mismatches fixed**
+1. `docs/demo-script.md`: 292 rows on Sonnet 5.5 cost "about $0.33"; it is
+   $0.336 (292 × $0.00115), so "about $0.34".
+2. `docs/architecture.md`: the upload-time weakness still gave only the
+   projection (about 35 s for 292 rows, limit about 1,100 rows). Now it adds
+   the measured 40 s and, from that, roughly 900 rows (an extrapolation).
+   Same note added to `SESSION_LOG.md`.
+3. `docs/likely-questions.md`: 20 short references like `` `:284` `` pointed
+   at lines that had moved; remapped through the file diffs and each checked
+   by printing the cited line. Q28 and Q37 said end-to-end time with
+   concurrency was unmeasured; now they quote the one live run.
+4. The confidence ranges of the known errors (Sonnet 4.6 payroll and sales tax
+   at 0.95 to 0.97, Sonnet 5.5 payroll tax at 0.85 to 0.93, SBA loan at 0.80)
+   were cited to architecture.md with no committed source. All were correct
+   against the saved predictions. They are now in
+   `eval/results/strict-errors.md` (new "every strict error, any confidence"
+   table) and a new facts.md section, and the citations point there.
+
+**Not changed:** `README.md` and `SESSION_LOG.md` still describe `main` as it
+is today, which is correct until the merge. `docs/architecture.md` line
+numbers are labelled as `eval-harness` 2026-09-30 and were not remapped.
+
 ## Morning summary
 
 All 10 tasks done on branch `overnight` (12 commits after the branch point,

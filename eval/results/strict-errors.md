@@ -24,6 +24,19 @@ Recomputed from saved predictions, no API calls. A row is auto-approved as the a
 | 2300 Payroll Liabilities | 5100 Payroll & Wages | 1 | **real mistake** | `GUSTO DES:TAX 06/30 ID:7RT32P2D2A INDN:BRIGHTLINE STUDIO LLC` |
 | 5500 Marketing & Advertising | 6100 Subscriptions & Software | 1 | policy alternate | `INTUIT *MAILCHIMP ATLANTA GA` |
 
+**Every strict error, any confidence** (the confidence the app ends with, after its own adjustments), groups of 2 or more:
+
+| Correct account | Booked to | Rows | Kind | Confidence |
+|---|---|---:|---|---|
+| 1100 Accounts Receivable | 4100 Service Revenue | 40 | policy alternate | 0.85 to 0.94 |
+| 1100 Accounts Receivable | 4000 Sales Revenue | 14 | **real mistake** | 0.85 to 0.92 |
+| 1020 Petty Cash | 3100 Owner's Draw | 4 | **real mistake** | 0.60 |
+| 2300 Payroll Liabilities | 5100 Payroll & Wages | 4 | **real mistake** | 0.85 to 0.93 |
+| 6300 Miscellaneous Expense | 5400 Office Supplies | 4 | policy alternate | 0.70 to 0.72 |
+| 2500 Long-Term Loan | 2400 Short-Term Loan | 2 | **real mistake** | 0.80 |
+| 4100 Service Revenue | 4000 Sales Revenue | 2 | **real mistake** | 0.88 |
+| 6100 Subscriptions & Software | 5100 Payroll & Wages | 2 | **real mistake** | 0.85 |
+
 ## `claude-sonnet-5-5` (full-sonnet-5-5, 1 run)
 
 **At 0.85:** 215 auto-approved; 33 strict errors (15.3%): 22 policy alternates, 11 real mistakes (5.1%, the lenient figure).
@@ -45,6 +58,16 @@ Recomputed from saved predictions, no API calls. A row is auto-approved as the a
 | 1100 Accounts Receivable | 4100 Service Revenue | 7 | policy alternate | `ACH CREDIT HARBORLINE DENTAL PPD ID: 1742233991`<br>`INCOMING WIRE TRF ORCHARD AND PINE CO REF 57TPS96G5B`<br>`STRIPE DES:TRANSFER ID:ST-5ZHG5Y3YVT INDN:BRIGHTLINE STUDIO LLC` |
 | 5500 Marketing & Advertising | 6100 Subscriptions & Software | 1 | policy alternate | `INTUIT *MAILCHIMP ATLANTA GA` |
 
+**Every strict error, any confidence** (the confidence the app ends with, after its own adjustments), groups of 2 or more:
+
+| Correct account | Booked to | Rows | Kind | Confidence |
+|---|---|---:|---|---|
+| 1100 Accounts Receivable | 4100 Service Revenue | 20 | policy alternate | 0.85 to 0.94 |
+| 1100 Accounts Receivable | 4000 Sales Revenue | 7 | **real mistake** | 0.85 to 0.92 |
+| 1020 Petty Cash | 3100 Owner's Draw | 2 | **real mistake** | 0.60 |
+| 2300 Payroll Liabilities | 5100 Payroll & Wages | 2 | **real mistake** | 0.85 to 0.90 |
+| 6300 Miscellaneous Expense | 5400 Office Supplies | 2 | policy alternate | 0.70 to 0.72 |
+
 ## `claude-sonnet-5-5` (full-sonnet-5-5-run2, 1 run)
 
 **At 0.85:** 203 auto-approved; 31 strict errors (15.3%): 20 policy alternates, 11 real mistakes (5.4%, the lenient figure).
@@ -63,6 +86,16 @@ Recomputed from saved predictions, no API calls. A row is auto-approved as the a
 |---|---|---:|---|---|
 | 1100 Accounts Receivable | 4100 Service Revenue | 11 | policy alternate | `ACH CREDIT HARBORLINE DENTAL PPD ID: 1742233991`<br>`INCOMING WIRE TRF ORCHARD AND PINE CO REF 57TPS96G5B`<br>`STRIPE DES:TRANSFER ID:ST-5ZHG5Y3YVT INDN:BRIGHTLINE STUDIO LLC` |
 | 2300 Payroll Liabilities | 5100 Payroll & Wages | 1 | **real mistake** | `GUSTO DES:TAX 06/30 ID:7RT32P2D2A INDN:BRIGHTLINE STUDIO LLC` |
+
+**Every strict error, any confidence** (the confidence the app ends with, after its own adjustments), groups of 2 or more:
+
+| Correct account | Booked to | Rows | Kind | Confidence |
+|---|---|---:|---|---|
+| 1100 Accounts Receivable | 4100 Service Revenue | 20 | policy alternate | 0.85 to 0.94 |
+| 1100 Accounts Receivable | 4000 Sales Revenue | 7 | **real mistake** | 0.85 to 0.92 |
+| 1020 Petty Cash | 3100 Owner's Draw | 2 | **real mistake** | 0.60 |
+| 2300 Payroll Liabilities | 5100 Payroll & Wages | 2 | **real mistake** | 0.90 to 0.93 |
+| 6300 Miscellaneous Expense | 5400 Office Supplies | 2 | policy alternate | 0.72 |
 
 ## `claude-sonnet-4-6` (full-sonnet-4-6, 2 runs)
 
@@ -90,3 +123,17 @@ Recomputed from saved predictions, no API calls. A row is auto-approved as the a
 | 2200 Sales Tax Payable | 6200 Taxes & Licenses | 6 | **real mistake** | `TX COMPTROLLER DES:SALES TAX ID:4WL4C50FFN`<br>`TX COMPTROLLER DES:SALES TAX ID:7ZRVKAPW8F`<br>`TX COMPTROLLER DES:SALES TAX ID:N9KKDKJS8F` |
 | 3100 Owner's Draw | 6200 Taxes & Licenses | 2 | policy alternate | `IRS DES:USATAXPYMT ID:E2BCDTP7UA INDN:JORDAN REYES` |
 | 5500 Marketing & Advertising | 6100 Subscriptions & Software | 1 | policy alternate | `INTUIT *MAILCHIMP ATLANTA GA` |
+
+**Every strict error, any confidence** (the confidence the app ends with, after its own adjustments), groups of 2 or more:
+
+| Correct account | Booked to | Rows | Kind | Confidence |
+|---|---|---:|---|---|
+| 1100 Accounts Receivable | 4100 Service Revenue | 52 | policy alternate | 0.88 to 0.95 |
+| 2300 Payroll Liabilities | 6200 Taxes & Licenses | 9 | **real mistake** | 0.95 to 0.97 |
+| 2200 Sales Tax Payable | 6200 Taxes & Licenses | 6 | **real mistake** | 0.95 to 0.97 |
+| 2500 Long-Term Loan | 2400 Short-Term Loan | 6 | **real mistake** | 0.82 to 0.90 |
+| 6300 Miscellaneous Expense | 5400 Office Supplies | 4 | policy alternate | 0.75 to 0.82 |
+| 1100 Accounts Receivable | 4000 Sales Revenue | 2 | **real mistake** | 0.92 |
+| 3100 Owner's Draw | 6200 Taxes & Licenses | 2 | policy alternate | 0.95 |
+| 6100 Subscriptions & Software | 5700 Professional Fees | 2 | **real mistake** | 0.88 to 0.90 |
+| 6100 Subscriptions & Software | 6000 Bank Fees & Charges | 2 | **real mistake** | 0.90 |

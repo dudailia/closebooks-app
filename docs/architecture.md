@@ -242,9 +242,10 @@ the journal-entry CSV export and the close report:
 - **Very long uploads can still time out.** `vercel.json` gives
   `/api/categorize` 120 s. With 4 batches at once and Sonnet 5.5's measured
   ~8.6 s per batch (eval, one at a time), a 292-row upload is 4 rounds, about
-  35 s; the limit is reached at roughly 55 batches (about 1,100 rows). This is
-  a projection: concurrent calls were only tested with a fake model, and API
-  rate limits or slower replies under load were not measured.
+  35 s by projection. Measured once on the preview (2026-10-01, stopwatch): about
+  40 s (facts.md, "Live preview run"). At that rate the limit is roughly 900
+  rows, an extrapolation from one run; API rate limits or slower replies under
+  load were not measured.
 - **Prompt injection is reduced, not ruled out.** Bank text is kept to one
   line, escaped and labelled as data, but the model still reads it.
 - **Eval results predate two prompt changes.** The saved runs were made

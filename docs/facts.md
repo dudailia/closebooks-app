@@ -137,6 +137,21 @@ sales-tax remittances to 6200 Taxes & Licenses).
 The app now uses Sonnet 5.5 at 0.93 (`src/lib/ai/models.ts`). That choice
 rests on this sweep; it has not been re-run at 0.93 as a live eval.
 
+### Confidence of the known errors
+
+Source: `eval/results/strict-errors.md`, "Every strict error, any
+confidence" (the confidence after the app's own adjustments). These are the
+errors the prompt causes; a threshold can only catch the ones below it.
+
+| Model | Correct account | Booked to | Rows | Confidence |
+|---|---|---|---:|---|
+| Sonnet 5.5 (2 runs) | 1100 Accounts Receivable | 4000 Sales Revenue (Stripe payouts) | 14 | 0.85 to 0.92 |
+| Sonnet 5.5 (2 runs) | 2300 Payroll Liabilities | 5100 Payroll & Wages (Gusto tax) | 4 | 0.85 to 0.93 |
+| Sonnet 5.5 (2 runs) | 2500 Long-Term Loan | 2400 Short-Term Loan (SBA loan) | 2 | 0.80 |
+| Sonnet 4.6 (2 runs) | 2300 Payroll Liabilities | 6200 Taxes & Licenses | 9 | 0.95 to 0.97 |
+| Sonnet 4.6 (2 runs) | 2200 Sales Tax Payable | 6200 Taxes & Licenses | 6 | 0.95 to 0.97 |
+| Sonnet 4.6 (2 runs) | 2500 Long-Term Loan | 2400 Short-Term Loan | 6 | 0.82 to 0.90 |
+
 ## Rules from corrections
 
 **Projection, not a live run.** Source: `eval/results/learn-plan.md`,
