@@ -1,0 +1,78 @@
+{
+  "source_url": "https://platform.claude.com/docs/en/about-claude/pricing",
+  "date_checked": "2026-09-29",
+  "currency": "USD",
+  "unit": "per million tokens",
+  "notes": [
+    "Standard first-party Claude API rates, global routing. No Batch API discount, no fast mode, no data-residency (inference_geo: \"us\") 1.1x multiplier.",
+    "The API's usage block does not say whether a cache write was 5-minute or 1-hour, so the harness prices all cache writes at the 5-minute rate. The app sends no cache_control, so cache writes are expected to be 0.",
+    "Copied by hand from the page's 'Model pricing' table. Re-check before relying on cost numbers; prices change.",
+    "Model ids confirmed with the models-list endpoint (GET /v1/models) on 2026-09-29, including claude-sonnet-5-5."
+  ],
+  "models": {
+    "claude-sonnet-4-6": {
+      "name": "Claude Sonnet 4.6",
+      "input": 3,
+      "output": 15,
+      "cache_write_5m": 3.75,
+      "cache_write_1h": 6,
+      "cache_read": 0.3
+    },
+    "claude-sonnet-4-5": {
+      "name": "Claude Sonnet 4.5",
+      "input": 3,
+      "output": 15,
+      "cache_write_5m": 3.75,
+      "cache_write_1h": 6,
+      "cache_read": 0.3
+    },
+    "claude-sonnet-5": {
+      "name": "Claude Sonnet 5",
+      "input": 2,
+      "output": 10,
+      "cache_write_5m": 2.5,
+      "cache_write_1h": 4,
+      "cache_read": 0.2
+    },
+    "claude-sonnet-5-5": {
+      "name": "Claude Sonnet 5.5",
+      "input": 2,
+      "output": 10,
+      "cache_write_5m": 2.5,
+      "cache_write_1h": 4,
+      "cache_read": 0.2
+    },
+    "claude-haiku-4-5-20251001": {
+      "name": "Claude Haiku 4.5",
+      "input": 1,
+      "output": 5,
+      "cache_write_5m": 1.25,
+      "cache_write_1h": 2,
+      "cache_read": 0.1
+    },
+    "claude-haiku-4-5": {
+      "name": "Claude Haiku 4.5",
+      "input": 1,
+      "output": 5,
+      "cache_write_5m": 1.25,
+      "cache_write_1h": 2,
+      "cache_read": 0.1
+    },
+    "claude-opus-5-5": {
+      "name": "Claude Opus 5.5",
+      "input": 4,
+      "output": 20,
+      "cache_write_5m": 5,
+      "cache_write_1h": 8,
+      "cache_read": 0.2
+    },
+    "claude-fable-5-1": {
+      "name": "Claude Fable 5.1",
+      "input": 10,
+      "output": 50,
+      "cache_write_5m": 12.5,
+      "cache_write_1h": 20,
+      "cache_read": 0.25
+    }
+  }
+}

@@ -4,18 +4,20 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import TransactionTable from '@/components/TransactionTable'
 import { KeyboardShortcutProvider } from '@/lib/review/KeyboardShortcutProvider'
-import { hydrateRules, applyRulesToJob } from '@/lib/review/rules'
-import { getSupabaseAndFirm } from '@/lib/syncSupabase'
+import { ensureRulesLoaded, applyRulesToJob } from '@/lib/review/rules'
 import NarrativeInsight from '@/components/ai/NarrativeInsight'
 import SendMonthlyReportButton from '@/components/reports/SendMonthlyReportButton'
 import AutoCloseModal from '@/components/ai/AutoCloseModal'
 import { getJob, saveJob, getJobs } from '@/lib/storage'
+import { clientForJob, sameClientJobs } from '@/lib/clientJobs'
 import { dbGetJob, dbSaveJob, dbSaveClient } from '@/lib/db'
 import { detectRecurring } from '@/lib/recurringDetection'
 import { logActivity } from '@/lib/activity'
 import { getQBOConnection, recordQBOSync } from '@/lib/integrations'
 import { JobInsightsPanel } from '@/components/InsightsPanel'
 import { getAuditTrail, logAuditEvent, auditGroup, formatAuditEvent, fmtAuditTs } from '@/lib/auditTrail'
+import { SYSTEM_ACTOR, userActor } from '@/lib/auditActor'
+import { createClient as createSupabaseClient } from '@/lib/supabase/client'
 import { calcROI, fmtHours } from '@/lib/roiCalc'
 import { detectAnomalies } from '@/lib/anomalyDetection'
 import { loadFirmSettings } from '@/lib/firmSettings'
@@ -892,6 +894,13 @@ export default function ReviewPage() {
   const [activePanel, setActivePanel]           = useState<PanelTab>('transactions')
   const [toasts, setToasts]     = useState<ToastState[]>([])
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([])
+  // Signed-in user's email, the actor on audit events a person causes.
+  const userEmailRef = useRef<string | null>(null)
+  useEffect(() => {
+    const supabase = createSupabaseClient()
+    if (!supabase) return
+    supabase.auth.getUser().then(({ data }) => { userEmailRef.current = data.user?.email ?? null }).catch(() => {})
+  }, [])
   const toastId = useRef(0)
   const [autoCloseOpen, setAutoCloseOpen] = useState(false)
 
@@ -915,19 +924,18 @@ export default function ReviewPage() {
 
   useEffect(() => {
     let cancelled = false
-    // Hydrate category rules in parallel (fails soft if Supabase unavailable)
-    getSupabaseAndFirm().then((ctx) => {
-      if (!ctx || cancelled) return
-      return hydrateRules(ctx.supabase, ctx.firmId)
-    }).catch(() => { /* ignore — rules will just be empty */ })
+    // Rules must be loaded before they're applied (fails soft if Supabase is unavailable).
+    const rulesReady = ensureRulesLoaded().catch(() => { /* rules will just be empty */ })
     // Try Supabase first, fall back to localStorage
-    dbGetJob(jobId).then((found) => {
+    dbGetJob(jobId).then(async (found) => {
+      await rulesReady
       if (cancelled) return
       if (!found) { setNotFound(true); return }
-      // Apply rules that have been learned for this firm
+      // Apply rules that have been learned for this firm, and save the result straight away
       const { txs: seeded, applied } = applyRulesToJob(found.transactions)
       if (applied.length > 0) {
         found = { ...found, transactions: seeded }
+        dbSaveJob(found).catch(() => { /* memory copy already updated */ })
       }
       setJob(found)
       // Start time tracking for this review session
@@ -936,7 +944,7 @@ export default function ReviewPage() {
       }
       setQboConn(getQBOConnection())
       setQboLive(false)
-      fetch('/api/integrations/quickbooks/status')
+      if (FEATURES.reviewQuickBooksPush) fetch('/api/integrations/quickbooks/status')
         .then((r) => r.json())
         .then((data: { connected?: boolean; companyName?: string; realmId?: string; lastSyncAt?: string | null; totalSynced?: number }) => {
           if (data.connected && data.companyName && data.realmId) {
@@ -952,30 +960,35 @@ export default function ReviewPage() {
         })
         .catch(() => { /* keep local demo connection */ })
       // Load client industry from localStorage (fast, always available)
-      const client = getClients().find((c) => c.business_name === found.client_name)
+      const client = clientForJob(found, getClients())
       if (client) setClientIndustry(client.industry)
       // Load audit trail; log job_created on first open if trail is empty
       const existing = getAuditTrail(jobId)
       if (existing.length === 0) {
         logAuditEvent(jobId, {
           action: 'job_created',
-          actor: 'system',
+          actor: SYSTEM_ACTOR,
           details: { txCount: found.total_transactions },
         })
         setAuditEvents(getAuditTrail(jobId))
       } else {
         setAuditEvents(existing)
       }
-    }).catch(() => {
+    }).catch(async () => {
       // Supabase failed, fall back to localStorage
+      await rulesReady
+      if (cancelled) return
       let found = getJob(jobId)
       if (!found) { setNotFound(true); return }
       const { txs: seeded, applied } = applyRulesToJob(found.transactions)
-      if (applied.length > 0) found = { ...found, transactions: seeded }
+      if (applied.length > 0) {
+        found = { ...found, transactions: seeded }
+        dbSaveJob(found).catch(() => { /* memory copy already updated */ })
+      }
       setJob(found)
       setQboConn(getQBOConnection())
       setQboLive(false)
-      fetch('/api/integrations/quickbooks/status')
+      if (FEATURES.reviewQuickBooksPush) fetch('/api/integrations/quickbooks/status')
         .then((r) => r.json())
         .then((data: { connected?: boolean; companyName?: string; realmId?: string; lastSyncAt?: string | null; totalSynced?: number }) => {
           if (data.connected && data.companyName && data.realmId) {
@@ -990,11 +1003,11 @@ export default function ReviewPage() {
           }
         })
         .catch(() => {})
-      const client = getClients().find((c) => c.business_name === found.client_name)
+      const client = clientForJob(found, getClients())
       if (client) setClientIndustry(client.industry)
       const existing = getAuditTrail(jobId)
       if (existing.length === 0) {
-        logAuditEvent(jobId, { action: 'job_created', actor: 'system', details: { txCount: found.total_transactions } })
+        logAuditEvent(jobId, { action: 'job_created', actor: SYSTEM_ACTOR, details: { txCount: found.total_transactions } })
         setAuditEvents(getAuditTrail(jobId))
       } else {
         setAuditEvents(existing)
@@ -1004,7 +1017,7 @@ export default function ReviewPage() {
   }, [jobId])
 
   const logAudit: AuditCallback = useCallback((event) => {
-    logAuditEvent(jobId, { ...event, actor: 'CPA' })
+    logAuditEvent(jobId, { ...event, actor: userActor(userEmailRef.current) })
     setAuditEvents(getAuditTrail(jobId))
   }, [jobId])
 
@@ -1030,7 +1043,7 @@ export default function ReviewPage() {
   // All jobs for anomaly detection and tax handoff
   const allClientJobs = useMemo(() => {
     if (!job) return []
-    return getJobs().filter((j) => j.client_name === job.client_name)
+    return getJobs().filter((j) => sameClientJobs(j, job))
   }, [job])
 
   // Anomaly detection — compare current job to previous job for same client
@@ -1154,7 +1167,7 @@ export default function ReviewPage() {
       }
       logAuditEvent(jobId, {
         action: 'job_exported',
-        actor: 'CPA',
+        actor: userActor(userEmailRef.current),
         details: { count, format: label },
       })
       setAuditEvents(getAuditTrail(jobId))
@@ -1231,7 +1244,7 @@ export default function ReviewPage() {
     setCompleting(false)
     logAuditEvent(jobId, {
       action: 'job_completed',
-      actor: 'CPA',
+      actor: userActor(userEmailRef.current),
       details: { approved: job.approved, flagged: job.flagged },
     })
     setAuditEvents(getAuditTrail(jobId))

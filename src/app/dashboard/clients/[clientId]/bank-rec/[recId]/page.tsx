@@ -22,7 +22,7 @@ export default function RecWorkspacePage() {
     if (client) {
       setClientName(client.business_name)
       // Load book transactions from approved categorization jobs
-      const jobs = getJobsForClient(client.business_name)
+      const jobs = getJobsForClient(client)
       const allTxns: BookTransaction[] = jobs.flatMap(job =>
         job.transactions
           .filter(t => t.status === 'approved' || t.status === 'edited')

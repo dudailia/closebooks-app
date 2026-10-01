@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import TransactionRow from './TransactionRow'
 import type { Transaction, ChartOfAccounts } from '@/types'
+import { AUTO_APPROVE_PERCENT, AUTO_APPROVE_THRESHOLD } from '@/lib/ai/models'
 import type { AuditCallback, AuditEvent } from '@/lib/auditTrail'
 import { useShortcut } from '@/lib/review/KeyboardShortcutProvider'
 import InlineCategoryPicker from '@/components/review/InlineCategoryPicker'
@@ -15,9 +16,10 @@ import HistoryDrawer from '@/components/review/HistoryDrawer'
 import ActionToastStack, { type ToastMsg } from '@/components/review/ActionToast'
 import { useUndoStack } from '@/lib/review/undoStack'
 import { deleteRule } from '@/lib/review/rules'
-import { approveTransaction, recategorizeTransaction } from '@/lib/review/approve'
+import { approveSelected, approveTransaction, isApproved, recategorizeTransaction } from '@/lib/review/approve'
 import type { TransactionSplit } from '@/types'
 import { saveRule, bumpRuleUsage, findRuleForDescription } from '@/lib/review/rules'
+import { saveCorrection } from '@/lib/corrections'
 import { normalizeVendor, vendorPatternMatches } from '@/lib/review/vendor'
 
 type FilterTab = 'all' | 'pending' | 'approved' | 'flagged'
@@ -35,10 +37,11 @@ interface Props {
 // ─── Mobile card ─────────────────────────────────────────────────────────────
 
 function MobileCard({
-  transaction, selected, onToggleSelect, onChange, chartOfAccounts, onAudit,
+  transaction, selected, onToggleSelect, onChange, onRecategorize, chartOfAccounts, onAudit,
 }: {
   transaction: Transaction; selected: boolean; onToggleSelect: (id: string) => void
-  onChange: (t: Transaction) => void; chartOfAccounts: ChartOfAccounts[]; onAudit?: AuditCallback
+  onChange: (t: Transaction) => void; onRecategorize: (t: Transaction, code: string) => void
+  chartOfAccounts: ChartOfAccounts[]; onAudit?: AuditCallback
 }) {
   const [expanded, setExpanded] = useState(false)
   const isCredit = transaction.type === 'credit'
@@ -49,7 +52,7 @@ function MobileCard({
   }
   const [tc, bg] = statusColors[transaction.status]
   function approve() {
-    onAudit?.({ action: 'tx_approved', txId: transaction.id, txDescription: transaction.description, details: { category: transaction.final_category ?? transaction.suggested_category ?? '' } })
+    if (!isApproved(transaction)) onAudit?.({ action: 'tx_approved', txId: transaction.id, txDescription: transaction.description, details: { category: transaction.final_category ?? transaction.suggested_category ?? '' } })
     onChange(approveTransaction(transaction))
     setExpanded(false)
   }
@@ -88,7 +91,7 @@ function MobileCard({
           <button onClick={approve} style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', backgroundColor: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Approve</button>
           <button onClick={flag} style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: '1px solid var(--danger)', backgroundColor: 'var(--surface-card)', color: 'var(--danger)', fontSize: 12, cursor: 'pointer' }}>Flag</button>
           <select value={transaction.final_account_code ?? transaction.suggested_account_code ?? ''}
-            onChange={e => onChange(recategorizeTransaction(transaction, e.target.value, chartOfAccounts))}
+            onChange={e => onRecategorize(transaction, e.target.value)}
             onClick={e => e.stopPropagation()}
             style={{ flex: 1, border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '6px 4px', fontSize: 11, color: 'var(--text-primary)', backgroundColor: 'var(--surface-card)' }}>
             <option value="">Category…</option>
@@ -118,7 +121,7 @@ function ConfirmModal({ count, remaining, onConfirm, onCancel }: { count: number
           <div>
             <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Approve high-confidence transactions?</p>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-              Approves <strong style={{ color: 'var(--accent)' }}>{count}</strong> transaction{count !== 1 ? 's' : ''} with confidence ≥ 85%
+              Approves <strong style={{ color: 'var(--accent)' }}>{count}</strong> transaction{count !== 1 ? 's' : ''} with confidence ≥ {AUTO_APPROVE_PERCENT}%
               {remaining > 0 ? `, leaving ${remaining} for manual review.` : '. All pending transactions will be approved.'}
             </p>
           </div>
@@ -136,7 +139,7 @@ function ConfirmModal({ count, remaining, onConfirm, onCancel }: { count: number
 
 export default function TransactionTable({
   initialTransactions, chartOfAccounts, onTransactionsChange,
-  recurringIds, onAudit, auditEvents = [], highlightIds,
+  recurringIds, onAudit, auditEvents = [],
 }: Props) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions)
   const [activeTab, setActiveTab]       = useState<FilterTab>('all')
@@ -149,7 +152,7 @@ export default function TransactionTable({
   const [pickerAnchor, setPickerAnchor] = useState<{ top: number; left: number; txId: string } | null>(null)
   const [paletteOpen, setPaletteOpen]   = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const [ruleCandidate, setRuleCandidate] = useState<{ vendor: string; accountCode: string; categoryName: string; matchingCount: number; ruleSuggestionOnly?: boolean } | null>(null)
+  const [ruleCandidate, setRuleCandidate] = useState<{ vendor: string; direction: Transaction['type']; accountCode: string; categoryName: string; matchingCount: number; ruleSuggestionOnly?: boolean } | null>(null)
   const approvalTracker = useRef<Map<string, { count: number; accountCode: string; categoryName: string; suggested: boolean }>>(new Map())
   const proactiveDismissed = useRef<Set<string>>(new Set())
   const [splitTxId, setSplitTxId] = useState<string | null>(null)
@@ -169,19 +172,27 @@ export default function TransactionTable({
     setToasts(prev => prev.filter(t => t.id !== id))
   }
 
+  // Every change to the list goes through here, from an event handler, never
+  // inside a setTransactions updater: onTransactionsChange and onAudit set the
+  // review page's state, and calling them from an updater (which React runs
+  // while rendering this table) caused "Cannot update a component while
+  // rendering a different component". The ref is updated at once so two
+  // changes in one handler build on each other.
+  function commitTransactions(next: Transaction[]) {
+    transactionsRef.current = next
+    setTransactions(next)
+    onTransactionsChange?.(next)
+  }
+
   function restoreTxs(priors: Transaction[]) {
-    setTransactions(prev => {
-      const next = prev.map(t => priors.find(p => p.id === t.id) ?? t)
-      onTransactionsChange?.(next)
-      return next
-    })
+    const prev = transactionsRef.current
+    const next = prev.map(t => priors.find(p => p.id === t.id) ?? t)
+    commitTransactions(next)
   }
   function applyTxs(nexts: Transaction[]) {
-    setTransactions(prev => {
-      const next = prev.map(t => nexts.find(n => n.id === t.id) ?? t)
-      onTransactionsChange?.(next)
-      return next
-    })
+    const prev = transactionsRef.current
+    const next = prev.map(t => nexts.find(n => n.id === t.id) ?? t)
+    commitTransactions(next)
   }
 
   // Sync incoming prop changes (e.g. after rule auto-apply on hydrate)
@@ -207,15 +218,15 @@ export default function TransactionTable({
   }), [transactions])
 
   const focusedIndex    = useMemo(() => visible.findIndex(t => t.id === focusedId), [visible, focusedId])
-  const highConfPending = transactions.filter(t => t.confidence >= 0.85 && t.status === 'pending').length
-  const lowConfPending  = transactions.filter(t => t.status === 'pending' && t.confidence < 0.85).length
+  const highConfPending = transactions.filter(t => t.confidence >= AUTO_APPROVE_THRESHOLD && t.status === 'pending').length
+  const lowConfPending  = transactions.filter(t => t.status === 'pending' && t.confidence < AUTO_APPROVE_THRESHOLD).length
 
   function trackApproval(tx: Transaction) {
     const pattern = normalizeVendor(tx.description)
     const category = tx.final_category ?? tx.suggested_category ?? ''
     const accountCode = tx.final_account_code ?? tx.suggested_account_code ?? ''
     if (!pattern || !category || !accountCode) return
-    if (findRuleForDescription(tx.description)) return
+    if (findRuleForDescription(tx.description, tx.type)) return
     const key = `${pattern}::${accountCode}`
     if (proactiveDismissed.current.has(key)) return
     const existing = approvalTracker.current.get(key)
@@ -223,8 +234,8 @@ export default function TransactionTable({
       existing.count += 1
       if (existing.count >= 3 && !existing.suggested) {
         existing.suggested = true
-        const pending = transactionsRef.current.filter(t => t.status === 'pending' && vendorPatternMatches(t.description, pattern))
-        setRuleCandidate({ vendor: pattern, accountCode, categoryName: category, matchingCount: pending.length, ruleSuggestionOnly: true })
+        const pending = transactionsRef.current.filter(t => t.status === 'pending' && t.type === tx.type && vendorPatternMatches(t.description, pattern))
+        setRuleCandidate({ vendor: pattern, direction: tx.type, accountCode, categoryName: category, matchingCount: pending.length, ruleSuggestionOnly: true })
       }
     } else {
       approvalTracker.current.set(key, { count: 1, accountCode, categoryName: category, suggested: false })
@@ -233,11 +244,9 @@ export default function TransactionTable({
 
   const handleChange = useCallback((updated: Transaction) => {
     const prior = transactionsRef.current.find(t => t.id === updated.id)
-    setTransactions(prev => {
-      const next = prev.map(t => t.id === updated.id ? updated : t)
-      onTransactionsChange?.(next)
-      return next
-    })
+    const prev = transactionsRef.current
+    const next = prev.map(t => t.id === updated.id ? updated : t)
+    commitTransactions(next)
     if (updated.status === 'approved' || updated.status === 'edited') trackApproval(updated)
     if (prior) {
       undoStack.push({
@@ -249,18 +258,38 @@ export default function TransactionTable({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onTransactionsChange])
 
+  /**
+   * A reviewer changes a row's account: desktop row, mobile card or the
+   * inline picker all come here, before or after the row was approved. It
+   * logs the change, saves the correction (a hint for the next upload),
+   * applies the account and offers "Always categorize … as …?".
+   */
+  function handleRecategorize(tx: Transaction, code: string) {
+    const prevCode = tx.final_account_code ?? tx.suggested_account_code
+    if (!code || code === prevCode) return
+    const toName = chartOfAccounts.find(a => a.code === code)?.name ?? code
+    const fromName = tx.final_category ?? tx.suggested_category ?? '—'
+    onAudit?.({ action: 'tx_category_changed', txId: tx.id, txDescription: tx.description, details: { from: fromName, to: toName } })
+    if (code !== tx.suggested_account_code && tx.suggested_category) {
+      saveCorrection(tx.description, tx.suggested_category, toName)
+    }
+    handleChange(recategorizeTransaction(tx, code, chartOfAccounts))
+    handleCategoryRuleCandidate(tx, code, toName)
+  }
+
   function handleCategoryRuleCandidate(tx: Transaction, accountCode: string, categoryName: string) {
     const pattern = normalizeVendor(tx.description)
     if (!pattern) return
     // If there's already an active rule for this vendor + category, skip the prompt
-    const existing = findRuleForDescription(tx.description)
+    const existing = findRuleForDescription(tx.description, tx.type)
     if (existing && existing.accountCode === accountCode) return
     const matching = transactionsRef.current.filter(t =>
       t.id !== tx.id &&
       t.status === 'pending' &&
+      t.type === tx.type &&
       vendorPatternMatches(t.description, pattern)
     )
-    setRuleCandidate({ vendor: pattern, accountCode, categoryName, matchingCount: matching.length })
+    setRuleCandidate({ vendor: pattern, direction: tx.type, accountCode, categoryName, matchingCount: matching.length })
   }
 
   async function handleSaveRule() {
@@ -272,23 +301,22 @@ export default function TransactionTable({
         accountCode: cand.accountCode,
         categoryName: cand.categoryName,
         createdBy: 'CPA',
+        direction: cand.direction,
       })
       const priorMatches = transactionsRef.current.filter(
-        t => t.status === 'pending' && vendorPatternMatches(t.description, rule.vendorPattern)
+        t => t.status === 'pending' && t.type === cand.direction && vendorPatternMatches(t.description, rule.vendorPattern)
       ).map(t => ({ ...t }))
       const updatedTxs: Transaction[] = []
-      setTransactions(prev => {
-        const next = prev.map(t => {
-          if (t.status !== 'pending') return t
-          if (!vendorPatternMatches(t.description, rule.vendorPattern)) return t
-          onAudit?.({ action: 'tx_category_changed', txId: t.id, txDescription: t.description, details: { from: t.suggested_category ?? '—', to: cand.categoryName, rule: '1' } })
-          const up = { ...t, status: 'edited' as const, categorizationSource: 'firm_rule' as const, final_account_code: cand.accountCode, final_category: cand.categoryName, confidence: Math.max(t.confidence, 0.99) }
-          updatedTxs.push(up)
-          return up
-        })
-        onTransactionsChange?.(next)
-        return next
+      const prev = transactionsRef.current
+      const next = prev.map(t => {
+        if (t.status !== 'pending' || t.type !== cand.direction) return t
+        if (!vendorPatternMatches(t.description, rule.vendorPattern)) return t
+        onAudit?.({ action: 'tx_category_changed', txId: t.id, txDescription: t.description, details: { from: t.suggested_category ?? '—', to: cand.categoryName, rule: '1' } })
+        const up = { ...t, status: 'approved' as const, categorizationSource: 'firm_rule' as const, approvedBy: 'rule' as const, final_account_code: cand.accountCode, final_category: cand.categoryName, confidence: Math.max(t.confidence, 0.99) }
+        updatedTxs.push(up)
+        return up
       })
+      commitTransactions(next)
       if (priorMatches.length > 0) void bumpRuleUsage(rule.id, priorMatches.length)
       proactiveDismissed.current.add(`${cand.vendor}::${cand.accountCode}`)
       undoStack.push({
@@ -298,7 +326,7 @@ export default function TransactionTable({
           restoreTxs(priorMatches)
         },
         redo: () => {
-          void saveRule({ description: cand.vendor, accountCode: cand.accountCode, categoryName: cand.categoryName, createdBy: 'CPA' })
+          void saveRule({ description: cand.vendor, accountCode: cand.accountCode, categoryName: cand.categoryName, createdBy: 'CPA', direction: cand.direction })
           applyTxs(updatedTxs)
         },
       })
@@ -333,16 +361,14 @@ export default function TransactionTable({
     if (ids.length === 0) return
     const priors = transactionsRef.current.filter(t => ids.includes(t.id)).map(t => ({ ...t }))
     const updatedTxs: Transaction[] = []
-    setTransactions(prev => {
-      const next = prev.map(t => {
-        if (!ids.includes(t.id)) return t
-        const up = { ...t, status: 'flagged' as const, notes: t.notes ? `${t.notes} · duplicate` : 'duplicate' }
-        updatedTxs.push(up)
-        return up
-      })
-      onTransactionsChange?.(next)
-      return next
+    const prev = transactionsRef.current
+    const next = prev.map(t => {
+      if (!ids.includes(t.id)) return t
+      const up = { ...t, status: 'flagged' as const, notes: t.notes ? `${t.notes} · duplicate` : 'duplicate' }
+      updatedTxs.push(up)
+      return up
     })
+    commitTransactions(next)
     ids.forEach(id => {
       const t = transactionsRef.current.find(x => x.id === id)
       if (t) onAudit?.({ action: 'tx_flagged', txId: id, txDescription: t.description, details: { reason: 'duplicate', bulk: 'true' } })
@@ -362,16 +388,14 @@ export default function TransactionTable({
     const ids = Array.from(selectedRef.current)
     const priors = transactionsRef.current.filter(t => ids.includes(t.id)).map(t => ({ ...t }))
     const updatedTxs: Transaction[] = []
-    setTransactions(prev => {
-      const next = prev.map(t => {
-        if (!ids.includes(t.id)) return t
-        const up = { ...t, notes: t.notes ? `${t.notes} · ${note}` : note }
-        updatedTxs.push(up)
-        return up
-      })
-      onTransactionsChange?.(next)
-      return next
+    const prev = transactionsRef.current
+    const next = prev.map(t => {
+      if (!ids.includes(t.id)) return t
+      const up = { ...t, notes: t.notes ? `${t.notes} · ${note}` : note }
+      updatedTxs.push(up)
+      return up
     })
+    commitTransactions(next)
     undoStack.push({
       label: `Added note to ${priors.length}`,
       inverse: () => restoreTxs(priors),
@@ -394,12 +418,10 @@ export default function TransactionTable({
     const target = transactionsRef.current.find(t => t.id === targetId)
     if (!target) { setSplitTxId(null); return }
     const prior = { ...target }
-    const updated: Transaction = { ...target, status: 'edited', categorizationSource: 'manual', splits }
-    setTransactions(prev => {
-      const next = prev.map(t => (t.id === targetId ? updated : t))
-      onTransactionsChange?.(next)
-      return next
-    })
+    const updated: Transaction = { ...target, status: 'edited', categorizationSource: 'manual', approvedBy: 'reviewer', splits }
+    const prev = transactionsRef.current
+    const next = prev.map(t => (t.id === targetId ? updated : t))
+    commitTransactions(next)
     onAudit?.({
       action: 'tx_category_changed',
       txId: targetId,
@@ -458,19 +480,19 @@ export default function TransactionTable({
   const bulkApprove = useCallback(() => {
     const selectedIds = Array.from(selected)
     if (selectedIds.length === 0) return
-    const priors = transactionsRef.current.filter(t => selectedIds.includes(t.id))
-    const approvedTxs: Transaction[] = []
-    setTransactions(prev => {
-      const next = prev.map(t => {
-        if (!selectedIds.includes(t.id)) return t
-        onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '', bulk: 'true' } })
-        const updated = { ...t, status: 'approved' as const, final_category: t.final_category ?? t.suggested_category, final_account_code: t.final_account_code ?? t.suggested_account_code }
-        approvedTxs.push(updated)
-        return updated
-      })
-      onTransactionsChange?.(next)
-      return next
-    })
+    // Rows already approved (by the AI, a rule or a reviewer) are left as they
+    // are, so who approved them isn't overwritten (src/lib/review/approve.ts).
+    const { next, approved: approvedTxs, priors } = approveSelected(transactionsRef.current, selectedIds)
+    setSelected(new Set())
+    if (approvedTxs.length === 0) {
+      pushToast({ message: 'Already approved', tone: 'success' })
+      return
+    }
+    for (const t of priors) {
+      onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '', bulk: 'true' } })
+    }
+    setTransactions(next)
+    onTransactionsChange?.(next)
     approvedTxs.forEach(trackApproval)
     const id = undoStack.push({
       label: `Approved ${priors.length} transaction${priors.length !== 1 ? 's' : ''}`,
@@ -483,7 +505,6 @@ export default function TransactionTable({
       onUndo: () => undoStack.undo(),
     })
     void id
-    setSelected(new Set())
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, onTransactionsChange, onAudit])
 
@@ -492,17 +513,15 @@ export default function TransactionTable({
     if (selectedIds.length === 0) return
     const priors = transactionsRef.current.filter(t => selectedIds.includes(t.id))
     const flaggedTxs: Transaction[] = []
-    setTransactions(prev => {
-      const next = prev.map(t => {
-        if (!selectedIds.includes(t.id)) return t
-        onAudit?.({ action: 'tx_flagged', txId: t.id, txDescription: t.description, details: { reason: '', bulk: 'true' } })
-        const updated = { ...t, status: 'flagged' as const }
-        flaggedTxs.push(updated)
-        return updated
-      })
-      onTransactionsChange?.(next)
-      return next
+    const prev = transactionsRef.current
+    const next = prev.map(t => {
+      if (!selectedIds.includes(t.id)) return t
+      onAudit?.({ action: 'tx_flagged', txId: t.id, txDescription: t.description, details: { reason: '', bulk: 'true' } })
+      const updated = { ...t, status: 'flagged' as const }
+      flaggedTxs.push(updated)
+      return updated
     })
+    commitTransactions(next)
     undoStack.push({
       label: `Flagged ${priors.length} transaction${priors.length !== 1 ? 's' : ''}`,
       inverse: () => restoreTxs(priors),
@@ -519,21 +538,19 @@ export default function TransactionTable({
 
   function doApproveHighConfidence() {
     setShowConfirm(false)
-    const eligible = transactionsRef.current.filter(t => t.confidence >= 0.85 && t.status === 'pending')
+    const eligible = transactionsRef.current.filter(t => t.confidence >= AUTO_APPROVE_THRESHOLD && t.status === 'pending')
     if (eligible.length === 0) return
     const priors = eligible.map(t => ({ ...t }))
     const approvedTxs: Transaction[] = []
-    setTransactions(prev => {
-      const next = prev.map(t => {
-        if (!(t.confidence >= 0.85 && t.status === 'pending')) return t
-        onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '', bulk: 'true' } })
-        const updated = approveTransaction(t)
-        approvedTxs.push(updated)
-        return updated
-      })
-      onTransactionsChange?.(next)
-      return next
+    const prev = transactionsRef.current
+    const next = prev.map(t => {
+      if (!(t.confidence >= AUTO_APPROVE_THRESHOLD && t.status === 'pending')) return t
+      onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '', bulk: 'true' } })
+      const updated = approveTransaction(t)
+      approvedTxs.push(updated)
+      return updated
     })
+    commitTransactions(next)
     approvedTxs.forEach(trackApproval)
     undoStack.push({
       label: `Approved ${priors.length} high-confidence`,
@@ -568,8 +585,9 @@ export default function TransactionTable({
     const vis = visibleRef.current, fi = focusedIdxRef.current
     if (fi < 0) return
     const t = vis[fi]
+    if (isApproved(t)) return
     onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '' } })
-    handleChange({ ...t, status: 'approved', final_category: t.final_category ?? t.suggested_category, final_account_code: t.final_account_code ?? t.suggested_account_code })
+    handleChange(approveTransaction(t))
   }
   function focusedFlag() {
     const vis = visibleRef.current, fi = focusedIdxRef.current
@@ -584,16 +602,14 @@ export default function TransactionTable({
     if (ids.length === 0) return
     const priors = transactionsRef.current.filter(t => ids.includes(t.id)).map(t => ({ ...t }))
     const updatedTxs: Transaction[] = []
-    setTransactions(prev => {
-      const next = prev.map(t => {
-        if (!ids.includes(t.id)) return t
-        const up = { ...t, status: 'flagged' as const, notes: t.notes ? `${t.notes} · duplicate` : 'duplicate' }
-        updatedTxs.push(up)
-        return up
-      })
-      onTransactionsChange?.(next)
-      return next
+    const prev = transactionsRef.current
+    const next = prev.map(t => {
+      if (!ids.includes(t.id)) return t
+      const up = { ...t, status: 'flagged' as const, notes: t.notes ? `${t.notes} · duplicate` : 'duplicate' }
+      updatedTxs.push(up)
+      return up
     })
+    commitTransactions(next)
     ids.forEach(id => {
       const t = transactionsRef.current.find(x => x.id === id)
       if (t) onAudit?.({ action: 'tx_flagged', txId: id, txDescription: t.description, details: { reason: 'duplicate' } })
@@ -815,7 +831,7 @@ export default function TransactionTable({
         {visible.length === 0
           ? <p style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-tertiary)', fontSize: 13 }}>{search ? 'No transactions match your search.' : 'No transactions in this category.'}</p>
           : visible.map(tx => (
-            <MobileCard key={tx.id} transaction={tx} selected={selected.has(tx.id)} onToggleSelect={toggleSelect} onChange={handleChange} chartOfAccounts={chartOfAccounts} onAudit={onAudit} />
+            <MobileCard key={tx.id} transaction={tx} selected={selected.has(tx.id)} onToggleSelect={toggleSelect} onChange={handleChange} onRecategorize={handleRecategorize} chartOfAccounts={chartOfAccounts} onAudit={onAudit} />
           ))
         }
       </div>
@@ -860,7 +876,7 @@ export default function TransactionTable({
                   enterTrigger={focusedId === tx.id ? enterTrigger : 0}
                   onAudit={onAudit}
                   txAuditEvents={auditEvents.filter(e => e.txId === tx.id)}
-                  onCategoryRuleCandidate={handleCategoryRuleCandidate}
+                  onRecategorize={handleRecategorize}
                   onSplit={openSplit}
                 />
               ))}
@@ -888,15 +904,13 @@ export default function TransactionTable({
           onSelect={(code, name) => {
             if (pickerAnchor.txId === '__bulk__') {
               const ids = Array.from(selectedRef.current)
-              setTransactions(prev => {
-                const next = prev.map(t =>
-                  ids.includes(t.id)
-                    ? { ...t, status: 'edited' as const, categorizationSource: 'manual' as const, final_account_code: code, final_category: name }
-                    : t
-                )
-                onTransactionsChange?.(next)
-                return next
-              })
+              const prev = transactionsRef.current
+              const next = prev.map(t =>
+                ids.includes(t.id)
+                  ? { ...t, status: 'edited' as const, categorizationSource: 'manual' as const, approvedBy: 'reviewer' as const, final_account_code: code, final_category: name }
+                  : t
+              )
+              commitTransactions(next)
               ids.forEach(id => {
                 const t = transactionsRef.current.find(x => x.id === id)
                 if (t) onAudit?.({ action: 'tx_category_changed', txId: id, txDescription: t.description, details: { from: t.final_category ?? t.suggested_category ?? '—', to: name, bulk: 'true' } })
@@ -904,12 +918,7 @@ export default function TransactionTable({
               setSelected(new Set())
             } else {
               const tx = transactionsRef.current.find(t => t.id === pickerAnchor.txId)
-              if (tx) {
-                const fromName = tx.final_category ?? tx.suggested_category ?? '—'
-                onAudit?.({ action: 'tx_category_changed', txId: tx.id, txDescription: tx.description, details: { from: fromName, to: name } })
-                handleChange({ ...tx, status: 'edited', categorizationSource: 'manual', final_account_code: code, final_category: name })
-                handleCategoryRuleCandidate(tx, code, name)
-              }
+              if (tx) handleRecategorize(tx, code)
             }
             setPickerAnchor(null)
           }}

@@ -4,6 +4,7 @@
  */
 
 import type { CategorizationJob, Client } from '@/types'
+import { jobsForClient } from '@/lib/clientJobs'
 
 let _jobs: CategorizationJob[] = []
 let _clients: Client[] = []
@@ -61,9 +62,8 @@ export function memoryDeleteClient(id: string): void {
   _clients = _clients.filter((c) => c.id !== id)
 }
 
-export function memoryGetJobsForClient(businessName: string): CategorizationJob[] {
-  const lower = (businessName ?? '').toLowerCase()
-  return _jobs.filter((j) => j.client_name.toLowerCase() === lower)
+export function memoryGetJobsForClient(client: Pick<Client, 'id' | 'business_name'>): CategorizationJob[] {
+  return jobsForClient(_jobs, client)
 }
 
 export function memoryGetPendingReviewCount(): number {

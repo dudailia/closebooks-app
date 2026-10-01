@@ -35,19 +35,13 @@ export async function hydrateFirmUsage(supabase: SupabaseClient, firmId: string)
   }
 }
 
-async function persist(): Promise<void> {
+// Trial dates and plan are server-owned (supabase/migrations/20260930200000_firm_usage_server_owned.sql).
+// The browser can only add one to the close counter.
+async function persistCloseUsed(): Promise<void> {
   const ctx = await getSupabaseAndFirm()
   if (!ctx) return
-  await ctx.supabase.from('firm_usage').upsert(
-    {
-      firm_id: ctx.firmId,
-      closes_used: _cache.closesUsed,
-      trial_started_at: _cache.startedAt,
-      plan_status: _cache.plan,
-      trial_activated_at: _cache.trialActivatedAt ?? null,
-    },
-    { onConflict: 'firm_id' }
-  )
+  const { data, error } = await ctx.supabase.rpc('cb_record_close_used', { fid: ctx.firmId })
+  if (!error && typeof data === 'number') _cache.closesUsed = data
 }
 
 const TRIAL_EVENT = 'closebooks_trial_updated'
@@ -60,7 +54,7 @@ function emitTrialUpdate(): void {
 
 export function recordCloseUsed(): void {
   _cache.closesUsed++
-  void persist()
+  void persistCloseUsed()
   emitTrialUpdate()
 }
 
@@ -81,10 +75,13 @@ export function getCurrentPlan(): TrialState['plan'] {
   return _cache.plan
 }
 
+/**
+ * Mirror a paid plan the server reported (Stripe subscription) into the local
+ * cache. Local only: plan_status in firm_usage is server-owned.
+ */
 export function activatePlan(plan: TrialState['plan']): void {
   _cache.plan = plan
   _cache.trialActivatedAt = new Date().toISOString()
-  void persist()
   emitTrialUpdate()
 }
 

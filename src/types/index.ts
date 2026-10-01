@@ -23,6 +23,8 @@ export type Transaction = {
   reasoning?: string
   validation_flags?: string[]
   categorizationSource?: 'ai' | 'firm_rule' | 'manual' | 'copilot'
+  /** Who approved the row: the AI at upload (confidence at or above the threshold), a firm rule, or a reviewer. */
+  approvedBy?: 'ai' | 'rule' | 'reviewer'
   splits?: TransactionSplit[]
 }
 
@@ -72,6 +74,9 @@ export interface JobNarrative {
 
 export type CategorizationJob = {
   id: string
+  /** The client's id. Missing on jobs saved before closes were linked by id (src/lib/clientJobs.ts). */
+  client_id?: string
+  /** The client's name when the close was made (shown in lists and exports). */
   client_name: string
   created_at: string
   status: 'processing' | 'review' | 'completed'

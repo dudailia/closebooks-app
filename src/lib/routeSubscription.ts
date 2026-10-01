@@ -8,6 +8,7 @@ import {
   type SubscriptionRow,
 } from '@/lib/subscriptionAccess'
 import { featureMinTier, tierAtLeast, type GatedFeature, type PlanTierId } from '@/lib/plans'
+import { latestFirmSubscription } from '@/lib/subscriptionLookup'
 
 interface RouteAccessOptions {
   feature?: GatedFeature
@@ -81,17 +82,8 @@ export async function requireRouteAccess(
     }
   }
 
-  const email = user.email.toLowerCase()
   const [{ data: row }, { data: firm }] = await Promise.all([
-    supabase
-      .from('subscriptions')
-      .select(
-        'status, plan_slug, stripe_subscription_id, current_period_end, trial_end, cancel_at_period_end, grace_period_end, payment_failed_at'
-      )
-      .eq('customer_email', email)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+    latestFirmSubscription(supabase, user.id, 'status, plan_slug, stripe_subscription_id, current_period_end, trial_end, cancel_at_period_end, grace_period_end, payment_failed_at'),
     supabase.from('firms').select('id').eq('owner_id', user.id).maybeSingle(),
   ])
 

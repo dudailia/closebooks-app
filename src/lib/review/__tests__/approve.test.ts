@@ -29,7 +29,8 @@ const fakeDb = vi.hoisted(() => {
 
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => fakeDb.client, supabaseConfigured: true }))
 
-import { approveTransaction, recategorizeTransaction } from '@/lib/review/approve'
+import { approveSelected, approveTransaction, recategorizeTransaction } from '@/lib/review/approve'
+import { approvalCounts } from '@/lib/review/approvalCounts'
 import { dbGetJob, dbSaveJob } from '@/lib/db'
 import { memoryDeleteJob } from '@/lib/memoryData'
 import { canonicalizeTransactionForExport } from '@/lib/exportValidation'
@@ -70,8 +71,10 @@ describe('recategorise then approve', () => {
     const edited = recategorizeTransaction(stripePayout, '1100', COA)
     const approved = approveTransaction(edited)
 
+    // An edit already approves the row; approving again leaves it as it is.
+    expect(approved).toBe(edited)
     expect(approved).toMatchObject({
-      status: 'approved',
+      status: 'edited',
       final_account_code: '1100',
       final_category: 'Accounts Receivable',
       categorizationSource: 'manual',
@@ -98,7 +101,7 @@ describe('recategorise then approve', () => {
     const reloaded = await dbGetJob('job-1')
     const tx = reloaded?.transactions[0]
     expect(tx).toMatchObject({
-      status: 'approved',
+      status: 'edited',
       final_account_code: '1100',
       final_category: 'Accounts Receivable',
       categorizationSource: 'manual',
@@ -110,5 +113,42 @@ describe('recategorise then approve', () => {
     expect(approveTransaction(stripePayout)).toMatchObject({
       status: 'approved', final_account_code: '4100', final_category: 'Service Revenue', categorizationSource: 'ai',
     })
+  })
+})
+
+describe('approving rows that are already approved', () => {
+  const aiApproved: Transaction = { ...stripePayout, id: 'tx-ai', status: 'approved', approvedBy: 'ai', confidence: 0.97 }
+  const ruleApplied: Transaction = {
+    ...stripePayout, id: 'tx-rule', status: 'edited', categorizationSource: 'firm_rule', approvedBy: 'rule',
+    final_account_code: '1100', final_category: 'Accounts Receivable',
+  }
+  const pending: Transaction = { ...stripePayout, id: 'tx-pending' }
+
+  it('approveTransaction leaves an AI or rule approval unchanged', () => {
+    expect(approveTransaction(aiApproved)).toBe(aiApproved)
+    expect(approveTransaction(ruleApplied)).toBe(ruleApplied)
+    expect(approveTransaction(pending)).toMatchObject({ status: 'approved', approvedBy: 'reviewer' })
+  })
+
+  it('select all + approve keeps who approved each row; only pending rows become reviewer approvals', () => {
+    const rows = [aiApproved, ruleApplied, pending]
+    const { next, approved, priors } = approveSelected(rows, rows.map((t) => t.id))
+
+    expect(next.map((t) => [t.id, t.status, t.approvedBy])).toEqual([
+      ['tx-ai', 'approved', 'ai'],
+      ['tx-rule', 'edited', 'rule'],
+      ['tx-pending', 'approved', 'reviewer'],
+    ])
+    // Only the row that changed is audited, undone and counted in "Approved N".
+    expect(approved.map((t) => t.id)).toEqual(['tx-pending'])
+    expect(priors).toEqual([pending])
+    // The close report's breakdown (the bug: it said "3 by reviewer").
+    expect(approvalCounts(next)).toMatchObject({ approved: 3, byAi: 1, byRule: 1, byReviewer: 1 })
+  })
+
+  it('rows not selected are untouched', () => {
+    const { next, approved } = approveSelected([pending, aiApproved], ['tx-ai'])
+    expect(next[0]).toBe(pending)
+    expect(approved).toEqual([])
   })
 })

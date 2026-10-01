@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/routeAuth'
+import { latestFirmSubscription } from '@/lib/subscriptionLookup'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,13 +28,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Billing lookup requires Supabase.' }, { status: 503 })
   }
 
-  const { data: sub } = await supabase
-    .from('subscriptions')
-    .select('stripe_customer_id, status')
-    .eq('customer_email', user.email.toLowerCase())
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const { data: sub } = await latestFirmSubscription(supabase, user.id, 'stripe_customer_id, status')
 
   const customerId = sub?.stripe_customer_id as string | undefined
   if (!customerId || customerId === 'unknown') {

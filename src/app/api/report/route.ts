@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { CategorizationJob, Transaction } from '@/types'
+import { approvalBreakdown, approvalCounts } from '@/lib/review/approvalCounts'
 import type { AuditEvent } from '@/lib/auditTrail'
 import { formatAuditEvent } from '@/lib/auditTrail'
 import type { FirmSettings } from '@/lib/firmSettings'
@@ -139,7 +140,7 @@ function fmtAuditTs(iso: string): string {
 
 function buildHtml(job: CategorizationJob, auditEvents: AuditEvent[] = []): string {
   const pending      = job.transactions.filter((t) => t.status === 'pending').length
-  const autoApproved = job.transactions.filter((t) => t.status === 'approved' && t.confidence >= 0.85).length
+  const approvals    = approvalCounts(job.transactions)
   const categoryRows = buildCategoryBreakdown(job.transactions)
   const generatedAt  = new Date().toLocaleDateString('en-US', {
     month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -445,8 +446,8 @@ function buildHtml(job: CategorizationJob, auditEvents: AuditEvent[] = []): stri
           <div class="lbl">Total Transactions</div>
         </div>
         <div class="summary-box green">
-          <div class="num">${job.approved}</div>
-          <div class="lbl">Approved (${job.total_transactions > 0 ? Math.round(job.approved / job.total_transactions * 100) : 0}% · ${autoApproved} auto)</div>
+          <div class="num">${approvals.approved}</div>
+          <div class="lbl">Approved (${job.total_transactions > 0 ? Math.round(approvals.approved / job.total_transactions * 100) : 0}% · ${approvalBreakdown(approvals)})</div>
         </div>
         <div class="summary-box amber">
           <div class="num">${pending}</div>

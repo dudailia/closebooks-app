@@ -14,6 +14,7 @@ import type { Client, ClientIndustry, AccountingSoftware, CategorizationJob } fr
 import ConnectedAccounts from '@/components/plaid/ConnectedAccounts'
 import { FEATURES, isDashboardRouteVisible } from '@/lib/features'
 import { formatStatementPeriod } from '@/lib/statementPeriod'
+import { AUTO_APPROVE_PERCENT, AUTO_APPROVE_THRESHOLD } from '@/lib/ai/models'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -316,14 +317,14 @@ export default function ClientDetailPage() {
     const c = getClient(clientId)
     if (!c) { setNotFound(true); return }
     setClient(c)
-    setJobs(getJobsForClient(c.business_name))
+    setJobs(getJobsForClient(c))
   }, [clientId])
 
   async function handleSaveEdit(updated: Client) {
     const persisted = await dbSaveClient(updated)
     setClient(updated)
     // Re-fetch jobs in case name changed
-    setJobs(getJobsForClient(updated.business_name))
+    setJobs(getJobsForClient(updated))
     setShowEdit(false)
     if (!persisted) {
       alert("Couldn't save these changes to the server. They're shown here but may not persist after a refresh — please try again.")
@@ -332,7 +333,7 @@ export default function ClientDetailPage() {
 
   function handleNewClose() {
     if (!client) return
-    setUploadPrefillClient(client.business_name)
+    setUploadPrefillClient(client.id)
     router.push('/dashboard/upload')
   }
 
@@ -368,6 +369,7 @@ export default function ClientDetailPage() {
   const totalAuto  = jobs.reduce((s, j) => s + j.auto_categorized, 0)
   const allConfs   = jobs.flatMap((j) => j.transactions.filter((t) => t.confidence > 0).map((t) => t.confidence))
   const avgConf    = allConfs.length > 0 ? Math.round(allConfs.reduce((a, b) => a + b, 0) / allConfs.length * 100) : null
+  const atThreshold = allConfs.filter((c) => c >= AUTO_APPROVE_THRESHOLD).length
   const timeSavedMin = totalTx * 2
   const timeSaved  = timeSavedMin === 0 ? '—' : timeSavedMin >= 60 ? `${(timeSavedMin / 60).toFixed(1)}h` : `${timeSavedMin}m`
 
@@ -504,9 +506,7 @@ export default function ClientDetailPage() {
             <div>
               <p className="font-medium" style={{ color: '#1a1714' }}>Average AI confidence</p>
               <p className="text-xs mt-0.5" style={{ color: '#a09a94' }}>
-                {avgConf >= 85 ? 'Excellent — most transactions auto-approved' :
-                 avgConf >= 70 ? 'Good — occasional manual review needed' :
-                 'Lower confidence — review carefully'}
+                {atThreshold} of {allConfs.length} rows ({Math.round((atThreshold / allConfs.length) * 100)}%) at or above the {AUTO_APPROVE_PERCENT}% auto-approve threshold
               </p>
             </div>
           </div>

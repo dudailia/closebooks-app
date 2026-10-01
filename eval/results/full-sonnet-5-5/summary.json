@@ -1,0 +1,625 @@
+{
+  "meta": {
+    "startedAt": "2026-09-29T20:21:42.312Z",
+    "finishedAt": "2026-09-29T20:23:47.191Z",
+    "model": "claude-sonnet-5-5",
+    "runs": 1,
+    "limit": null,
+    "labelledOnly": false,
+    "datasetRows": 292,
+    "datasetLabelledRows": 284,
+    "datasetReviewRows": 8,
+    "statementSize": 97,
+    "datasetSha256": "c8a4b728e0d03e468b417dcff77a5aa7820a2f52f8356f2e4caed23b11554d58",
+    "gitCommit": "0935f3590259aff1a416709a197f164dd0cf2d91",
+    "gitDirty": false,
+    "autoApproveThreshold": 0.85,
+    "batchSize": 20,
+    "business": "Brightline Studio LLC",
+    "chartName": "Standard Small Business chart (34 accounts)",
+    "budget": {
+      "capUsd": 2,
+      "spentBeforeUsd": 1.111913,
+      "spentAfterUsd": 1.4472149999999997
+    },
+    "cut": null
+  },
+  "scoredRows": 284,
+  "scoredPredictions": 284,
+  "excludedRows": 0,
+  "accuracy": {
+    "n": 284,
+    "strictCorrect": 246,
+    "lenientCorrect": 270,
+    "strict": 0.8661971830985915,
+    "lenient": 0.9507042253521126
+  },
+  "perAccount": [
+    {
+      "code": "1010",
+      "name": "Savings Account",
+      "n": 4,
+      "strictCorrect": 4,
+      "lenientCorrect": 4,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 4,
+      "precision": 1
+    },
+    {
+      "code": "1020",
+      "name": "Petty Cash",
+      "n": 2,
+      "strictCorrect": 0,
+      "lenientCorrect": 0,
+      "strict": 0,
+      "lenient": 0,
+      "predictedCount": 0,
+      "precision": null
+    },
+    {
+      "code": "1100",
+      "name": "Accounts Receivable",
+      "n": 27,
+      "strictCorrect": 0,
+      "lenientCorrect": 20,
+      "strict": 0,
+      "lenient": 0.7407407407407407,
+      "predictedCount": 0,
+      "precision": null
+    },
+    {
+      "code": "1500",
+      "name": "Equipment",
+      "n": 2,
+      "strictCorrect": 2,
+      "lenientCorrect": 2,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 2,
+      "precision": 1
+    },
+    {
+      "code": "2100",
+      "name": "Credit Card Payable",
+      "n": 3,
+      "strictCorrect": 3,
+      "lenientCorrect": 3,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 3,
+      "precision": 1
+    },
+    {
+      "code": "2200",
+      "name": "Sales Tax Payable",
+      "n": 3,
+      "strictCorrect": 3,
+      "lenientCorrect": 3,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 3,
+      "precision": 1
+    },
+    {
+      "code": "2300",
+      "name": "Payroll Liabilities",
+      "n": 6,
+      "strictCorrect": 4,
+      "lenientCorrect": 4,
+      "strict": 0.6666666666666666,
+      "lenient": 0.6666666666666666,
+      "predictedCount": 4,
+      "precision": 1
+    },
+    {
+      "code": "2400",
+      "name": "Short-Term Loan",
+      "n": 3,
+      "strictCorrect": 3,
+      "lenientCorrect": 3,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 4,
+      "precision": 0.75
+    },
+    {
+      "code": "2500",
+      "name": "Long-Term Loan",
+      "n": 3,
+      "strictCorrect": 2,
+      "lenientCorrect": 2,
+      "strict": 0.6666666666666666,
+      "lenient": 0.6666666666666666,
+      "predictedCount": 2,
+      "precision": 1
+    },
+    {
+      "code": "3000",
+      "name": "Owner's Equity",
+      "n": 1,
+      "strictCorrect": 1,
+      "lenientCorrect": 1,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 1,
+      "precision": 1
+    },
+    {
+      "code": "3100",
+      "name": "Owner's Draw",
+      "n": 7,
+      "strictCorrect": 6,
+      "lenientCorrect": 7,
+      "strict": 0.8571428571428571,
+      "lenient": 1,
+      "predictedCount": 8,
+      "precision": 0.75
+    },
+    {
+      "code": "4000",
+      "name": "Sales Revenue",
+      "n": 0,
+      "strictCorrect": 0,
+      "lenientCorrect": 0,
+      "strict": null,
+      "lenient": null,
+      "predictedCount": 8,
+      "precision": 0
+    },
+    {
+      "code": "4100",
+      "name": "Service Revenue",
+      "n": 2,
+      "strictCorrect": 1,
+      "lenientCorrect": 1,
+      "strict": 0.5,
+      "lenient": 0.5,
+      "predictedCount": 21,
+      "precision": 0.047619047619047616
+    },
+    {
+      "code": "4200",
+      "name": "Other Income",
+      "n": 3,
+      "strictCorrect": 3,
+      "lenientCorrect": 3,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 3,
+      "precision": 1
+    },
+    {
+      "code": "5100",
+      "name": "Payroll & Wages",
+      "n": 6,
+      "strictCorrect": 6,
+      "lenientCorrect": 6,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 9,
+      "precision": 0.6666666666666666
+    },
+    {
+      "code": "5200",
+      "name": "Rent & Lease",
+      "n": 6,
+      "strictCorrect": 6,
+      "lenientCorrect": 6,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 6,
+      "precision": 1
+    },
+    {
+      "code": "5300",
+      "name": "Utilities",
+      "n": 9,
+      "strictCorrect": 9,
+      "lenientCorrect": 9,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 9,
+      "precision": 1
+    },
+    {
+      "code": "5400",
+      "name": "Office Supplies",
+      "n": 38,
+      "strictCorrect": 38,
+      "lenientCorrect": 38,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 40,
+      "precision": 0.95
+    },
+    {
+      "code": "5500",
+      "name": "Marketing & Advertising",
+      "n": 26,
+      "strictCorrect": 25,
+      "lenientCorrect": 26,
+      "strict": 0.9615384615384616,
+      "lenient": 1,
+      "predictedCount": 25,
+      "precision": 1
+    },
+    {
+      "code": "5600",
+      "name": "Insurance",
+      "n": 9,
+      "strictCorrect": 9,
+      "lenientCorrect": 9,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 9,
+      "precision": 1
+    },
+    {
+      "code": "5700",
+      "name": "Professional Fees",
+      "n": 12,
+      "strictCorrect": 12,
+      "lenientCorrect": 12,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 12,
+      "precision": 1
+    },
+    {
+      "code": "5800",
+      "name": "Travel & Entertainment",
+      "n": 69,
+      "strictCorrect": 69,
+      "lenientCorrect": 69,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 69,
+      "precision": 1
+    },
+    {
+      "code": "6000",
+      "name": "Bank Fees & Charges",
+      "n": 5,
+      "strictCorrect": 5,
+      "lenientCorrect": 5,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 5,
+      "precision": 1
+    },
+    {
+      "code": "6100",
+      "name": "Subscriptions & Software",
+      "n": 34,
+      "strictCorrect": 33,
+      "lenientCorrect": 33,
+      "strict": 0.9705882352941176,
+      "lenient": 0.9705882352941176,
+      "predictedCount": 34,
+      "precision": 0.9705882352941176
+    },
+    {
+      "code": "6200",
+      "name": "Taxes & Licenses",
+      "n": 2,
+      "strictCorrect": 2,
+      "lenientCorrect": 2,
+      "strict": 1,
+      "lenient": 1,
+      "predictedCount": 3,
+      "precision": 0.6666666666666666
+    },
+    {
+      "code": "6300",
+      "name": "Miscellaneous Expense",
+      "n": 2,
+      "strictCorrect": 0,
+      "lenientCorrect": 2,
+      "strict": 0,
+      "lenient": 1,
+      "predictedCount": 0,
+      "precision": null
+    }
+  ],
+  "review": {
+    "n": 284,
+    "approved": 215,
+    "pending": 69,
+    "flagged": 0,
+    "reviewRate": 0.24295774647887325,
+    "flagRate": 0,
+    "unknownToChart": 0,
+    "noPrediction": 0,
+    "autoApproved": {
+      "n": 215,
+      "strictCorrect": 182,
+      "lenientCorrect": 204,
+      "strict": 0.8465116279069768,
+      "lenient": 0.9488372093023256
+    },
+    "sentToReview": {
+      "n": 69,
+      "strictCorrect": 64,
+      "lenientCorrect": 66,
+      "strict": 0.927536231884058,
+      "lenient": 0.9565217391304348
+    },
+    "autoApprovedErrorRate": {
+      "strict": 0.15348837209302324,
+      "lenient": 0.051162790697674376
+    }
+  },
+  "calibration": {
+    "strict": {
+      "basis": "strict",
+      "buckets": [
+        {
+          "lower": 0,
+          "upper": 0.1,
+          "n": 0,
+          "meanConfidence": null,
+          "accuracy": null
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "n": 0,
+          "meanConfidence": null,
+          "accuracy": null
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "n": 0,
+          "meanConfidence": null,
+          "accuracy": null
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "n": 0,
+          "meanConfidence": null,
+          "accuracy": null
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "n": 0,
+          "meanConfidence": null,
+          "accuracy": null
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "n": 0,
+          "meanConfidence": null,
+          "accuracy": null
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "n": 13,
+          "meanConfidence": 0.6307692307692307,
+          "accuracy": 0.8461538461538461
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "n": 37,
+          "meanConfidence": 0.7289189189189187,
+          "accuracy": 0.9459459459459459
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "n": 66,
+          "meanConfidence": 0.8496969696969697,
+          "accuracy": 0.803030303030303
+        },
+        {
+          "lower": 0.9,
+          "upper": 1,
+          "n": 168,
+          "meanConfidence": 0.9494642857142855,
+          "accuracy": 0.875
+        }
+      ],
+      "ece": 0.09302816901408445
+    },
+    "lenient": {
+      "basis": "lenient",
+      "buckets": [
+        {
+          "lower": 0,
+          "upper": 0.1,
+          "n": 0,
+          "meanConfidence": null,
+          "accuracy": null
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "n": 0,
+          "meanConfidence": null,
+          "accuracy": null
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "n": 0,
+          "meanConfidence": null,
+          "accuracy": null
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "n": 0,
+          "meanConfidence": null,
+          "accuracy": null
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "n": 0,
+          "meanConfidence": null,
+          "accuracy": null
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "n": 0,
+          "meanConfidence": null,
+          "accuracy": null
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "n": 13,
+          "meanConfidence": 0.6307692307692307,
+          "accuracy": 0.8461538461538461
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "n": 37,
+          "meanConfidence": 0.7289189189189187,
+          "accuracy": 1
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "n": 66,
+          "meanConfidence": 0.8496969696969697,
+          "accuracy": 0.8787878787878788
+        },
+        {
+          "lower": 0.9,
+          "upper": 1,
+          "n": 168,
+          "meanConfidence": 0.9494642857142855,
+          "accuracy": 0.9761904761904762
+        }
+      ],
+      "ece": 0.06774647887323954
+    }
+  },
+  "failures": {
+    "failed": 0,
+    "total": 15,
+    "topError": null,
+    "topCount": 0
+  },
+  "stability": {
+    "runs": 1,
+    "rowsCompared": 0,
+    "rowsChanged": 0,
+    "changeRate": null,
+    "meanConfidenceSpread": null,
+    "rowsDecisionChanged": 0
+  },
+  "latency": {
+    "batches": 15,
+    "perBatchMs": {
+      "median": 8375,
+      "p90": 8998
+    },
+    "perTransactionMs": {
+      "median": 424.3,
+      "p90": 453.05
+    },
+    "perCallMs": {
+      "median": 8375,
+      "p90": 8998
+    }
+  },
+  "cost": {
+    "tokens": {
+      "calls": 15,
+      "failedCalls": 0,
+      "inputTokens": 57126,
+      "outputTokens": 22105,
+      "cacheReadTokens": 0,
+      "cacheWriteTokens": 0
+    },
+    "statementSize": 97,
+    "totalUsd": 0.335302,
+    "perTransactionUsd": 0.0011482945205479453,
+    "perStatementUsd": 0.11138456849315069
+  },
+  "confusions": [
+    {
+      "trueCode": "1100",
+      "predictedCode": "4100",
+      "count": 20,
+      "acceptable": true
+    },
+    {
+      "trueCode": "1100",
+      "predictedCode": "4000",
+      "count": 7,
+      "acceptable": false
+    },
+    {
+      "trueCode": "1020",
+      "predictedCode": "3100",
+      "count": 2,
+      "acceptable": false
+    },
+    {
+      "trueCode": "2300",
+      "predictedCode": "5100",
+      "count": 2,
+      "acceptable": false
+    },
+    {
+      "trueCode": "6300",
+      "predictedCode": "5400",
+      "count": 2,
+      "acceptable": true
+    },
+    {
+      "trueCode": "2500",
+      "predictedCode": "2400",
+      "count": 1,
+      "acceptable": false
+    },
+    {
+      "trueCode": "3100",
+      "predictedCode": "6200",
+      "count": 1,
+      "acceptable": true
+    },
+    {
+      "trueCode": "4100",
+      "predictedCode": "4000",
+      "count": 1,
+      "acceptable": false
+    },
+    {
+      "trueCode": "5500",
+      "predictedCode": "6100",
+      "count": 1,
+      "acceptable": true
+    },
+    {
+      "trueCode": "6100",
+      "predictedCode": "5100",
+      "count": 1,
+      "acceptable": false
+    }
+  ],
+  "unlabelled": {
+    "n": 0,
+    "approved": 0,
+    "pending": 0,
+    "flagged": 0
+  },
+  "reviewLabelled": {
+    "n": 8,
+    "sentToReview": 8,
+    "autoApproved": 0,
+    "rate": 1
+  },
+  "reviewRows": 8
+}

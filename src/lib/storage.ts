@@ -33,8 +33,9 @@ export function deleteJob(id: string): void {
   memoryDeleteJob(id)
 }
 
-export function getJobsForClient(businessName: string): CategorizationJob[] {
-  return memoryGetJobsForClient(businessName)
+/** This client's closes: by client id, or by name for jobs saved before ids (src/lib/clientJobs.ts). */
+export function getJobsForClient(client: Pick<Client, 'id' | 'business_name'>): CategorizationJob[] {
+  return memoryGetJobsForClient(client)
 }
 
 export function getPendingReviewCount(): number {

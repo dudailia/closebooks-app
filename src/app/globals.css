@@ -514,8 +514,12 @@
   }
 
   /* Smooth page transitions */
+  /* `backwards`, not `both`: a fill that keeps `transform` after the animation
+     makes this element the containing block for every position:fixed child,
+     so toasts and bars inside the page were placed relative to the page, below
+     the fold, instead of the screen. */
   .page-enter {
-    animation: fadeUp 0.18s ease both;
+    animation: fadeUp 0.18s ease backwards;
   }
 
   .animate-fade-up {
@@ -796,8 +800,9 @@ button,
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+/* `backwards`: see .page-enter. */
 .page-content {
-  animation: pageFadeUp 0.18s ease both;
+  animation: pageFadeUp 0.18s ease backwards;
 }
 
 /* ---------------------------------------------------------------------------

@@ -18,7 +18,8 @@ import {
   memoryDeleteClient as lsDeleteClient,
 } from '@/lib/memoryData'
 import type { CategorizationJob, Client, Transaction } from '@/types'
-import { newColumnValues, readCategorizationSource, readSplits, upsertTransactionRows } from '@/lib/transactionPersistence'
+import { upsertJobRow } from '@/lib/jobPersistence'
+import { newColumnValues, readApprovedBy, readCategorizationSource, readSplits, upsertTransactionRows } from '@/lib/transactionPersistence'
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
@@ -67,12 +68,14 @@ function mapTxRow(row: Record<string, unknown>): Transaction {
     reasoning,
     splits:               readSplits(row.splits),
     categorizationSource: readCategorizationSource(row.categorization_source),
+    approvedBy:           readApprovedBy(row.approved_by),
   }
 }
 
 function mapJobRow(row: Record<string, unknown>, transactions: Transaction[]): CategorizationJob {
   return {
     id:                 String(row.id),
+    ...(row.client_id ? { client_id: String(row.client_id) } : {}),
     client_name:        String(row.client_name ?? ''),
     created_at:         String(row.created_at ?? new Date().toISOString()),
     status:             (row.status as CategorizationJob['status']) ?? 'review',
@@ -102,7 +105,7 @@ export async function dbGetJobs(): Promise<CategorizationJob[]> {
 
     const { data, error } = await supabase
       .from('jobs')
-      .select('id, client_name, created_at, status, total_transactions, auto_categorized, approved, flagged, chart_of_accounts')
+      .select('*') // '*' so client_id is read once its migration runs, and the query still works before
       .eq('firm_id', firmId)
       .order('created_at', { ascending: false })
 
@@ -158,9 +161,10 @@ export async function dbSaveJob(job: CategorizationJob): Promise<void> {
     const approved = transactions.filter(t => t.status === 'approved' || t.status === 'edited').length
     const flagged  = transactions.filter(t => t.status === 'flagged').length
 
-    const { error: jobErr } = await supabase.from('jobs').upsert({
+    const { error: jobErr } = await upsertJobRow(supabase, {
       id:                 meta.id,
       firm_id:            firmId,
+      client_id:          meta.client_id ?? null,
       client_name:        meta.client_name,
       created_at:         meta.created_at,
       status:             meta.status,
@@ -169,7 +173,7 @@ export async function dbSaveJob(job: CategorizationJob): Promise<void> {
       approved,
       flagged,
       chart_of_accounts,
-    }, { onConflict: 'id' })
+    })
 
     if (jobErr) return
 
@@ -311,15 +315,15 @@ export async function dbEnsureFirm(
       return fail(`Firm creation failed: ${firmError?.message ?? 'no firm id returned'}`)
     }
 
-    const { error: usageError } = await supabase.from('firm_usage').upsert(
-      {
-        firm_id: data.id,
-        trial_started_at: new Date().toISOString(),
-        plan_status: 'free',
-        closes_used: 0,
-      },
-      { onConflict: 'firm_id', ignoreDuplicates: true }
-    )
+    // Trial row: created server-side with trial_started_at = now(); never overwrites an existing row.
+    let { error: usageError } = await supabase.rpc('cb_ensure_firm_usage', { fid: data.id })
+    // Until the migration is applied the function doesn't exist: insert the row if it's missing, as before.
+    if (usageError && (usageError.code === 'PGRST202' || usageError.code === '42883')) {
+      ;({ error: usageError } = await supabase.from('firm_usage').upsert(
+        { firm_id: data.id, trial_started_at: new Date().toISOString(), plan_status: 'free', closes_used: 0 },
+        { onConflict: 'firm_id', ignoreDuplicates: true }
+      ))
+    }
     if (usageError) return fail(`Trial setup failed: ${usageError.message}`)
 
     return { ok: true }

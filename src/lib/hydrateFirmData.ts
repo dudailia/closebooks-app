@@ -7,7 +7,7 @@ import { getFirmIdForUser } from '@/lib/supabase/firmScope'
 import type { CategorizationJob, Client, Transaction } from '@/types'
 import { memorySetJobs, memorySetClients, setMemoryHydrated } from '@/lib/memoryData'
 import { mapJobFromRows } from '@/lib/hydrateMappers'
-import { readCategorizationSource, readSplits } from '@/lib/transactionPersistence'
+import { readApprovedBy, readCategorizationSource, readSplits } from '@/lib/transactionPersistence'
 import { hydrateFirmSettings } from '@/lib/firmSettings'
 import { hydrateFirmUsage } from '@/lib/freeTrial'
 import { hydrateBilling } from '@/lib/billingStorage'
@@ -30,6 +30,7 @@ function mapTx(row: Record<string, unknown>): Transaction {
     notes: row.notes ? String(row.notes) : undefined,
     splits: readSplits(row.splits),
     categorizationSource: readCategorizationSource(row.categorization_source),
+    approvedBy: readApprovedBy(row.approved_by),
   }
 }
 

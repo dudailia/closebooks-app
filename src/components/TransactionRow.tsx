@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import type { Transaction, ChartOfAccounts } from '@/types'
-import { saveCorrection } from '@/lib/corrections'
+import { AUTO_APPROVE_THRESHOLD } from '@/lib/ai/models'
 import { getAlternativeSuggestions } from '@/lib/categorySuggestions'
-import { approveTransaction, recategorizeTransaction } from '@/lib/review/approve'
+import { approveTransaction, isApproved } from '@/lib/review/approve'
 import type { AuditCallback, AuditEvent } from '@/lib/auditTrail'
 import { formatAuditEvent, fmtAuditTs } from '@/lib/auditTrail'
 
@@ -44,7 +44,7 @@ function StatusPill({ status }: { status: Transaction['status'] }) {
 
 function ConfidencePill({ value }: { value: number }) {
   const pct = Math.round(value * 100)
-  const color = value >= 0.85 ? 'var(--accent)' : value >= 0.7 ? 'var(--warning)' : 'var(--danger)'
+  const color = value >= AUTO_APPROVE_THRESHOLD ? 'var(--accent)' : value >= 0.7 ? 'var(--warning)' : 'var(--danger)'
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'monospace', fontSize: 12, color }}>
       <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: color, flexShrink: 0 }} />
@@ -95,7 +95,8 @@ interface Props {
   enterTrigger?: number
   onAudit?: AuditCallback
   txAuditEvents?: AuditEvent[]
-  onCategoryRuleCandidate?: (tx: Transaction, accountCode: string, categoryName: string) => void
+  /** A reviewer picked a different account for this row. */
+  onRecategorize: (tx: Transaction, accountCode: string) => void
   onSplit?: (id: string) => void
 }
 
@@ -113,7 +114,7 @@ export default function TransactionRow({
   enterTrigger  = 0,
   onAudit,
   txAuditEvents = [],
-  onCategoryRuleCandidate,
+  onRecategorize,
   onSplit,
 }: Props) {
   const [expanded, setExpanded]       = useState(false)
@@ -129,7 +130,8 @@ export default function TransactionRow({
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   function handleApprove() {
-    onAudit?.({ action: 'tx_approved', txId: transaction.id, txDescription: transaction.description, details: { category: transaction.final_category ?? transaction.suggested_category ?? '' } })
+    // Approving an already-approved row changes nothing, so it isn't audited.
+    if (!isApproved(transaction)) onAudit?.({ action: 'tx_approved', txId: transaction.id, txDescription: transaction.description, details: { category: transaction.final_category ?? transaction.suggested_category ?? '' } })
     onChange({ ...approveTransaction(transaction), notes: notes || undefined })
     setExpanded(false)
   }
@@ -141,19 +143,11 @@ export default function TransactionRow({
   }
 
   function handleCategoryChange(code: string) {
-    const account  = chartOfAccounts.find(a => a.code === code)
-    const prevCode = transaction.final_account_code ?? transaction.suggested_account_code
     setEditCode(code)
-    if (code !== prevCode) {
-      const fromName = transaction.final_category ?? transaction.suggested_category ?? '—'
-      const toName   = account?.name ?? code
-      onAudit?.({ action: 'tx_category_changed', txId: transaction.id, txDescription: transaction.description, details: { from: fromName, to: toName } })
-      if (code !== transaction.suggested_account_code && transaction.suggested_category) {
-        saveCorrection(transaction.description, transaction.suggested_category, toName)
-      }
-      onCategoryRuleCandidate?.(transaction, code, toName)
-    }
-    onChange(recategorizeTransaction(transaction, code, chartOfAccounts))
+    // The table records the change, saves the correction and offers the rule
+    // (TransactionTable.handleRecategorize), the same for every place an
+    // account can be changed.
+    onRecategorize(transaction, code)
   }
 
   function handleNotesBlur() {

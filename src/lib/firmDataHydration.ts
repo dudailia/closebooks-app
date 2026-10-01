@@ -5,7 +5,7 @@
 import { createClient, supabaseConfigured } from '@/lib/supabase/client'
 import { getFirmIdForUser } from '@/lib/supabase/firmScope'
 import { LEGACY_KEYS, readLegacyJson, readLegacyString } from './legacyLocalStorage'
-import { readCategorizationSource, readSplits, upsertTransactionRows } from '@/lib/transactionPersistence'
+import { readApprovedBy, readCategorizationSource, readSplits, upsertTransactionRows } from '@/lib/transactionPersistence'
 
 export async function importLegacyLocalStorageToSupabase(): Promise<{ imported: string[]; errors: string[] }> {
   const imported: string[] = []
@@ -66,6 +66,7 @@ export async function importLegacyLocalStorageToSupabase(): Promise<{ imported: 
             notes: t.notes ?? null,
             splits: readSplits(t.splits) ?? null,
             categorization_source: readCategorizationSource(t.categorizationSource) ?? null,
+            approved_by: readApprovedBy(t.approvedBy) ?? null,
           }))
           await upsertTransactionRows(supabase, rows, 200)
         }
@@ -105,18 +106,8 @@ export async function importLegacyLocalStorageToSupabase(): Promise<{ imported: 
     imported.push('firm_settings')
   }
 
-  const firmUsage = readLegacyJson(LEGACY_KEYS.freeTrial, null)
-  if (firmUsage) {
-    const u = firmUsage as Record<string, unknown>
-    await supabase.from('firm_usage').upsert({
-      firm_id: firmId,
-      closes_used: Number(u.closesUsed ?? 0),
-      trial_started_at: u.startedAt ? String(u.startedAt) : null,
-      plan_status: String(u.plan ?? 'free'),
-      trial_activated_at: u.trialActivatedAt ? String(u.trialActivatedAt) : null,
-    }, { onConflict: 'firm_id' })
-    imported.push('firm_usage')
-  }
+  // Legacy trial state (LEGACY_KEYS.freeTrial) is not imported: trial dates are
+  // server-owned and a browser value must not set them.
 
   // JSON blob tables
   const blobUpserts: Array<{ table: string; key: keyof typeof LEGACY_KEYS; name: string }> = [

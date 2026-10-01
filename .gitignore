@@ -49,3 +49,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .worktrees/
+/.next-e2e/
+/test-results/
+/playwright-report/
+/.playwright-mcp/

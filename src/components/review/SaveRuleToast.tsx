@@ -1,4 +1,5 @@
 'use client'
+import Portal from '@/components/ui/Portal'
 import { useEffect, useState } from 'react'
 
 interface Props {
@@ -15,8 +16,13 @@ export default function SaveRuleToast({ vendor, categoryName, matchingCount, onS
     requestAnimationFrame(() => setMounted(true))
   }, [])
 
+  // Rendered on document.body: inside the review page a transformed ancestor
+  // made position:fixed relative to the page, so the prompt sat below the fold.
   return (
+    <Portal>
     <div
+      role="status"
+      aria-label="Save rule"
       style={{
         position: 'fixed',
         bottom: 20,
@@ -33,7 +39,8 @@ export default function SaveRuleToast({ vendor, categoryName, matchingCount, onS
         display: 'flex',
         alignItems: 'center',
         gap: 14,
-        maxWidth: 560,
+        width: 'min(560px, calc(100vw - 32px))',
+        boxSizing: 'border-box',
       }}
     >
       <div
@@ -95,5 +102,6 @@ export default function SaveRuleToast({ vendor, categoryName, matchingCount, onS
         </button>
       </div>
     </div>
+    </Portal>
   )
 }

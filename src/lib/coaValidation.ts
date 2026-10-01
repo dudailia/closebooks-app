@@ -1,4 +1,5 @@
 import type { ChartOfAccounts, Transaction } from '@/types'
+import { AUTO_APPROVE_THRESHOLD } from '@/lib/ai/models'
 
 export interface CoaResolutionInput {
   suggested_category: string
@@ -15,8 +16,6 @@ export interface CoaResolution {
   reasoning?: string
   validationFlags: string[]
 }
-
-const DEFAULT_AUTO_APPROVE_THRESHOLD = 0.85
 
 function normalize(value: string | undefined | null): string {
   return String(value ?? '')
@@ -41,7 +40,7 @@ export function resolveAgainstCoa(
   raw: CoaResolutionInput,
   tx: Pick<Transaction, 'type' | 'description' | 'amount'>,
   chartOfAccounts: ChartOfAccounts[],
-  autoApproveThreshold = DEFAULT_AUTO_APPROVE_THRESHOLD
+  autoApproveThreshold = AUTO_APPROVE_THRESHOLD
 ): CoaResolution {
   const flags: string[] = []
   const byCode = new Map(chartOfAccounts.map((account) => [normalize(account.code), account]))
