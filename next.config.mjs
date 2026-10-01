@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // The e2e run builds into its own folder so it never mixes with `.next`.
+  ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
   typescript: {
     // Type errors fail the build. Do not set this back to true — every
     // type-detectable bug that reached production got there this way.

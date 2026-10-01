@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { fakeAnthropicClient, fakeModelEnabled } from '@/lib/ai/fakeCategorizer'
 import type { Transaction, ChartOfAccounts } from '@/types'
 import { resolveAgainstCoa } from '@/lib/coaValidation'
 import { sanitizePromptField } from '@/lib/promptSanitize'
@@ -319,7 +320,7 @@ export async function categorizeTransactionsWithUsage(
   if (!transactions.length) return { transactions: [], calls, batches }
   if (!chartOfAccounts.length) throw new Error('Chart of accounts is empty.')
 
-  const api = options.client ?? client
+  const api = options.client ?? (fakeModelEnabled() ? fakeAnthropicClient : client)
   const model = options.model ?? MODEL
   const concurrency = Math.max(1, Math.floor(options.concurrency ?? CATEGORIZE_CONCURRENCY))
 

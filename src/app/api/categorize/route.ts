@@ -5,6 +5,7 @@ import type { Transaction, ChartOfAccounts } from '@/types'
 import { rateLimit } from '@/lib/rateLimit'
 import { sanitizeForPrompt } from '@/lib/promptSanitize'
 import { requireRouteAccess } from '@/lib/routeSubscription'
+import { fakeModelEnabled } from '@/lib/ai/fakeCategorizer'
 
 export const dynamic = 'force-dynamic'
 const bodySchema = z.object({
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Guard here, inside the handler, not at module level
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.ANTHROPIC_API_KEY && !fakeModelEnabled()) {
     console.error('ANTHROPIC_API_KEY is missing from environment')
     return NextResponse.json({ error: 'Server misconfiguration: API key not set.' }, { status: 500 })
   }
