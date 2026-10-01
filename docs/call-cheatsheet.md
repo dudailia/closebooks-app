@@ -31,7 +31,7 @@ runs; total API spend on evals $2.3571.
 
 1. **The prompt's accounting policy:** it says deposits are revenue and payroll tax an expense, which is wrong for a business that invoices or runs payroll through a provider; 18 of the 20 strict errors at 0.93 come from it.
 2. **The evidence:** one synthetic business, one chart, two runs, and the 0.93 threshold was chosen and measured on the same 292 rows, with no held-out set.
-3. **Database security isn't closed yet:** 8 migrations are written and tested but not applied (F7 must wait for the merge), and the anon key reaches Supabase directly, which the app's middleware can't block.
+3. **Database security is closed only where a migration exists:** all 8 security and client-id migrations were applied on 2026-10-01 (F7 right after the deploy), but F5's consent gap, F13, F16 and the rest of F15 have no fix yet, and the anon key reaches Supabase directly, which the app's middleware can't block.
 
 ## 10 hard questions, one sentence each
 

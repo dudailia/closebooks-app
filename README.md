@@ -16,10 +16,10 @@ ledger CSV, balanced journal entries and a close report.
 - The demo deploy at https://closebooks-app.vercel.app runs `main`, which
   includes the `eval-harness` and `overnight` work (Sonnet 5.5 at 0.93,
   rules first, closes linked to clients by id).
-- Database security fixes are written as migrations; which are applied, and
-  in what order the rest go, is in
-  [docs/migrations-to-apply.md](docs/migrations-to-apply.md). Some take
-  effect only once applied (see [SESSION_LOG.md](SESSION_LOG.md)).
+- Database security fixes are migrations in `supabase/migrations/`. Every
+  one from 2026-09-26 on was applied by 2026-10-01; the order and checks are
+  in [docs/migrations-to-apply.md](docs/migrations-to-apply.md). Findings
+  with no migration yet are listed in [SESSION_LOG.md](SESSION_LOG.md).
 
 ## What it does (core path)
 

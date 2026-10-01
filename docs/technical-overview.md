@@ -3,18 +3,19 @@
 For a technical reader who wants the engine, not the UI. Sources:
 [architecture.md](./architecture.md), [facts.md](./facts.md),
 [engine/journal-entries.md](./engine/journal-entries.md) and
-[engine/rls-audit.md](./engine/rls-audit.md). Line numbers are for branch
-`overnight` on 2026-10-01.
+[engine/rls-audit.md](./engine/rls-audit.md). Line numbers are for `main`
+at `041a6ef` (the merge of `overnight`, 2026-10-01).
 
 **Status.** CloseBooks is a demo. It has no customers and no real client data.
 Every accuracy and cost number below was measured on one **synthetic** dataset
 (section 9).
 
-**Which version.** This describes the app once `eval-harness` and `overnight`
-are merged to `main` (which Vercel deploys): Claude Sonnet 5.5, auto-approve
-at 0.93, 4 batches at once, saved firm rules applied before the model, and
-closes linked to clients by id. Until that merge, the live app is the older
-build (Claude Sonnet 4.6 at 0.85, batches one at a time).
+**Which version.** This describes the live app: `eval-harness` and
+`overnight` were merged to `main` and production deployed from `041a6ef` on
+2026-10-01. Claude Sonnet 5.5, auto-approve at 0.93, 4 batches at once, saved
+firm rules applied before the model, and closes linked to clients by id. The
+security migrations are applied (section 10). Before the merge the live app
+ran Claude Sonnet 4.6 at 0.85, one batch at a time.
 
 ## 1. What it does (core path only)
 
@@ -304,17 +305,21 @@ files only; the live database was not inspected.
 **Applied in the database (2026-09-30):** the fix for the `portal-docs`
 bucket open to anon (F1, critical), and `transactions.approved_by`.
 
-**Written, not applied, with an order** ([migrations-to-apply.md](./migrations-to-apply.md)):
-7 can run before the merge: RLS on `qbo_connections` (F15), subscriptions
-visible by firm not email (F8), `cb_is_member_of_firm` answers only about the
-caller (F10), `owner_id` pinned against API updates (F14), role limits on
-adding members and a deterministic `cb_firm_id()` (F5), `brand-assets` uploads
-only into the caller's firm folder and no SVG (F9), and `jobs.client_id`.
-1 must run right after the merge deploys: members can no longer rewrite trial
-state (F7); the merged code needs it to save the close count. Each closes a
-hole the anon key can reach directly, which the middleware can't block, so
-each finding stays open until its migration runs. All are tested on PGlite
-(`supabase/__tests__/migrations.test.ts`), including a second run.
+**Applied in the database (2026-10-01)**, in the order in
+[migrations-to-apply.md](./migrations-to-apply.md). Before the deploy: RLS on
+`qbo_connections` (F15), subscriptions visible by firm not email (F8),
+`cb_is_member_of_firm` answers only about the caller (F10), `owner_id` pinned
+against API updates (F14), role limits on adding members and a deterministic
+`cb_firm_id()` (F5), `brand-assets` uploads only into the caller's firm folder
+and no SVG (F9), and `jobs.client_id`. After the deploy: members can no longer
+rewrite trial state (F7), and the `jobs.client_id` backfill ran a second time
+to link closes created in between. Each closes a hole the anon key can reach
+directly, which the middleware can't block. All are tested on PGlite
+(`supabase/__tests__/migrations.test.ts`), including a second run. They were
+applied by the owner in the Supabase SQL editor; the repo can't see the live
+database, so this is as reported. A live test after the deploy passed: new
+signup, 14-day trial, an 8-row close (6 auto-approved, 2 pending), and the
+client shows 1 close.
 
 **Still open:** a user can be added to a firm without consenting (F5, no
 invitation flow), F13 (membership-only policies on hidden features), F16 (user
@@ -339,10 +344,11 @@ id stored as firm id in hidden features), and the rest of F15 (schema drift).
   (`vercel.json`). The 292-row file took about 40 s on the preview (one
   stopwatch run, section 9); at that rate (292 rows in 40 s) 120 s is roughly 900
   rows, an extrapolation from one run; rate limits under load are unmeasured.
-- **Closes from before the client-id change still match by name.** New
-  closes store the client's id (`src/lib/clientJobs.ts`); older jobs and jobs
-  from `/get-started` don't, and until `20261001200000_jobs_client_id.sql` is
-  applied, Supabase drops the id on save.
+- **Some closes still match by name.** New closes store the client's id
+  (`src/lib/clientJobs.ts`), and `20261001200000_jobs_client_id.sql` backfilled
+  older jobs where exactly one client of the firm has the job's name. Jobs
+  from `/get-started`, and older jobs whose name matches no client or more
+  than one, have no id and match by name only.
 - **Charts.** Only the 34-account Standard Small Business chart was
   evaluated. New Close and onboarding both use it now
   (`src/lib/coaTemplates.ts`).

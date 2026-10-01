@@ -253,19 +253,21 @@ the journal-entry CSV export and the close report:
   synthetic descriptions need no sanitising, so only that label differs; it
   has not been re-measured.
 - **Security findings still open.** See [engine/rls-audit.md](./engine/rls-audit.md).
-  Two migrations that close the worst database-level holes are written but
-  not applied.
+  The migrations for F1, F5, F7, F8, F9, F10, F14 and F15 (`qbo_connections`)
+  were applied by 2026-10-01 ([migrations-to-apply.md](./migrations-to-apply.md));
+  F5's consent gap, F13, F16 and the rest of F15 have no fix yet.
 - **QuickBooks push is hidden and wrong.** `api/integrations/quickbooks/push`
   posts every transaction to one default expense account
   (`src/app/api/integrations/quickbooks/push/route.ts:113,121`), ignoring the
   approved account.
-- **Clients were matched by name** (fixed on branch `overnight`). New jobs
-  store `client_id` and are matched on it (`src/lib/clientJobs.ts`); New Close
-  step 1 picks a client from a list. Jobs saved before that, and jobs made by
-  `/get-started`, have no id and still match by name. The `jobs.client_id`
-  column needs `supabase/migrations/20261001200000_jobs_client_id.sql`
-  (written, not applied); until then saves drop the column and new jobs fall
-  back to name matching after a reload.
+- **Clients were matched by name** (fixed; merged to `main` 2026-10-01). New
+  jobs store `client_id` and are matched on it (`src/lib/clientJobs.ts`); New
+  Close step 1 picks a client from a list. The column comes from
+  `supabase/migrations/20261001200000_jobs_client_id.sql` (applied
+  2026-10-01), whose backfill gave older jobs an id where exactly one client
+  of the firm has the job's name. Jobs made by `/get-started`, and older jobs
+  whose name matches no client or several, have no id and still match by
+  name.
 - **Three charts named "Standard Small Business"** (fixed on branch
   `overnight`): New Close and onboarding now both use the 34-account chart in
   `src/lib/coaTemplates.ts` (the one evaluated; a test checks it equals

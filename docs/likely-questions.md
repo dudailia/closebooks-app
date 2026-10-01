@@ -2,10 +2,12 @@
 
 Forty questions a CTO at an AI accounting company would ask about the
 CloseBooks engine, grouped by topic. Each answer is short and points to the
-code or document that backs it. Answers describe the app once `eval-harness`
-and `overnight` are merged to `main` (Claude Sonnet 5.5 at 0.93, 4 batches at
-once, rules first, clients by id). Line numbers are for branch `overnight` on
-2026-10-01.
+code or document that backs it. Answers describe the live app: `eval-harness`
+and `overnight` were merged to `main` and production deployed from `041a6ef`
+on 2026-10-01 (Claude Sonnet 5.5 at 0.93, 4 batches at once, rules first,
+clients by id), with every migration in
+[migrations-to-apply.md](./migrations-to-apply.md) applied the same day.
+Line numbers are for `main` at `041a6ef`.
 
 Ground rules for every answer:
 
@@ -359,28 +361,32 @@ in the repo (rls-audit.md section 1).
 ### 31. What did the security audit find, and what's still open?
 
 Sixteen findings (rls-audit.md section 3). The worst: the `portal-docs`
-bucket is readable and writable with the public anon key (F1), and members
-can reset their own trial (F7). Hidden features' routes now return 404. The
-F1 migration was applied on 2026-09-30, so the bucket is closed. Eight more
-are written, tested on PGlite and **not applied**, with an order in
+bucket was readable and writable with the public anon key (F1), and members
+could reset their own trial (F7). Hidden features' routes now return 404. The
+F1 migration was applied on 2026-09-30, so the bucket is closed. Eight more,
+tested on PGlite, were applied on 2026-10-01 in the order in
 [migrations-to-apply.md](./migrations-to-apply.md): seven (F15, F8, F10, F14,
-F5, F9 and `jobs.client_id`) can run before the merge; F7 must run right after
-it deploys, because the old code writes trial state from the browser. Until
-each runs, its finding is open to anyone calling Supabase directly with the
-anon key; the middleware can't block that.
+F5, F9 and `jobs.client_id`) before the merge, and F7 right after it deployed,
+because the old code wrote trial state from the browser. The owner applied
+them in the Supabase SQL editor; the repo can't see the live database, so
+that is as reported. Still open: F5's consent gap (no invitation flow), F13,
+F16 and the rest of F15 (rls-audit.md section 0). Those are reachable by
+anyone calling Supabase directly with the anon key; the middleware can't
+block that.
 
 ### 32. A user who belongs to two firms: which firm's data do they see?
 
-Undefined. `cb_firm_id()` returns `firm_id ... limit 1` with no `order by`
-(`supabase/migrations/20260416000000_firm_members_rls_audit.sql:119-127`),
-and `category_rules` uses it. Meanwhile the app finds "my firm" by
-`firms.owner_id` (`src/lib/db.ts:29-45`, `src/lib/supabase/firmScope.ts:14-18`).
-So non-owner members don't persist at all today (the TODO at `db.ts:29`), and
-a user in two firms can lose their rules. Finding F5 in rls-audit.md. It's
-single-owner software right now. A migration written overnight (not applied,
-`supabase/migrations/20261001600000_firm_members_insert_limits.sql`) makes
-`cb_firm_id()` return the firm the user owns first, then their oldest
-membership; it is tested on PGlite (`supabase/__tests__/migrations.test.ts`).
+The firm they own, else their oldest membership. Until 2026-10-01
+`cb_firm_id()` returned `firm_id ... limit 1` with no `order by`
+(`supabase/migrations/20260416000000_firm_members_rls_audit.sql:119-127`), so
+the answer was undefined, and `category_rules` uses it. The F5 migration,
+applied 2026-10-01
+(`supabase/migrations/20261001600000_firm_members_insert_limits.sql:64-77`),
+orders by "owns this firm", then membership date; it is tested on PGlite
+(`supabase/__tests__/migrations.test.ts`). The app still finds "my firm" by
+`firms.owner_id` (`src/lib/db.ts:28-44`, `src/lib/supabase/firmScope.ts:14-18`),
+so non-owner members don't persist at all (the TODO at `db.ts:28`). Finding
+F5 in rls-audit.md. It's single-owner software right now.
 
 ### 33. Firm rules: are they per client?
 
@@ -405,14 +411,15 @@ the demo. It should be removed or reduced to counts before real data.
 
 ### 35. Two clients with the same name?
 
-They used to get mixed up: jobs stored only `client_name`. On branch
-`overnight`, New Close step 1 picks a client from a list and the job stores
-its id (`src/app/dashboard/upload/page.tsx:175`); matching is by id
+They used to get mixed up: jobs stored only `client_name`. Now New Close
+step 1 picks a client from a list and the job stores its id
+(`src/app/dashboard/upload/page.tsx:175`); matching is by id
 (`src/lib/clientJobs.ts`), and the e2e test checks two same-name clients keep
-separate closes. Jobs saved before, and jobs from `/get-started`, have no id
-and still match by name. The `jobs.client_id` column's migration is written
-but not applied, so with Supabase on, new jobs fall back to name matching
-after a reload until it is.
+separate closes. The `jobs.client_id` migration was applied on 2026-10-01,
+and its backfill (run again after the deploy) gave older jobs an id where
+exactly one client of the firm has the job's name. Jobs from `/get-started`,
+and older jobs whose name matches no client or several, have no id and still
+match by name.
 
 ## Failure modes and scaling
 

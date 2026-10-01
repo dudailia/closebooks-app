@@ -1,16 +1,29 @@
 # Migrations to apply
 
-Date: 2026-10-01. Branch: `overnight`. Nothing in this list is applied.
+Written 2026-10-01 on `overnight`; updated 2026-10-01 after the merge.
 
-**Already applied** (owner, Supabase SQL editor): `20260926000000_transaction_splits_source.sql`
+**All applied.** The owner applied the 8 below in the Supabase SQL editor on
+2026-10-01, in this order: steps 1 to 7 before the deploy, then the merge to
+`main` (production deployed from `041a6ef`), then step 8 (F7) and a second run
+of step 7's `update ... set client_id`. Reported by the owner; the repo has no
+access to the live database, so this is not re-checked from here. A live test
+after the deploy passed: new signup, 14-day trial, an 8-row close (6
+auto-approved, 2 pending), and the client shows 1 close.
+
+**Applied earlier** (owner, Supabase SQL editor): `20260926000000_transaction_splits_source.sql`
 (2026-09-26), `20260930000000_transaction_approved_by.sql` and
 `20260930100000_portal_docs_service_role_only.sql` (F1), both 2026-09-30.
 
-**Not applied:** the 8 below. "Main" means the code on `main`, which is what
-Vercel serves today. "Merge" means `eval-harness` and `overnight` reaching
-`main` and deploying.
+The "When" column is the plan as written before the merge, kept as the
+reason for the order. "Main" there means the code on `main` before the merge;
+"merge" means `eval-harness` and `overnight` reaching `main` and deploying.
 
-## Order
+Every migration from 2026-09-26 on is now applied. The 16 older files
+(2026-04-13 to 2026-09-25) predate this list; whether the live database
+matches them is what F15 (schema drift) is about. A new migration goes in
+`supabase/migrations/` and gets a row here until it is applied.
+
+## Order (as applied)
 
 | # | File | What it does | When |
 |---:|---|---|---|
@@ -24,18 +37,18 @@ Vercel serves today. "Merge" means `eval-harness` and `overnight` reaching
 | 8 | `20260930200000_firm_usage_server_owned.sql` | F7: members can no longer write `firm_usage` (trial dates, plan); the browser creates the trial row with `cb_ensure_firm_usage()` and counts a close with `cb_record_close_used()`. | **After the merge, as soon as it deploys.** Before it, main breaks: its browser writes to `firm_usage` would be refused, so closes stop being counted, and signup fails if the firm wasn't already created by the signup trigger (`src/lib/db.ts:314` on main). After the merge but before this runs, the new code works, but it counts closes only through `cb_record_close_used()`, so closes used are not saved (the free-tier limit isn't enforced) until it is applied. |
 
 Steps 1 to 6 don't depend on each other. This order is by exposure: step 1
-guards OAuth tokens whose live protection is unknown; steps 3 to 6 are low
+guards OAuth tokens whose live protection was unknown; steps 3 to 6 are low
 findings.
 
-## Before and after
+## Checks
 
-- **Before step 1:** run `supabase/checks/open_findings_check.sql` (read-only).
-  It shows whether `qbo_connections` already has RLS, subscriptions with no
-  firm (they lose access after step 2), users in more than one firm (step 5
-  changes which firm `cb_firm_id()` picks for them), and SVGs in
-  `brand-assets` (step 6).
-- **After each:** the same file has a check per finding (policy lists,
-  function definition, trigger name, bucket types).
+`supabase/checks/open_findings_check.sql` (read-only) has a check per finding:
+policy lists, function definition, trigger name, bucket types. It also lists
+subscriptions with no firm (invisible to signed-in users since step 2), users
+in more than one firm (step 5 changed which firm `cb_firm_id()` picks for
+them) and SVGs still stored in `brand-assets` (step 6 doesn't delete them).
+Run it to confirm the live state; its results from 2026-10-01 are not
+recorded in the repo.
 
 ## Tested how
 
@@ -48,7 +61,7 @@ editor doesn't record what ran, so a later `supabase db push` would run them
 again. This shows the SQL runs on Postgres; it doesn't show the live
 database's state.
 
-## Not covered by any migration
+## Still open: not covered by any migration
 
 F5's consent gap (a user can be added to a firm without accepting; needs an
 invitation flow), F13 (membership-only policies on hidden features), F16 (user
