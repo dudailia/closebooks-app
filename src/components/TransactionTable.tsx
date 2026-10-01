@@ -137,7 +137,7 @@ function ConfirmModal({ count, remaining, onConfirm, onCancel }: { count: number
 
 export default function TransactionTable({
   initialTransactions, chartOfAccounts, onTransactionsChange,
-  recurringIds, onAudit, auditEvents = [], highlightIds,
+  recurringIds, onAudit, auditEvents = [],
 }: Props) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions)
   const [activeTab, setActiveTab]       = useState<FilterTab>('all')

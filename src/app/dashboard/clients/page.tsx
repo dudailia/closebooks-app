@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import HealthPill from '@/components/health/HealthPill'
 import type { HealthBreakdown } from '@/lib/health/scoreClient'
 import Link from 'next/link'

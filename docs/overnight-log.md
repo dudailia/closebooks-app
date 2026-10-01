@@ -173,7 +173,7 @@ Branch: `overnight`, created from `eval-harness` at `8f357bcf`.
 - Task 9 (charts): unified, not renamed. `src/lib/coaTemplates.ts` now holds
   the Standard Small Business (34), E-commerce (46) and Professional Services
   (44) templates; New Close and `/get-started` both read it. Choice: onboarding
-  also loses its own 14-to-16-account E-commerce and Professional Services
+  also loses its own E-commerce (13 accounts) and Professional Services (14)
   charts (same names, different accounts as New Close), so a client set up in
   onboarding gets the same chart as one set up in New Close; its Restaurant
   chart stays (no clash). The demo's 29-account chart keeps its accounts
@@ -184,3 +184,12 @@ Branch: `overnight`, created from `eval-harness` at `8f357bcf`.
   `src/lib/__tests__/coaTemplates.test.ts` (chart equals the eval CSV, unique
   codes, no other "Standard Small Business" chart in `src/`). Not covered by
   e2e: `/get-started` (typecheck and build only).
+- Task 10 (lint, core path only): 112 warnings to 108. Removed four unused
+  names: `useMemo` (`src/app/dashboard/clients/page.tsx`), `deleteJob` and
+  `ClientCloseStatus` (`src/app/dashboard/page.tsx`), and the unused
+  `highlightIds` prop destructure in `src/components/TransactionTable.tsx` (the
+  review page still passes it; the table never read it). Left alone on
+  purpose: the `react-hooks/exhaustive-deps` warning in
+  `src/app/dashboard/clients/[clientId]/page.tsx:314` (adding `jobs` would
+  change when the effect runs, so it is a behaviour change), and warnings in
+  hidden features (bank-rec, copilot). Tests, typecheck, build, e2e pass.
