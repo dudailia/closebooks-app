@@ -273,3 +273,19 @@ command was missing `DEMO_MODE=true`, without which `/api/categorize` answers
   `src/app/dashboard/clients/[clientId]/page.tsx:314` (adding `jobs` would
   change when the effect runs, so it is a behaviour change), and warnings in
   hidden features (bank-rec, copilot). Tests, typecheck, build, e2e pass.
+
+## Morning follow-up, 2026-10-01
+
+- Strict figures added next to every lenient one (facts.md, technical
+  overview, likely questions). New `eval/strict-errors-cli.ts` (no API calls)
+  writes `eval/results/strict-errors.md`; `learn-plan.md` now has strict
+  wrong auto-approvals (26 to 23).
+- Fixed: bulk approve relabelled AI and rule approvals as the reviewer's. An
+  edited row now stays `edited` when approved again (tests updated to match).
+- Fixed: the setState-during-render warning. New `npm run e2e:dev` checks it in
+  dev mode; it fails on the old code.
+- Recorded: approved_by and F1 migrations applied 2026-09-30.
+- `docs/migrations-to-apply.md`: 8 unapplied; F7 must wait for the merge.
+  Found while writing it: until F7 runs, the branch code doesn't save the close
+  count (it uses the function F7 creates), so rls-audit.md's "works with or
+  without" was corrected.
