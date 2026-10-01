@@ -35,3 +35,12 @@ Branch: `overnight`, created from `eval-harness` at `8f357bcf`.
   20 of 274 (7.3%) in `eval/results/threshold-sweep.md`. Not added to
   facts.md (your call). Line numbers are for this branch before tasks 5 to 10;
   later code tasks may shift some.
+- Task 2 (`docs/demo-script.md`): written by a sub-agent against `main`'s code
+  (the live app), spot-checked. Choices: the script uses a 60-row cut of
+  `eval/data/synthetic_upload.csv`, because on `main` batches run one at a
+  time and the measured Sonnet 4.6 median (1.15 s per row) puts 292 rows at
+  about 336 s against the 120 s route limit (arithmetic, not a timed run).
+  Demo risks it found on `main`: rules load and apply at the same time on the
+  review page (fixed on `eval-harness`), the older vendor key may keep ids so a
+  saved rule matches nothing, the Report button's `window.open` after `await`
+  can be blocked as a pop-up, clients matched by name, 5 free closes per firm.
