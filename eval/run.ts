@@ -14,6 +14,10 @@
 //                      stops cleanly and the finished part is saved.
 //   --ledger <path>    spend ledger shared across invocations
 //                      (default eval/results/spend-ledger.json)
+//   --prompt <name>    a system-prompt variant from eval/prompts/variants.ts
+//                      (default: the app's prompt)
+//   --months <list>    only rows from these months, e.g. 2026-07,2026-08 (a time split)
+//   --cache            mark the system prompt and chart cacheable (the app doesn't)
 //
 // Calls the Anthropic API unless --fake is given. Reads ANTHROPIC_API_KEY from
 // the environment or .env.local.
@@ -27,6 +31,7 @@ import { Budget, budgetedClient } from './budget'
 import { loadChart, loadTruth, spreadSample, DATA_DIR, EVAL_DIR, ROOT_DIR } from './data'
 import { REVIEW_LABEL, type BatchTiming, type CallUsage, type Prediction, type Pricing, type TruthRow } from './metrics'
 import { renderReport, writeResults, type RawResults } from './report'
+import { applyPromptVariant } from './prompts/variants'
 
 interface Args {
   model: string | null
@@ -37,10 +42,13 @@ interface Args {
   fake: boolean
   budget: number | null
   ledger: string | null
+  prompt: string | null
+  months: string[] | null
+  cache: boolean
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { model: null, runs: 1, limit: null, labelledOnly: false, out: null, fake: false, budget: null, ledger: null }
+  const args: Args = { model: null, runs: 1, limit: null, labelledOnly: false, out: null, fake: false, budget: null, ledger: null, prompt: null, months: null, cache: false }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     const value = () => {
@@ -65,6 +73,13 @@ function parseArgs(argv: string[]): Args {
       args.budget = n
     }
     else if (a === '--ledger') args.ledger = value()
+    else if (a === '--prompt') args.prompt = value()
+    else if (a === '--months') {
+      const list = value().split(',').map((m) => m.trim()).filter(Boolean)
+      if (list.length === 0 || list.some((m) => !/^\d{4}-\d{2}$/.test(m))) throw new Error('--months takes YYYY-MM values separated by commas')
+      args.months = list
+    }
+    else if (a === '--cache') args.cache = true
     else throw new Error(`unknown option ${a}`)
   }
   return args
@@ -87,7 +102,9 @@ function git(cmd: string): string {
 const fakeClient = {
   messages: {
     create: async ({ messages }: { messages: Array<{ content: string }> }) => {
-      const count = (messages[0].content.match(/^\d+: date=/gm) ?? []).length
+      const c = messages[0].content as unknown
+      const text = typeof c === 'string' ? c : (c as Array<{ text?: string }>).map((b) => b.text ?? '').join('')
+      const count = (text.match(/^\d+: date=/gm) ?? []).length
       const items = Array.from({ length: count }, (_, index) => ({
         index, suggested_category: 'Miscellaneous Expense', suggested_account_code: '6300', confidence: 0.5, reasoning: 'fake',
       }))
@@ -118,7 +135,10 @@ async function main(): Promise<void> {
   const truth = loadTruth(truthPath)
   const chart = loadChart()
   const pricing = JSON.parse(readFileSync(`${EVAL_DIR}pricing.json`, 'utf8')) as Pricing
-  const pool = args.labelledOnly ? truth.filter((t) => t.trueCode) : truth
+  const inMonths = (t: TruthRow) => !args.months || args.months.includes(t.date.slice(0, 7))
+  const pool = (args.labelledOnly ? truth.filter((t) => t.trueCode) : truth).filter(inMonths)
+  if (pool.length === 0) throw new Error(`no rows in months ${args.months?.join(', ')}`)
+  const systemPrompt = args.prompt ? applyPromptVariant(engine.CATEGORIZE_SYSTEM_PROMPT, args.prompt) : undefined
   const rows = spreadSample(pool, args.limit)
   const months = new Set(truth.map((t) => t.date.slice(0, 7))).size
   const calls = args.runs * Math.ceil(rows.length / engine.BATCH_SIZE)
@@ -150,7 +170,7 @@ async function main(): Promise<void> {
   outer: for (let run = 0; run < args.runs; run++) {
     for (let b = 0; b * size < txs.length; b++) {
       const chunk = txs.slice(b * size, (b + 1) * size)
-      const result = await engine.categorizeTransactionsWithUsage(chunk, chart, [], { model, client: api as never })
+      const result = await engine.categorizeTransactionsWithUsage(chunk, chart, [], { model, client: api as never, systemPrompt, cache: args.cache })
       const billed = result.calls.filter((c) => !c.error?.startsWith('budget cap'))
       callLog.push(...billed.map((c) => ({ ...c, run, batchIndex: b })))
       if (budget?.refused) {
@@ -209,6 +229,9 @@ async function main(): Promise<void> {
       chartName: `Standard Small Business chart (${chart.length} accounts)`,
       budget: budget ? { capUsd: budget.capUsd, spentBeforeUsd, spentAfterUsd: budget.spentUsd } : null,
       cut,
+      promptVariant: args.prompt,
+      months: args.months,
+      cache: args.cache,
     },
     chart, rows, predictions, calls: callLog, batches: batchLog, pricing,
   }

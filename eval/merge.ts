@@ -13,6 +13,11 @@ export function mergeRuns(raws: RawResults[]): RawResults {
     if (bad) throw new Error(`can't merge: ${key} differs (${String(first.meta[key])} vs ${String(bad.meta[key])})`)
   }
   for (const key of ['model', 'datasetSha256', 'autoApproveThreshold', 'batchSize', 'limit', 'labelledOnly'] as const) same(key)
+  // Runs saved before these fields existed used the app's prompt without caching.
+  for (const [key, norm] of [['promptVariant', (v: unknown) => v ?? null], ['cache', (v: unknown) => v ?? false]] as const) {
+    const bad = raws.find((r) => norm(r.meta[key]) !== norm(first.meta[key]))
+    if (bad) throw new Error(`can't merge: ${key} differs (${String(norm(first.meta[key]))} vs ${String(norm(bad.meta[key]))})`)
+  }
   const ids = first.rows.map((r) => r.id).join('\n')
   if (raws.some((r) => r.rows.map((x) => x.id).join('\n') !== ids)) throw new Error("can't merge: runs sent different rows")
 

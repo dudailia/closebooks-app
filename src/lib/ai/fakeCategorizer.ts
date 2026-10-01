@@ -84,7 +84,9 @@ export const fakeAnthropicClient = {
   messages: {
     async create(params: { messages: { role: string; content: unknown }[] }) {
       const content = params.messages[0]?.content
-      const prompt = typeof content === 'string' ? content : ''
+      const prompt = typeof content === 'string'
+        ? content
+        : Array.isArray(content) ? content.map((b: { text?: string }) => b.text ?? '').join('') : ''
       return {
         content: [{ type: 'text', text: fakeCategorize(prompt) }],
         usage: { input_tokens: 0, output_tokens: 0 },

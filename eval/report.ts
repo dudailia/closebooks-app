@@ -37,6 +37,12 @@ export interface RunMeta {
   cut?: { run: number; rowsDone: number; rowsPlanned: number } | null
   /** Set by eval/merge-cli.ts: the separately saved runs pooled into this one. */
   mergedFrom?: string[]
+  /** --prompt: the system-prompt variant (eval/prompts/variants.ts); absent = the app's prompt. */
+  promptVariant?: string | null
+  /** --months: only rows from these months (YYYY-MM) were sent. */
+  months?: string[] | null
+  /** --cache: the system prompt and chart were marked cacheable. */
+  cache?: boolean
 }
 
 /** "100-row subset" for --limit runs, plus "cut by budget cap" when stopped early. */
@@ -44,6 +50,9 @@ export function runLabel(meta: RunMeta, rowsSent: number): string {
   const parts: string[] = []
   if (meta.limit !== null) parts.push(`${rowsSent}-row subset`)
   if (meta.cut) parts.push('cut by budget cap')
+  if (meta.promptVariant) parts.push(`prompt ${meta.promptVariant}`)
+  if (meta.months && meta.months.length > 0) parts.push(`months ${meta.months.join('+')}`)
+  if (meta.cache) parts.push('cache on')
   return parts.join(', ')
 }
 
@@ -106,7 +115,8 @@ export function renderReport(raw: RawResults): string {
   const m = raw.meta
   const names = new Map(raw.chart.map((a) => [a.code, a.name]))
   const label = (code: string) => (names.has(code) ? `${code} ${names.get(code)}` : code === '(none)' ? '(no prediction)' : `${code} (not in chart)`)
-  const partial = s.scoredRows < m.datasetLabelledRows
+  // A --months run is a deliberate subset, flagged by its own banner, not "partial".
+  const partial = s.scoredRows < m.datasetLabelledRows && !(m.months && m.months.length > 0)
   const runsText = `${m.runs} run${m.runs === 1 ? '' : 's'}` + (m.cut ? ` (run ${m.cut.run + 1} cut short by the budget cap)` : '')
   const scope = `${s.scoredPredictions} scored predictions (${s.scoredRows} rows with an account label, ${runsText})` +
     (s.reviewRows ? ` (the ${s.reviewRows} REVIEW rows are excluded here; see "Unknowable from the bank line")` : '')
@@ -125,6 +135,9 @@ export function renderReport(raw: RawResults): string {
       `${f.failed} of ${f.total} API calls failed${f.topError ? `; most common error (${f.topCount}×): \`${f.topError}\`` : ''}. ` +
       `Those rows count as wrong and as sent to review; they say nothing about the model's accounting.`, '')
   }
+  if (m.promptVariant) p(`> **PROMPT VARIANT \`${m.promptVariant}\`**: not the app's prompt (eval/prompts/variants.ts).`, '')
+  if (m.months && m.months.length > 0) p(`> **MONTHS ${m.months.join(', ')} ONLY**: a time split, not the whole dataset.`, '')
+  if (m.cache) p(`> **PROMPT CACHING ON**: system prompt and chart marked cacheable; the app sends no cache_control. Batches ran one at a time.`, '')
   if (m.cut) {
     p(`> **CUT BY BUDGET CAP: run ${m.cut.run + 1} of ${m.runs} stopped after ${m.cut.rowsDone} of ${m.cut.rowsPlanned} rows.** ` +
       `The rest were never sent. Numbers below cover only the finished part.`, '')

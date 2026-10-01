@@ -94,16 +94,22 @@ interface MessagesLike {
   messages: { create: (params: never) => Promise<unknown> }
 }
 
-type CreateParams = { model: string; system?: string; messages: Array<{ content: unknown }> }
+type CreateParams = { model: string; system?: unknown; messages: Array<{ content: unknown }> }
 
 /** A client that checks the budget before each attempt and records what it cost. */
 export function budgetedClient<T extends MessagesLike>(inner: T, budget: Budget, price: ModelPrice, label: string): T {
   return {
     messages: {
       create: async (params: CreateParams) => {
-        const chars = (params.system ?? '').length +
-          params.messages.reduce((s, m) => s + (typeof m.content === 'string' ? m.content.length : JSON.stringify(m.content).length), 0)
-        budget.check(worstCaseAttemptUsd(chars, price))
+        const size = (v: unknown) => (typeof v === 'string' ? v.length : JSON.stringify(v ?? '').length)
+        const chars = size(params.system) + params.messages.reduce((s, m) => s + size(m.content), 0)
+        // A request with cache_control may be billed as a cache write, which costs
+        // more than plain input, so the worst case uses the write price.
+        const cached = JSON.stringify(params).includes('"cache_control"')
+        const worstPrice = cached && price.cache_write_5m != null && price.cache_write_5m > (price.input ?? 0)
+          ? { ...price, input: price.cache_write_5m }
+          : price
+        budget.check(worstCaseAttemptUsd(chars, worstPrice))
         const res = (await inner.messages.create(params as never)) as { usage?: Usage }
         const u = res.usage ?? {}
         budget.record({

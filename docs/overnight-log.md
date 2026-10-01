@@ -148,3 +148,25 @@ Branch: `overnight`, created from `eval-harness` at `8f357bcf`.
   Choice: `@anthropic-ai/sdk` 0.82 to 0.91.1 looks like a minor bump but npm
   treats a 0.x minor as breaking (outside `^0.82.0`), and its advisory is in
   the memory-tool helper the app doesn't use, so I listed it as a proposal.
+- Task 8 (`docs/next-experiments.md`): both experiments are runnable, not
+  just described. Added `systemPrompt` and `cache` options to the engine (off
+  by default; a test checks the default request is unchanged and the cached
+  request carries the same text), prompt variants as find-and-replace edits
+  (`eval/prompts/variants.ts`, variant `ar-liabilities`), and `--prompt`,
+  `--months`, `--cache` on `eval/run.ts`. Reports, comparisons and
+  `merge-cli.ts` label or refuse mixed runs. All 11 commands in the doc were
+  run with `--fake`. Estimates: (a) about $1.11 (cap $1.50), (b) about $1.32
+  (cap $1.60). Choices and findings:
+  - (a) is measured on July to August after tuning only on June, but I say in
+    the doc that the error types were found on all three months, so the split
+    only protects the wording, not the choice of what to fix. It can move 28 of
+    188 test rows, so "no clear difference" is a likely result.
+  - (b): the eval sends batches one at a time, so it measures the warm-cache
+    case. In the app, 4 batches start at once and none can read a cache still
+    being written, so for a 97-row statement caching is about break-even
+    (arithmetic in the doc). Output is about two thirds of the cost.
+    Sonnet 5.5's minimum cacheable length isn't in the API reference I have;
+    step 0 checks for $0.05.
+  - Fixed on the way: the budget cap's worst-case estimate measured an array
+    system prompt as 1 character and didn't price cache writes; and a
+    month-filtered report was labelled "PARTIAL RUN".
