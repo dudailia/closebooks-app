@@ -25,7 +25,7 @@ History of the overnight session (CTO-call docs, e2e, client-by-id, migrations, 
 - **Prompt hygiene:** text fields go through `sanitizePromptField` (one line, escaped, descriptions ≤ 200 chars) and are labelled as data, not instructions. The saved eval runs predate the label.
 - **Replies:** `categorize.ts` reads text blocks and ignores thinking blocks; an unreadable reply is retried once, and network errors up to 3 times. `categorizeTransactionsWithUsage()` reports tokens and latency.
 - **From before (`je-fix`, `demo-hide`):** balanced journal entries per approved transaction (`src/lib/autopilot/journalEntries.ts`, spec `docs/engine/journal-entries.md`), JE CSV, and a journal section in the close report; splits and `categorizationSource` persisted; approve keeps the reviewer's account.
-- **Hidden features:** their API routes 404 (middleware allowlist in `src/lib/features.ts`, 13 routes served) and `/portal/*` 404s.
+- **Hidden features:** their API routes 404 (middleware allowlist in `src/lib/features.ts`, 12 routes served) and `/portal/*` 404s.
 - **Gate:** `npm test` (vitest, 187 tests, no API calls; includes migrations on PGlite), `npm run typecheck`, `npm run build` (type-checks and lints), `npm run e2e` (Playwright core path in demo mode with the fake model; outside requests blocked).
 
 ## Migrations
@@ -60,7 +60,7 @@ Every migration from 2026-09-26 on is applied. `supabase/checks/open_findings_ch
 
 ## Open issues
 
-- **Security (`docs/engine/rls-audit.md`, section 0):** F1, F7, F8, F9, F10, F14, F15 (`qbo_connections`) and most of F5 are fixed by the applied migrations (above). Not covered by any migration: F5's consent gap (needs an invitation flow), F13, F16, and the rest of F15 (`inbox-attachments` bucket, `portal_tokens` drift). `/api/notify` (called after upload) forwards the client name to Formspree without auth.
+- **Security (`docs/engine/rls-audit.md`, section 0):** F1, F7, F8, F9, F10, F14, F15 (`qbo_connections`) and most of F5 are fixed by the applied migrations (above). Not covered by any migration: F5's consent gap (needs an invitation flow), F13, F16, and the rest of F15 (`inbox-attachments` bucket, `portal_tokens` drift). `/api/notify` is off (404, removed from the allowlist and from its three callers, 2026-10-01): it forwarded the client name to Formspree without auth.
 - **Categorisation errors the threshold can't catch:** deposits go to revenue, so client payments land on 4100 instead of 1100 AR, plus the Stripe and Gusto errors above. A correction is sent to the model as a hint at the next upload, but with no saved rule the row can still come back below 0.93 and stay pending (seen on the preview with a Stripe row).
 - **Long uploads run in one request**, with no queue and no resume; a failed request saves nothing (`upload/page.tsx`). Size limit above.
 - **PDF path** still on Sonnet 4.6, without the thinking-block handling; unmeasured.

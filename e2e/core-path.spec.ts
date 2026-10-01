@@ -87,9 +87,10 @@ async function startClose(page: Page, file: string, rows: number) {
 }
 
 test('core path: two closes, a rule, balanced journal entries, report', async ({ page, context }) => {
-  // Nothing may leave this machine. The notify route would forward to Formspree,
-  // so the browser's call to it is answered here instead.
+  // Nothing may leave this machine. /api/notify (which forwarded to Formspree)
+  // is off and nothing may call it; any call is recorded and fails the test.
   const external: string[] = []
+  const notifyCalls: string[] = []
   await context.route('**/*', (route) => {
     const url = new URL(route.request().url())
     if (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.protocol === 'blob:' || url.protocol === 'data:') {
@@ -98,7 +99,10 @@ test('core path: two closes, a rule, balanced journal entries, report', async ({
     external.push(url.href)
     return route.abort()
   })
-  await context.route('**/api/notify', (route) => route.fulfill({ json: { ok: true } }))
+  await context.route('**/api/notify', (route) => {
+    notifyCalls.push(route.request().url())
+    return route.fulfill({ status: 404, json: { error: 'Not found' } })
+  })
 
   // 1. Enter the demo (no Supabase: no sign-in, the dashboard opens directly).
   await page.goto('/dashboard')
@@ -267,4 +271,5 @@ test('core path: two closes, a rule, balanced journal entries, report', async ({
   await shot(page, '12-clients-closes-by-id')
 
   expect(external, 'no request left localhost').toEqual([])
+  expect(notifyCalls, 'nothing called /api/notify').toEqual([])
 })

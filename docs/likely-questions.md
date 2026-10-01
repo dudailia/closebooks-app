@@ -2,10 +2,9 @@
 
 Forty questions a CTO at an AI accounting company would ask about the
 CloseBooks engine, grouped by topic. Each answer is short and points to the
-code or document that backs it. Answers describe the live app: `eval-harness`
-and `overnight` were merged to `main` and production deployed from `041a6ef`
-on 2026-10-01 (Claude Sonnet 5.5 at 0.93, 4 batches at once, rules first,
-clients by id), with every migration in
+code or document that backs it. Answers describe the live app, deployed from
+commit `041a6ef` on 2026-10-01 (Claude Sonnet 5.5 at 0.93, 4 batches at once,
+rules first, clients by id), with every migration in
 [migrations-to-apply.md](./migrations-to-apply.md) applied the same day.
 Line numbers are for `main` at `041a6ef`.
 
@@ -15,9 +14,10 @@ Ground rules for every answer:
   and latency number comes from one **synthetic** labelled dataset (292 rows,
   one fictional business, one checking account, one 34-account chart). Numbers
   are copied from [facts.md](./facts.md), which names the source file for each.
-  The one exception is a single timed live run on the preview deployment
-  (292 rows in about 40 s; 128 of 292 auto-approved), also in facts.md and
-  labelled as one run.
+  The exceptions are live runs, each labelled as one run: a timed run on the
+  preview (292 rows in about 40 s; 128 of 292 auto-approved, in facts.md) and
+  the owner's 8-row close after the production deploy (6 auto-approved, 2
+  pending).
 - "Lenient" accepts the policy alternates in `eval/data/vendors.csv`;
   "strict" accepts only the primary label (definitions in facts.md).
 - Where the honest answer is "I don't know yet", I say so and say how I'd
@@ -38,7 +38,7 @@ Contents: [Architecture](#architecture) (1-5), [Data](#data-and-storage)
 ### 1. Walk me through one statement from upload to journal entries.
 
 The CSV is parsed in the browser (`src/lib/parseCSV.ts:157`). Firm rules run
-first (`src/app/dashboard/upload/page.tsx:153-154`); matched rows are
+first (`src/app/dashboard/upload/page.tsx:152-153`); matched rows are
 approved, credited to the rule, and skip the model. The rest go to `POST /api/categorize`, which calls
 `categorizeTransactions` (`src/lib/categorize.ts:347`): batches of 20, up to 4
 at once, one Claude call per batch. Each suggestion is checked against the
@@ -52,10 +52,10 @@ page, and exported. Journal entries are built at export time by
 
 It started as a client-first demo with an in-memory store, and the
 orchestration stayed there: rules, the categorise call, merging and saving
-all run in `src/app/dashboard/upload/page.tsx:151-208`. The model call itself
+all run in `src/app/dashboard/upload/page.tsx:150-201`. The model call itself
 is server-side, so the API key never reaches the browser. The cost is that
 nothing durable happens if the tab closes mid-upload, and saving is
-fire-and-forget (`upload/page.tsx:188`). For a real product I'd move the
+fire-and-forget (`upload/page.tsx:187`). For a real product I'd move the
 pipeline into a server job (see question 38).
 
 ### 3. Why one model call per 20 rows instead of one per row or one per statement?
@@ -81,7 +81,7 @@ failure class. I'd switch and confirm with the existing mocked-client tests
 A small part. `DEMO_HIDE = true` (`src/lib/features.ts:10`) hides everything
 outside the core path: the pages redirect, and `src/middleware.ts:55-60`
 returns 404 for any API route not in `VISIBLE_API_ROUTES`
-(`src/lib/features.ts:44-58`, 13 routes). Portal, inbox, Plaid, copilot,
+(`src/lib/features.ts:44-57`, 12 routes). Portal, inbox, Plaid, copilot,
 autopilot and the QuickBooks push are all off. The engine is
 `categorize.ts`, `coaValidation.ts`, `review/rules.ts`, `review/vendor.ts`
 and `autopilot/journalEntries.ts`.
@@ -92,7 +92,7 @@ and `autopilot/journalEntries.ts`.
 
 Per row: date, description, amount and direction. Per batch: the whole chart
 (code, name, type) and up to 10 recent corrections
-(`src/lib/categorize.ts:103-125`, `src/app/dashboard/upload/page.tsx:158`).
+(`src/lib/categorize.ts:103-125`, `src/app/dashboard/upload/page.tsx:157`).
 The client name is accepted by the route but not put in the prompt
 (`src/app/api/categorize/route.ts:48-65`). Text fields are made single-line,
 escaped and capped at 200 characters (`src/lib/promptSanitize.ts:17`,
@@ -114,7 +114,7 @@ corrections and rules; table list in [architecture.md](./architecture.md)
 section 2). `dbSaveJob` writes the in-memory cache first, then Supabase, and
 swallows every Supabase error (`src/lib/db.ts:150-205`, the silent return at
 `:178` and the empty catch at `:202-204`). The upload page doesn't await it
-(`upload/page.tsx:188`). So if the write fails, the reviewer sees the job,
+(`upload/page.tsx:187`). So if the write fails, the reviewer sees the job,
 works on it, and loses it on reload with no warning. That is a real gap.
 The fix is to await the save and show an error.
 
@@ -366,8 +366,8 @@ could reset their own trial (F7). Hidden features' routes now return 404. The
 F1 migration was applied on 2026-09-30, so the bucket is closed. Eight more,
 tested on PGlite, were applied on 2026-10-01 in the order in
 [migrations-to-apply.md](./migrations-to-apply.md): seven (F15, F8, F10, F14,
-F5, F9 and `jobs.client_id`) before the merge, and F7 right after it deployed,
-because the old code wrote trial state from the browser. The owner applied
+F5, F9 and `jobs.client_id`) before the production deploy, and F7 right after
+it, because the previous code wrote trial state from the browser. The owner applied
 them in the Supabase SQL editor; the repo can't see the live database, so
 that is as reported. Still open: F5's consent gap (no invitation flow), F13,
 F16 and the rest of F15 (rls-audit.md section 0). Those are reachable by
@@ -403,17 +403,20 @@ least checked against the chart.
 
 ### 34. Does anything leave the system that a client wouldn't expect?
 
-Yes: after each upload, `/api/notify` forwards an event with the **client
-name** and row counts to a Formspree form, and the route has no
-authentication (`src/app/api/notify/route.ts:3-35`,
-`src/app/dashboard/upload/page.tsx:201-206`). It was an owner notification for
-the demo. It should be removed or reduced to counts before real data.
+Not any more. Until 2026-10-01, after each upload `/api/notify` forwarded an
+event with the **client name** and row counts to a Formspree form, with no
+authentication. It was an owner notification for the demo. Nothing in the
+core path needed it, so the calls are removed and the route is off the
+allowlist: it returns 404 (`src/lib/features.ts:44-57`, checked in
+`src/lib/__tests__/features.test.ts`), and the e2e fails if the browser calls
+it. What still leaves is what the categorisation needs: rows and chart to
+Anthropic, data to Supabase (architecture.md section 2).
 
 ### 35. Two clients with the same name?
 
 They used to get mixed up: jobs stored only `client_name`. Now New Close
 step 1 picks a client from a list and the job stores its id
-(`src/app/dashboard/upload/page.tsx:175`); matching is by id
+(`src/app/dashboard/upload/page.tsx:174`); matching is by id
 (`src/lib/clientJobs.ts`), and the e2e test checks two same-name clients keep
 separate closes. The `jobs.client_id` migration was applied on 2026-10-01,
 and its backfill (run again after the deploy) gave older jobs an id where
@@ -430,7 +433,7 @@ Network and API errors are retried up to 3 attempts with 1 s and 2 s back-off
 (`:16`, `:331`). If a batch still fails, its 20 rows are flagged with no
 suggestion and the rest of the statement continues (`:387-389`). If the
 whole request fails, the upload page shows an error and nothing is saved
-(`upload/page.tsx:209-212`).
+(`upload/page.tsx:202-205`).
 
 ### 37. What's the largest statement you can process?
 

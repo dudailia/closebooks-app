@@ -6,7 +6,6 @@ import { getRecentCorrections } from '@/lib/corrections'
 import { saveJob } from '@/lib/storage'
 import { dbSaveClient } from '@/lib/db'
 import { logActivity } from '@/lib/activity'
-import { notify } from '@/lib/notify'
 import { parseTransactionCSV } from '@/lib/parseCSV'
 import type { ChartOfAccounts, CategorizationJob, Transaction } from '@/types'
 import { CHART_TEMPLATES } from '@/lib/coaTemplates'
@@ -404,12 +403,6 @@ export default function GetStartedPage() {
         description: `Started categorization for ${clientName} — ${data.transactions.length} transactions`,
         clientName,
         jobId,
-      })
-
-      notify('get_started_completed', {
-        clientName,
-        template,
-        transactionCount: data.transactions.length,
       })
 
       setProgress(100)

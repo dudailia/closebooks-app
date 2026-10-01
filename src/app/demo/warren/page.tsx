@@ -1,9 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
 import Link from 'next/link'
 import AppFooter from '@/components/AppFooter'
-import { notify } from '@/lib/notify'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Warren's bookkeeping firm transactions (March 2026)
@@ -214,18 +212,7 @@ function MiniNav() {
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
 
-let warrenDemoNotified = false
-
 export default function WarrenDemoPage() {
-  useEffect(() => {
-    if (warrenDemoNotified) return
-    warrenDemoNotified = true
-    notify('Warren viewed his demo page', {
-      page: '/demo/warren',
-      time: new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }),
-    })
-  }, [])
-
   return (
     <div className="min-h-screen flex flex-col" data-theme="dark" style={{ backgroundColor: '#080808' }}>
       <MiniNav />

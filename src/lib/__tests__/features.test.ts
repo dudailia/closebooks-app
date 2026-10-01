@@ -34,7 +34,8 @@ describe('API allowlist (demo build)', () => {
 
   it('blocks the routes named in the RLS audit', () => {
     for (const p of ['/api/portal/ingest', '/api/portal/tokens', '/api/portal/documents', '/api/inbox/webhook',
-      '/api/integrations/plaid/webhooks', '/api/integrations/quickbooks/push', '/api/firm/logo', '/api/clients/health']) {
+      '/api/integrations/plaid/webhooks', '/api/integrations/quickbooks/push', '/api/firm/logo', '/api/clients/health',
+      '/api/notify']) {
       expect(isApiRouteVisible(p)).toBe(false)
     }
   })

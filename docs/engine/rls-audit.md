@@ -10,7 +10,7 @@ Changes from `eval-harness` (commits `9a27a7ad` to `72f2b51f`) and `overnight`, 
 
 - **Hidden features are off at the back end.** `src/middleware.ts` now runs on
   `/api/*` and returns 404 for every API route not in `VISIBLE_API_ROUTES`
-  (`src/lib/features.ts`): 13 routes served, 87 blocked. `/portal/*` pages
+  (`src/lib/features.ts`): 12 routes served, 88 blocked (13 and 87 until `/api/notify` was taken off on 2026-10-01; it forwarded the client name to Formspree without auth). `/portal/*` pages
   return 404 (`PORTAL_ENABLED = false`). `src/lib/__tests__/features.test.ts`
   walks `src/app/api` and checks that exactly the allowlist is served.
 - **Every migration in this document is applied** (owner, Supabase SQL

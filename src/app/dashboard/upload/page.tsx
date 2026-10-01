@@ -10,7 +10,6 @@ import { dbSaveClient, dbSaveJob } from '@/lib/db'
 import { getClients, getJobsForClient } from '@/lib/storage'
 import { getRecentCorrections } from '@/lib/corrections'
 import { applyRulesBeforeAI, ensureRulesLoaded, mergeCategorized } from '@/lib/review/rules'
-import { notify } from '@/lib/notify'
 import { logActivity } from '@/lib/activity'
 import { canStartClose, recordCloseUsed, getTrialStatus } from '@/lib/freeTrial'
 import { startSession, endSession } from '@/lib/timeTracking'
@@ -197,12 +196,6 @@ function CategorizeStep({
         description: `New close started for ${clientName}`,
         clientName,
         jobId: job.id,
-      })
-      notify('Categorization completed', {
-        client: clientName,
-        transactions: categorized.length,
-        auto_approved: job.auto_categorized,
-        flagged: job.flagged,
       })
       endSession(sessionId)
       router.push(`/dashboard/review/${job.id}`)

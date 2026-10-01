@@ -48,7 +48,6 @@ export const VISIBLE_API_ROUTES: readonly string[] = [
   '/api/parse-pdf',         // PDF upload
   '/api/export',            // review: CSV and journal-entry export
   '/api/report',            // review: close report
-  '/api/notify',            // upload: "categorization completed" notice to the owner
   '/api/demo/categorize',   // public /demo page
   '/api/subscription',      // subscription state (SubscriptionContext)
   '/api/stripe/checkout',   // pricing page
