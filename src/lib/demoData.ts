@@ -2,7 +2,9 @@ import type { Transaction, ChartOfAccounts } from '@/types'
 import { AUTO_APPROVE_THRESHOLD } from '@/lib/ai/models'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Chart of Accounts — Standard Small Business
+// Demo chart (29 accounts): the sample chart for the public /demo page and
+// /api/demo/categorize only. Not the Standard Small Business template that
+// New Close offers (src/lib/coaTemplates.ts); DEMO_TRANSACTIONS use these codes.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const DEMO_COA: ChartOfAccounts[] = [

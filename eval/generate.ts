@@ -20,7 +20,7 @@ const PERIOD_END = '2026-08-31'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const DATA = fileURLToPath(new URL('./data/', import.meta.url))
-const CHART_SOURCE = `${ROOT}src/components/ChartOfAccountsUpload.tsx`
+const CHART_SOURCE = `${ROOT}src/lib/coaTemplates.ts`
 
 // ─── CSV ──────────────────────────────────────────────────────────────────────
 

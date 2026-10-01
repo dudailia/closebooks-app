@@ -41,7 +41,7 @@ flowchart TD
 ## 2. What data is loaded, where it lives, what leaves
 
 **Loaded by the user:** a bank statement (CSV or PDF), and a chart of
-accounts (a built-in template or an uploaded CSV, `src/components/ChartOfAccountsUpload.tsx`).
+accounts (a built-in template from `src/lib/coaTemplates.ts`, or an uploaded CSV, `src/components/ChartOfAccountsUpload.tsx`).
 Clients are created by hand on the Clients page.
 
 **Stored in Supabase** (when configured; RLS is reviewed in
@@ -265,10 +265,13 @@ the journal-entry CSV export and the close report:
   column needs `supabase/migrations/20261001200000_jobs_client_id.sql`
   (written, not applied); until then saves drop the column and new jobs fall
   back to name matching after a reload.
-- **Three charts named "Standard Small Business":** the 34-account upload
-  template (`src/components/ChartOfAccountsUpload.tsx:85`, the one evaluated),
-  a 16-account onboarding chart (`src/app/get-started/page.tsx:62`) and the
-  29-account demo chart (`src/lib/demoData.ts:5`).
+- **Three charts named "Standard Small Business"** (fixed on branch
+  `overnight`): New Close and onboarding now both use the 34-account chart in
+  `src/lib/coaTemplates.ts` (the one evaluated; a test checks it equals
+  `eval/data/chart_of_accounts.csv`). The 29-account chart in
+  `src/lib/demoData.ts` is renamed "demo chart" and is used only by the public
+  `/demo` page. Onboarding's own E-commerce and Professional Services charts
+  were replaced by the New Close ones too; its Restaurant chart is unchanged.
 - **Email confirmation is off for the demo.** This is a Supabase dashboard
   setting and is not visible in the repo.
 - **`approved_by` column not yet applied.** Until

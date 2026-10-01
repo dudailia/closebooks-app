@@ -30,10 +30,10 @@ the categoriser or the Anthropic API.
 
 1. **Chart.** The chart is the app's "Standard Small Business" template, the
    34-account default on the New Close upload step. `generate.ts` reads it
-   directly from `src/components/ChartOfAccountsUpload.tsx` and stops if the
-   template changes shape. Note that `src/app/get-started/page.tsx` has a
-   different 16-account chart with the same name, used in onboarding. This
-   test set does not use it.
+   directly from `src/lib/coaTemplates.ts` and stops if the template changes
+   shape. New Close and onboarding (`src/app/get-started/page.tsx`) both use
+   that file, so there is one chart with this name (until 2026-10-01
+   onboarding had its own 16-account chart under the same name).
 2. **Vendor table.** `vendors.csv` was drafted with Claude's help, then
    **reviewed and corrected by hand** by the project owner. Each non-ambiguous
    vendor has exactly one correct account and a one-sentence `why`.

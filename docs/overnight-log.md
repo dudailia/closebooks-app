@@ -170,3 +170,17 @@ Branch: `overnight`, created from `eval-harness` at `8f357bcf`.
   - Fixed on the way: the budget cap's worst-case estimate measured an array
     system prompt as 1 character and didn't price cache writes; and a
     month-filtered report was labelled "PARTIAL RUN".
+- Task 9 (charts): unified, not renamed. `src/lib/coaTemplates.ts` now holds
+  the Standard Small Business (34), E-commerce (46) and Professional Services
+  (44) templates; New Close and `/get-started` both read it. Choice: onboarding
+  also loses its own 14-to-16-account E-commerce and Professional Services
+  charts (same names, different accounts as New Close), so a client set up in
+  onboarding gets the same chart as one set up in New Close; its Restaurant
+  chart stays (no clash). The demo's 29-account chart keeps its accounts
+  (`DEMO_TRANSACTIONS` and the demo's sample statuses use its codes) and is
+  renamed "demo chart" in its comment; the demo UI never showed the name.
+  The eval reads the chart from the new file; `node eval/generate.ts`
+  reproduces the dataset byte for byte. 3 tests in
+  `src/lib/__tests__/coaTemplates.test.ts` (chart equals the eval CSV, unique
+  codes, no other "Standard Small Business" chart in `src/`). Not covered by
+  e2e: `/get-started` (typecheck and build only).

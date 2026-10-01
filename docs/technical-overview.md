@@ -305,8 +305,9 @@ id stored as firm id in hidden features), and the rest of F15 (schema drift).
   store the client's id (`src/lib/clientJobs.ts`), but the column's migration
   (`20261001200000_jobs_client_id.sql`) is not applied, and older jobs still
   match by name.
-- **Three charts named "Standard Small Business"** with 34, 16 and 29
-  accounts. Only the 34-account one was evaluated.
+- **Charts.** Only the 34-account Standard Small Business chart was
+  evaluated. Until branch `overnight`, onboarding and the demo had other charts
+  under the same name; now one file holds it (`src/lib/coaTemplates.ts`).
 - **Prompt injection is reduced, not ruled out.** The model still reads bank
   text.
 - **The QuickBooks push** (hidden) posts every transaction to one default

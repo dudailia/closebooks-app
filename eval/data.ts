@@ -68,7 +68,7 @@ export function loadChart(): ChartAccount[] {
   const chart = readCsv(`${DATA_DIR}chart_of_accounts.csv`).map((r) => ({
     code: r.Code, name: r.Name, type: r.Type as ChartAccount['type'],
   }))
-  const src = readFileSync(`${ROOT_DIR}src/components/ChartOfAccountsUpload.tsx`, 'utf8')
+  const src = readFileSync(`${ROOT_DIR}src/lib/coaTemplates.ts`, 'utf8')
   const block = src.match(/const STANDARD_SMALL_BUSINESS[^=]*=\s*\[([\s\S]*?)\n\]/)?.[1] ?? ''
   const template = [...block.matchAll(/\{\s*code:\s*'([^']+)',\s*name:\s*(['"])(.+?)\2,\s*type:\s*'([^']+)'/g)]
     .map((m) => `${m[1]}|${m[3]}|${m[4]}`)

@@ -9,6 +9,7 @@ import { logActivity } from '@/lib/activity'
 import { notify } from '@/lib/notify'
 import { parseTransactionCSV } from '@/lib/parseCSV'
 import type { ChartOfAccounts, CategorizationJob, Transaction } from '@/types'
+import { CHART_TEMPLATES } from '@/lib/coaTemplates'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -58,56 +59,12 @@ const SAMPLE_TRANSACTIONS: RawTransaction[] = [
   { date: '2024-03-29', description: 'INSURANCE PREMIUM - BUSINESS LIABILITY', amount: 312.00, type: 'debit' },
 ]
 
+// Standard Small Business, E-commerce and Professional Services are the same
+// charts New Close offers (src/lib/coaTemplates.ts); Restaurant exists only here.
 const COA_TEMPLATES: Record<string, ChartOfAccounts[]> = {
-  'Standard Small Business': [
-    { code: '1000', name: 'Cash and Bank', type: 'asset' },
-    { code: '1200', name: 'Accounts Receivable', type: 'asset' },
-    { code: '2000', name: 'Accounts Payable', type: 'liability' },
-    { code: '3000', name: 'Owner Equity', type: 'equity' },
-    { code: '4000', name: 'Revenue', type: 'revenue' },
-    { code: '5000', name: 'Cost of Goods Sold', type: 'expense' },
-    { code: '6100', name: 'Payroll & Wages', type: 'expense' },
-    { code: '6200', name: 'Rent & Occupancy', type: 'expense' },
-    { code: '6300', name: 'Software & SaaS', type: 'expense' },
-    { code: '6400', name: 'Marketing & Advertising', type: 'expense' },
-    { code: '6500', name: 'Utilities', type: 'expense' },
-    { code: '6600', name: 'Office Supplies', type: 'expense' },
-    { code: '6700', name: 'Travel & Meals', type: 'expense' },
-    { code: '6800', name: 'Insurance', type: 'expense' },
-    { code: '6900', name: 'Professional Services', type: 'expense' },
-    { code: '7000', name: 'Miscellaneous', type: 'expense' },
-  ],
-  'Professional Services': [
-    { code: '1000', name: 'Cash and Bank', type: 'asset' },
-    { code: '1200', name: 'Accounts Receivable', type: 'asset' },
-    { code: '2000', name: 'Accounts Payable', type: 'liability' },
-    { code: '3000', name: 'Owner Equity', type: 'equity' },
-    { code: '4000', name: 'Consulting Revenue', type: 'revenue' },
-    { code: '4100', name: 'Retainer Revenue', type: 'revenue' },
-    { code: '6100', name: 'Payroll & Wages', type: 'expense' },
-    { code: '6200', name: 'Rent & Occupancy', type: 'expense' },
-    { code: '6300', name: 'Software & Tools', type: 'expense' },
-    { code: '6400', name: 'Business Development', type: 'expense' },
-    { code: '6500', name: 'Professional Development', type: 'expense' },
-    { code: '6600', name: 'Insurance', type: 'expense' },
-    { code: '6700', name: 'Travel & Entertainment', type: 'expense' },
-    { code: '7000', name: 'Miscellaneous', type: 'expense' },
-  ],
-  'E-commerce': [
-    { code: '1000', name: 'Cash and Bank', type: 'asset' },
-    { code: '1200', name: 'Accounts Receivable', type: 'asset' },
-    { code: '1300', name: 'Inventory', type: 'asset' },
-    { code: '2000', name: 'Accounts Payable', type: 'liability' },
-    { code: '3000', name: 'Owner Equity', type: 'equity' },
-    { code: '4000', name: 'Online Sales Revenue', type: 'revenue' },
-    { code: '5000', name: 'Cost of Goods Sold', type: 'expense' },
-    { code: '5100', name: 'Shipping & Fulfillment', type: 'expense' },
-    { code: '6100', name: 'Payroll & Wages', type: 'expense' },
-    { code: '6300', name: 'Platform & Software', type: 'expense' },
-    { code: '6400', name: 'Paid Advertising', type: 'expense' },
-    { code: '6500', name: 'Returns & Refunds', type: 'expense' },
-    { code: '7000', name: 'Miscellaneous', type: 'expense' },
-  ],
+  'Standard Small Business': CHART_TEMPLATES.standard.accounts,
+  'E-commerce': CHART_TEMPLATES.ecommerce.accounts,
+  'Professional Services': CHART_TEMPLATES.professional.accounts,
   'Restaurant': [
     { code: '1000', name: 'Cash and Bank', type: 'asset' },
     { code: '2000', name: 'Accounts Payable', type: 'liability' },
@@ -125,10 +82,10 @@ const COA_TEMPLATES: Record<string, ChartOfAccounts[]> = {
 }
 
 const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
-  'Standard Small Business': 'General-purpose for most service businesses',
-  'E-commerce': 'For online stores with COGS, fulfillment, and ad spend',
-  'Professional Services': 'Consulting, legal, accounting firms',
-  'Restaurant': 'Food cost, labor, occupancy optimized',
+  'Standard Small Business': `General-purpose for most service businesses · ${CHART_TEMPLATES.standard.accounts.length} accounts`,
+  'E-commerce': `For online stores with COGS, fulfillment, and ad spend · ${CHART_TEMPLATES.ecommerce.accounts.length} accounts`,
+  'Professional Services': `Consulting, legal, accounting firms · ${CHART_TEMPLATES.professional.accounts.length} accounts`,
+  'Restaurant': `Food cost, labor, occupancy optimized · ${COA_TEMPLATES['Restaurant'].length} accounts`,
 }
 
 const LOADING_PHASES = [
