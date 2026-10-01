@@ -278,10 +278,13 @@ files only; the live database was not inspected.
   firm (F8, code side).
 - Prompt fields are sanitised and labelled as data.
 
+**Applied in the database (2026-09-30):** the fix for the `portal-docs`
+bucket open to anon (F1, critical).
+
 **Written, not applied** (each closes a hole that the anon key can reach
-directly, which the middleware can't block): `portal-docs` bucket open to
-anon (F1, critical), members able to rewrite trial state (F7), the email match
-in the subscriptions policy (F8), and RLS on `qbo_connections` (F15).
+directly, which the middleware can't block): members able to rewrite trial
+state (F7), the email match in the subscriptions policy (F8), and RLS on
+`qbo_connections` (F15).
 
 **Also written, not applied** (branch `overnight`, tested on PGlite by
 `supabase/__tests__/migrations.test.ts`): role limits on adding members and a
@@ -338,5 +341,5 @@ id stored as firm id in hidden features), and the rest of F15 (schema drift).
    per vendor.
 5. **Move batching off the request path** (a queue or background job) and
    upload PDFs straight to storage.
-6. **Apply the written migrations** and add an invitation flow (the rest of
+6. **Apply the written migrations** ([migrations-to-apply.md](./migrations-to-apply.md)) and add an invitation flow (the rest of
    F5) before any real client data is loaded.

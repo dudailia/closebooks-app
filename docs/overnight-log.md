@@ -58,10 +58,11 @@ counting tokens is an API call.
 
 1. **Run the experiments?** About $1.11 for (a) and $1.32 for (b), each with
    a hard cap (`docs/next-experiments.md`). My expectation: (b) saves little.
-2. **Apply migrations?** 10 are written and not applied. From `eval-harness`:
-   F1 portal-docs bucket (critical), F7 trial state, F8 subscriptions, F15
-   qbo_connections, `transactions.approved_by`. From tonight:
-   `jobs.client_id`, F9, F10, F14, F5. I'd do F1 first.
+2. **Apply migrations?** (Update 2026-10-01: you had already applied F1 and
+   `transactions.approved_by` on 2026-09-30, so 8 remain; order in
+   `docs/migrations-to-apply.md`.) From `eval-harness`: F7 trial state, F8
+   subscriptions, F15 qbo_connections. From tonight: `jobs.client_id`, F9,
+   F10, F14, F5.
    Read-only checks first: `supabase/checks/open_findings_check.sql`.
 3. **F5 consent:** a user can still be added to a firm without accepting.
    Fixing it needs an invitation flow; do you want one?

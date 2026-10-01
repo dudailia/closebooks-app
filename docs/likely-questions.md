@@ -346,10 +346,13 @@ in the repo (rls-audit.md section 1).
 
 Sixteen findings (rls-audit.md section 3). The worst: the `portal-docs`
 bucket is readable and writable with the public anon key (F1), and members
-can reset their own trial (F7). Hidden features' routes now return 404, and
-migrations for F1, F7, F8 and part of F15 are written but **not applied**
-(rls-audit.md section 0). Until they're applied, F1 and F7 are open to anyone
-calling Supabase directly; the middleware can't block that.
+can reset their own trial (F7). Hidden features' routes now return 404. The
+F1 migration was applied on 2026-09-30, so the bucket is closed. Migrations
+for F7, F8, part of F15, and (written overnight) F5, F9, F10 and F14 are
+written but **not applied** (rls-audit.md section 0,
+[migrations-to-apply.md](./migrations-to-apply.md)). Until F7's is applied,
+anyone calling Supabase directly can reset a trial; the middleware can't block
+that.
 
 ### 32. A user who belongs to two firms: which firm's data do they see?
 

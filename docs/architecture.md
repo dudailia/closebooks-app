@@ -274,9 +274,11 @@ the journal-entry CSV export and the close report:
   were replaced by the New Close ones too; its Restaurant chart is unchanged.
 - **Email confirmation is off for the demo.** This is a Supabase dashboard
   setting and is not visible in the repo.
-- **`approved_by` column not yet applied.** Until
-  `supabase/migrations/20260930000000_transaction_approved_by.sql` runs, the
-  report falls back to the categorisation source and may say "not recorded".
+- **`approved_by` applied 2026-09-30.**
+  `supabase/migrations/20260930000000_transaction_approved_by.sql` was applied
+  in the Supabase SQL editor. Rows saved before it have no approver and the
+  report falls back to the categorisation source, which may say "not
+  recorded".
 - **Evaluation is synthetic only.** One fictional business, one chart, one
   checking account, clean imitation descriptions. Nothing has been measured
   on real bank data.

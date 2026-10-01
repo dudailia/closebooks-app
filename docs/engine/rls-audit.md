@@ -11,10 +11,16 @@ Changes on `eval-harness`, commits `9a27a7ad` to `72f2b51f`:
   (`src/lib/features.ts`): 13 routes served, 87 blocked. `/portal/*` pages
   return 404 (`PORTAL_ENABLED = false`). `src/lib/__tests__/features.test.ts`
   walks `src/app/api` and checks that exactly the allowlist is served.
-- **Two migrations written, not applied:**
-  `supabase/migrations/20260930100000_portal_docs_service_role_only.sql` (F1) and
-  `supabase/migrations/20260930200000_firm_usage_server_owned.sql` (F7). The
-  app code already works with them applied or not.
+- **F1 migration applied; F7 written, not applied.**
+  `supabase/migrations/20260930100000_portal_docs_service_role_only.sql` (F1)
+  was applied by the owner in the Supabase SQL editor on 2026-09-30 (recorded 2026-10-01; not re-checked from the repo, which has no access to the live database). So was
+  `20260930000000_transaction_approved_by.sql` (not a security finding).
+  `supabase/migrations/20260930200000_firm_usage_server_owned.sql` (F7) is not
+  applied. The app code works with each applied or not.
+- **Applied as of 2026-10-01:** only those two (plus
+  `20260926000000_transaction_splits_source.sql` on 2026-09-26). No other
+  migration listed in this document is applied; the order to apply them is in
+  [../migrations-to-apply.md](../migrations-to-apply.md).
 
 **Migration tests (branch `overnight`).** `supabase/__tests__/migrations.test.ts`
 (part of `npm test`) applies every file in `supabase/migrations/` in order to
@@ -31,7 +37,7 @@ open until their migration is applied.
 
 | Finding | Status |
 |---|---|
-| F1 `portal-docs` bucket open to anon | **Open in the database until the migration is applied.** The app no longer serves portal routes, but the bucket is reachable directly with the anon key. Run `supabase/checks/portal_docs_check.sql` to see how many objects it holds. |
+| F1 `portal-docs` bucket open to anon | **Fixed in the database:** the migration was applied on 2026-09-30 (reported by the owner; not re-checked from the repo). `supabase/checks/portal_docs_check.sql` query 2 should list no `portal-docs` policy, and query 1 shows how many objects the bucket holds. Whether anything was read while it was open can only be seen in Supabase's storage logs. |
 | F2 portal routes update by id | Mitigated: every portal route returns 404. The route code is unchanged; fix it before re-enabling the portal. |
 | F3 `/api/portal/ingest`, `/api/inbox/webhook` | Mitigated: both return 404. Fix before re-enabling (auth on ingest, make the webhook token required, remove the `supabase.rpc` payload write). |
 | F4 inbox slugs not unique | Mitigated for now (inbox routes 404). The missing unique index remains. |
