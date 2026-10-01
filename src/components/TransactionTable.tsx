@@ -19,6 +19,7 @@ import { deleteRule } from '@/lib/review/rules'
 import { approveSelected, approveTransaction, isApproved, recategorizeTransaction } from '@/lib/review/approve'
 import type { TransactionSplit } from '@/types'
 import { saveRule, bumpRuleUsage, findRuleForDescription } from '@/lib/review/rules'
+import { saveCorrection } from '@/lib/corrections'
 import { normalizeVendor, vendorPatternMatches } from '@/lib/review/vendor'
 
 type FilterTab = 'all' | 'pending' | 'approved' | 'flagged'
@@ -36,10 +37,11 @@ interface Props {
 // ─── Mobile card ─────────────────────────────────────────────────────────────
 
 function MobileCard({
-  transaction, selected, onToggleSelect, onChange, chartOfAccounts, onAudit,
+  transaction, selected, onToggleSelect, onChange, onRecategorize, chartOfAccounts, onAudit,
 }: {
   transaction: Transaction; selected: boolean; onToggleSelect: (id: string) => void
-  onChange: (t: Transaction) => void; chartOfAccounts: ChartOfAccounts[]; onAudit?: AuditCallback
+  onChange: (t: Transaction) => void; onRecategorize: (t: Transaction, code: string) => void
+  chartOfAccounts: ChartOfAccounts[]; onAudit?: AuditCallback
 }) {
   const [expanded, setExpanded] = useState(false)
   const isCredit = transaction.type === 'credit'
@@ -89,7 +91,7 @@ function MobileCard({
           <button onClick={approve} style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', backgroundColor: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Approve</button>
           <button onClick={flag} style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: '1px solid var(--danger)', backgroundColor: 'var(--surface-card)', color: 'var(--danger)', fontSize: 12, cursor: 'pointer' }}>Flag</button>
           <select value={transaction.final_account_code ?? transaction.suggested_account_code ?? ''}
-            onChange={e => onChange(recategorizeTransaction(transaction, e.target.value, chartOfAccounts))}
+            onChange={e => onRecategorize(transaction, e.target.value)}
             onClick={e => e.stopPropagation()}
             style={{ flex: 1, border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '6px 4px', fontSize: 11, color: 'var(--text-primary)', backgroundColor: 'var(--surface-card)' }}>
             <option value="">Category…</option>
@@ -256,6 +258,25 @@ export default function TransactionTable({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onTransactionsChange])
 
+  /**
+   * A reviewer changes a row's account: desktop row, mobile card or the
+   * inline picker all come here, before or after the row was approved. It
+   * logs the change, saves the correction (a hint for the next upload),
+   * applies the account and offers "Always categorize … as …?".
+   */
+  function handleRecategorize(tx: Transaction, code: string) {
+    const prevCode = tx.final_account_code ?? tx.suggested_account_code
+    if (!code || code === prevCode) return
+    const toName = chartOfAccounts.find(a => a.code === code)?.name ?? code
+    const fromName = tx.final_category ?? tx.suggested_category ?? '—'
+    onAudit?.({ action: 'tx_category_changed', txId: tx.id, txDescription: tx.description, details: { from: fromName, to: toName } })
+    if (code !== tx.suggested_account_code && tx.suggested_category) {
+      saveCorrection(tx.description, tx.suggested_category, toName)
+    }
+    handleChange(recategorizeTransaction(tx, code, chartOfAccounts))
+    handleCategoryRuleCandidate(tx, code, toName)
+  }
+
   function handleCategoryRuleCandidate(tx: Transaction, accountCode: string, categoryName: string) {
     const pattern = normalizeVendor(tx.description)
     if (!pattern) return
@@ -291,7 +312,7 @@ export default function TransactionTable({
         if (t.status !== 'pending' || t.type !== cand.direction) return t
         if (!vendorPatternMatches(t.description, rule.vendorPattern)) return t
         onAudit?.({ action: 'tx_category_changed', txId: t.id, txDescription: t.description, details: { from: t.suggested_category ?? '—', to: cand.categoryName, rule: '1' } })
-        const up = { ...t, status: 'edited' as const, categorizationSource: 'firm_rule' as const, approvedBy: 'rule' as const, final_account_code: cand.accountCode, final_category: cand.categoryName, confidence: Math.max(t.confidence, 0.99) }
+        const up = { ...t, status: 'approved' as const, categorizationSource: 'firm_rule' as const, approvedBy: 'rule' as const, final_account_code: cand.accountCode, final_category: cand.categoryName, confidence: Math.max(t.confidence, 0.99) }
         updatedTxs.push(up)
         return up
       })
@@ -810,7 +831,7 @@ export default function TransactionTable({
         {visible.length === 0
           ? <p style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-tertiary)', fontSize: 13 }}>{search ? 'No transactions match your search.' : 'No transactions in this category.'}</p>
           : visible.map(tx => (
-            <MobileCard key={tx.id} transaction={tx} selected={selected.has(tx.id)} onToggleSelect={toggleSelect} onChange={handleChange} chartOfAccounts={chartOfAccounts} onAudit={onAudit} />
+            <MobileCard key={tx.id} transaction={tx} selected={selected.has(tx.id)} onToggleSelect={toggleSelect} onChange={handleChange} onRecategorize={handleRecategorize} chartOfAccounts={chartOfAccounts} onAudit={onAudit} />
           ))
         }
       </div>
@@ -855,7 +876,7 @@ export default function TransactionTable({
                   enterTrigger={focusedId === tx.id ? enterTrigger : 0}
                   onAudit={onAudit}
                   txAuditEvents={auditEvents.filter(e => e.txId === tx.id)}
-                  onCategoryRuleCandidate={handleCategoryRuleCandidate}
+                  onRecategorize={handleRecategorize}
                   onSplit={openSplit}
                 />
               ))}
@@ -897,12 +918,7 @@ export default function TransactionTable({
               setSelected(new Set())
             } else {
               const tx = transactionsRef.current.find(t => t.id === pickerAnchor.txId)
-              if (tx) {
-                const fromName = tx.final_category ?? tx.suggested_category ?? '—'
-                onAudit?.({ action: 'tx_category_changed', txId: tx.id, txDescription: tx.description, details: { from: fromName, to: name } })
-                handleChange({ ...tx, status: 'edited', categorizationSource: 'manual', approvedBy: 'reviewer', final_account_code: code, final_category: name })
-                handleCategoryRuleCandidate(tx, code, name)
-              }
+              if (tx) handleRecategorize(tx, code)
             }
             setPickerAnchor(null)
           }}

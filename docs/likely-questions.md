@@ -372,7 +372,7 @@ membership; it is tested on PGlite (`supabase/__tests__/migrations.test.ts`).
 No, they're per firm. A rule stores a vendor key, direction and account code,
 with no client and no chart (`src/lib/review/rules.ts:7-19`). At upload,
 `applyRulesToJob` applies any matching rule to any client and marks the row
-edited, confidence at least 0.99 (`rules.ts:134-156`), without checking the
+approved (credited to the rule), confidence at least 0.99 (`rules.ts:134-158`), without checking the
 account is in that client's chart. If it isn't, the journal-entry step lists
 the row as an exception instead of posting it
 (`src/lib/autopilot/journalEntries.ts`, exceptions in

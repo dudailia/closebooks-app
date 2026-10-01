@@ -165,6 +165,23 @@ network and API load when the run was made. Source: `summary.json`,
 | Sonnet 5.5 (2 runs) | 0.43 s | 0.46 s |
 | Haiku 4.5 (single run) | 0.53 s | 0.64 s |
 
+## Live preview run (one timed run)
+
+**Not an eval result.** Measured by hand on the `overnight` preview deployment
+(Supabase on, a new test account), 2026-10-01: one upload of the 292-row
+synthetic file (`eval/data/synthetic_upload.csv`), Sonnet 5.5 at 0.93, 4
+batches at once, no rules saved yet. Source: the owner's test notes,
+recorded in `SESSION_LOG.md`.
+
+- Categorisation took **about 40 s** (stopwatch, one run). It depends on
+  network and API load at the time.
+- **128 of 292 rows auto-approved (43.8%), 164 pending, 0 flagged.**
+
+The eval's 49.3% auto-approved at 0.93 (threshold sweep) counts only
+account-labelled rows over 2 saved runs made before the "data, not
+instructions" prompt label; this is one live run over all 292 rows, so the
+two are not the same measure.
+
 ## Cost
 
 API-reported tokens times list prices in `eval/pricing.json` (checked

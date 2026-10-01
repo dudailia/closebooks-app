@@ -35,7 +35,7 @@ report are API routes.
 flowchart TD
   A[Bank CSV] -->|parsed in browser, src/lib/parseCSV.ts| C[Rows: date, description, amount, type]
   B[Bank PDF] -->|"/api/parse-pdf: pdf-parse text, then Claude Sonnet 4.6"| C
-  C --> R{"Firm rules first<br/>applyRulesBeforeAI, src/lib/review/rules.ts:163"}
+  C --> R{"Firm rules first<br/>applyRulesBeforeAI, src/lib/review/rules.ts:165"}
   R -->|matched: rule's account, no AI call| M[Job]
   R -->|unmatched| API["/api/categorize"]
   API --> E["categorizeTransactions, src/lib/categorize.ts<br/>batches of 20, 4 at a time"]
@@ -191,7 +191,7 @@ A row missing from an otherwise readable reply is flagged (`src/lib/categorize.t
   kinds of payment from one vendor (`gusto des:net` vs `gusto des:tax`).
   Matching is exact on the key.
 - At upload, rules run before any AI call (`applyRulesBeforeAI`,
-  `src/lib/review/rules.ts:163`). Matched rows take the rule's account, are
+  `src/lib/review/rules.ts:165`). Matched rows take the rule's account, are
   recorded as `firm_rule` / `approvedBy: 'rule'`, and are not sent to Claude.
 - Separately, the 10 most recent corrections go into the prompt as hints.
 

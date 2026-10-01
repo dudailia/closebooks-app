@@ -26,6 +26,27 @@ F5/F9/F10/F14 (not applied), dependency report, prepared experiments, one chart
 source. **Read `docs/overnight-log.md` first**: its morning summary lists
 what's done, tested, blocked and needs a decision.
 
+**Preview browser test, 2026-10-01** (owner, `overnight` preview, Supabase on,
+new test account):
+- The "Always categorize ... / Save rule" prompt never showed. Cause: the
+  dashboard's page-enter animation (`animation: ... both` in
+  `src/app/globals.css`) left `transform: translateY(0)` on the page
+  container, which makes every `position: fixed` child position relative to
+  the page instead of the screen, so the prompt rendered below the fold. The
+  mobile card's dropdown never offered it at all. Fixed: animations now end
+  with `backwards` fill, the prompt and action toasts render on
+  `document.body`, and every account change goes through one handler
+  (`handleRecategorize` in `TransactionTable.tsx`). The e2e checks the prompt
+  is inside the viewport (it failed on the old code).
+- Close 2 showed Accounts Receivable on the Stripe row with no saved rule:
+  that came from the correction hint (close 1's change was saved as a
+  correction and sent to the model at the next upload), at a confidence below
+  0.93, so the row stayed pending and wasn't posted. A rule-applied row is now
+  `approved` (approvedBy `rule`, source `firm_rule`) and posts; before, it was
+  `edited`, which also counts as approved.
+- 292-row synthetic upload: about 40 s (stopwatch, one run); 128 of 292
+  auto-approved (43.8%), 164 pending, 0 flagged. In `docs/facts.md`.
+
 ## On `eval-harness` (not merged)
 
 **Eval (`eval/`, see `eval/README.md`):** a 292-row synthetic labelled dataset (fictional Brightline Studio, 34-account Standard Small Business chart; 284 account labels, 8 REVIEW); `run.ts` runs the real engine with a hard budget cap; `metrics.ts`/`report.ts`/`compare.ts` score and report; `sweep-cli.ts` (threshold sweep) and `learn-cli.ts` (June corrections → rules) work from saved runs without API calls. Results live in `eval/results/` (gitignored).

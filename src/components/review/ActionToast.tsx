@@ -1,4 +1,5 @@
 'use client'
+import Portal from '@/components/ui/Portal'
 import { useEffect, useState, ReactNode } from 'react'
 
 export interface ToastMsg {
@@ -15,7 +16,9 @@ interface Props {
 }
 
 export default function ActionToastStack({ toasts, onDismiss }: Props) {
+  // Rendered on document.body so no transformed ancestor can move it off screen.
   return (
+    <Portal>
     <div
       style={{
         position: 'fixed',
@@ -32,6 +35,7 @@ export default function ActionToastStack({ toasts, onDismiss }: Props) {
         <ActionToast key={t.id} toast={t} onDismiss={onDismiss} />
       ))}
     </div>
+    </Portal>
   )
 }
 

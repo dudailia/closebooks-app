@@ -16,9 +16,10 @@ Studio LLC).
 | `04-chart-of-accounts.png` | New Close step 2: the 34-account Standard Small Business template |
 | `05-upload-preview-us-dates.png` | 8-row file with MM/DD/YYYY dates, read as August 2026 |
 | `06-review-after-categorise.png` | Review page after categorising |
-| `07-recategorise-and-rule-offer.png` | Stripe payout moved from 4100 to 1100 Accounts Receivable; "Always categorize ...?" offer |
+| `07-recategorise-and-rule-offer.png` | Stripe payout moved from 4100 to 1100 Accounts Receivable; the "Always categorize ...?" prompt on screen (the test checks it is inside the viewport, and still there after the row's Approve) |
 | `08-all-approved.png` | All 8 rows approved |
 | `09-export-menu.png` | Export menu with the journal-entry CSV |
 | `10-close-report.png` | Close report, full page, with the journal entries section |
-| `11-second-close-rule-applied.png` | Second close (292 rows): Stripe payouts on 1100 from the saved rule, marked Edited; these 5 rows were not sent to the model |
-| `12-clients-closes-by-id.png` | Clients page: both closes are on the chosen client (2 closes); its same-name twin has 0 |
+| `11-second-close-rule-applied.png` | Second close (292 rows): Stripe payouts on 1100 from the saved rule, marked Approved; these 5 rows were not sent to the model, and all 5 are in the journal-entry CSV with source `rule` |
+| `13-mobile-rule-offer.png` | Phone width (390 px): changing an account on a transaction card shows the same prompt |
+| `12-clients-closes-by-id.png` | Clients page: all three closes are on the chosen client (3 closes); its same-name twin has 0. Close 3 is the 8-row file again: its Stripe row is approved by the rule and posted |

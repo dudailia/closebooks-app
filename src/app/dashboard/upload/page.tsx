@@ -177,7 +177,7 @@ function CategorizeStep({
         created_at: new Date().toISOString(),
         status: 'review',
         total_transactions: categorized.length,
-        // Rule-applied rows are 'edited' (approved by a firm rule).
+        // Rule-applied rows are approved (approvedBy 'rule'); rows saved before 2026-10-01 may be 'edited'.
         auto_categorized: categorized.filter((t) => t.status === 'approved' || t.status === 'edited').length,
         approved: categorized.filter((t) => t.status === 'approved' || t.status === 'edited').length,
         flagged: categorized.filter((t) => t.status === 'flagged').length,

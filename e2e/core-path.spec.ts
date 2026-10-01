@@ -23,6 +23,18 @@ async function shot(page: Page, name: string, fullPage = false) {
   await page.screenshot({ path: path.join(SHOTS, `${name}.png`), fullPage })
 }
 
+/** The Save-rule prompt is fully shown and fits inside the screen, both ways. */
+async function expectPromptOnScreen(page: Page) {
+  const prompt = page.getByRole('status', { name: 'Save rule' })
+  await expect(prompt).toBeInViewport({ ratio: 1 })
+  await expect(prompt).toHaveCSS('opacity', '1')
+  const box = (await prompt.boundingBox())!
+  const vp = page.viewportSize()!
+  expect(box.x).toBeGreaterThanOrEqual(0)
+  expect(box.x + box.width).toBeLessThanOrEqual(vp.width)
+  expect(box.y + box.height).toBeLessThanOrEqual(vp.height)
+}
+
 /** Parse the journal-entry CSV and return totals in cents, per entry and overall. */
 function journalTotals(csv: string) {
   const [header, ...lines] = csv.trim().split(/\r?\n/)
@@ -91,6 +103,12 @@ test('core path: two closes, a rule, balanced journal entries, report', async ({
   // 1. Enter the demo (no Supabase: no sign-in, the dashboard opens directly).
   await page.goto('/dashboard')
   await expect(page.getByRole('link', { name: 'New Close' }).first()).toBeVisible()
+  // First visit shows the onboarding modal over the whole screen; close it.
+  const welcome = page.getByRole('heading', { name: 'Welcome to CloseBooks' })
+  if (await welcome.isVisible().catch(() => false)) {
+    await page.getByRole('button', { name: 'Close' }).first().click()
+    await expect(welcome).toBeHidden()
+  }
   await shot(page, '01-demo-dashboard')
 
   // 2. Create the client, and a second client with the same name.
@@ -138,9 +156,17 @@ test('core path: two closes, a rule, balanced journal entries, report', async ({
   await expect(stripeRow).toContainText('4100')
   await stripeRow.click()
   await page.locator('select').filter({ has: page.locator('option[value="1100"]') }).first().selectOption('1100')
-  await expect(page.getByText(/Always categorize/)).toBeVisible()
+  // The prompt must be on screen, not just in the page: it used to render below
+  // the fold (a transformed ancestor made position:fixed relative to the page).
+  const rulePrompt = page.getByRole('status', { name: 'Save rule' })
+  await expectPromptOnScreen(page)
+  await expect(rulePrompt).toContainText('Always categorize')
   await shot(page, '07-recategorise-and-rule-offer')
-  await page.getByRole('button', { name: 'Save rule' }).click()
+  // Approve the row first (what a reviewer did on the preview); the prompt stays.
+  await page.locator('tr', { has: page.getByText('AI Reasoning') }).getByRole('button', { name: 'Approve', exact: true }).click()
+  await expectPromptOnScreen(page)
+  await rulePrompt.getByRole('button', { name: 'Save rule' }).click()
+  await expect(rulePrompt).toHaveCount(0)
   await expect(stripeRow).toContainText('1100')
   await expect(stripeRow).toContainText('Edited')
 
@@ -185,9 +211,10 @@ test('core path: two closes, a rule, balanced journal entries, report', async ({
   await expect(ruleRows).toHaveCount(5)
   // Those 5 rows matched the rule, so they were not sent to the model.
   expect(sentSecond).toBe(292 - 5)
+  // Rule rows are approved (the rule is the reviewer's own saved correction).
   for (let i = 0; i < 5; i++) {
     await expect(ruleRows.nth(i)).toContainText('Accounts Receivable')
-    await expect(ruleRows.nth(i)).toContainText('Edited')
+    await expect(ruleRows.nth(i)).toContainText('Approved')
   }
   await ruleRows.first().scrollIntoViewIfNeeded()
   await shot(page, '11-second-close-rule-applied')
@@ -196,16 +223,46 @@ test('core path: two closes, a rule, balanced journal entries, report', async ({
   await page.getByRole('button', { name: 'Export', exact: true }).click()
   const download2 = page.waitForEvent('download')
   await page.getByRole('button', { name: /Journal entries CSV/ }).click()
-  const totals2 = journalTotals(readFileSync(await (await download2).path(), 'utf8'))
+  const csv2 = readFileSync(await (await download2).path(), 'utf8')
+  const totals2 = journalTotals(csv2)
   expect(totals2.perEntry.size).toBeGreaterThan(0)
   for (const [entry, t] of totals2.perEntry) expect(t.debit, `${entry} balances`).toBe(t.credit)
   expect(totals2.debit).toBe(totals2.credit)
+  // All 5 rule rows are posted to 1100 with source "rule".
+  expect(csv2.match(/,1100,Accounts Receivable,,[\d.]+,Posted to 1100 Accounts Receivable,rule,/g)).toHaveLength(5)
 
-  // 10. Both closes belong to the chosen client only, not to its same-name twin.
+  // 9b. Third close, same client, same 8-row file as close 1 (the preview test):
+  // the Stripe row takes the rule, is approved and is in the journal.
+  const third = await startClose(page, US_DATES_CSV, 8)
+  await third.chooseChart()
+  await third.upload()
+  expect(await third.categorize()).toBe(7)
+  const stripe3 = page.locator('tr', { hasText: 'STRIPE TRANSFER ST-KQ81ZD0PA2' }).first()
+  await expect(stripe3).toContainText('1100')
+  await expect(stripe3).toContainText('Approved')
+  await page.getByRole('button', { name: 'Export', exact: true }).click()
+  const download3 = page.waitForEvent('download')
+  await page.getByRole('button', { name: /Journal entries CSV/ }).click()
+  const csv3 = readFileSync(await (await download3).path(), 'utf8')
+  expect(csv3).toMatch(/,1100,Accounts Receivable,,4921\.09,Posted to 1100 Accounts Receivable,rule,/)
+  const totals3 = journalTotals(csv3)
+  for (const [entry, t] of totals3.perEntry) expect(t.debit, `${entry} balances`).toBe(t.credit)
+
+  // 9c. Mobile card: changing the account offers the rule too, on screen.
+  await page.setViewportSize({ width: 390, height: 844 })
+  const zoomCard = page.locator('div.md\\:hidden > div', { hasText: 'ZOOM.US 888-799-9666 CA' }).first()
+  await zoomCard.getByText('ZOOM.US 888-799-9666 CA').click() // open the card
+  await zoomCard.locator('select').selectOption('5400')
+  await expectPromptOnScreen(page)
+  await shot(page, '13-mobile-rule-offer')
+  await rulePrompt.getByRole('button', { name: 'Dismiss' }).click()
+  await page.setViewportSize({ width: 1360, height: 900 })
+
+  // 10. All three closes belong to the chosen client only, not to its same-name twin.
   await page.getByRole('link', { name: 'Clients' }).first().click()
   await page.waitForURL('**/dashboard/clients')
   const cards = page.locator('main').first()
-  await expect(cards.getByText('2 closes')).toHaveCount(1)
+  await expect(cards.getByText('3 closes')).toHaveCount(1)
   await expect(cards.getByText('0 closes')).toHaveCount(1)
   await shot(page, '12-clients-closes-by-id')
 

@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react'
 import type { Transaction, ChartOfAccounts } from '@/types'
 import { AUTO_APPROVE_THRESHOLD } from '@/lib/ai/models'
-import { saveCorrection } from '@/lib/corrections'
 import { getAlternativeSuggestions } from '@/lib/categorySuggestions'
-import { approveTransaction, isApproved, recategorizeTransaction } from '@/lib/review/approve'
+import { approveTransaction, isApproved } from '@/lib/review/approve'
 import type { AuditCallback, AuditEvent } from '@/lib/auditTrail'
 import { formatAuditEvent, fmtAuditTs } from '@/lib/auditTrail'
 
@@ -96,7 +95,8 @@ interface Props {
   enterTrigger?: number
   onAudit?: AuditCallback
   txAuditEvents?: AuditEvent[]
-  onCategoryRuleCandidate?: (tx: Transaction, accountCode: string, categoryName: string) => void
+  /** A reviewer picked a different account for this row. */
+  onRecategorize: (tx: Transaction, accountCode: string) => void
   onSplit?: (id: string) => void
 }
 
@@ -114,7 +114,7 @@ export default function TransactionRow({
   enterTrigger  = 0,
   onAudit,
   txAuditEvents = [],
-  onCategoryRuleCandidate,
+  onRecategorize,
   onSplit,
 }: Props) {
   const [expanded, setExpanded]       = useState(false)
@@ -143,19 +143,11 @@ export default function TransactionRow({
   }
 
   function handleCategoryChange(code: string) {
-    const account  = chartOfAccounts.find(a => a.code === code)
-    const prevCode = transaction.final_account_code ?? transaction.suggested_account_code
     setEditCode(code)
-    if (code !== prevCode) {
-      const fromName = transaction.final_category ?? transaction.suggested_category ?? '—'
-      const toName   = account?.name ?? code
-      onAudit?.({ action: 'tx_category_changed', txId: transaction.id, txDescription: transaction.description, details: { from: fromName, to: toName } })
-      if (code !== transaction.suggested_account_code && transaction.suggested_category) {
-        saveCorrection(transaction.description, transaction.suggested_category, toName)
-      }
-      onCategoryRuleCandidate?.(transaction, code, toName)
-    }
-    onChange(recategorizeTransaction(transaction, code, chartOfAccounts))
+    // The table records the change, saves the correction and offers the rule
+    // (TransactionTable.handleRecategorize), the same for every place an
+    // account can be changed.
+    onRecategorize(transaction, code)
   }
 
   function handleNotesBlur() {

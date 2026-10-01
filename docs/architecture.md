@@ -22,8 +22,8 @@ flowchart TD
   A[Bank statement CSV] -->|parsed in the browser<br/>src/lib/parseCSV.ts:157| C[Transaction list<br/>date, description, amount, type]
   B[Bank statement PDF] -->|base64 POST<br/>src/components/FileUpload.tsx:52| P["/api/parse-pdf<br/>pdf-parse text + Claude Sonnet 4.6"]
   P --> C
-  C --> R{Firm rules first<br/>src/lib/review/rules.ts:163}
-  R -->|matched: rule's account,<br/>status edited, approvedBy rule| M[Merged job]
+  C --> R{Firm rules first<br/>src/lib/review/rules.ts:165}
+  R -->|matched: rule's account,<br/>status approved, approvedBy rule| M[Merged job]
   R -->|unmatched rows| API["/api/categorize<br/>src/app/api/categorize/route.ts"]
   API --> E["categorizeTransactions<br/>src/lib/categorize.ts, batches of 20, 4 at a time"]
   E -->|system prompt + chart + corrections + rows| CL[Claude Sonnet 5.5]
@@ -186,9 +186,9 @@ In `categorizeBatch` (`src/lib/categorize.ts`):
   processor prefixes. Words that separate two kinds of payment from one
   vendor are kept (`gusto des:net` and `gusto des:tax` are different keys).
   Matching is exact on the key.
-- **Rules first.** At upload, `applyRulesBeforeAI` (`src/lib/review/rules.ts:163`)
+- **Rules first.** At upload, `applyRulesBeforeAI` (`src/lib/review/rules.ts:165`)
   runs before any AI call. Matching rows take the rule's account (status
-  *edited*, `categorizationSource: 'firm_rule'`, `approvedBy: 'rule'`) and
+  *approved*, `categorizationSource: 'firm_rule'`, `approvedBy: 'rule'`) and
   are not sent to Claude. Rules are loaded first with `ensureRulesLoaded`
   (line 34).
 - **Corrections as hints.** Separately, the 10 most recent corrections are

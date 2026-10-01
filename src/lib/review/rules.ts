@@ -141,9 +141,11 @@ export function applyRulesToJob(txs: Transaction[]): {
     const rule = findRuleForDescription(t.description, t.type)
     if (!rule) return t
     applied.push({ ruleId: rule.id, txId: t.id })
+    // A rule is a reviewer's own earlier correction, saved, so the row is
+    // approved (and posted), credited to the rule.
     return {
       ...t,
-      status: 'edited' as const,
+      status: 'approved' as const,
       categorizationSource: 'firm_rule' as const,
       approvedBy: 'rule' as const,
       final_account_code: rule.accountCode,

@@ -9,6 +9,8 @@ import {
   applyRulesBeforeAI, applyRulesToJob, deleteRule, ensureRulesLoaded, findRuleForDescription, listRules,
   mergeCategorized, saveRule,
 } from '@/lib/review/rules'
+import { generateJournalEntries } from '@/lib/autopilot/journalEntries'
+import { approvalCounts } from '@/lib/review/approvalCounts'
 
 const tx = (id: string, description: string, type: Transaction['type'] = 'debit'): Transaction => ({
   id, date: '2026-07-01', description, original_description: description, amount: 50, type,
@@ -114,13 +116,35 @@ describe('rules first at upload', () => {
     const { txs: out, unmatched, ruleApplied } = applyRulesBeforeAI(txs)
     expect(ruleApplied).toBe(1)
     expect(unmatched.map((t) => t.id)).toEqual(['a', 'c'])
+    // A rule is the reviewer's own saved correction: the row is approved, credited to the rule.
     expect(out[1]).toMatchObject({
-      status: 'edited', categorizationSource: 'firm_rule', final_account_code: '2300', suggested_account_code: '2300',
+      status: 'approved', approvedBy: 'rule', categorizationSource: 'firm_rule', final_account_code: '2300', suggested_account_code: '2300',
       suggested_category: 'Payroll Liabilities',
     })
     const fromAi = unmatched.map((t) => ({ ...t, suggested_account_code: '5800', status: 'approved' as const }))
     expect(mergeCategorized(out, fromAi).map((t) => [t.id, t.final_account_code ?? t.suggested_account_code])).toEqual([
       ['a', '5800'], ['b', '2300'], ['c', '5800'],
     ])
+  })
+})
+
+describe('rule-applied rows are posted', () => {
+  const chart = [
+    { code: '1000', name: 'Checking Account', type: 'asset' as const },
+    { code: '1100', name: 'Accounts Receivable', type: 'asset' as const },
+    { code: '4100', name: 'Service Revenue', type: 'revenue' as const },
+  ]
+
+  it('a rule match is approved, by rule, source rule, and gets a journal entry', async () => {
+    await saveRule({ description: 'STRIPE TRANSFER PAYOUT', accountCode: '1100', categoryName: 'Accounts Receivable', createdBy: 't', direction: 'credit' })
+    const { txs } = applyRulesBeforeAI([tx('s', 'STRIPE TRANSFER PAYOUT', 'credit'), tx('o', 'SOMETHING ELSE', 'credit')])
+    expect(txs[0]).toMatchObject({ status: 'approved', approvedBy: 'rule', categorizationSource: 'firm_rule', final_account_code: '1100' })
+    expect(approvalCounts(txs)).toMatchObject({ approved: 1, byRule: 1 })
+
+    const { entries, exceptions } = generateJournalEntries(txs, chart)
+    expect(entries).toHaveLength(1)
+    expect(entries[0]).toMatchObject({ source: 'rule' })
+    expect(entries[0].lines.map((l) => [l.accountCode, l.debit, l.credit])).toEqual([['1000', 50, 0], ['1100', 0, 50]])
+    expect(exceptions).toHaveLength(1) // the unmatched pending row
   })
 })
