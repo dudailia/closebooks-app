@@ -170,19 +170,27 @@ export default function TransactionTable({
     setToasts(prev => prev.filter(t => t.id !== id))
   }
 
+  // Every change to the list goes through here, from an event handler, never
+  // inside a setTransactions updater: onTransactionsChange and onAudit set the
+  // review page's state, and calling them from an updater (which React runs
+  // while rendering this table) caused "Cannot update a component while
+  // rendering a different component". The ref is updated at once so two
+  // changes in one handler build on each other.
+  function commitTransactions(next: Transaction[]) {
+    transactionsRef.current = next
+    setTransactions(next)
+    onTransactionsChange?.(next)
+  }
+
   function restoreTxs(priors: Transaction[]) {
-    setTransactions(prev => {
-      const next = prev.map(t => priors.find(p => p.id === t.id) ?? t)
-      onTransactionsChange?.(next)
-      return next
-    })
+    const prev = transactionsRef.current
+    const next = prev.map(t => priors.find(p => p.id === t.id) ?? t)
+    commitTransactions(next)
   }
   function applyTxs(nexts: Transaction[]) {
-    setTransactions(prev => {
-      const next = prev.map(t => nexts.find(n => n.id === t.id) ?? t)
-      onTransactionsChange?.(next)
-      return next
-    })
+    const prev = transactionsRef.current
+    const next = prev.map(t => nexts.find(n => n.id === t.id) ?? t)
+    commitTransactions(next)
   }
 
   // Sync incoming prop changes (e.g. after rule auto-apply on hydrate)
@@ -234,11 +242,9 @@ export default function TransactionTable({
 
   const handleChange = useCallback((updated: Transaction) => {
     const prior = transactionsRef.current.find(t => t.id === updated.id)
-    setTransactions(prev => {
-      const next = prev.map(t => t.id === updated.id ? updated : t)
-      onTransactionsChange?.(next)
-      return next
-    })
+    const prev = transactionsRef.current
+    const next = prev.map(t => t.id === updated.id ? updated : t)
+    commitTransactions(next)
     if (updated.status === 'approved' || updated.status === 'edited') trackApproval(updated)
     if (prior) {
       undoStack.push({
@@ -280,18 +286,16 @@ export default function TransactionTable({
         t => t.status === 'pending' && t.type === cand.direction && vendorPatternMatches(t.description, rule.vendorPattern)
       ).map(t => ({ ...t }))
       const updatedTxs: Transaction[] = []
-      setTransactions(prev => {
-        const next = prev.map(t => {
-          if (t.status !== 'pending' || t.type !== cand.direction) return t
-          if (!vendorPatternMatches(t.description, rule.vendorPattern)) return t
-          onAudit?.({ action: 'tx_category_changed', txId: t.id, txDescription: t.description, details: { from: t.suggested_category ?? '—', to: cand.categoryName, rule: '1' } })
-          const up = { ...t, status: 'edited' as const, categorizationSource: 'firm_rule' as const, approvedBy: 'rule' as const, final_account_code: cand.accountCode, final_category: cand.categoryName, confidence: Math.max(t.confidence, 0.99) }
-          updatedTxs.push(up)
-          return up
-        })
-        onTransactionsChange?.(next)
-        return next
+      const prev = transactionsRef.current
+      const next = prev.map(t => {
+        if (t.status !== 'pending' || t.type !== cand.direction) return t
+        if (!vendorPatternMatches(t.description, rule.vendorPattern)) return t
+        onAudit?.({ action: 'tx_category_changed', txId: t.id, txDescription: t.description, details: { from: t.suggested_category ?? '—', to: cand.categoryName, rule: '1' } })
+        const up = { ...t, status: 'edited' as const, categorizationSource: 'firm_rule' as const, approvedBy: 'rule' as const, final_account_code: cand.accountCode, final_category: cand.categoryName, confidence: Math.max(t.confidence, 0.99) }
+        updatedTxs.push(up)
+        return up
       })
+      commitTransactions(next)
       if (priorMatches.length > 0) void bumpRuleUsage(rule.id, priorMatches.length)
       proactiveDismissed.current.add(`${cand.vendor}::${cand.accountCode}`)
       undoStack.push({
@@ -336,16 +340,14 @@ export default function TransactionTable({
     if (ids.length === 0) return
     const priors = transactionsRef.current.filter(t => ids.includes(t.id)).map(t => ({ ...t }))
     const updatedTxs: Transaction[] = []
-    setTransactions(prev => {
-      const next = prev.map(t => {
-        if (!ids.includes(t.id)) return t
-        const up = { ...t, status: 'flagged' as const, notes: t.notes ? `${t.notes} · duplicate` : 'duplicate' }
-        updatedTxs.push(up)
-        return up
-      })
-      onTransactionsChange?.(next)
-      return next
+    const prev = transactionsRef.current
+    const next = prev.map(t => {
+      if (!ids.includes(t.id)) return t
+      const up = { ...t, status: 'flagged' as const, notes: t.notes ? `${t.notes} · duplicate` : 'duplicate' }
+      updatedTxs.push(up)
+      return up
     })
+    commitTransactions(next)
     ids.forEach(id => {
       const t = transactionsRef.current.find(x => x.id === id)
       if (t) onAudit?.({ action: 'tx_flagged', txId: id, txDescription: t.description, details: { reason: 'duplicate', bulk: 'true' } })
@@ -365,16 +367,14 @@ export default function TransactionTable({
     const ids = Array.from(selectedRef.current)
     const priors = transactionsRef.current.filter(t => ids.includes(t.id)).map(t => ({ ...t }))
     const updatedTxs: Transaction[] = []
-    setTransactions(prev => {
-      const next = prev.map(t => {
-        if (!ids.includes(t.id)) return t
-        const up = { ...t, notes: t.notes ? `${t.notes} · ${note}` : note }
-        updatedTxs.push(up)
-        return up
-      })
-      onTransactionsChange?.(next)
-      return next
+    const prev = transactionsRef.current
+    const next = prev.map(t => {
+      if (!ids.includes(t.id)) return t
+      const up = { ...t, notes: t.notes ? `${t.notes} · ${note}` : note }
+      updatedTxs.push(up)
+      return up
     })
+    commitTransactions(next)
     undoStack.push({
       label: `Added note to ${priors.length}`,
       inverse: () => restoreTxs(priors),
@@ -398,11 +398,9 @@ export default function TransactionTable({
     if (!target) { setSplitTxId(null); return }
     const prior = { ...target }
     const updated: Transaction = { ...target, status: 'edited', categorizationSource: 'manual', approvedBy: 'reviewer', splits }
-    setTransactions(prev => {
-      const next = prev.map(t => (t.id === targetId ? updated : t))
-      onTransactionsChange?.(next)
-      return next
-    })
+    const prev = transactionsRef.current
+    const next = prev.map(t => (t.id === targetId ? updated : t))
+    commitTransactions(next)
     onAudit?.({
       action: 'tx_category_changed',
       txId: targetId,
@@ -494,17 +492,15 @@ export default function TransactionTable({
     if (selectedIds.length === 0) return
     const priors = transactionsRef.current.filter(t => selectedIds.includes(t.id))
     const flaggedTxs: Transaction[] = []
-    setTransactions(prev => {
-      const next = prev.map(t => {
-        if (!selectedIds.includes(t.id)) return t
-        onAudit?.({ action: 'tx_flagged', txId: t.id, txDescription: t.description, details: { reason: '', bulk: 'true' } })
-        const updated = { ...t, status: 'flagged' as const }
-        flaggedTxs.push(updated)
-        return updated
-      })
-      onTransactionsChange?.(next)
-      return next
+    const prev = transactionsRef.current
+    const next = prev.map(t => {
+      if (!selectedIds.includes(t.id)) return t
+      onAudit?.({ action: 'tx_flagged', txId: t.id, txDescription: t.description, details: { reason: '', bulk: 'true' } })
+      const updated = { ...t, status: 'flagged' as const }
+      flaggedTxs.push(updated)
+      return updated
     })
+    commitTransactions(next)
     undoStack.push({
       label: `Flagged ${priors.length} transaction${priors.length !== 1 ? 's' : ''}`,
       inverse: () => restoreTxs(priors),
@@ -525,17 +521,15 @@ export default function TransactionTable({
     if (eligible.length === 0) return
     const priors = eligible.map(t => ({ ...t }))
     const approvedTxs: Transaction[] = []
-    setTransactions(prev => {
-      const next = prev.map(t => {
-        if (!(t.confidence >= AUTO_APPROVE_THRESHOLD && t.status === 'pending')) return t
-        onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '', bulk: 'true' } })
-        const updated = approveTransaction(t)
-        approvedTxs.push(updated)
-        return updated
-      })
-      onTransactionsChange?.(next)
-      return next
+    const prev = transactionsRef.current
+    const next = prev.map(t => {
+      if (!(t.confidence >= AUTO_APPROVE_THRESHOLD && t.status === 'pending')) return t
+      onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '', bulk: 'true' } })
+      const updated = approveTransaction(t)
+      approvedTxs.push(updated)
+      return updated
     })
+    commitTransactions(next)
     approvedTxs.forEach(trackApproval)
     undoStack.push({
       label: `Approved ${priors.length} high-confidence`,
@@ -587,16 +581,14 @@ export default function TransactionTable({
     if (ids.length === 0) return
     const priors = transactionsRef.current.filter(t => ids.includes(t.id)).map(t => ({ ...t }))
     const updatedTxs: Transaction[] = []
-    setTransactions(prev => {
-      const next = prev.map(t => {
-        if (!ids.includes(t.id)) return t
-        const up = { ...t, status: 'flagged' as const, notes: t.notes ? `${t.notes} · duplicate` : 'duplicate' }
-        updatedTxs.push(up)
-        return up
-      })
-      onTransactionsChange?.(next)
-      return next
+    const prev = transactionsRef.current
+    const next = prev.map(t => {
+      if (!ids.includes(t.id)) return t
+      const up = { ...t, status: 'flagged' as const, notes: t.notes ? `${t.notes} · duplicate` : 'duplicate' }
+      updatedTxs.push(up)
+      return up
     })
+    commitTransactions(next)
     ids.forEach(id => {
       const t = transactionsRef.current.find(x => x.id === id)
       if (t) onAudit?.({ action: 'tx_flagged', txId: id, txDescription: t.description, details: { reason: 'duplicate' } })
@@ -891,15 +883,13 @@ export default function TransactionTable({
           onSelect={(code, name) => {
             if (pickerAnchor.txId === '__bulk__') {
               const ids = Array.from(selectedRef.current)
-              setTransactions(prev => {
-                const next = prev.map(t =>
-                  ids.includes(t.id)
-                    ? { ...t, status: 'edited' as const, categorizationSource: 'manual' as const, approvedBy: 'reviewer' as const, final_account_code: code, final_category: name }
-                    : t
-                )
-                onTransactionsChange?.(next)
-                return next
-              })
+              const prev = transactionsRef.current
+              const next = prev.map(t =>
+                ids.includes(t.id)
+                  ? { ...t, status: 'edited' as const, categorizationSource: 'manual' as const, approvedBy: 'reviewer' as const, final_account_code: code, final_category: name }
+                  : t
+              )
+              commitTransactions(next)
               ids.forEach(id => {
                 const t = transactionsRef.current.find(x => x.id === id)
                 if (t) onAudit?.({ action: 'tx_category_changed', txId: id, txDescription: t.description, details: { from: t.final_category ?? t.suggested_category ?? '—', to: name, bulk: 'true' } })
