@@ -170,6 +170,9 @@ test('core path: two closes, a rule, balanced journal entries, report', async ({
   await report.waitForLoadState()
   await expect(report.getByText('MONTH-END CLOSE REPORT')).toBeVisible()
   await expect(report.getByText('Journal entries (8)')).toBeVisible()
+  // Select all + Approve kept the AI's own approvals: rent, Gusto and Uber were
+  // auto-approved at upload; the Stripe edit and the 4 pending rows are the reviewer's.
+  await expect(report.getByText(/3 auto-approved by AI · 5 by reviewer/)).toBeVisible()
   await report.screenshot({ path: path.join(SHOTS, '10-close-report.png'), fullPage: true })
   await report.close()
 

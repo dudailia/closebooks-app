@@ -16,7 +16,7 @@ import HistoryDrawer from '@/components/review/HistoryDrawer'
 import ActionToastStack, { type ToastMsg } from '@/components/review/ActionToast'
 import { useUndoStack } from '@/lib/review/undoStack'
 import { deleteRule } from '@/lib/review/rules'
-import { approveTransaction, recategorizeTransaction } from '@/lib/review/approve'
+import { approveSelected, approveTransaction, isApproved, recategorizeTransaction } from '@/lib/review/approve'
 import type { TransactionSplit } from '@/types'
 import { saveRule, bumpRuleUsage, findRuleForDescription } from '@/lib/review/rules'
 import { normalizeVendor, vendorPatternMatches } from '@/lib/review/vendor'
@@ -50,7 +50,7 @@ function MobileCard({
   }
   const [tc, bg] = statusColors[transaction.status]
   function approve() {
-    onAudit?.({ action: 'tx_approved', txId: transaction.id, txDescription: transaction.description, details: { category: transaction.final_category ?? transaction.suggested_category ?? '' } })
+    if (!isApproved(transaction)) onAudit?.({ action: 'tx_approved', txId: transaction.id, txDescription: transaction.description, details: { category: transaction.final_category ?? transaction.suggested_category ?? '' } })
     onChange(approveTransaction(transaction))
     setExpanded(false)
   }
@@ -461,19 +461,19 @@ export default function TransactionTable({
   const bulkApprove = useCallback(() => {
     const selectedIds = Array.from(selected)
     if (selectedIds.length === 0) return
-    const priors = transactionsRef.current.filter(t => selectedIds.includes(t.id))
-    const approvedTxs: Transaction[] = []
-    setTransactions(prev => {
-      const next = prev.map(t => {
-        if (!selectedIds.includes(t.id)) return t
-        onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '', bulk: 'true' } })
-        const updated = approveTransaction(t)
-        approvedTxs.push(updated)
-        return updated
-      })
-      onTransactionsChange?.(next)
-      return next
-    })
+    // Rows already approved (by the AI, a rule or a reviewer) are left as they
+    // are, so who approved them isn't overwritten (src/lib/review/approve.ts).
+    const { next, approved: approvedTxs, priors } = approveSelected(transactionsRef.current, selectedIds)
+    setSelected(new Set())
+    if (approvedTxs.length === 0) {
+      pushToast({ message: 'Already approved', tone: 'success' })
+      return
+    }
+    for (const t of priors) {
+      onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '', bulk: 'true' } })
+    }
+    setTransactions(next)
+    onTransactionsChange?.(next)
     approvedTxs.forEach(trackApproval)
     const id = undoStack.push({
       label: `Approved ${priors.length} transaction${priors.length !== 1 ? 's' : ''}`,
@@ -486,7 +486,6 @@ export default function TransactionTable({
       onUndo: () => undoStack.undo(),
     })
     void id
-    setSelected(new Set())
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, onTransactionsChange, onAudit])
 
@@ -571,6 +570,7 @@ export default function TransactionTable({
     const vis = visibleRef.current, fi = focusedIdxRef.current
     if (fi < 0) return
     const t = vis[fi]
+    if (isApproved(t)) return
     onAudit?.({ action: 'tx_approved', txId: t.id, txDescription: t.description, details: { category: t.final_category ?? t.suggested_category ?? '' } })
     handleChange(approveTransaction(t))
   }

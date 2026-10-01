@@ -5,7 +5,7 @@ import type { Transaction, ChartOfAccounts } from '@/types'
 import { AUTO_APPROVE_THRESHOLD } from '@/lib/ai/models'
 import { saveCorrection } from '@/lib/corrections'
 import { getAlternativeSuggestions } from '@/lib/categorySuggestions'
-import { approveTransaction, recategorizeTransaction } from '@/lib/review/approve'
+import { approveTransaction, isApproved, recategorizeTransaction } from '@/lib/review/approve'
 import type { AuditCallback, AuditEvent } from '@/lib/auditTrail'
 import { formatAuditEvent, fmtAuditTs } from '@/lib/auditTrail'
 
@@ -130,7 +130,8 @@ export default function TransactionRow({
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   function handleApprove() {
-    onAudit?.({ action: 'tx_approved', txId: transaction.id, txDescription: transaction.description, details: { category: transaction.final_category ?? transaction.suggested_category ?? '' } })
+    // Approving an already-approved row changes nothing, so it isn't audited.
+    if (!isApproved(transaction)) onAudit?.({ action: 'tx_approved', txId: transaction.id, txDescription: transaction.description, details: { category: transaction.final_category ?? transaction.suggested_category ?? '' } })
     onChange({ ...approveTransaction(transaction), notes: notes || undefined })
     setExpanded(false)
   }
