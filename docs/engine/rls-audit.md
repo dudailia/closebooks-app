@@ -16,7 +16,10 @@ Changes on `eval-harness`, commits `9a27a7ad` to `72f2b51f`:
   was applied by the owner in the Supabase SQL editor on 2026-09-30 (recorded 2026-10-01; not re-checked from the repo, which has no access to the live database). So was
   `20260930000000_transaction_approved_by.sql` (not a security finding).
   `supabase/migrations/20260930200000_firm_usage_server_owned.sql` (F7) is not
-  applied. The app code works with each applied or not.
+  applied. Main's code breaks if F7 is applied before the merge (its browser
+  writes to `firm_usage` are refused), and the branch code needs F7 to save the
+  close count, so F7 goes right after the merge deploys
+  ([../migrations-to-apply.md](../migrations-to-apply.md)).
 - **Applied as of 2026-10-01:** only those two (plus
   `20260926000000_transaction_splits_source.sql` on 2026-09-26). No other
   migration listed in this document is applied; the order to apply them is in

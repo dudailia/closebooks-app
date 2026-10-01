@@ -176,3 +176,25 @@ describe('F9: brand-assets uploads only into the caller’s firm folder', () => 
     expect(r.rows[0].allowed_mime_types).toEqual(['image/png', 'image/jpeg', 'image/webp'])
   })
 })
+
+// Migrations are applied by hand in the Supabase SQL editor, so Supabase does
+// not record them; a later `supabase db push` would run them again. Every
+// migration from 2026-09-26 on (the three applied ones and all not yet
+// applied, docs/migrations-to-apply.md) must survive a second run.
+describe('re-running the recent migrations', () => {
+  const recent = () => readdirSync(MIGRATIONS).filter((n) => n.endsWith('.sql') && n >= '20260926').sort()
+
+  it('every migration from 2026-09-26 on applies a second time without error', async () => {
+    expect(recent().length).toBeGreaterThanOrEqual(11)
+    for (const f of recent()) {
+      await expect(db.exec(readFileSync(path.join(MIGRATIONS, f), 'utf8')), f).resolves.toBeDefined()
+    }
+  })
+
+  it('and the policies still decide the same way afterwards', async () => {
+    expect((await as(U.E, `select public.cb_is_member_of_firm('${FA}', '${U.A}') as v`)).rows[0].v).toBe(false)
+    expect((await as(U.A, `insert into storage.objects (bucket_id, name) values ('brand-assets', '${FB}/again.png')`)).ok).toBe(false)
+    expect((await as(U.D, `update public.firms set owner_id = '${U.C}' where id = '${FA}'`)).ok).toBe(false)
+    expect((await as(U.D, `insert into public.firm_members (user_id, firm_id, role) values ('${U.C}', '${FA}', 'admin')`)).ok).toBe(false)
+  })
+})
