@@ -297,9 +297,10 @@ as firm id in hidden features), and the rest of F15 (schema drift).
 - **Long uploads on the request path.** `/api/categorize` has 120 s
   (`vercel.json`). The limit is projected at roughly 1,100 rows; concurrency
   was only tested with a fake model.
-- **Clients are matched by name.** Jobs store `client_name` only
-  (`src/app/dashboard/review/[jobId]/page.tsx:962`). Two clients with the same
-  name get mixed up.
+- **Clients were matched by name.** Fixed on branch `overnight`: new closes
+  store the client's id (`src/lib/clientJobs.ts`), but the column's migration
+  (`20261001200000_jobs_client_id.sql`) is not applied, and older jobs still
+  match by name.
 - **Three charts named "Standard Small Business"** with 34, 16 and 29
   accounts. Only the 34-account one was evaluated.
 - **Prompt injection is reduced, not ruled out.** The model still reads bank

@@ -80,3 +80,31 @@ Branch: `overnight`, created from `eval-harness` at `8f357bcf`.
     only, on recategorise). After select-all + Approve, the report says
     "8 by reviewer", including the 4 rows the AI had already auto-approved,
     so bulk approve re-labels AI approvals as the reviewer's.
+- Task 5 (closes linked to clients by id):
+  - `CategorizationJob.client_id` (optional). `src/lib/clientJobs.ts` holds
+    the rules: a job with an id matches only that client; a job without one
+    (saved before tonight, or made by `/get-started`) matches by name,
+    case-insensitive, as before; the review page links a legacy job to a
+    client only when exactly one client has that name.
+  - New Close step 1 is `src/components/ClientPicker.tsx`: search box (name,
+    industry, email), a list showing industry, email and close count so
+    same-name clients can be told apart, and "+ Create new client" with a
+    warning when the name already exists. Choice: a duplicate name is allowed
+    (two real businesses can share a name), with the warning. A client made
+    here gets industry Other and no email; edit it on the Clients page.
+  - "New close" from a client's page now hands over the client's id.
+  - Migration written, not applied:
+    `supabase/migrations/20261001200000_jobs_client_id.sql` (column, index,
+    and a backfill that links a job only when exactly one client of that firm
+    has its name). No foreign key, so a job still saves if its client row
+    didn't. Until it's applied, `src/lib/jobPersistence.ts` retries the job
+    upsert without `client_id`, and `dbGetJobs` now selects `*` so it works
+    with or without the column.
+  - Hidden features (advisory, radar, agent, predict and others) still group
+    jobs by name; not touched.
+  - Tests: 12 unit tests (`src/lib/__tests__/clientJobs.test.ts`), and the e2e
+    now creates two clients with the same name, checks the picker's search and
+    duplicate warning, and checks at the end that the chosen client has
+    2 closes and its twin 0. `npm test` 151 passing, build passes, e2e passes.
+  - Bug I made and fixed before commit: the picker read "no clients yet" before
+    the list loaded and stuck on the create form; the e2e caught it.

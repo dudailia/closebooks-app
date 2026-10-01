@@ -1,13 +1,13 @@
-/** In-memory handoff from client page → upload (replaces sessionStorage). */
+/** In-memory handoff from client page → upload (replaces sessionStorage). Holds the client's id. */
 
-let _clientName: string | null = null
+let _clientId: string | null = null
 
-export function setUploadPrefillClient(name: string): void {
-  _clientName = name
+export function setUploadPrefillClient(clientId: string): void {
+  _clientId = clientId
 }
 
 export function consumeUploadPrefillClient(): string | null {
-  const v = _clientName
-  _clientName = null
+  const v = _clientId
+  _clientId = null
   return v
 }

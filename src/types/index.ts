@@ -74,6 +74,9 @@ export interface JobNarrative {
 
 export type CategorizationJob = {
   id: string
+  /** The client's id. Missing on jobs saved before closes were linked by id (src/lib/clientJobs.ts). */
+  client_id?: string
+  /** The client's name when the close was made (shown in lists and exports). */
   client_name: string
   created_at: string
   status: 'processing' | 'review' | 'completed'

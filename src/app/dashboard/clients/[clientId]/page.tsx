@@ -317,14 +317,14 @@ export default function ClientDetailPage() {
     const c = getClient(clientId)
     if (!c) { setNotFound(true); return }
     setClient(c)
-    setJobs(getJobsForClient(c.business_name))
+    setJobs(getJobsForClient(c))
   }, [clientId])
 
   async function handleSaveEdit(updated: Client) {
     const persisted = await dbSaveClient(updated)
     setClient(updated)
     // Re-fetch jobs in case name changed
-    setJobs(getJobsForClient(updated.business_name))
+    setJobs(getJobsForClient(updated))
     setShowEdit(false)
     if (!persisted) {
       alert("Couldn't save these changes to the server. They're shown here but may not persist after a refresh — please try again.")
@@ -333,7 +333,7 @@ export default function ClientDetailPage() {
 
   function handleNewClose() {
     if (!client) return
-    setUploadPrefillClient(client.business_name)
+    setUploadPrefillClient(client.id)
     router.push('/dashboard/upload')
   }
 

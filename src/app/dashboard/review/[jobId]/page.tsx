@@ -9,6 +9,7 @@ import NarrativeInsight from '@/components/ai/NarrativeInsight'
 import SendMonthlyReportButton from '@/components/reports/SendMonthlyReportButton'
 import AutoCloseModal from '@/components/ai/AutoCloseModal'
 import { getJob, saveJob, getJobs } from '@/lib/storage'
+import { clientForJob, sameClientJobs } from '@/lib/clientJobs'
 import { dbGetJob, dbSaveJob, dbSaveClient } from '@/lib/db'
 import { detectRecurring } from '@/lib/recurringDetection'
 import { logActivity } from '@/lib/activity'
@@ -959,7 +960,7 @@ export default function ReviewPage() {
         })
         .catch(() => { /* keep local demo connection */ })
       // Load client industry from localStorage (fast, always available)
-      const client = getClients().find((c) => c.business_name === found.client_name)
+      const client = clientForJob(found, getClients())
       if (client) setClientIndustry(client.industry)
       // Load audit trail; log job_created on first open if trail is empty
       const existing = getAuditTrail(jobId)
@@ -1002,7 +1003,7 @@ export default function ReviewPage() {
           }
         })
         .catch(() => {})
-      const client = getClients().find((c) => c.business_name === found.client_name)
+      const client = clientForJob(found, getClients())
       if (client) setClientIndustry(client.industry)
       const existing = getAuditTrail(jobId)
       if (existing.length === 0) {
@@ -1042,7 +1043,7 @@ export default function ReviewPage() {
   // All jobs for anomaly detection and tax handoff
   const allClientJobs = useMemo(() => {
     if (!job) return []
-    return getJobs().filter((j) => j.client_name === job.client_name)
+    return getJobs().filter((j) => sameClientJobs(j, job))
   }, [job])
 
   // Anomaly detection — compare current job to previous job for same client

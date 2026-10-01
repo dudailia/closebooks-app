@@ -258,10 +258,13 @@ the journal-entry CSV export and the close report:
   posts every transaction to one default expense account
   (`src/app/api/integrations/quickbooks/push/route.ts:113,121`), ignoring the
   approved account.
-- **Clients are matched by name.** Jobs store `client_name` only; the review
-  page finds the client with `business_name === client_name`
-  (`src/app/dashboard/review/[jobId]/page.tsx:962`). Renaming a client, or two
-  clients with the same name, breaks the link.
+- **Clients were matched by name** (fixed on branch `overnight`). New jobs
+  store `client_id` and are matched on it (`src/lib/clientJobs.ts`); New Close
+  step 1 picks a client from a list. Jobs saved before that, and jobs made by
+  `/get-started`, have no id and still match by name. The `jobs.client_id`
+  column needs `supabase/migrations/20261001200000_jobs_client_id.sql`
+  (written, not applied); until then saves drop the column and new jobs fall
+  back to name matching after a reload.
 - **Three charts named "Standard Small Business":** the 34-account upload
   template (`src/components/ChartOfAccountsUpload.tsx:85`, the one evaluated),
   a 16-account onboarding chart (`src/app/get-started/page.tsx:62`) and the

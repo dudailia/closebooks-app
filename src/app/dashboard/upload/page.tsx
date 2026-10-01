@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation'
 import FileUpload from '@/components/FileUpload'
 import Link from 'next/link'
 import ChartOfAccountsUpload from '@/components/ChartOfAccountsUpload'
-import { dbSaveJob } from '@/lib/db'
+import ClientPicker from '@/components/ClientPicker'
+import { dbSaveClient, dbSaveJob } from '@/lib/db'
+import { getClients, getJobsForClient } from '@/lib/storage'
 import { getRecentCorrections } from '@/lib/corrections'
 import { applyRulesBeforeAI, ensureRulesLoaded, mergeCategorized } from '@/lib/review/rules'
 import { notify } from '@/lib/notify'
@@ -14,7 +16,7 @@ import { canStartClose, recordCloseUsed, getTrialStatus } from '@/lib/freeTrial'
 import { startSession, endSession } from '@/lib/timeTracking'
 import { consumeUploadPrefillClient } from '@/lib/uploadPrefill'
 import { FEATURES } from '@/lib/features'
-import type { Transaction, ChartOfAccounts, CategorizationJob } from '@/types'
+import type { Transaction, ChartOfAccounts, CategorizationJob, Client } from '@/types'
 
 // ---------------------------------------------------------------------------
 // Step indicator
@@ -85,11 +87,13 @@ function StepCard({ title, children }: { title: string; children: React.ReactNod
 type CategorizeState = 'idle' | 'loading' | 'error'
 
 function CategorizeStep({
+  clientId,
   clientName,
   transactions,
   chartOfAccounts,
   onBack,
 }: {
+  clientId: string
   clientName: string
   transactions: Transaction[]
   chartOfAccounts: ChartOfAccounts[]
@@ -168,6 +172,7 @@ function CategorizeStep({
 
       const job: CategorizationJob = {
         id: crypto.randomUUID(),
+        client_id: clientId,
         client_name: clientName,
         created_at: new Date().toISOString(),
         status: 'review',
@@ -340,8 +345,9 @@ function CategorizeStep({
 
 export default function UploadPage() {
   const [step, setStep] = useState(0)
-  const [clientName, setClientName] = useState('')
-  const [clientNameError, setClientNameError] = useState<string | null>(null)
+  const [clients, setClients] = useState<Client[]>([])
+  const [client, setClient] = useState<Client | null>(null)
+  const [clientError, setClientError] = useState<string | null>(null)
   const [chartOfAccounts, setChartOfAccounts] = useState<ChartOfAccounts[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [plaidMode, setPlaidMode] = useState(false)
@@ -352,16 +358,35 @@ export default function UploadPage() {
   }, [])
 
   useEffect(() => {
-    const prefill = consumeUploadPrefillClient()
-    if (prefill) setClientName(prefill)
+    const all = getClients()
+    setClients(all)
+    // "New close" from a client's page preselects that client.
+    const prefillId = consumeUploadPrefillClient()
+    const prefilled = prefillId ? all.find((c) => c.id === prefillId) : undefined
+    if (prefilled) setClient(prefilled)
   }, [])
 
+  async function handleCreateClient(name: string): Promise<Client | null> {
+    const created: Client = {
+      id: crypto.randomUUID(),
+      business_name: name,
+      industry: 'Other',
+      contact_email: '',
+      accounting_software: 'QuickBooks',
+      created_at: new Date().toISOString(),
+    }
+    const persisted = await dbSaveClient(created)
+    if (!persisted) return null
+    setClients(getClients())
+    return created
+  }
+
   function handleClientContinue() {
-    if (!clientName.trim()) {
-      setClientNameError('Please enter a client name.')
+    if (!client) {
+      setClientError('Pick a client, or create a new one.')
       return
     }
-    setClientNameError(null)
+    setClientError(null)
     setStep(1)
   }
 
@@ -411,36 +436,29 @@ export default function UploadPage() {
           <StepIndicator current={step} />
         </div>
 
-        {/* Step 0 — Client name */}
+        {/* Step 0 — Client */}
         {step === 0 && (
           <StepCard title="Who is this close for?">
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: '#1a1714' }}>
-                  Client name
-                </label>
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="e.g. Acme Corp, Jane Smith LLC"
-                  value={clientName}
-                  onChange={(e) => { setClientName(e.target.value); setClientNameError(null) }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleClientContinue()}
-                  className="w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d5a27]"
-                  style={{ borderColor: clientNameError ? '#dc2626' : '#e0dbd4', backgroundColor: '#fff', color: '#1a1714' }}
-                />
-                {clientNameError && (
-                  <p className="text-xs mt-1" style={{ color: '#991b1b' }}>{clientNameError}</p>
-                )}
-              </div>
+              <ClientPicker
+                clients={clients}
+                selectedId={client?.id ?? null}
+                onSelect={(c) => { setClient(c); setClientError(null) }}
+                onCreate={handleCreateClient}
+                closesFor={(c) => getJobsForClient(c).length}
+              />
+              {clientError && (
+                <p className="text-xs" style={{ color: '#991b1b' }}>{clientError}</p>
+              )}
               <button
                 onClick={handleClientContinue}
-                className="w-full py-2.5 rounded-xl text-sm font-semibold text-white"
+                disabled={!client}
+                className="w-full py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
                 style={{ backgroundColor: '#2d5a27' }}
                 onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88' }}
                 onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
               >
-                Continue →
+                {client ? `Continue with ${client.business_name} →` : 'Continue →'}
               </button>
             </div>
           </StepCard>
@@ -551,7 +569,8 @@ export default function UploadPage() {
         {/* Step 3 — Categorize */}
         {step === 3 && (
           <CategorizeStep
-            clientName={clientName}
+            clientId={client!.id}
+            clientName={client!.business_name}
             transactions={transactions}
             chartOfAccounts={chartOfAccounts}
             onBack={() => setStep(2)}

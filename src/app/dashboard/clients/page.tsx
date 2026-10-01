@@ -217,7 +217,7 @@ function ClientCard({
   health?: HealthBreakdown
 }) {
   const router = useRouter()
-  const jobs = getJobsForClient(client.business_name)
+  const jobs = getJobsForClient(client)
   const lastClose = jobs[0]
   const style = INDUSTRY_STYLE[client.industry] ?? INDUSTRY_STYLE['Other']
 
@@ -340,7 +340,7 @@ export default function ClientsPage() {
     const payload = {
       clients: clients.map((c) => ({
         clientName: c.business_name,
-        jobs: getJobsForClient(c.business_name),
+        jobs: getJobsForClient(c),
       })),
     }
     void (async () => {

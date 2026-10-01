@@ -15,6 +15,9 @@ const SHOTS = path.join(ROOT, 'docs', 'screenshots')
 const US_DATES_CSV = path.join(ROOT, 'e2e', 'fixtures', 'us-dates-8.csv')
 const SYNTHETIC_292_CSV = path.join(ROOT, 'eval', 'data', 'synthetic_upload.csv')
 const CLIENT = 'Brightline Studio LLC (synthetic)'
+// A second client with the same name: closes must not mix between the two.
+const CLIENT_EMAIL = 'books@brightline.test'
+const TWIN_EMAIL = 'other@brightline.test'
 
 async function shot(page: Page, name: string, fullPage = false) {
   await page.screenshot({ path: path.join(SHOTS, `${name}.png`), fullPage })
@@ -47,8 +50,9 @@ function journalTotals(csv: string) {
 async function startClose(page: Page, file: string, rows: number) {
   await page.getByRole('link', { name: 'New Close' }).first().click()
   await page.waitForURL('**/dashboard/upload')
-  await page.getByPlaceholder('e.g. Acme Corp, Jane Smith LLC').fill(CLIENT)
-  await page.getByRole('button', { name: 'Continue →' }).click()
+  // Step 1: pick the client from the list (two share the name; the email tells them apart).
+  await page.getByRole('option').filter({ hasText: CLIENT_EMAIL }).click()
+  await page.getByRole('button', { name: `Continue with ${CLIENT} →` }).click()
   await expect(page.getByText("Standard Small Business").first()).toBeVisible()
   return {
     async chooseChart() {
@@ -89,17 +93,34 @@ test('core path: two closes, a rule, balanced journal entries, report', async ({
   await expect(page.getByRole('link', { name: 'New Close' }).first()).toBeVisible()
   await shot(page, '01-demo-dashboard')
 
-  // 2. Create the client.
+  // 2. Create the client, and a second client with the same name.
   await page.getByRole('link', { name: 'Clients' }).first().click()
   await page.waitForURL('**/dashboard/clients')
-  await page.getByRole('button', { name: /Add Client/ }).first().click()
-  await page.getByPlaceholder('Sunrise Advisory LLC').fill(CLIENT)
-  await shot(page, '02-new-client-form')
-  await page.getByRole('button', { name: 'Add Client', exact: true }).click()
-  await expect(page.getByText(CLIENT).first()).toBeVisible()
+  for (const email of [TWIN_EMAIL, CLIENT_EMAIL]) {
+    await page.getByRole('button', { name: /Add Client/ }).first().click()
+    await page.getByPlaceholder('Sunrise Advisory LLC').fill(CLIENT)
+    await page.getByPlaceholder('jane@sunriseadvisory.com').fill(email)
+    if (email === CLIENT_EMAIL) await shot(page, '02-new-client-form')
+    await page.getByRole('button', { name: 'Add Client', exact: true }).click()
+  }
+  await expect(page.getByText(CLIENT)).toHaveCount(2)
   await shot(page, '03-client-created')
 
   // 3. First close: choose the chart, upload the 8-row US-date file.
+  // New Close step 1 is a searchable list with "create new client".
+  await page.getByRole('link', { name: 'New Close' }).first().click()
+  await page.waitForURL('**/dashboard/upload')
+  await expect(page.getByRole('option')).toHaveCount(2)
+  await page.getByRole('button', { name: '+ Create new client' }).click()
+  await page.getByLabel('New client name').fill(CLIENT)
+  await expect(page.getByText('A client with this name already exists')).toBeVisible()
+  await page.getByRole('button', { name: 'Cancel' }).click()
+  await page.getByLabel('Search clients').fill('books@')
+  await expect(page.getByRole('option')).toHaveCount(1)
+  await page.getByRole('option').click()
+  await shot(page, '04a-new-close-client-picker')
+  await page.getByLabel('Search clients').fill('')
+
   const first = await startClose(page, US_DATES_CSV, 8)
   await shot(page, '04-chart-of-accounts')
   await first.chooseChart()
@@ -176,6 +197,14 @@ test('core path: two closes, a rule, balanced journal entries, report', async ({
   expect(totals2.perEntry.size).toBeGreaterThan(0)
   for (const [entry, t] of totals2.perEntry) expect(t.debit, `${entry} balances`).toBe(t.credit)
   expect(totals2.debit).toBe(totals2.credit)
+
+  // 10. Both closes belong to the chosen client only, not to its same-name twin.
+  await page.getByRole('link', { name: 'Clients' }).first().click()
+  await page.waitForURL('**/dashboard/clients')
+  const cards = page.locator('main').first()
+  await expect(cards.getByText('2 closes')).toHaveCount(1)
+  await expect(cards.getByText('0 closes')).toHaveCount(1)
+  await shot(page, '12-clients-closes-by-id')
 
   expect(external, 'no request left localhost').toEqual([])
 })

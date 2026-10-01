@@ -156,7 +156,7 @@ export default function ClientPredictiveAdvisoryPage({ clientId }: { clientId: s
     const foundClient = getClient(clientId)
     setClient(foundClient)
     if (!foundClient) return
-    const clientJobs = getJobsForClient(foundClient.business_name)
+    const clientJobs = getJobsForClient(foundClient)
       .sort((a, b) => a.created_at.localeCompare(b.created_at))
     setJobs(clientJobs)
     setMemo(getAdvisoryMemosForClient(foundClient.business_name)[0] ?? null)

@@ -6,6 +6,7 @@ export function mapJobFromRows(
 ): CategorizationJob {
   return {
     id: String(row.id),
+    ...(row.client_id ? { client_id: String(row.client_id) } : {}),
     client_name: String(row.client_name ?? ''),
     created_at: String(row.created_at ?? new Date().toISOString()),
     // Seed/legacy rows use 'complete'; the type + all STATUS_STYLE maps use 'completed'. Normalize once here.
