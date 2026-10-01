@@ -273,11 +273,15 @@ directly, which the middleware can't block): `portal-docs` bucket open to
 anon (F1, critical), members able to rewrite trial state (F7), the email match
 in the subscriptions policy (F8), and RLS on `qbo_connections` (F15).
 
-**Still open:** F5 (owners/admins can add any user; `cb_firm_id()` picks an
-arbitrary firm for multi-firm users), F9 (`brand-assets` upload to any path),
-F10 (`cb_is_member_of_firm` callable over RPC), F13 (membership-only policies
-on hidden features), F14 (admins can change `owner_id`), F16 (user id stored
-as firm id in hidden features), and the rest of F15 (schema drift).
+**Also written, not applied** (branch `overnight`, tested on PGlite by
+`supabase/__tests__/migrations.test.ts`): role limits on adding members and a
+deterministic `cb_firm_id()` (F5), `brand-assets` uploads only into the
+caller's firm folder and no SVG (F9), `cb_is_member_of_firm` answers only
+about the caller (F10), `owner_id` pinned against API updates (F14).
+
+**Still open:** a user can be added to a firm without consenting (F5, no
+invitation flow), F13 (membership-only policies on hidden features), F16 (user
+id stored as firm id in hidden features), and the rest of F15 (schema drift).
 
 ## 11. Known weaknesses
 
@@ -323,5 +327,5 @@ as firm id in hidden features), and the rest of F15 (schema drift).
    per vendor.
 5. **Move batching off the request path** (a queue or background job) and
    upload PDFs straight to storage.
-6. **Apply the written migrations** and close F5, F9, F10 and F14 before any
-   real client data is loaded.
+6. **Apply the written migrations** and add an invitation flow (the rest of
+   F5) before any real client data is loaded.

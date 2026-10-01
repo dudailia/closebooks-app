@@ -4,9 +4,9 @@ import { isMissingClientIdColumn, resetJobColumnDetection, upsertJobRow } from '
 import { mapJobFromRows } from '@/lib/hydrateMappers'
 
 // Two clients with the same name, plus one other.
-const acmeA = { id: 'c-a', business_name: 'Acme LLC', industry: 'Retail', contact_email: 'a@acme.test' }
-const acmeB = { id: 'c-b', business_name: 'Acme LLC', industry: 'Technology', contact_email: 'b@acme.test' }
-const other = { id: 'c-o', business_name: 'Other Co', industry: 'Other', contact_email: '' }
+const acmeA = { id: 'c-a', business_name: 'Acme LLC', industry: 'Retail' as const, contact_email: 'a@acme.test' }
+const acmeB = { id: 'c-b', business_name: 'Acme LLC', industry: 'Technology' as const, contact_email: 'b@acme.test' }
+const other = { id: 'c-o', business_name: 'Other Co', industry: 'Other' as const, contact_email: '' }
 const clients = [acmeA, acmeB, other]
 
 const jobA = { id: 'j1', client_id: 'c-a', client_name: 'Acme LLC' }

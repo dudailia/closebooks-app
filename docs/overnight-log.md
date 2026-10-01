@@ -108,3 +108,34 @@ Branch: `overnight`, created from `eval-harness` at `8f357bcf`.
     2 closes and its twin 0. `npm test` 151 passing, build passes, e2e passes.
   - Bug I made and fixed before commit: the picker read "no clients yet" before
     the list loaded and stuck on the create form; the e2e caught it.
+- Task 6 (low audit findings): four migrations written, **none applied**:
+  - F9 `20261001300000_brand_assets_firm_folder.sql`: insert only into
+    `<firm_id>/...` for an owner/admin of that firm; SVG dropped from the
+    bucket's types. Code: `/api/firm/logo` now finds the firm from the
+    request's session (it used the browser client on the server, which
+    returns null) and accepts PNG, JPEG, WebP only. Route still 404s.
+  - F10 `20261001400000_member_check_caller_only.sql`: same signature, true
+    only when `check_user = auth.uid()`. Choice: not revoking execute, because
+    RLS policies call it as the querying role and would start erroring.
+  - F14 `20261001500000_firms_owner_id_pinned.sql`: trigger refusing an
+    `owner_id` change from anon/authenticated API sessions (a policy's WITH
+    CHECK can't see the old value). Service role and SQL editor can still
+    transfer.
+  - F5 `20261001600000_firm_members_insert_limits.sql`: no second owner row,
+    only the owner adds/promotes admins, `cb_firm_id()` prefers the owned firm
+    then the oldest membership. Not fixed: adding a user without consent needs
+    an invitation flow, which doesn't exist (your decision whether to build it).
+  - **Tested on real Postgres SQL** via PGlite (added as a dev dependency):
+    `supabase/__tests__/migrations.test.ts` applies all 31 migrations in order
+    with stand-ins for Supabase's auth/roles/storage and checks the policies
+    (17 tests, in `npm test`). Removing the four new files makes 12 fail. The
+    test caught two bugs in my first drafts: F10 returned null instead of
+    false for anon, and the F14 trigger errored on an empty JWT-claims
+    setting. Both fixed before commit.
+  - Read-only checks for each finding appended to
+    `supabase/checks/open_findings_check.sql`.
+  - `docs/engine/rls-audit.md` section 0 and `docs/technical-overview.md`
+    updated.
+  - Found: `next build` did not type-check test files (a type error in
+    `clientJobs.test.ts` from task 5 passed the build). Fixed the error and
+    added `npm run typecheck` (`tsc --noEmit`, whole repo); I run it from here on.

@@ -16,6 +16,14 @@ Changes on `eval-harness`, commits `9a27a7ad` to `72f2b51f`:
   `supabase/migrations/20260930200000_firm_usage_server_owned.sql` (F7). The
   app code already works with them applied or not.
 
+**Migration tests (branch `overnight`).** `supabase/__tests__/migrations.test.ts`
+(part of `npm test`) applies every file in `supabase/migrations/` in order to
+PGlite (Postgres in WebAssembly, in memory) with small stand-ins for Supabase's
+`auth.uid()`, roles and `storage` schema, then checks the F5, F9, F10 and F14
+policies as a signed-in user and as anon: 17 tests. With the four new
+migrations removed, 12 of them fail. This shows the SQL runs and the policies
+decide as intended on Postgres; it does not show what the live database has.
+
 **Important limit.** The middleware only blocks this app's routes. Anyone
 with the public anon key can still call Supabase's REST and Storage APIs
 directly, where only RLS applies. Findings that live in the database stay
@@ -27,15 +35,15 @@ open until their migration is applied.
 | F2 portal routes update by id | Mitigated: every portal route returns 404. The route code is unchanged; fix it before re-enabling the portal. |
 | F3 `/api/portal/ingest`, `/api/inbox/webhook` | Mitigated: both return 404. Fix before re-enabling (auth on ingest, make the webhook token required, remove the `supabase.rpc` payload write). |
 | F4 inbox slugs not unique | Mitigated for now (inbox routes 404). The missing unique index remains. |
-| F5 `firm_members` insert, `cb_firm_id()` | Open. |
+| F5 `firm_members` insert, `cb_firm_id()` | **Partly fixed; migration written, not applied** (branch `overnight`): `supabase/migrations/20261001600000_firm_members_insert_limits.sql`. Nobody can add a second `owner` row; only the owner can add or promote an admin; admins can add senior_accountant, staff or readonly. `cb_firm_id()` now returns the firm the caller owns, then their oldest membership. **Still open:** a user can be added to a firm without consenting (there is no invitation flow; no app code inserts `firm_members`). |
 | F6 Plaid webhook signature | Mitigated: Plaid routes 404 (the Vercel cron at `/api/integrations/plaid/sync/cron` now gets 404 too). |
 | F7 members can rewrite trial state | **Open in the database until the migration is applied.** The browser no longer writes `trial_started_at` or `plan_status` (`src/lib/freeTrial.ts`, `src/lib/db.ts`); after the migration, only `cb_ensure_firm_usage` and `cb_record_close_used` can change the row from a signed-in session. |
 | F8 subscription keyed on email | **Code fixed; migration written, not applied.** Every lookup is by the caller's firm (`src/lib/subscriptionLookup.ts`); checkout requires a signed-in firm and ignores any email in the body; the pricing page sends visitors to sign up. `supabase/migrations/20261001000000_subscriptions_by_firm.sql` removes the email match from the select policy. Until applied, a signed-in user can still read a subscription row whose `customer_email` matches theirs through the REST API (no access or billing portal, since the app no longer uses the email match). |
-| F9 `brand-assets` upload to any path | Open in the database. `/api/firm/logo` returns 404, but the bucket policy is unchanged. |
-| F10 `cb_is_member_of_firm` callable over RPC | Open (information leak only). |
+| F9 `brand-assets` upload to any path | **Code fixed; migration written, not applied** (branch `overnight`): `20261001300000_brand_assets_firm_folder.sql` allows inserts only into `<firm_id>/...` for a firm where the caller is owner or admin, and drops `image/svg+xml` from the bucket's types. `/api/firm/logo` (still 404 in the demo) now finds the firm from the request's session instead of the browser client and accepts PNG, JPEG and WebP only. SVGs already stored are not deleted; `supabase/checks/open_findings_check.sql` lists them. |
+| F10 `cb_is_member_of_firm` callable over RPC | **Migration written, not applied** (branch `overnight`): `20261001400000_member_check_caller_only.sql` keeps the signature but returns true only when `check_user` is the caller. Every caller in the repo passes `auth.uid()`, so policies are unchanged. Execute is not revoked, because policies call the function as the querying role. |
 | F11, F12 portal pages | Mitigated: `/portal/*` returns 404. |
 | F13 membership-only policies | Open at the database level; the affected routes (inbox, consolidation, Plaid, bank rec) return 404. |
-| F14 admins can change `owner_id` | Open. |
+| F14 admins can change `owner_id` | **Migration written, not applied** (branch `overnight`): `20261001500000_firms_owner_id_pinned.sql` adds a trigger that refuses an `owner_id` change from an anon or authenticated API session. The service role and direct database sessions can still transfer ownership. No app code changes `owner_id`. |
 | F15 schema drift | Partly fixed: `supabase/migrations/20261001100000_lock_tables_outside_migrations.sql` enables RLS on `qbo_connections` and revokes anon/authenticated access (not applied). The live state is unknown; `supabase/checks/open_findings_check.sql` shows it. The `inbox-attachments` bucket and `portal_tokens` drift remain. |
 | F16 user id as firm id | Open (fails closed for bank rec; portal and Plaid routes 404). |
 
