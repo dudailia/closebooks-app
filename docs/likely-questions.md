@@ -201,14 +201,20 @@ It's there because some accounts are a policy choice (`eval/README.md`,
 "Acceptable alternates"). But one of the alternates is exactly the prompt's
 known error: client payments and Stripe payouts are accepted on 4100 revenue
 instead of 1100 AR. So lenient hides that error. Strict is the number to hold
-me to: 86.7% for the current model (facts.md).
+me to: 86.7% for the current model (facts.md). The gap shows up most in
+auto-approvals: at 0.93, 1 of 274 (0.4%) wrong lenient but 20 of 274 (7.3%)
+wrong strict. Of those 20, 19 are policy alternates (18 client payments to
+4100 instead of 1100 AR, 1 Mailchimp charge to Software instead of Marketing)
+and 1 is a real mistake (Gusto payroll tax to 5100 instead of 2300 Payroll
+Liabilities). Source: facts.md, "What the strict errors are"
+(`eval/results/strict-errors.md`).
 
 ### 18. 292 rows is tiny. How confident are you in any of these numbers?
 
 Not very. 292 rows, 8 REVIEW rows, 2 runs per model at most (Haiku 4.5 one
 run), one business, one chart (facts.md, "About the data", "REVIEW rows",
-"Stability across runs"). The wrong-auto-approval rate at 0.93 is 1 of 274;
-one more error would double it. I haven't computed confidence intervals. With
+"Stability across runs"). The wrong-auto-approval rate at 0.93 is 1 of 274
+lenient (one more error would double it) and 20 of 274 strict. I haven't computed confidence intervals. With
 real data I'd want several hundred rows per firm from several firms and
 intervals on every rate.
 
@@ -222,8 +228,8 @@ runs". Two runs shows that variation exists; it doesn't bound it.
 ### 20. Did you try other models?
 
 Yes, on the same synthetic set. Haiku 4.5 (single run): 214/284 (75.4%)
-strict, 246/284 (86.6%) lenient, and 30/230 (13.0%) wrong among
-auto-approved at 0.85. Opus 5.5 produced no usable predictions: all 8 calls
+strict, 246/284 (86.6%) lenient, and 30/230 (13.0%) lenient, 60/230 (26.1%)
+strict wrong among auto-approved at 0.85. Opus 5.5 produced no usable predictions: all 8 calls
 failed on a reply-parsing bug (thinking blocks) that is now fixed
 (`src/lib/categorize.ts:319` reads text blocks only). Opus is unmeasured.
 Source: facts.md, "Accuracy per model".
@@ -234,18 +240,23 @@ Source: facts.md, "Accuracy per model".
 
 From a threshold sweep over saved confidences, no new API calls
 (`eval/sweep-cli.ts`, `eval/results/threshold-sweep.md`). For Sonnet 5.5
-pooled over 2 runs, 0.93 auto-approves 274 rows (49.3%) with 1 wrong (0.4%,
-lenient) and leaves 50.5 of 97 rows per statement for review. 0.91 met a 2%
-target on the pooled runs (4 of 291 wrong, 1.4%), but run 2 alone needed
-0.93 (facts.md, "Threshold sweep"). The constant is
-`src/lib/ai/models.ts:15`. The strict wrong rate at 0.93 is higher than the
-lenient one; it's in the same table.
+pooled over 2 runs, 0.93 auto-approves 274 rows (49.3%) with 1 wrong lenient
+(0.4%) and 20 wrong strict (7.3%), and leaves 50.5 of 97 rows per statement
+for review. The 2% target was set on the lenient figure: 0.91 met it on the
+pooled runs (4 of 291 wrong lenient, 1.4%; 27 strict, 9.3%), but run 2 alone
+needed 0.93 (facts.md, "Threshold sweep"). The constant is
+`src/lib/ai/models.ts:15`. 19 of the 20 strict errors at 0.93 are client
+payments and one Mailchimp charge on a policy alternate; 1 is a real mistake
+(question 17). If a firm books client payments against invoices, strict is
+the number that matters for it, and no threshold below 0.94 gets it under 2%
+(0.94: 4 of 242, 1.7%, with 56.0 of 97 rows per statement to review;
+facts.md, "Threshold sweep").
 
 ### 22. You picked the threshold on the same data you report it on. Isn't that overfitting?
 
 Yes. There is no held-out set: the threshold was chosen and reported on the
-same 292 rows. The 0.4% is an in-sample number and will be worse on new
-data. The next experiment is a time split (choose on June, report on July
+same 292 rows. The 0.4% (lenient) and 7.3% (strict) are in-sample numbers
+and will be worse on new data. The next experiment is a time split (choose on June, report on July
 and August), and with real data a proper held-out month per firm.
 
 ### 23. Is confidence calibrated?

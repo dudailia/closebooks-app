@@ -16,6 +16,7 @@ Accuracy and wrong auto-approvals are over rows with an account label; REVIEW ro
 | Accuracy, strict | 84.7% | 86.3% |
 | Auto-approved | 152 | 152 |
 | Wrong auto-approvals (lenient) | 8 (5.3%) | 6 (3.9%) |
+| Wrong auto-approvals (strict) | 26 (17.1%) | 23 (15.1%) |
 | REVIEW rows auto-approved | 0 | 0 |
 | Review load (rows a human checks) · per 97-row statement | 36 · 18.6 | 36 · 18.6 |
 | Rows sent to the AI | 188 | 183 |

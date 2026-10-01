@@ -108,6 +108,7 @@ async function main(): Promise<void> {
     cmp('Accuracy, strict', pct(before.strict), pct(after.strict)),
     cmp('Auto-approved', String(before.autoApproved), String(after.autoApproved)),
     cmp('Wrong auto-approvals (lenient)', `${before.wrongAmongAutoApprovedLenient} (${pct(before.wrongAmongAutoApprovedLenientRate)})`, `${after.wrongAmongAutoApprovedLenient} (${pct(after.wrongAmongAutoApprovedLenientRate)})`),
+    cmp('Wrong auto-approvals (strict)', `${before.wrongAmongAutoApprovedStrict} (${pct(before.wrongAmongAutoApprovedStrictRate)})`, `${after.wrongAmongAutoApprovedStrict} (${pct(after.wrongAmongAutoApprovedStrictRate)})`),
     cmp('REVIEW rows auto-approved', String(before.reviewRowsAutoApproved), String(after.reviewRowsAutoApproved)),
     cmp(`Review load (rows a human checks) · per ${m.statementSize}-row statement`, `${before.reviewLoad} · ${perStatement(before.reviewLoad)}`, `${after.reviewLoad} · ${perStatement(after.reviewLoad)}`),
     cmp('Rows sent to the AI', String(before.aiRows), String(after.aiRows)),

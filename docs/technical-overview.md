@@ -138,16 +138,25 @@ attempts (`MAX_RETRIES`, line 14). A batch that still fails marks its rows
 **How 0.93 was chosen.** `eval/sweep-cli.ts` recomputed the app's auto-approve
 decision at every threshold from 0.70 to 0.99, using the confidences saved
 from the eval runs (no new API calls; at 0.85 it reproduces every saved
-decision). The target was at most 2% wrong among auto-approved rows (lenient)
-with no REVIEW row auto-approved. Pooled over two Sonnet 5.5 runs the lowest
+decision). The target was at most 2% wrong among auto-approved rows, counted
+lenient (policy alternates not counted as wrong), with no REVIEW row
+auto-approved. Pooled over two Sonnet 5.5 runs the lowest
 such threshold is 0.91, but run 2 alone needed 0.93, so 0.93 was taken. Source:
 `eval/results/threshold-sweep.md`.
 
-| Setting | Auto-approved | Wrong among auto-approved (lenient) | Review rows per 97-row statement |
-|---|---:|---:|---:|
-| Sonnet 4.6 at 0.85 (previous app setting), 2 runs | 468 (82.4%) | 27 (5.8%) | 19.3 |
-| Sonnet 5.5 at 0.91, 2 runs pooled | 291 (52.3%) | 4 (1.4%) | 47.7 |
-| Sonnet 5.5 at 0.93, 2 runs pooled | 274 (49.3%) | 1 (0.4%) | 50.5 |
+| Setting | Auto-approved | Wrong among auto-approved, lenient | Wrong among auto-approved, strict | Review rows per 97-row statement |
+|---|---:|---:|---:|---:|
+| Sonnet 4.6 at 0.85 (previous app setting), 2 runs | 468 (82.4%) | 27 (5.8%) | 82 (17.5%) | 19.3 |
+| Sonnet 5.5 at 0.91, 2 runs pooled | 291 (52.3%) | 4 (1.4%) | 27 (9.3%) | 47.7 |
+| Sonnet 5.5 at 0.93, 2 runs pooled | 274 (49.3%) | 1 (0.4%) | 20 (7.3%) | 50.5 |
+
+**What the 20 strict errors at 0.93 are:** 19 are policy alternates the
+dataset accepts (18 client payments booked to 4100 Service Revenue instead of
+1100 Accounts Receivable, 1 Mailchimp charge to 6100 Software instead of 5500
+Marketing) and 1 is a real mistake (a Gusto payroll-tax payment to 5100
+Payroll & Wages instead of 2300 Payroll Liabilities). So if the firm books
+client payments against invoices, the auto-approved rows it would correct are
+7.3%, not 0.4%. Source: `eval/results/strict-errors.md`.
 
 The cost is review load: roughly half of each statement goes to a human.
 Sonnet 4.6 would need 0.98 to reach 2% wrong, which reviews 92.8 of 97 rows.
@@ -188,8 +197,9 @@ A row missing from an otherwise readable reply is flagged (`src/lib/categorize.t
 
 **Measured effect (projection, not a live run):** treating June as reviewed
 and every wrong June row as a rule, rules matched 5 of 188 July to August
-rows, all 5 correct. Lenient accuracy on those rows went from 94.5% to 95.6%,
-and wrong auto-approvals from 8 to 6. Only 16 later rows came from vendors
+rows, all 5 correct. Accuracy on those rows went from 94.5% to 95.6% lenient
+(84.7% to 86.3% strict), and wrong auto-approvals from 8 to 6 lenient (26 to
+23 strict), at the saved run's 0.85 threshold. Only 16 later rows came from vendors
 with a June correction; 11 of them use a second bank-line format the rules
 didn't match. This used Sonnet 4.6 run 1 predictions, not the current model.
 Source: `eval/results/learn-plan.md`.
@@ -222,11 +232,11 @@ chart. 284 rows have an account label; 8 are labelled REVIEW. Threshold 0.85,
 batch size 20, no corrections sent. Source: `eval/results/comparison.md` and
 each run's `summary.json`.
 
-| Model | Runs | Strict | Lenient | Wrong among auto-approved at 0.85 (lenient) | Cost per 97-row statement | Median latency per row |
+| Model | Runs | Strict | Lenient | Wrong among auto-approved at 0.85, strict / lenient | Cost per 97-row statement | Median latency per row |
 |---|---:|---:|---:|---:|---:|---:|
-| Sonnet 4.6 | 2 | 480/568 (84.5%) | 539/568 (94.9%) | 27/468 (5.8%) | $0.160 | 1.15 s |
-| Sonnet 5.5 | 2 (run 2 cut at 280 rows) | 482/556 (86.7%) | 528/556 (95.0%) | 22/418 (5.3%) | $0.111 | 0.43 s |
-| Haiku 4.5 | 1 | 214/284 (75.4%) | 246/284 (86.6%) | 30/230 (13.0%) | $0.050 | 0.53 s |
+| Sonnet 4.6 | 2 | 480/568 (84.5%) | 539/568 (94.9%) | 82/468 (17.5%) / 27/468 (5.8%) | $0.160 | 1.15 s |
+| Sonnet 5.5 | 2 (run 2 cut at 280 rows) | 482/556 (86.7%) | 528/556 (95.0%) | 64/418 (15.3%) / 22/418 (5.3%) | $0.111 | 0.43 s |
+| Haiku 4.5 | 1 | 214/284 (75.4%) | 246/284 (86.6%) | 60/230 (26.1%) / 30/230 (13.0%) | $0.050 | 0.53 s |
 
 *Strict* accepts only the primary label; *lenient* also accepts policy
 alternates (for example a client payment to revenue instead of AR). All 16

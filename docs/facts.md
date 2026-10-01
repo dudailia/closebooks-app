@@ -14,7 +14,7 @@ customers and no real client data; nothing here was measured on real books.
 
 **About the sources.** `eval/results/` is gitignored, but every summary file
 named below (`report.md`, `summary.json`, `comparison.md`,
-`threshold-sweep.md`, `learn-plan.md` and the two spend ledgers) is committed
+`threshold-sweep.md`, `strict-errors.md`, `learn-plan.md` and the two spend ledgers) is committed
 with `git add -f`. The per-prediction `raw.json` files are not in git.
 
 **Terms.** *Strict* accuracy accepts only the primary label. *Lenient* also
@@ -49,6 +49,8 @@ lenient (run 2, `eval/results/full-sonnet-5-5-run2/summary.json`).
 ## Wrong among auto-approved, at 0.85
 
 Source: same `summary.json` files (`review.autoApprovedErrorRate`).
+Quote strict and lenient together. The gap between them is policy alternates
+(see "What the strict errors are", below).
 
 | Model | Strict | Lenient |
 |---|---:|---:|
@@ -90,21 +92,47 @@ Two runs is the minimum to see variation; it doesn't bound it.
 Source: `eval/results/threshold-sweep.md`, produced by `eval/sweep-cli.ts`
 from saved confidences (no new API calls). The app's decision depends only
 on confidence, validation flags and threshold, so the recomputation is exact
-for these predictions, but no run was made at these thresholds. Lenient
-counts. Review load includes REVIEW rows.
+for these predictions, but no run was made at these thresholds. Review load
+includes REVIEW rows.
 
-| Model | Threshold | Auto-approved | Wrong among auto-approved | Review rows per 97-row statement |
-|---|---:|---:|---:|---:|
-| Sonnet 4.6 (2 runs) | 0.85 | 468 (82.4%) | 27 (5.8%) | 19.3 |
-| Sonnet 4.6 | 0.91 | 334 (58.8%) | 18 (5.4%) | 41.5 |
-| Sonnet 4.6 | 0.93 | 298 (52.5%) | 15 (5.0%) | 47.5 |
-| Sonnet 5.5 (2 runs pooled) | 0.85 | 418 (75.2%) | 22 (5.3%) | 26.1 |
-| Sonnet 5.5 | 0.91 | 291 (52.3%) | 4 (1.4%) | 47.7 |
-| Sonnet 5.5 | **0.93 (app default now)** | 274 (49.3%) | 1 (0.4%) | 50.5 |
+| Model | Threshold | Auto-approved | Wrong among auto-approved, lenient | Wrong among auto-approved, strict | Review rows per 97-row statement |
+|---|---:|---:|---:|---:|---:|
+| Sonnet 4.6 (2 runs) | 0.85 | 468 (82.4%) | 27 (5.8%) | 82 (17.5%) | 19.3 |
+| Sonnet 4.6 | 0.91 | 334 (58.8%) | 18 (5.4%) | 56 (16.8%) | 41.5 |
+| Sonnet 4.6 | 0.93 | 298 (52.5%) | 15 (5.0%) | 38 (12.8%) | 47.5 |
+| Sonnet 5.5 (2 runs pooled) | 0.85 | 418 (75.2%) | 22 (5.3%) | 64 (15.3%) | 26.1 |
+| Sonnet 5.5 | 0.91 | 291 (52.3%) | 4 (1.4%) | 27 (9.3%) | 47.7 |
+| Sonnet 5.5 | **0.93 (app default now)** | 274 (49.3%) | 1 (0.4%) | 20 (7.3%) | 50.5 |
+| Sonnet 5.5 | 0.94 | 242 (43.5%) | 0 (0.0%) | 4 (1.7%) | 56.0 |
 
-Per run at 0.93, Sonnet 5.5: 137 auto-approved, 0 wrong (run 1); 137
-auto-approved, 1 wrong (run 2). Sonnet 4.6 first reaches at most 2% wrong at
-0.98 (4.4% auto-approved, 92.8 review rows per statement).
+Per run at 0.93, Sonnet 5.5: 137 auto-approved, 0 wrong lenient and 8 (5.8%)
+strict (run 1); 137 auto-approved, 1 (0.7%) lenient and 12 (8.8%) strict
+(run 2). Sonnet 4.6 first reaches at most 2% lenient wrong at 0.98 (4.4%
+auto-approved, 0 wrong of 25 lenient and strict, 92.8 review rows per
+statement). The 2% target that picked 0.93 was set on the lenient figure;
+for Sonnet 5.5 the lowest threshold with at most 2% strict wrong is 0.94.
+
+### What the strict errors are
+
+Source: `eval/results/strict-errors.md`, produced by
+`eval/strict-errors-cli.ts` from the same saved predictions (no API calls). A
+*policy alternate* is an account `eval/data/vendors.csv` accepts for that
+vendor; anything else is a real mistake. Strict wrong minus policy alternates
+is the lenient count.
+
+At 0.93, Sonnet 5.5 (2 runs pooled): 20 strict errors among 274 auto-approved
+rows. **19 are policy alternates:** 18 client payments (9 ACH credits from two
+clients, 4 incoming wires, 5 Stripe payouts in the `STRIPE DES:TRANSFER`
+format) booked to 4100 Service Revenue instead of 1100 Accounts Receivable, and 1 Mailchimp charge booked to 6100 Subscriptions &
+Software instead of 5500 Marketing. **1 is a real mistake:** a Gusto
+payroll-tax payment booked to 5100 Payroll & Wages instead of 2300 Payroll
+Liabilities.
+
+At 0.85 the same runs have 64 strict errors: 42 policy alternates and 22 real
+mistakes (14 Stripe payouts to 4000 Sales Revenue, 4 Gusto payroll tax to
+5100, 2 Square workshop sales to 4000, 2 Gusto fees to 5100). Sonnet 4.6 at
+0.93: 38 strict, 23 policy alternates, 15 real mistakes (9 payroll tax and 6
+sales-tax remittances to 6200 Taxes & Licenses).
 
 The app now uses Sonnet 5.5 at 0.93 (`src/lib/ai/models.ts`). That choice
 rests on this sweep; it has not been re-run at 0.93 as a live eval.
@@ -118,8 +146,11 @@ wrong June row corrected and turned into a rule; July and August (188 rows)
 matched with the app's rule code.
 
 - Rules matched 5 of 188 July to August rows, all 5 correct; no wrong matches.
-- Lenient accuracy on those 188 rows: 94.5% without rules, 95.6% with rules first.
-- Wrong auto-approvals (lenient): 8 (5.3%) without rules, 6 (3.9%) with.
+- Accuracy on those 188 rows: 94.5% lenient and 84.7% strict without rules;
+  95.6% lenient and 86.3% strict with rules first.
+- Wrong auto-approvals: 8 (5.3%) lenient and 26 (17.1%) strict without rules;
+  6 (3.9%) lenient and 23 (15.1%) strict with rules. These use the saved
+  run's 0.85 statuses, not 0.93.
 - 16 July to August rows came from vendors with a June correction; the other 11 use a second bank-line format the rules didn't see.
 
 ## Latency

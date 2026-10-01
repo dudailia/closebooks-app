@@ -55,6 +55,8 @@ export interface ScenarioMetrics {
   autoApproved: number
   wrongAmongAutoApprovedLenient: number
   wrongAmongAutoApprovedLenientRate: number | null
+  wrongAmongAutoApprovedStrict: number
+  wrongAmongAutoApprovedStrictRate: number | null
   reviewLoad: number
   reviewRowsAutoApproved: number
   aiRows: number
@@ -123,6 +125,8 @@ function scenario(preds: Prediction[], truth: TruthRow[], aiRows: number): Scena
     autoApproved: split.approved,
     wrongAmongAutoApprovedLenient: split.autoApproved.n - split.autoApproved.lenientCorrect,
     wrongAmongAutoApprovedLenientRate: split.autoApprovedErrorRate.lenient,
+    wrongAmongAutoApprovedStrict: split.autoApproved.n - split.autoApproved.strictCorrect,
+    wrongAmongAutoApprovedStrictRate: split.autoApprovedErrorRate.strict,
     reviewLoad: split.pending + split.flagged + rl.sentToReview,
     reviewRowsAutoApproved: rl.autoApproved,
     aiRows,
