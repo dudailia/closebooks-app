@@ -37,7 +37,6 @@ export default function AppFooter() {
               { href: '/#features',    label: 'Features'  },
               { href: '/pricing',      label: 'Pricing'   },
               { href: '/dashboard',    label: 'Dashboard' },
-              { href: '/portal/demo',  label: 'Portal'    },
               { href: '/demo',         label: 'Demo'      },
             ].map(({ href, label }) => (
               <Link

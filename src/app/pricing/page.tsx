@@ -79,8 +79,8 @@ export default function PricingPage({ searchParams }: PricingPageProps) {
               lineHeight: 1.55,
             }}
           >
-            Starter for solo CPAs, Professional for growing firms, Enterprise when you need the
-            full suite. 14-day trial on every plan. No per-transaction fees.
+            Starter for solo CPAs, Professional for growing firms, Enterprise for unlimited
+            clients. 14-day trial on every plan. No per-transaction fees.
           </p>
           {stripeTestMode && (
             <p

@@ -66,7 +66,7 @@ function BeforeAfterVisual() {
               transition: 'color 250ms',
             }}
           >
-            {after ? 'After CloseBooks' : 'Before CloseBooks'}
+            {after ? 'After CloseBooks (illustrative)' : 'Before CloseBooks'}
           </span>
         </button>
       </div>
@@ -295,7 +295,7 @@ function ReportPreview() {
         <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #141414', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 10, color: '#444', fontFamily: 'var(--font-sans)' }}>Close report · April 2025</span>
           <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: 'rgba(0,200,83,0.1)', border: '1px solid rgba(0,200,83,0.2)', color: '#00C853', fontFamily: 'var(--font-sans)' }}>
-            PDF
+            Print / PDF
           </span>
         </div>
       </div>
@@ -500,10 +500,10 @@ export default function BentoGrid() {
                 </svg>
               </FeatureIcon>
               <h3 style={{ margin: 0, marginBottom: 8, fontSize: 20, fontWeight: 600, color: '#FAFAFA', fontFamily: 'var(--font-sans)', letterSpacing: '-0.025em' }}>
-                AI that learns your firm
+                AI that uses your firm's corrections
               </h3>
               <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, color: '#888', fontFamily: 'var(--font-sans)', maxWidth: 480 }}>
-                Recent corrections are passed to Claude as hints when it categorizes, and saved vendor rules are applied on top of its suggestions.
+                Saved vendor rules are applied first, and recent corrections are passed to Claude as hints for the rest.
               </p>
               <BeforeAfterVisual />
             </GlowCard>

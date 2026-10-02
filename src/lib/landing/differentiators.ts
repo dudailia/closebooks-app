@@ -50,7 +50,7 @@ export const ADD_ON_MODULES = [
     accent: '#F59E0B',
   },
   {
-    name: 'Exception Inbox',
+    name: 'Exception queue',
     tier: 'Review layer',
     copy: 'Low-confidence and COA-flagged rows wait for your team.',
     accent: '#A855F7',

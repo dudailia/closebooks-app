@@ -24,10 +24,7 @@ const PUBLIC_PATHS = [
   '/about',
   '/contact',
   '/directory',
-  '/connect',
-  '/connect/docs',
   '/cpa-council',
-  '/certification',
 ]
 
 export default function sitemap(): MetadataRoute.Sitemap {

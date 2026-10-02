@@ -8,7 +8,7 @@ import { AUTO_APPROVE_PERCENT } from '@/lib/ai/models'
 const RAW_TXS = [
   { raw: 'AMZN*MKT*7H3K9',     amt: '$412.09', cat: 'Cloud Infrastructure', conf: 99, flag: false },
   { raw: 'DOORDASH*ORDER_8823', amt: '$38.12',  cat: 'Meals',                conf: 94, flag: false },
-  { raw: 'UBER* TRIP 4XKQ',    amt: '$22.80',  cat: 'Travel',               conf: 91, flag: false },
+  { raw: 'UBER* TRIP 4XKQ',    amt: '$22.80',  cat: 'Travel',               conf: 95, flag: false },
   { raw: 'SLACK TECHNOLOGIES',  amt: '$87.50',  cat: 'Communications',       conf: 97, flag: false },
   { raw: 'GOOG*ADS-9284',       amt: '$280.00', cat: 'Marketing',            conf: 71, flag: true  },
 ]
@@ -44,7 +44,7 @@ const STEPS = [
   {
     num: '02',
     title: 'AI suggests, you approve',
-    body: `Claude suggests an account for each transaction with a confidence score and its reasoning, using your firm's recent corrections as hints. Saved vendor rules are applied, and rows below the default auto-approve confidence threshold of ${AUTO_APPROVE_PERCENT}% wait for your review.`,
+    body: `Claude suggests an account for each transaction with a confidence score and its reasoning, using your firm's recent corrections as hints. Saved vendor rules are applied first, and rows below the default auto-approve confidence threshold of ${AUTO_APPROVE_PERCENT}% wait for your review.`,
   },
   {
     num: '03',
@@ -231,7 +231,7 @@ function Visual2Categorize({ active }: { active: boolean }) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: (rowDelay + 620) / 1000 }}
-                style={{ fontSize: 11, color: tx.conf >= 90 ? '#00C853' : '#F59E0B', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}
+                style={{ fontSize: 11, color: tx.conf >= AUTO_APPROVE_PERCENT ? '#00C853' : '#F59E0B', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}
               >
                 {tx.conf}%
               </motion.span>
@@ -247,8 +247,8 @@ function Visual2Categorize({ active }: { active: boolean }) {
         transition={{ delay: 3.8 }}
         style={{ paddingTop: 12, borderTop: '1px solid #141414', display: 'flex', justifyContent: 'space-between' }}
       >
-        <span style={{ fontSize: 11, color: '#444', fontFamily: 'var(--font-sans)' }}>4/5 auto-categorized</span>
-        <span style={{ fontSize: 11, color: '#F59E0B', fontFamily: 'var(--font-sans)' }}>1 exception →</span>
+        <span style={{ fontSize: 11, color: '#444', fontFamily: 'var(--font-sans)' }}>4/5 auto-approved (sample rows)</span>
+        <span style={{ fontSize: 11, color: '#F59E0B', fontFamily: 'var(--font-sans)' }}>1 for review →</span>
       </motion.div>
     </div>
   )

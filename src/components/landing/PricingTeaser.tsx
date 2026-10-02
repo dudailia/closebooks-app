@@ -3,8 +3,8 @@ import Link from 'next/link'
 
 const BULLETS = [
   'Unlimited clients, unlimited transactions',
-  'All AI features: categorization, rules, narratives, agent',
-  'Plaid bank sync · CSV import',
+  'AI categorization and saved firm rules',
+  'CSV import',
   'Audit-ready exports',
 ]
 

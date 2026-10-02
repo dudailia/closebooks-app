@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { shouldAllowDashboardAccess } from '@/lib/middlewareSubscription'
 import { supabaseCookieOptions } from '@/lib/supabase/cookieOptions'
-import { isApiRouteVisible, isDashboardRouteVisible, PORTAL_ENABLED } from '@/lib/features'
+import { isApiRouteVisible, isDashboardRouteVisible, isPublicRouteVisible, PORTAL_ENABLED } from '@/lib/features'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -59,6 +59,11 @@ export async function middleware(request: NextRequest) {
       return res
     }
     return NextResponse.next()
+  }
+  if (!isPublicRouteVisible(pathname)) {
+    const res = new NextResponse('Not found', { status: 404, headers: { 'Content-Type': 'text/plain' } })
+    applySecurityHeaders(res)
+    return res
   }
   if (!PORTAL_ENABLED && pathname.startsWith('/portal')) {
     const res = new NextResponse('Not found', { status: 404, headers: { 'Content-Type': 'text/plain' } })
@@ -181,5 +186,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/signup', '/portal/:path*', '/api/:path*'],
+  matcher: ['/dashboard/:path*', '/login', '/signup', '/portal/:path*', '/api/:path*', '/demo/:path+', '/certification', '/connect/:path*', '/ref/:path*'],
 }

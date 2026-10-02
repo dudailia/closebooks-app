@@ -38,7 +38,7 @@ ledger CSV, balanced journal entries and a close report.
    threshold are set in `src/lib/ai/models.ts`.
 5. Review: approve, recategorise, split, and save "always categorise as"
    rules. Changes can be undone within the session (⌘Z).
-6. Export a standard or QuickBooks-format CSV, a journal-entry CSV, or an
+6. Export a standard CSV or a CSV with QuickBooks-style columns (import not tested), a journal-entry CSV, or an
    HTML close report.
 
 How each step works, and its known weaknesses: [docs/architecture.md](docs/architecture.md).

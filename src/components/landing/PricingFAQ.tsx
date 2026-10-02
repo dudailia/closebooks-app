@@ -21,7 +21,7 @@ const FAQS = [
   },
   {
     q: 'What should larger firms do?',
-    a: 'Enterprise is for API access, white-label portal needs, and larger rollout requirements. Contact us so we can route procurement and security questions correctly.',
+    a: 'Enterprise removes the client limit. Team seats, API access and white-label are not available yet. Contact us to talk about a larger rollout.',
   },
 ] as const
 

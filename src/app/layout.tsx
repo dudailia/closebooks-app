@@ -38,8 +38,8 @@ export const metadata: Metadata = {
     default: 'CloseBooks — AI Accounting for CPA Firms',
     template: '%s | CloseBooks',
   },
-  description: 'AI accounting software for CPA firms: transaction categorization, month-end close review, client portals, and QuickBooks-style exports.',
-  keywords: ['accounting software', 'AI bookkeeping', 'CPA tools', 'automated close', 'tax preparation', 'autonomous accounting'],
+  description: 'AI-assisted transaction categorization for CPA firms: upload a bank statement, review suggestions, and export CSVs or a close report.',
+  keywords: ['accounting software', 'AI bookkeeping', 'CPA tools', 'transaction categorization', 'month-end close'],
   openGraph: {
     siteName: 'CloseBooks',
     type: 'website',

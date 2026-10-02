@@ -1,7 +1,7 @@
 import { readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { DEMO_HIDE, isApiRouteVisible, PORTAL_ENABLED, VISIBLE_API_ROUTES } from '@/lib/features'
+import { DEMO_HIDE, isApiRouteVisible, isPublicRouteVisible, PORTAL_ENABLED, VISIBLE_API_ROUTES } from '@/lib/features'
 
 const API_DIR = join(__dirname, '../../app/api')
 
@@ -47,5 +47,25 @@ describe('API allowlist (demo build)', () => {
     expect(isApiRouteVisible('/api/categorizex')).toBe(false)
     expect(isApiRouteVisible('/api')).toBe(false)
     expect(isApiRouteVisible('/dashboard')).toBe(true)
+  })
+})
+
+describe('hidden public pages (demo build)', () => {
+  it('hides the per-firm demo pages and keeps /demo and other public pages', () => {
+    expect(isPublicRouteVisible('/demo/warren')).toBe(false)
+    expect(isPublicRouteVisible('/demo/warren/')).toBe(false)
+    expect(isPublicRouteVisible('/demo/any-firm')).toBe(false)
+    expect(isPublicRouteVisible('/demo')).toBe(true)
+    expect(isPublicRouteVisible('/demo/')).toBe(true)
+    expect(isPublicRouteVisible('/')).toBe(true)
+    expect(isPublicRouteVisible('/pricing')).toBe(true)
+  })
+
+  it('hides the certification, API and referral pages', () => {
+    for (const p of ['/certification', '/connect', '/connect/docs', '/ref/some-firm', '/ref/some-firm/']) {
+      expect(isPublicRouteVisible(p)).toBe(false)
+    }
+    expect(isPublicRouteVisible('/cpa-firms')).toBe(true)
+    expect(isPublicRouteVisible('/about')).toBe(true)
   })
 })

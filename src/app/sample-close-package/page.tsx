@@ -18,7 +18,7 @@ const CHECKS = [
 
 const EXCEPTIONS = [
   'Google Ads: confirm campaign should remain Marketing vs. Client Reimbursable',
-  'Amazon Marketplace: request receipt before category approval',
+  'Amazon Marketplace: confirm with the client before approving the category',
   'ACH Deposit: confirm customer invoice source',
 ] as const
 
@@ -54,7 +54,7 @@ export default function SampleClosePackagePage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <div>
                   <p style={{ margin: 0, color: '#00C853', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 800 }}>Close package</p>
-                  <h2 style={{ margin: '6px 0 0', color: '#FAFAFA', fontSize: 22, letterSpacing: '-0.03em' }}>Sunrise Advisory · March</h2>
+                  <h2 style={{ margin: '6px 0 0', color: '#FAFAFA', fontSize: 22, letterSpacing: '-0.03em' }}>Sunrise Advisory (fictional sample) · March</h2>
                 </div>
                 <span style={{ padding: '5px 10px', borderRadius: 999, backgroundColor: 'rgba(0,200,83,0.1)', color: '#00C853', fontSize: 12, fontWeight: 700 }}>Ready with exceptions</span>
               </div>

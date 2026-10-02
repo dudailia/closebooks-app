@@ -13,9 +13,9 @@ const STAGES = [
     accent: '#38BDF8',
   },
   {
-    eyebrow: 'AI close',
+    eyebrow: 'Categorize',
     title: 'AI suggests accounts',
-    copy: 'Claude maps each transaction to the client chart, your saved rules are applied, and uncertainty is flagged.',
+    copy: 'Your saved rules are applied first, Claude maps the rest to the client chart, and uncertainty is flagged.',
     metric: 'Confidence scored',
     accent: '#00C853',
   },

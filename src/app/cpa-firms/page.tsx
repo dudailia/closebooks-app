@@ -12,12 +12,8 @@ const WORKFLOWS = [
     copy: 'Give reviewers confidence scores, COA validation flags, AI reasoning, and a clean exception queue.',
   },
   {
-    title: 'Client questions',
-    copy: 'Turn ambiguous transactions and missing documents into focused client requests instead of long email threads.',
-  },
-  {
     title: 'Firm standardization',
-    copy: 'Use correction memory and firm rules so preparers apply the same judgment across similar clients.',
+    copy: 'Saved firm rules apply the same account to the same vendor across clients, before the AI runs.',
   },
 ] as const
 
@@ -25,7 +21,7 @@ const OUTCOMES = [
   'Review exceptions instead of every row',
   'Export CSVs your team can bring into the books it already uses',
   'Own the AI workflow instead of outsourcing client margin',
-  'Package close output for review, export, and client delivery',
+  'Package close output as CSV exports and a printable close report',
 ] as const
 
 export default function CpaFirmsPage() {

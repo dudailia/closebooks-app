@@ -125,7 +125,7 @@ function UploadStep({ onStart }: { onStart: (input: DemoInput) => void }) {
       <div className="rounded-xl border p-4 flex items-center justify-between gap-4" style={{ borderColor: 'rgba(0,200,83,0.2)', backgroundColor: 'rgba(0,200,83,0.06)' }}>
         <div>
           <p className="text-sm font-semibold" style={{ color: '#FAFAFA' }}>Don&apos;t have a CSV handy?</p>
-          <p className="text-xs mt-0.5" style={{ color: '#888888' }}>Download our sample — 20 real transactions from Sunrise Advisory LLC</p>
+          <p className="text-xs mt-0.5" style={{ color: '#888888' }}>Download our sample: 20 made-up transactions for a fictional client, Sunrise Advisory LLC</p>
         </div>
         <button
           onClick={downloadSample}
@@ -242,7 +242,7 @@ function CategorizingStep({ input, onDone }: CategorizingStepProps) {
         // sample off as their data.
         categorized = DEMO_TRANSACTIONS
         notice = input.isSample
-          ? null
+          ? 'The model isn\'t available right now, so these are pre-made sample results, not live AI output. Try again shortly.'
           : 'AI-assisted categorization is at capacity right now, so this shows our sample data — not your uploaded file. Try again shortly to run your own.'
       } else if (input.truncated) {
         notice = `Showing the first ${total} transactions — the public demo caps each run at ${DEMO_MAX_ROWS}.`
@@ -563,7 +563,7 @@ function ExportStep({ transactions }: { transactions: Transaction[] }) {
 
       {/* CTA to sign up */}
       <div className="rounded-2xl p-5 text-center space-y-3" style={{ backgroundColor: '#0f0f0f', border: '1px solid #1f1f1f' }}>
-        <p className="font-bold" style={{ color: '#FAFAFA' }}>You just closed a client&apos;s books in under 2 minutes.</p>
+        <p className="font-bold" style={{ color: '#FAFAFA' }}>That&apos;s the workflow: upload, categorize, review, export.</p>
         <p className="text-sm" style={{ color: '#888888' }}>Start your free trial and do this for all your clients.</p>
         <Link href="/get-started"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all"
@@ -698,9 +698,7 @@ export default function DemoPage() {
                   <p className="text-sm" style={{ color: '#FAFAFA' }}><strong>CloseBooks reads any CSV</strong> exported from your client&apos;s bank.</p>
                   <p className="text-sm" style={{ color: '#888888' }}>Chase, Bank of America, Wells Fargo, Citi — one CSV, zero formatting required.</p>
                   <ul className="text-xs space-y-1 mt-3" style={{ color: '#888888' }}>
-                    <li>✓ Handles 1 or 10,000 transactions</li>
                     <li>✓ Auto-detects column formats</li>
-                    <li>✓ Security-first upload workflow</li>
                   </ul>
                 </div>
               )}
@@ -738,40 +736,6 @@ export default function DemoPage() {
               )}
             </div>
 
-            {/* Time saved */}
-            <div className="rounded-2xl p-5" style={{ backgroundColor: 'rgba(0,200,83,0.08)', border: '1px solid rgba(0,200,83,0.2)' }}>
-              <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#00C853' }}>Time saved on this close</p>
-              <div className="flex items-end gap-3">
-                <span className="text-3xl font-bold" style={{ fontFamily: 'var(--font-dm-serif), Georgia, serif', color: '#00C853' }}>
-                  ~{Math.round(DEMO_TRANSACTIONS.length * 2)} min
-                </span>
-                <span className="text-sm pb-1" style={{ color: '#888888' }}>vs manual review</span>
-              </div>
-              <p className="text-xs mt-2" style={{ color: '#888888' }}>
-                Use the{' '}
-                <Link href="/tools/roi-calculator" style={{ color: '#00C853', textDecoration: 'none', fontWeight: 600 }}>
-                  ROI calculator
-                </Link>{' '}
-                to estimate time saved for your firm size and client volume.
-              </p>
-            </div>
-
-            {/* More features */}
-            <div className="rounded-2xl border p-5 space-y-3" style={{ borderColor: '#1f1f1f', backgroundColor: '#0f0f0f' }}>
-              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#b8734a' }}>Also included in every plan</p>
-              {[
-                { icon: '🤖', text: 'Autopilot — guided close pipeline with exception review' },
-                { icon: '📊', text: 'Advisory memos — AI-drafted client summaries for your review' },
-                { icon: '🛡️', text: 'Audit defense — draft response letters for CPA review (beta)' },
-                { icon: '📋', text: 'TaxDraft — tax prep workspace from close data (beta)' },
-                { icon: '🔗', text: 'Client portal — branded financials your clients can see live' },
-              ].map(f => (
-                <div key={f.icon} className="flex items-start gap-2.5">
-                  <span className="text-base shrink-0">{f.icon}</span>
-                  <p className="text-xs" style={{ color: '#FAFAFA' }}>{f.text}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </main>

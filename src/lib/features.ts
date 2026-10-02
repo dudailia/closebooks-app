@@ -36,6 +36,33 @@ export function isDashboardRouteVisible(pathname: string): boolean {
   return ROUTE_PATTERNS.some((re) => re.test(path))
 }
 
+// Public pages that can't be made honest, so they return 404 (not deleted).
+// - `/demo/[slug]` (incl. `/demo/warren`): a "personalized demo" for any firm
+//   name in the URL, and one real person's firm; both called invented sample
+//   data real. `/demo` itself stays.
+// - `/certification`: a CPE-credit program that doesn't exist.
+// - `/connect`, `/connect/docs`: a public API, keys, webhooks and SDKs that don't exist.
+// - `/ref/[slug]`: a referral page for any name in the URL, with a reward
+//   that isn't implemented and an unmeasured "72%" claim.
+export const HIDDEN_PUBLIC_ROUTES: readonly string[] = [
+  '/demo/[slug]',
+  '/certification',
+  '/connect',
+  '/connect/docs',
+  '/ref/[slug]',
+]
+
+const PUBLIC_PATTERNS = HIDDEN_PUBLIC_ROUTES.map(
+  (route) => new RegExp('^' + route.replace(/\[[^\]]+\]/g, '[^/]+') + '$'),
+)
+
+/** False for a hidden public page (see HIDDEN_PUBLIC_ROUTES). */
+export function isPublicRouteVisible(pathname: string): boolean {
+  if (!DEMO_HIDE) return true
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
+  return !PUBLIC_PATTERNS.some((re) => re.test(path))
+}
+
 // ─── API routes and portal ────────────────────────────────────────────────────
 
 // API routes the core path calls. While DEMO_HIDE is on, middleware returns 404
