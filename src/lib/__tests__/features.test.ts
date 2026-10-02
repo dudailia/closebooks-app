@@ -68,4 +68,16 @@ describe('hidden public pages (demo build)', () => {
     expect(isPublicRouteVisible('/cpa-firms')).toBe(true)
     expect(isPublicRouteVisible('/about')).toBe(true)
   })
+
+  it('hides directory, compare, use cases, pilot, contact and the other dropped pages', () => {
+    for (const p of ['/directory', '/directory/some-firm', '/compare/floqast', '/use-cases/month-end-close',
+      '/implementation', '/cpa-council', '/tools/roi-calculator', '/pilot', '/dpa', '/contact',
+      '/security/questionnaire']) {
+      expect(isPublicRouteVisible(p)).toBe(false)
+    }
+    for (const p of ['/', '/pricing', '/about', '/cpa-firms', '/demo', '/sample-close-package', '/security',
+      '/terms', '/privacy', '/login', '/signup', '/get-started', '/install']) {
+      expect(isPublicRouteVisible(p)).toBe(true)
+    }
+  })
 })

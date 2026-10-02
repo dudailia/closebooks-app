@@ -1,7 +1,6 @@
 'use client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { FEATURES } from '@/lib/features'
 
 const COLUMNS = [
   {
@@ -9,8 +8,6 @@ const COLUMNS = [
     links: [
       { href: '#features', label: 'Features' },
       { href: '/cpa-firms', label: 'CPA Firms' },
-      { href: '/pilot', label: 'Paid Pilot' },
-      { href: '/implementation', label: 'Implementation' },
       { href: '/sample-close-package', label: 'Sample Package' },
       { href: '#pricing', label: 'Pricing' },
       { href: '/install', label: 'Install' },
@@ -21,17 +18,12 @@ const COLUMNS = [
     title: 'Resources',
     links: [
       { href: '/security', label: 'Security' },
-      { href: '/security/questionnaire', label: 'Security Questionnaire' },
-      ...(FEATURES.publicRoiCalculator ? [{ href: '/tools/roi-calculator', label: 'ROI Calculator' }] : []),
-      ...(FEATURES.publicApiDocs ? [{ href: '/connect/docs', label: 'API Docs' }] : []),
-      ...(FEATURES.publicCompare ? [{ href: '/compare/floqast', label: 'Compare' }] : []),
     ],
   },
   {
     title: 'Company',
     links: [
       { href: '/about', label: 'About' },
-      { href: '/contact', label: 'Contact' },
     ],
   },
   {
@@ -39,7 +31,6 @@ const COLUMNS = [
     links: [
       { href: '/privacy', label: 'Privacy' },
       { href: '/terms', label: 'Terms' },
-      { href: '/dpa', label: 'DPA' },
     ],
   },
 ]

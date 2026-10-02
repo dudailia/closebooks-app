@@ -7,12 +7,12 @@ export default function PrivacyPage() {
       title="Privacy policy for firms evaluating CloseBooks."
       description="This overview explains the data CloseBooks needs to provide AI-assisted close workflows, billing, and support."
     >
-      <p style={{ marginTop: 0 }}>Last updated: June 14, 2026.</p>
+      <p style={{ marginTop: 0 }}>Last updated: October 2, 2026.</p>
 
       <LegalSection title="Information we process">
         <p>
           CloseBooks may process account information, firm details, client names, uploaded statements,
-          transaction data, charts of accounts, corrections, review notes, portal messages, and billing metadata.
+          transaction data, charts of accounts, corrections, review notes, and billing metadata.
         </p>
       </LegalSection>
 
@@ -27,15 +27,17 @@ export default function PrivacyPage() {
         <p>
           CloseBooks relies on infrastructure and service providers including Supabase for authentication
           and database services, Vercel for hosting, Anthropic for AI processing, Stripe for billing,
-          and selected email or document-processing providers when configured.
+          and an email provider for sign-in emails when configured.
         </p>
       </LegalSection>
 
       <LegalSection title="AI providers">
         <p>
-          Transaction descriptions, chart of accounts data, and correction hints may be sent to AI providers
-          when you request AI categorization or related AI workflows. Avoid uploading data you are not
-          authorized to process.
+          To suggest accounts, each transaction&apos;s date, description, amount and direction, the client&apos;s
+          chart of accounts and up to 10 recent corrections are sent to Anthropic. For a PDF statement, up to
+          60,000 characters of its text are sent, which can include the account holder&apos;s name, address and
+          account number. No zero-data-retention agreement has been arranged. Avoid uploading data you are
+          not authorized to process.
         </p>
       </LegalSection>
 

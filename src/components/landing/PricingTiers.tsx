@@ -349,31 +349,6 @@ function PricingCta({ tier, annual, stripeTestMode }: { tier: Tier; annual: bool
   const priceId = resolvePriceId(tier.id, annual)
   const configured = !!priceId
 
-  if (tier.id === 'enterprise') {
-    return (
-      <Link
-        href="/contact?topic=enterprise"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '100%',
-          padding: '13px 16px',
-          fontSize: 14,
-          fontWeight: 700,
-          borderRadius: 10,
-          color: '#FAFAFA',
-          background: 'rgba(255,255,255,0.06)',
-          border: '1px solid #1f1f1f',
-          textDecoration: 'none',
-          fontFamily: 'var(--font-sans)',
-        }}
-      >
-        Contact Enterprise
-      </Link>
-    )
-  }
-
   async function handleClick() {
     if (!configured) return
     setLoading(true)

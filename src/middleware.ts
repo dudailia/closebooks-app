@@ -186,5 +186,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/signup', '/portal/:path*', '/api/:path*', '/demo/:path+', '/certification', '/connect/:path*', '/ref/:path*'],
+  matcher: ['/dashboard/:path*', '/login', '/signup', '/portal/:path*', '/api/:path*', '/demo/:path+', '/certification', '/connect/:path*', '/ref/:path*',
+    '/directory/:path*', '/compare/:path*', '/use-cases/:path*', '/implementation', '/cpa-council',
+    '/tools/:path*', '/pilot', '/dpa', '/contact', '/security/questionnaire'],
 }

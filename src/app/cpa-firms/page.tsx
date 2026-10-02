@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import PublicShell from '@/components/landing/PublicShell'
-import PilotOffer from '@/components/landing/PilotOffer'
 
 const WORKFLOWS = [
   {
@@ -44,8 +43,8 @@ export default function CpaFirmsPage() {
                 It is a review-first close workflow for firms that want AI speed with CPA control.
               </p>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 30 }}>
-                <Link href="/pilot" style={{ padding: '14px 20px', borderRadius: 12, backgroundColor: '#00C853', color: '#030303', textDecoration: 'none', fontSize: 14, fontWeight: 800 }}>
-                  Start paid pilot
+                <Link href="/signup" style={{ padding: '14px 20px', borderRadius: 12, backgroundColor: '#00C853', color: '#030303', textDecoration: 'none', fontSize: 14, fontWeight: 800 }}>
+                  Start 14-day trial
                 </Link>
                 <Link href="/demo" style={{ padding: '14px 20px', borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.045)', border: '1px solid #1f1f1f', color: '#FAFAFA', textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>
                   Try sample close
@@ -85,7 +84,6 @@ export default function CpaFirmsPage() {
           </div>
         </section>
 
-        <PilotOffer />
       </main>
     </PublicShell>
   )

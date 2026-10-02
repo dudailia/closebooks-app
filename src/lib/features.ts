@@ -44,12 +44,29 @@ export function isDashboardRouteVisible(pathname: string): boolean {
 // - `/connect`, `/connect/docs`: a public API, keys, webhooks and SDKs that don't exist.
 // - `/ref/[slug]`: a referral page for any name in the URL, with a reward
 //   that isn't implemented and an unmeasured "72%" claim.
+// - `/directory`: invented firm profiles. `/compare/*`: unverified claims about
+//   named competitors. `/use-cases/*`, `/implementation`, `/cpa-council`,
+//   `/tools/roi-calculator`, `/pilot`: hidden features, programs or unmeasured
+//   numbers. `/dpa`: no DPA is offered.
+// - `/contact`: only mailto links to addresses not known to reach anyone.
+//   `/security/questionnaire`: pointed to `/contact` and a DPA.
 export const HIDDEN_PUBLIC_ROUTES: readonly string[] = [
   '/demo/[slug]',
   '/certification',
   '/connect',
   '/connect/docs',
   '/ref/[slug]',
+  '/directory',
+  '/directory/[slug]',
+  '/compare/[slug]',
+  '/use-cases/[slug]',
+  '/implementation',
+  '/cpa-council',
+  '/tools/roi-calculator',
+  '/pilot',
+  '/dpa',
+  '/contact',
+  '/security/questionnaire',
 ]
 
 const PUBLIC_PATTERNS = HIDDEN_PUBLIC_ROUTES.map(

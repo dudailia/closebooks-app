@@ -7,12 +7,12 @@ export default function TermsPage() {
       title="Terms of service."
       description="These terms summarize the commercial and acceptable-use expectations for using CloseBooks while a formal customer agreement is finalized."
     >
-      <p style={{ marginTop: 0 }}>Last updated: June 14, 2026.</p>
+      <p style={{ marginTop: 0 }}>Last updated: October 2, 2026.</p>
 
       <LegalSection title="Use of CloseBooks">
         <p>
           CloseBooks provides software for CPA firms and finance teams to assist with transaction
-          categorization, review, export, client collaboration, and related close workflows. Users are
+          categorization, review and export. It is an early demo with no customers yet. Users are
           responsible for reviewing accounting output before relying on it.
         </p>
       </LegalSection>
@@ -27,7 +27,7 @@ export default function TermsPage() {
       <LegalSection title="Billing and trials">
         <p>
           CloseBooks offers trial access and paid subscription plans. Billing is processed through Stripe.
-          Plan limits, cancellation options, and invoices are managed through the customer portal where available.
+          Billing is currently in Stripe test mode, and no real charges are made.
         </p>
       </LegalSection>
 

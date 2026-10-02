@@ -44,9 +44,6 @@ export default function SampleClosePackagePage() {
                 <Link href="/demo" style={{ padding: '13px 18px', borderRadius: 12, backgroundColor: '#00C853', color: '#030303', textDecoration: 'none', fontSize: 14, fontWeight: 800 }}>
                   Walk through demo
                 </Link>
-                <Link href="/pilot" style={{ padding: '13px 18px', borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.045)', border: '1px solid #1f1f1f', color: '#FAFAFA', textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>
-                  Prove with pilot
-                </Link>
               </div>
             </div>
 

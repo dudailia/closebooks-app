@@ -135,22 +135,6 @@ export default function Nav() {
             >
               Sign in
             </Link>
-            <Link
-              href="/pilot"
-              className="hidden md:inline-flex"
-              style={{
-                alignItems: 'center',
-                padding: '8px 14px',
-                fontSize: 13,
-                fontWeight: 600,
-                color: '#FAFAFA',
-                textDecoration: 'none',
-                borderRadius: 8,
-                border: '1px solid #1f1f1f',
-              }}
-            >
-              Pilot
-            </Link>
 
             <MagneticButton>
               <Link

@@ -1,62 +1,61 @@
 import LegalPageLayout, { LegalSection } from '@/components/landing/LegalPageLayout'
 
+// Every statement here must be true of the current code and setup. Check it
+// against the code before adding to it.
 export default function SecurityPage() {
   return (
     <LegalPageLayout
       eyebrow="Security overview"
       title="How CloseBooks handles firm and client data."
-      description="CloseBooks is designed for CPA-firm workflows where financial data, client access, and review controls matter. This page summarizes the controls currently built into the product."
+      description="What is in place today, and what is not. CloseBooks is an early demo with no customers yet."
     >
-      <p style={{ marginTop: 0 }}>
-        CloseBooks protects dashboard access with authenticated firm workspaces, subscription/trial gates,
-        session controls, and review-first accounting workflows. We are intentionally transparent about
-        what exists today and what is still part of the compliance roadmap.
-      </p>
-
-      <LegalSection title="Authentication and access">
+      <LegalSection title="Sign-in and sessions">
         <p>
-          Dashboard routes require a signed-in user when Supabase authentication is configured.
-          Email/password and Google sign-in are supported. Firm data is scoped to authenticated
-          workspaces, and sensitive dashboard areas include role-aware controls.
+          Dashboard pages require a signed-in user (Supabase Auth, email and password). After 30 minutes
+          of inactivity you have to sign in again.
         </p>
       </LegalSection>
 
-      <LegalSection title="Session controls">
+      <LegalSection title="Separation between firms">
         <p>
-          CloseBooks requires re-authentication after inactivity and exposes session visibility in firm
-          settings. Middleware also applies security headers and rate limits selected public portal routes.
+          Firm data is stored in Supabase Postgres. Row-level security policies limit each table to the
+          signed-in user&apos;s firm.
         </p>
       </LegalSection>
 
-      <LegalSection title="AI processing">
+      <LegalSection title="Keys">
         <p>
-          AI categorization requests can include transaction descriptions, amounts, and the client chart
-          of accounts so Claude can suggest categories. CloseBooks keeps a human review layer in the
-          workflow: low-confidence or invalid account mappings remain in review before export.
+          The Anthropic API key, the Stripe secret key and the Supabase service-role key are used only on
+          the server. The browser receives no secret keys: only the Supabase project URL and its public
+          key (which row-level security restricts), Stripe price IDs and the app&apos;s URL.
         </p>
       </LegalSection>
 
-      <LegalSection title="Billing">
+      <LegalSection title="What is sent to Anthropic">
         <p>
-          Payment collection, invoices, and customer portal billing actions are handled by Stripe.
-          CloseBooks does not store card numbers.
+          To suggest accounts, CloseBooks sends Claude each transaction&apos;s date, description, amount and
+          direction, the client&apos;s chart of accounts, and up to 10 recent corrections from your firm. The
+          client&apos;s name is not sent. For a PDF statement, up to 60,000 characters of the statement&apos;s
+          text are sent, which can include the account holder&apos;s name, address and account number.
+        </p>
+        <p>
+          No zero-data-retention agreement with Anthropic has been arranged; Anthropic&apos;s standard API
+          terms apply. Suggestions are reviewed by your firm: rows below the confidence threshold or with
+          an invalid account wait for review.
         </p>
       </LegalSection>
 
-      <LegalSection title="Compliance status">
+      <LegalSection title="Service providers">
         <p>
-          CloseBooks is not currently claiming SOC 2, ISO 27001, HIPAA, or similar third-party
-          certification. Formal compliance programs are part of the roadmap as production firm usage grows.
+          Hosting: Vercel. Database and sign-in: Supabase. AI: Anthropic. Billing: Stripe, currently in
+          test mode. CloseBooks does not store card numbers.
         </p>
       </LegalSection>
 
-      <LegalSection title="Security contact">
+      <LegalSection title="Compliance">
         <p>
-          For security questions or responsible disclosure, contact{' '}
-          <a href="mailto:security@closebooks.io" style={{ color: '#00C853' }}>
-            security@closebooks.io
-          </a>
-          .
+          CloseBooks has no SOC 2, ISO 27001, HIPAA or other third-party certification, and does not
+          offer a data processing agreement.
         </p>
       </LegalSection>
     </LegalPageLayout>

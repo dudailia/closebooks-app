@@ -180,33 +180,6 @@ export default function CtaBand() {
                 </Link>
               </MagneticButton>
 
-              <Link
-                href="/pilot"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  padding: '15px 24px',
-                  fontSize: 15,
-                  fontWeight: 500,
-                  color: '#FAFAFA',
-                  backgroundColor: 'rgba(255,255,255,0.04)',
-                  border: '1px solid #1f1f1f',
-                  borderRadius: 12,
-                  textDecoration: 'none',
-                  transition: 'background-color 200ms, border-color 200ms',
-                  fontFamily: 'var(--font-sans)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'
-                  e.currentTarget.style.borderColor = '#1f1f1f'
-                }}
-              >
-                See paid pilot
-              </Link>
             </motion.div>
           </div>
         </motion.div>
