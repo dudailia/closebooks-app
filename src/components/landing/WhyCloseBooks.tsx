@@ -131,7 +131,7 @@ export default function WhyCloseBooks() {
               One workflow, statement to export.
             </motion.h2>
             <p style={{ margin: '22px 0 0', color: '#A1A1A1', fontSize: 16, lineHeight: 1.72 }}>
-              CloseBooks takes a client&apos;s bank statement to a validated, QuickBooks-ready CSV.
+              CloseBooks takes a client&apos;s bank statement to a validated, QuickBooks-style CSV.
               Claude suggests accounts from the client&apos;s chart, rules saved from your corrections
               are reapplied, and anything uncertain waits for your review.
             </p>

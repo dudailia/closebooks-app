@@ -29,7 +29,7 @@ const STAGES = [
   {
     eyebrow: 'Delivery',
     title: 'Export and report',
-    copy: 'Download a QuickBooks-ready or standard CSV, and print a close report for the period.',
+    copy: 'Download a QuickBooks-style or standard CSV, and print a close report for the period.',
     metric: 'Ready to download',
     accent: '#A855F7',
   },
@@ -223,7 +223,7 @@ function AutomationConsole({ active }: { active: number }) {
 
           <div style={{ border: '1px solid #1f1f1f', borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.025)', padding: 14 }}>
             <p style={{ margin: 0, color: '#666', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', fontWeight: 700 }}>Output</p>
-            {['QuickBooks CSV', 'Standard CSV', 'Close report'].map((item, index) => (
+            {['CSV (QuickBooks-style columns)', 'Standard CSV', 'Close report'].map((item, index) => (
               <motion.div
                 key={item}
                 animate={{ opacity: active >= 3 ? 1 : 0.45, scale: active >= 3 ? 1 : 0.98 }}

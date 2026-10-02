@@ -421,7 +421,7 @@ function DashboardMockup({ reduced }: { reduced: boolean }) {
       </div>
 
       {/* Floating pills — land on the conducted beats: "Confidence scored"
-          as the rows lock (LOCK), "QuickBooks-ready CSV" on the final settle (REST). */}
+          as the rows lock (LOCK), "QuickBooks-style CSV" on the final settle (REST). */}
       <motion.div
         initial={reduced ? false : { opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -470,7 +470,7 @@ function DashboardMockup({ reduced }: { reduced: boolean }) {
       >
         <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 8px rgba(0,200,83,0.8)' }} />
         <span style={{ fontSize: 13, fontWeight: 600, color: '#00C853', fontFamily: 'var(--font-sans)', letterSpacing: '-0.01em' }}>
-          QuickBooks-ready CSV
+          QuickBooks-style CSV
         </span>
       </motion.div>
 
@@ -673,7 +673,7 @@ export default function Hero() {
             >
               Upload a CSV or PDF bank statement. Claude suggests an account from the
               client&apos;s chart for every transaction, your team reviews the low-confidence
-              ones, and you download a QuickBooks-ready CSV.
+              ones, and you download a QuickBooks-style CSV.
             </motion.p>
 
             {/* CTA row */}

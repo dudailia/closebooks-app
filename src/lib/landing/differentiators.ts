@@ -13,7 +13,7 @@ export const PLATFORM_PILLARS = [
   },
   {
     title: 'Export and report',
-    copy: 'Download a QuickBooks-ready CSV or a standard CSV, and print a close report for the period (Save as PDF).',
+    copy: 'Download a QuickBooks-style CSV or a standard CSV, and print a close report for the period (Save as PDF).',
   },
 ] as const
 

@@ -305,12 +305,6 @@ function ClientCard({
             <HealthPill breakdown={health} />
           </span>
         )}
-        <span
-          className="ml-auto text-xs px-2 py-0.5 rounded"
-          style={{ backgroundColor: '#f5f0ea', color: '#a09a94' }}
-        >
-          {client.accounting_software}
-        </span>
       </div>
     </div>
   )

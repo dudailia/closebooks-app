@@ -1,7 +1,7 @@
 export const PILOT_DELIVERABLES = [
   'Setup for up to 10 client close workflows',
   'Chart-of-accounts validation for each pilot client',
-  'Sample CSV import and QuickBooks-ready export walkthrough',
+  'Sample CSV import and QuickBooks-style export walkthrough',
   'Firm rules and correction patterns configured during review',
   'Security, privacy, and DPA review path for stakeholders',
   'Conversion plan into a Starter, Professional, or Enterprise subscription',

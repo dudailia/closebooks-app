@@ -412,12 +412,6 @@ export default function ClientDetailPage() {
               >
                 {client.industry}
               </span>
-              <span
-                className="text-xs px-2 py-1 rounded font-medium"
-                style={{ backgroundColor: '#f5f0ea', color: '#a09a94' }}
-              >
-                {client.accounting_software}
-              </span>
               {health && <HealthPill breakdown={health} />}
             </div>
             {client.contact_email && (

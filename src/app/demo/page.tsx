@@ -19,7 +19,7 @@ const STEPS: StepInfo[] = [
   { id: 'upload',       label: '1. Upload Statement',     desc: 'Drop a CSV bank statement' },
   { id: 'categorizing', label: '2. AI Categorizes',       desc: 'CloseBooks AI analyzes every transaction' },
   { id: 'review',       label: '3. Review & Approve',     desc: 'Approve, edit, or flag items' },
-  { id: 'export',       label: '4. Download QuickBooks CSV', desc: 'QuickBooks-format CSV file' },
+  { id: 'export',       label: '4. Download CSV (QuickBooks-style columns)', desc: 'CSV with QuickBooks-style columns' },
 ]
 
 const SAMPLE_CSV = `Date,Description,Amount,Type
@@ -519,7 +519,7 @@ function ExportStep({ transactions }: { transactions: Transaction[] }) {
           Close complete — ready to export
         </h2>
         <p className="text-sm" style={{ color: '#888888' }}>
-          Download your QBO-ready file or standard CSV
+          Download a CSV with QuickBooks-style columns, or a standard CSV
         </p>
       </div>
 
@@ -543,7 +543,7 @@ function ExportStep({ transactions }: { transactions: Transaction[] }) {
       {/* Export buttons */}
       <div className="space-y-2">
         {[
-          { format: 'quickbooks' as const, label: 'QuickBooks CSV', sub: 'CSV in QuickBooks import format', icon: '📥', accent: '#00C853' },
+          { format: 'quickbooks' as const, label: 'Download CSV (QuickBooks-style columns)', sub: 'Not tested in QuickBooks', icon: '📥', accent: '#00C853' },
           { format: 'standard' as const,   label: 'Export Standard CSV',  sub: 'Date · Category · Amount · Status',   icon: '📄', accent: '#888888' },
         ].map(b => (
           <button key={b.format} onClick={() => doExport(b.format)} disabled={exporting}
@@ -727,10 +727,10 @@ export default function DemoPage() {
               )}
               {step === 'export' && (
                 <div className="space-y-2">
-                  <p className="text-sm" style={{ color: '#FAFAFA' }}><strong>QuickBooks-ready CSV.</strong> The download uses QuickBooks&apos; import column layout, so you import the file yourself — nothing is pushed to QuickBooks.</p>
+                  <p className="text-sm" style={{ color: '#FAFAFA' }}><strong>QuickBooks-style CSV.</strong> The columns follow QuickBooks&apos; import layout, but importing it into QuickBooks hasn&apos;t been tested. There is no QuickBooks connection; nothing is pushed.</p>
                   <p className="text-sm" style={{ color: '#888888' }}>Also available: a standard CSV and a printable close report.</p>
                   <ul className="text-xs space-y-1 mt-3" style={{ color: '#888888' }}>
-                    <li>✓ QuickBooks import column format</li>
+                    <li>✓ QuickBooks-style columns (import not tested)</li>
                     <li>✓ Standard CSV</li>
                     <li>✓ Printable close report (Save as PDF)</li>
                   </ul>

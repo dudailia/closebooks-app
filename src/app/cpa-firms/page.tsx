@@ -5,7 +5,7 @@ import PilotOffer from '@/components/landing/PilotOffer'
 const WORKFLOWS = [
   {
     title: 'Monthly bookkeeping close',
-    copy: 'Upload statements, classify transactions, review exceptions, and export QuickBooks-ready files.',
+    copy: 'Upload statements, classify transactions, review exceptions, and export QuickBooks-style files.',
   },
   {
     title: 'Partner review',
@@ -23,7 +23,7 @@ const WORKFLOWS = [
 
 const OUTCOMES = [
   'Review exceptions instead of every row',
-  'Keep QuickBooks workflows your clients already use',
+  'Export CSVs your team can bring into the books it already uses',
   'Own the AI workflow instead of outsourcing client margin',
   'Package close output for review, export, and client delivery',
 ] as const

@@ -13,7 +13,7 @@ const CHECKS = [
   'All exportable rows resolve to the client chart of accounts',
   'Pending and flagged rows excluded from export',
   'AI reasoning preserved for review context',
-  'QuickBooks-ready CSV prepared after validation',
+  'QuickBooks-style CSV prepared after validation',
 ] as const
 
 const EXCEPTIONS = [
@@ -81,7 +81,7 @@ export default function SampleClosePackagePage() {
                 </p>
                 <p style={{ margin: '14px 0 0', color: '#A1A1A1', fontSize: 14, lineHeight: 1.7 }}>
                   March expenses were led by payroll and cloud infrastructure. Three transactions remain
-                  in review pending client context. Once resolved, the QuickBooks-ready export can be
+                  in review pending client context. Once resolved, the QuickBooks-style export can be
                   delivered with the reviewed close summary.
                 </p>
               </div>

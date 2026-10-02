@@ -267,7 +267,7 @@ export default function WarrenDemoPage() {
           </h1>
           <p className="text-lg max-w-xl" style={{ color: '#888888', lineHeight: 1.6 }}>
             Upload your bank statement. CloseBooks suggests categories with confidence scores,
-            flags items that need your review, and exports clean data to QuickBooks after approval.
+            flags items that need your review, and exports a CSV with QuickBooks-style columns after approval.
           </p>
 
           {/* Stat strip */}
@@ -390,7 +390,7 @@ export default function WarrenDemoPage() {
           </div>
 
           <p className="mt-3 text-xs text-center" style={{ color: '#444444' }}>
-            On the real app you can approve, flag, edit categories, and download a QuickBooks-ready CSV.
+            On the real app you can approve, flag, edit categories, and download a QuickBooks-style CSV.
           </p>
         </section>
 
@@ -438,7 +438,7 @@ export default function WarrenDemoPage() {
                   </svg>
                 ),
                 title: 'Review, approve, export',
-                body: 'Scan the flagged ones, make edits, then export a clean QuickBooks CSV. Firm rules can apply to future closes.',
+                body: 'Scan the flagged ones, make edits, then export a CSV with QuickBooks-style columns. Firm rules can apply to future closes.',
               },
             ].map(({ step, icon, title, body }) => (
               <div

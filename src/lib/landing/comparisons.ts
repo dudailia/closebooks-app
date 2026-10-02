@@ -6,7 +6,7 @@ export const COMPARISONS = {
       'FloQast-style tools are strong for internal accounting teams managing close checklists. CloseBooks is focused on CPA firms that need AI-assisted execution across many client books.',
     bestFor: 'Mid-market internal accounting teams that need close orchestration, checklists, reconciliations, and documentation.',
     closeBooksAngle:
-      'CPA-firm-owned AI close execution: transaction categorization, COA validation, exception review, QuickBooks-ready export, and client delivery.',
+      'CPA-firm-owned AI close execution: transaction categorization, COA validation, exception review, QuickBooks-style export, and client delivery.',
     rows: [
       ['Primary buyer', 'Internal controller/accounting team', 'CPA/CAS firm managing many client books'],
       ['Main job', 'Organize and document the close', 'Run and validate recurring client close work'],

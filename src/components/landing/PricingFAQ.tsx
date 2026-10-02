@@ -13,7 +13,7 @@ const FAQS = [
   },
   {
     q: 'Do you support QuickBooks?',
-    a: 'CloseBooks exports categorized transactions as QuickBooks-compatible CSV from the review workflow.',
+    a: 'There is no live QuickBooks connection. The review page exports a CSV with QuickBooks-style columns; importing it into QuickBooks has not been tested yet.',
   },
   {
     q: 'How is AI output controlled?',

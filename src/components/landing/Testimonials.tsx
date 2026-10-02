@@ -14,7 +14,7 @@ const PROOF_CARDS = [
   },
   {
     title: 'Guided first close',
-    copy: 'Create a firm account, upload a bank CSV or PDF, review exceptions, and download your first QuickBooks-ready CSV.',
+    copy: 'Create a firm account, upload a bank CSV or PDF, review exceptions, and download your first QuickBooks-style CSV.',
     href: '/signup',
     cta: 'Start trial',
     initials: '02',

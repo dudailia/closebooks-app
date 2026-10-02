@@ -79,7 +79,7 @@ const STEPS = [
   },
   {
     title: 'Export and done',
-    body: 'Once reviewed, download a QuickBooks-format or standard CSV, or generate a close report.',
+    body: 'Once reviewed, download a CSV (QuickBooks-style columns) or a standard CSV, or generate a close report.',
     illustration: <IllustrationExport />,
     isWelcome: false,
   },

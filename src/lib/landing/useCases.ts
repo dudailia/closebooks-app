@@ -3,7 +3,7 @@ export const USE_CASES = {
     eyebrow: 'Use case',
     title: 'AI month-end close for CPA firms.',
     description:
-      'CloseBooks helps firms move from raw bank activity to reviewed, validated, QuickBooks-ready output in one workflow.',
+      'CloseBooks helps firms move from raw bank activity to reviewed, validated, QuickBooks-style output in one workflow.',
     pains: [
       'Preparers spend too much time categorizing repeat vendors.',
       'Reviewers find errors late, often after export or client delivery.',

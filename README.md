@@ -94,6 +94,6 @@ the summaries the docs cite are committed, the per-prediction `raw.json` files a
 - [docs/architecture.md](docs/architecture.md): data flow, prompt, confidence, rules, journal entries, weaknesses.
 - [docs/facts.md](docs/facts.md): every number we quote, with its source file.
 - [docs/engine/rls-audit.md](docs/engine/rls-audit.md): row-level security review.
-- [docs/migrations-to-apply.md](docs/migrations-to-apply.md): migrations not yet applied, their order, and checks.
+- [docs/migrations-to-apply.md](docs/migrations-to-apply.md): migrations, all applied 2026-10-01, their order, and checks.
 - [docs/engine/journal-entries.md](docs/engine/journal-entries.md): journal-entry rules.
 - [SESSION_LOG.md](SESSION_LOG.md): current state and open issues.

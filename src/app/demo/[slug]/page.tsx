@@ -279,7 +279,7 @@ export default function PersonalizedDemoPage({
               {
                 n: '03',
                 title: 'Review, approve, export',
-                body: 'Scan the flagged ones, make edits, export a clean QuickBooks CSV. Done in minutes, not hours.',
+                body: 'Scan the flagged ones, make edits, export a CSV with QuickBooks-style columns. Done in minutes, not hours.',
               },
             ].map(({ n, title, body }) => (
               <div

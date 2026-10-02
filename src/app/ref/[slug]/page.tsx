@@ -36,7 +36,7 @@ export default function ReferralLandingPage({ params }: Props) {
     {
       icon: '📄',
       title: 'One-click reports and exports',
-      desc: 'Generate branded client summaries, close reports, and QuickBooks-ready CSV exports instantly.',
+      desc: 'Generate branded client summaries, close reports, and QuickBooks-style CSV exports instantly.',
     },
     {
       icon: '🔍',

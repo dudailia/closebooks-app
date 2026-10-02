@@ -49,7 +49,7 @@ const STEPS = [
   {
     num: '03',
     title: 'Review. Approve. Done.',
-    body: 'Filter to the exceptions and low-confidence rows, approve or recategorize them (in bulk, with undo), then download a QuickBooks-ready CSV or print a close report.',
+    body: 'Filter to the exceptions and low-confidence rows, approve or recategorize them (in bulk, with undo), then download a QuickBooks-style CSV or print a close report.',
   },
 ]
 
@@ -385,7 +385,7 @@ export default function HowItWorks() {
           transition={{ duration: 0.6, delay: 0.1 }}
           style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 'clamp(38px, 5vw, 56px)', fontWeight: 400, lineHeight: 1.05, letterSpacing: '-0.035em', color: '#FAFAFA' }}
         >
-          From bank statement to QuickBooks-ready CSV{' '}
+          From bank statement to QuickBooks-style CSV{' '}
           <span style={{ fontStyle: 'italic', color: '#444' }}>in three steps.</span>
         </motion.h2>
       </div>

@@ -18,7 +18,7 @@ const ACTIVITY = [
   { label: 'Accounts suggested', detail: 'Each suggestion checked against the client chart of accounts', color: '#00C853' },
   { label: 'Saved rules applied', detail: 'Vendors your firm has a rule for get that account', color: '#FB7185' },
   { label: 'Exceptions flagged', detail: 'Low-confidence and invalid rows wait for review', color: '#A855F7' },
-  { label: 'Ready to export', detail: 'QuickBooks-ready CSV and printable close report', color: '#22C55E' },
+  { label: 'Ready to export', detail: 'QuickBooks-style CSV and printable close report', color: '#22C55E' },
 ] as const
 
 function AgentNode({

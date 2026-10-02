@@ -4,7 +4,6 @@ import Link from 'next/link'
 const BULLETS = [
   'Unlimited clients, unlimited transactions',
   'All AI features: categorization, rules, narratives, agent',
-  'Direct QuickBooks Online push',
   'Plaid bank sync · CSV import',
   'Audit-ready exports',
 ]

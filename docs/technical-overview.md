@@ -212,6 +212,7 @@ section 0.
   rows, extrapolated from one run; rate limits under load unmeasured.
 - **Some closes match by name:** `/get-started` jobs and older ones without a
   unique name match.
+- **No live QuickBooks connection**; CSV import into QuickBooks not tested.
 - **One chart evaluated**; **prompt injection reduced, not ruled out**; the
   hidden QuickBooks push posts everything to one account.
 

@@ -143,7 +143,7 @@ function ExportDropdown({ onExport, loading, approvedCount }: ExportDropdownProp
   const formats: { key: ExportFormat; label: string; sub: string }[] = [
     {
       key:   'quickbooks',
-      label: 'QuickBooks CSV',
+      label: 'Download CSV (QuickBooks-style columns)',
       sub:   'Date, Account, Description, Amount, Category, Class',
     },
     {
@@ -399,7 +399,7 @@ function ReviewSummary({ transactions, onExport, onReport, exporting, reporting 
               <path d="M2 11h10" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           )}
-          {exporting ? 'Exporting…' : 'Download QuickBooks CSV'}
+          {exporting ? 'Exporting…' : 'Download CSV (QuickBooks-style columns)'}
         </button>
 
         <button
@@ -1148,7 +1148,7 @@ export default function ReviewPage() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
 
-      const label = format === 'quickbooks' ? 'QuickBooks CSV' : isJournal ? 'Journal entries CSV' : 'Standard CSV'
+      const label = format === 'quickbooks' ? 'CSV (QuickBooks-style columns)' : isJournal ? 'Journal entries CSV' : 'Standard CSV'
       const count = isJournal ? Number(res.headers.get('x-je-entries') ?? 0) : exportable.length
       const noun  = isJournal ? 'journal entr' + (count !== 1 ? 'ies' : 'y') : 'transaction' + (count !== 1 ? 's' : '')
       if (isJournal) {

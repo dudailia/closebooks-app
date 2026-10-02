@@ -10,7 +10,7 @@ export default function AboutPage() {
       <LegalSection title="What we are building">
         <p>
           CloseBooks combines AI categorization, chart-of-accounts validation, exception review,
-          QuickBooks-ready exports, client workflows, and firm automation into one close workspace.
+          QuickBooks-style exports, client workflows, and firm automation into one close workspace.
         </p>
       </LegalSection>
 

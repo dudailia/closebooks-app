@@ -15,7 +15,7 @@ const MODULES = [
     title: 'Month-End Close Mastery',
     hours: 2,
     desc: 'Run complete month-end closes for any client type. Handle exceptions gracefully, communicate with clients about anomalies, and export audit-ready packages in minutes.',
-    topics: ['The 5-step CloseBooks close workflow', 'Exception management and escalation', 'Client communication templates', 'Exporting to QuickBooks, Xero, and PDF'],
+    topics: ['The 5-step CloseBooks close workflow', 'Exception management and escalation', 'Client communication templates', 'Exporting CSVs and the close report'],
   },
   {
     num: 3,
