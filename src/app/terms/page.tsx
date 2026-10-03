@@ -41,8 +41,8 @@ export default function TermsPage() {
       <LegalSection title="Contact">
         <p>
           For contracting questions, contact{' '}
-          <a href="mailto:hello@closebooks.io" style={{ color: '#00C853' }}>
-            hello@closebooks.io
+          <a href="mailto:mistersun4@gmail.com" style={{ color: '#00C853' }}>
+            mistersun4@gmail.com
           </a>
           .
         </p>

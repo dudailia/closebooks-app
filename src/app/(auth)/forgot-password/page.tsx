@@ -213,7 +213,7 @@ export default function ForgotPasswordPage() {
                     {(errInfo.isRateLimit || errInfo.isConfig) && (
                       <div style={{ marginTop: 8, fontSize: 12 }}>
                         <a
-                          href="mailto:hello@closebooks.app?subject=Password Reset Request"
+                          href="mailto:mistersun4@gmail.com?subject=Password Reset Request"
                           style={{ color: '#00C853', textDecoration: 'underline' }}
                         >
                           Email us
@@ -256,7 +256,7 @@ export default function ForgotPasswordPage() {
 
         <p style={{ marginTop: 20, fontSize: 12, textAlign: 'center', color: '#444444' }}>
           Having trouble?{' '}
-          <a href="mailto:hello@closebooks.app" style={{ color: '#444444', textDecoration: 'underline' }}>
+          <a href="mailto:mistersun4@gmail.com" style={{ color: '#444444', textDecoration: 'underline' }}>
             Contact support
           </a>
         </p>

@@ -58,6 +58,16 @@ export default function SecurityPage() {
           offer a data processing agreement.
         </p>
       </LegalSection>
+
+      <LegalSection title="Contact">
+        <p>
+          For security questions or to report a vulnerability, email{' '}
+          <a href="mailto:mistersun4@gmail.com" style={{ color: '#00C853' }}>
+            mistersun4@gmail.com
+          </a>
+          .
+        </p>
+      </LegalSection>
     </LegalPageLayout>
   )
 }

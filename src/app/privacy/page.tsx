@@ -44,8 +44,8 @@ export default function PrivacyPage() {
       <LegalSection title="Questions">
         <p>
           For privacy questions, contact{' '}
-          <a href="mailto:privacy@closebooks.io" style={{ color: '#00C853' }}>
-            privacy@closebooks.io
+          <a href="mailto:mistersun4@gmail.com" style={{ color: '#00C853' }}>
+            mistersun4@gmail.com
           </a>
           .
         </p>

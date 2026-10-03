@@ -24,6 +24,7 @@ const COLUMNS = [
     title: 'Company',
     links: [
       { href: '/about', label: 'About' },
+      { href: 'mailto:mistersun4@gmail.com', label: 'Contact' },
     ],
   },
   {
